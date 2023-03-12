@@ -1,23 +1,23 @@
-#pragma once
+п»ї#pragma once
 
-/// @brief Точка вискограммы
+/// @brief РўРѕС‡РєР° РІРёСЃРєРѕРіСЂР°РјРјС‹
 struct viscosity_data_point {
     double temperature;
     double kinematic_viscosity;
 };
 
 
-/// @brief Модель вязкости (с потенциалом на общую модель вязкости)
+/// @brief РњРѕРґРµР»СЊ РІСЏР·РєРѕСЃС‚Рё (СЃ РїРѕС‚РµРЅС†РёР°Р»РѕРј РЅР° РѕР±С‰СѓСЋ РјРѕРґРµР»СЊ РІСЏР·РєРѕСЃС‚Рё)
 struct oil_viscosity_parameters_t
 {
-    /// @brief Номинальная температура для вязкости
-    double nominal_temperature{ KELVIN_OFFSET + 20 }; // 20 градусов Цельсия
-    /// @brief Кинематическая вязкость при номинальной температуре перекачки
+    /// @brief РќРѕРјРёРЅР°Р»СЊРЅР°СЏ С‚РµРјРїРµСЂР°С‚СѓСЂР° РґР»СЏ РІСЏР·РєРѕСЃС‚Рё
+    double nominal_temperature{ KELVIN_OFFSET + 20 }; // 20 РіСЂР°РґСѓСЃРѕРІ Р¦РµР»СЊСЃРёСЏ
+    /// @brief РљРёРЅРµРјР°С‚РёС‡РµСЃРєР°СЏ РІСЏР·РєРѕСЃС‚СЊ РїСЂРё РЅРѕРјРёРЅР°Р»СЊРЅРѕР№ С‚РµРјРїРµСЂР°С‚СѓСЂРµ РїРµСЂРµРєР°С‡РєРё
     double nominal_viscosity{ 10e-6 };
-    /// @brief Коэффициент в формуле Филонова-Рейнольдса
+    /// @brief РљРѕСЌС„С„РёС†РёРµРЅС‚ РІ С„РѕСЂРјСѓР»Рµ Р¤РёР»РѕРЅРѕРІР°-Р РµР№РЅРѕР»СЊРґСЃР°
     double temperature_coefficient{ 0 };
 
-    /// @brief Формула вискограммы Филонова-Рейнольдса
+    /// @brief Р¤РѕСЂРјСѓР»Р° РІРёСЃРєРѕРіСЂР°РјРјС‹ Р¤РёР»РѕРЅРѕРІР°-Р РµР№РЅРѕР»СЊРґСЃР°
     static double viscosity_Filonov_Reynolds(double default_viscosity,
         double default_temperature, double kinematic_viscosity_temperature_coefficient,
         double temperature)
@@ -26,7 +26,7 @@ struct oil_viscosity_parameters_t
         double viscosity = default_viscosity * exp(-k * (temperature - default_temperature));
         return viscosity;
     }
-    /// @brief Рассчитывает температурный коэффициент и температуру при 20 град по двум точкам
+    /// @brief Р Р°СЃСЃС‡РёС‚С‹РІР°РµС‚ С‚РµРјРїРµСЂР°С‚СѓСЂРЅС‹Р№ РєРѕСЌС„С„РёС†РёРµРЅС‚ Рё С‚РµРјРїРµСЂР°С‚СѓСЂСѓ РїСЂРё 20 РіСЂР°Рґ РїРѕ РґРІСѓРј С‚РѕС‡РєР°Рј
     /// (T_1, \nu_1), (T_2, \nu_2)
     static double find_kinematic_viscosity_temperature_coefficient(
         double viscosity1, double temperature1,
@@ -40,13 +40,13 @@ struct oil_viscosity_parameters_t
         return viscosity_Filonov_Reynolds(nominal_viscosity, nominal_temperature,
             temperature_coefficient, temperature);
     }
-    /// @brief Изотермическая вязкость - просто возвращаем при номинальном режиме
+    /// @brief РР·РѕС‚РµСЂРјРёС‡РµСЃРєР°СЏ РІСЏР·РєРѕСЃС‚СЊ - РїСЂРѕСЃС‚Рѕ РІРѕР·РІСЂР°С‰Р°РµРј РїСЂРё РЅРѕРјРёРЅР°Р»СЊРЅРѕРј СЂРµР¶РёРјРµ
     double operator()() const
     {
         return nominal_viscosity;
     }
 
-    /// @brief Инициализация модели вязкости по вискограмме из двух точек
+    /// @brief РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РјРѕРґРµР»Рё РІСЏР·РєРѕСЃС‚Рё РїРѕ РІРёСЃРєРѕРіСЂР°РјРјРµ РёР· РґРІСѓС… С‚РѕС‡РµРє
     /// @param viscogramm 
     oil_viscosity_parameters_t(const array<viscosity_data_point, 2>& viscogramm)
     {
@@ -58,62 +58,62 @@ struct oil_viscosity_parameters_t
         nominal_temperature = v[0].temperature;
         nominal_viscosity = v[0].kinematic_viscosity;
     }
-    /// @brief Дефолтная инициализация
+    /// @brief Р”РµС„РѕР»С‚РЅР°СЏ РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ
     oil_viscosity_parameters_t() = default;
 };
 
 struct oil_density_parameters_t {
-    /// @brief Плотность при номинальных условиях, кг/м3
+    /// @brief РџР»РѕС‚РЅРѕСЃС‚СЊ РїСЂРё РЅРѕРјРёРЅР°Р»СЊРЅС‹С… СѓСЃР»РѕРІРёСЏС…, РєРі/Рј3
     double nominal_density{ 760 };
-    /// @brief Модуль упругости жидкости, Па
-    /// Значение по умолчанию приведено по [Лурье 2017], стр. 77
+    /// @brief РњРѕРґСѓР»СЊ СѓРїСЂСѓРіРѕСЃС‚Рё Р¶РёРґРєРѕСЃС‚Рё, РџР°
+    /// Р—РЅР°С‡РµРЅРёРµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РїСЂРёРІРµРґРµРЅРѕ РїРѕ [Р›СѓСЂСЊРµ 2017], СЃС‚СЂ. 77
     double fluid_elasticity_modulus{ 1.5e9 };
-    /// @brief Номинальное давление, при котором фиксировалась плотность, Па
+    /// @brief РќРѕРјРёРЅР°Р»СЊРЅРѕРµ РґР°РІР»РµРЅРёРµ, РїСЂРё РєРѕС‚РѕСЂРѕРј С„РёРєСЃРёСЂРѕРІР°Р»Р°СЃСЊ РїР»РѕС‚РЅРѕСЃС‚СЊ, РџР°
     double nominal_pressure{ ATMOSPHERIC_PRESSURE };
 
-    /// @brief Коэффициент сжимаемости для жидкости (1/Па)
-    /// Коэффициент, учитывающий изменение плотности жидкости при отклонении давления от номинального
-    /// В документах обозначает как \beta_\rho
+    /// @brief РљРѕСЌС„С„РёС†РёРµРЅС‚ СЃР¶РёРјР°РµРјРѕСЃС‚Рё РґР»СЏ Р¶РёРґРєРѕСЃС‚Рё (1/РџР°)
+    /// РљРѕСЌС„С„РёС†РёРµРЅС‚, СѓС‡РёС‚С‹РІР°СЋС‰РёР№ РёР·РјРµРЅРµРЅРёРµ РїР»РѕС‚РЅРѕСЃС‚Рё Р¶РёРґРєРѕСЃС‚Рё РїСЂРё РѕС‚РєР»РѕРЅРµРЅРёРё РґР°РІР»РµРЅРёСЏ РѕС‚ РЅРѕРјРёРЅР°Р»СЊРЅРѕРіРѕ
+    /// Р’ РґРѕРєСѓРјРµРЅС‚Р°С… РѕР±РѕР·РЅР°С‡Р°РµС‚ РєР°Рє \beta_\rho
     double getCompressionRatio() const {
         return 1 / fluid_elasticity_modulus;
     }
-    /// @brief Плотность при рабочем давлении, с учетом коэффициента сжимаемости жидкости
+    /// @brief РџР»РѕС‚РЅРѕСЃС‚СЊ РїСЂРё СЂР°Р±РѕС‡РµРј РґР°РІР»РµРЅРёРё, СЃ СѓС‡РµС‚РѕРј РєРѕСЌС„С„РёС†РёРµРЅС‚Р° СЃР¶РёРјР°РµРјРѕСЃС‚Рё Р¶РёРґРєРѕСЃС‚Рё
     double getDensity(double pressure) const {
         return nominal_density * (1 + getCompressionRatio() * (pressure - nominal_pressure));
     }
 
-    /// @brief Плотность без учета сжимаемости и температурного расширения
+    /// @brief РџР»РѕС‚РЅРѕСЃС‚СЊ Р±РµР· СѓС‡РµС‚Р° СЃР¶РёРјР°РµРјРѕСЃС‚Рё Рё С‚РµРјРїРµСЂР°С‚СѓСЂРЅРѕРіРѕ СЂР°СЃС€РёСЂРµРЅРёСЏ
     double operator()() const
     {
         return nominal_density;
     }
 };
 
-/// @brief Теплофизические свойства нефти (переименовать во флюид)
+/// @brief РўРµРїР»РѕС„РёР·РёС‡РµСЃРєРёРµ СЃРІРѕР№СЃС‚РІР° РЅРµС„С‚Рё (РїРµСЂРµРёРјРµРЅРѕРІР°С‚СЊ РІРѕ С„Р»СЋРёРґ)
 struct oil_heat_parameters_t {
-    /// @brief Коэффициент внутренней теплоотдачи, Вт*м-2*К-1
+    /// @brief РљРѕСЌС„С„РёС†РёРµРЅС‚ РІРЅСѓС‚СЂРµРЅРЅРµР№ С‚РµРїР»РѕРѕС‚РґР°С‡Рё, Р’С‚*Рј-2*Рљ-1
     double internalHeatTransferCoefficient = 257;
-    /// @brief Теплоемкость, Дж*кг-1*К-1
+    /// @brief РўРµРїР»РѕРµРјРєРѕСЃС‚СЊ, Р”Р¶*РєРі-1*Рљ-1
     double HeatCapacity = 2000;
-    /// @brief Температура застывания, градусы C (переделать на Кельвины!)
+    /// @brief РўРµРјРїРµСЂР°С‚СѓСЂР° Р·Р°СЃС‚С‹РІР°РЅРёСЏ, РіСЂР°РґСѓСЃС‹ C (РїРµСЂРµРґРµР»Р°С‚СЊ РЅР° РљРµР»СЊРІРёРЅС‹!)
     double pourPointTemperature{ 12 };
 };
 
 
-/// @brief Сущность нефти
+/// @brief РЎСѓС‰РЅРѕСЃС‚СЊ РЅРµС„С‚Рё
 struct OilParameters
 {
-    /// @brief Модель плотности
+    /// @brief РњРѕРґРµР»СЊ РїР»РѕС‚РЅРѕСЃС‚Рё
     oil_density_parameters_t density;
-    /// @brief Модель вязкости
+    /// @brief РњРѕРґРµР»СЊ РІСЏР·РєРѕСЃС‚Рё
     oil_viscosity_parameters_t viscosity;
-    /// @brief Тепловая модель
+    /// @brief РўРµРїР»РѕРІР°СЏ РјРѕРґРµР»СЊ
     oil_heat_parameters_t heat;
 
 
 
-    /// @brief Теплоемкость по формуле Крэга
-    /// Формула из документа "Полный вывод НЕизотермических..."
+    /// @brief РўРµРїР»РѕРµРјРєРѕСЃС‚СЊ РїРѕ С„РѕСЂРјСѓР»Рµ РљСЂСЌРіР°
+    /// Р¤РѕСЂРјСѓР»Р° РёР· РґРѕРєСѓРјРµРЅС‚Р° "РџРѕР»РЅС‹Р№ РІС‹РІРѕРґ РќР•РёР·РѕС‚РµСЂРјРёС‡РµСЃРєРёС…..."
     double get_heat_capacity_kreg(double temperature) const {
         double Cp = 31.56 / sqrt(density.nominal_density) * (762 + 3.39 * temperature);
         return Cp;
@@ -124,16 +124,16 @@ struct OilParameters
 
 
 
-/// @brief Универсальная реконструкция вязкости по таблице
+/// @brief РЈРЅРёРІРµСЂСЃР°Р»СЊРЅР°СЏ СЂРµРєРѕРЅСЃС‚СЂСѓРєС†РёСЏ РІСЏР·РєРѕСЃС‚Рё РїРѕ С‚Р°Р±Р»РёС†Рµ
 struct viscosity_table_model_t {
     static constexpr std::array<double, 3> viscosity_temperatures{
         KELVIN_OFFSET + 0, KELVIN_OFFSET + 20, KELVIN_OFFSET + 50 };
 
-    /// @brief Корректирует базовую таблицу вязкости под рабочую вязкость
-    /// @param viscosities Базовая таблица вязкости
-    /// @param viscosity_working Рабочая вязкость
-    /// @param viscosity_working_temperature Температура при которой измеряется вязкость ()
-    /// @return Откорректированная таблица вязкости
+    /// @brief РљРѕСЂСЂРµРєС‚РёСЂСѓРµС‚ Р±Р°Р·РѕРІСѓСЋ С‚Р°Р±Р»РёС†Сѓ РІСЏР·РєРѕСЃС‚Рё РїРѕРґ СЂР°Р±РѕС‡СѓСЋ РІСЏР·РєРѕСЃС‚СЊ
+    /// @param viscosities Р‘Р°Р·РѕРІР°СЏ С‚Р°Р±Р»РёС†Р° РІСЏР·РєРѕСЃС‚Рё
+    /// @param viscosity_working Р Р°Р±РѕС‡Р°СЏ РІСЏР·РєРѕСЃС‚СЊ
+    /// @param viscosity_working_temperature РўРµРјРїРµСЂР°С‚СѓСЂР° РїСЂРё РєРѕС‚РѕСЂРѕР№ РёР·РјРµСЂСЏРµС‚СЃСЏ РІСЏР·РєРѕСЃС‚СЊ ()
+    /// @return РћС‚РєРѕСЂСЂРµРєС‚РёСЂРѕРІР°РЅРЅР°СЏ С‚Р°Р±Р»РёС†Р° РІСЏР·РєРѕСЃС‚Рё
     static inline array<double, 3> adapt(array<double, 3> viscosities,
         double viscosity_working, double viscosity_working_temperature)
     {
@@ -155,7 +155,7 @@ struct viscosity_table_model_t {
     }
 
 
-    /// @brief Восстанавливает аппроксимацию по таблице вязкости
+    /// @brief Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ Р°РїРїСЂРѕРєСЃРёРјР°С†РёСЋ РїРѕ С‚Р°Р±Р»РёС†Рµ РІСЏР·РєРѕСЃС‚Рё
     /// @param viscosities 
     /// @return 
     static inline array<double, 3> reconstruct(const array<double, 3>& viscosities)
@@ -172,8 +172,8 @@ struct viscosity_table_model_t {
         constexpr double T2 = viscosity_temperatures[1];
         constexpr double T3 = viscosity_temperatures[2];
 
-        constexpr double eps1 = 1e-4; // Проверка равенства вязкостей по их отношению (!!надо исследовать!!)
-        constexpr double eps2 = 1e-4; // Проверка 
+        constexpr double eps1 = 1e-4; // РџСЂРѕРІРµСЂРєР° СЂР°РІРµРЅСЃС‚РІР° РІСЏР·РєРѕСЃС‚РµР№ РїРѕ РёС… РѕС‚РЅРѕС€РµРЅРёСЋ (!!РЅР°РґРѕ РёСЃСЃР»РµРґРѕРІР°С‚СЊ!!)
+        constexpr double eps2 = 1e-4; // РџСЂРѕРІРµСЂРєР° 
 
         constexpr double a1 = (T3 - T2) / (T2 - T1);
 
@@ -182,23 +182,23 @@ struct viscosity_table_model_t {
         double nu3div1 = v[2] / v[0];
 
         if (abs(nu3div1 - 1) < eps1 && abs(nu2div3 - 1) < eps1) {
-            // Вязкость = const
+            // Р’СЏР·РєРѕСЃС‚СЊ = const
             coeffs[0] = v[0];
             return coeffs;
         }
 
-        double a = a1 * lognu1div2 / log(nu2div3); // похоже, a > 1
+        double a = a1 * lognu1div2 / log(nu2div3); // РїРѕС…РѕР¶Рµ, a > 1
 
         if (abs(a - 1) < eps2) {
-            // Филонов-Рейнольс
-            coeffs[0] = v[1]; // при двадцати градусах
+            // Р¤РёР»РѕРЅРѕРІ-Р РµР№РЅРѕР»СЊСЃ
+            coeffs[0] = v[1]; // РїСЂРё РґРІР°РґС†Р°С‚Рё РіСЂР°РґСѓСЃР°С…
 
             constexpr double DT = T2 - T1;
-            coeffs[1] = lognu1div2 / DT; // перепроверить!
+            coeffs[1] = lognu1div2 / DT; // РїРµСЂРµРїСЂРѕРІРµСЂРёС‚СЊ!
             return coeffs;
         }
 
-        // Фогель-Фульчер-Тамман
+        // Р¤РѕРіРµР»СЊ-Р¤СѓР»СЊС‡РµСЂ-РўР°РјРјР°РЅ
         coeffs[0] = v[2] * pow(nu3div1, 1.0 / (a - 1)); // nu_inf
         coeffs[1] = (T3 - a * T1) / (1 - a); // theta
         const double& theta = coeffs[1];
@@ -206,27 +206,27 @@ struct viscosity_table_model_t {
 
         return coeffs;
     }
-    /// @brief Расчет вязкости с после реконструкции
+    /// @brief Р Р°СЃС‡РµС‚ РІСЏР·РєРѕСЃС‚Рё СЃ РїРѕСЃР»Рµ СЂРµРєРѕРЅСЃС‚СЂСѓРєС†РёРё
     /// @param coeffs 
     /// @param temperature 
     /// @return 
     static inline double calc(const array<double, 3>& coeffs, double temperature)
     {
         if (!std::isnan(coeffs[2])) {
-            // Фогель-Фульчер-Тамман
+            // Р¤РѕРіРµР»СЊ-Р¤СѓР»СЊС‡РµСЂ-РўР°РјРјР°РЅ
             const auto& nu_inf = coeffs[0];
             const auto& theta = coeffs[1];
             const auto& b = coeffs[2];
             return nu_inf * exp(b / (temperature - theta));
         }
         else if (!std::isnan(coeffs[1])) {
-            // Филонов-Рейнольс
+            // Р¤РёР»РѕРЅРѕРІ-Р РµР№РЅРѕР»СЊСЃ
             const auto& nu_nominal = coeffs[0];
             const auto& k = coeffs[1];
             return nu_nominal * exp(-k * (temperature - viscosity_temperatures[1]));
         }
         else {
-            // Константа
+            // РљРѕРЅСЃС‚Р°РЅС‚Р°
             return coeffs[0];
         }
     }
@@ -235,13 +235,13 @@ struct viscosity_table_model_t {
 
 
 
-/// @brief Динамические (пересчитываемые в процессе расчета) параметры нефти
-/// @tparam DataBuffer Задается vector<double> для профилей, double для точечного случая
+/// @brief Р”РёРЅР°РјРёС‡РµСЃРєРёРµ (РїРµСЂРµСЃС‡РёС‚С‹РІР°РµРјС‹Рµ РІ РїСЂРѕС†РµСЃСЃРµ СЂР°СЃС‡РµС‚Р°) РїР°СЂР°РјРµС‚СЂС‹ РЅРµС„С‚Рё
+/// @tparam DataBuffer Р—Р°РґР°РµС‚СЃСЏ vector<double> РґР»СЏ РїСЂРѕС„РёР»РµР№, double РґР»СЏ С‚РѕС‡РµС‡РЅРѕРіРѕ СЃР»СѓС‡Р°СЏ
 template <typename BufferDensity, typename BufferViscosity>
 struct fluid_properties_dynamic {
-    /// @brief Плотность при стандартных (нормальных, номинальных) условиях
+    /// @brief РџР»РѕС‚РЅРѕСЃС‚СЊ РїСЂРё СЃС‚Р°РЅРґР°СЂС‚РЅС‹С… (РЅРѕСЂРјР°Р»СЊРЅС‹С…, РЅРѕРјРёРЅР°Р»СЊРЅС‹С…) СѓСЃР»РѕРІРёСЏС…
     BufferDensity nominal_density;
-    /// @brief Таблица вязкости
+    /// @brief РўР°Р±Р»РёС†Р° РІСЏР·РєРѕСЃС‚Рё
     BufferViscosity viscosity_approximation;
 
     fluid_properties_dynamic(BufferDensity nominal_density, BufferViscosity viscosity_approximation)
@@ -254,43 +254,43 @@ struct fluid_properties_dynamic {
 
 
 
-/// @brief Статические (неизменные в процессе расчета) параметры нефти
+/// @brief РЎС‚Р°С‚РёС‡РµСЃРєРёРµ (РЅРµРёР·РјРµРЅРЅС‹Рµ РІ РїСЂРѕС†РµСЃСЃРµ СЂР°СЃС‡РµС‚Р°) РїР°СЂР°РјРµС‚СЂС‹ РЅРµС„С‚Рё
 struct fluid_properties_static {
-    // === Вязкость
-    /// @brief Температуры, при которых задавалась вязкость
+    // === Р’СЏР·РєРѕСЃС‚СЊ
+    /// @brief РўРµРјРїРµСЂР°С‚СѓСЂС‹, РїСЂРё РєРѕС‚РѕСЂС‹С… Р·Р°РґР°РІР°Р»Р°СЃСЊ РІСЏР·РєРѕСЃС‚СЊ
 
 
-    // === Плотность
-    /// @brief Модуль упругости жидкости, Па
-    /// Значение по умолчанию приведено по [Лурье 2017], стр. 77
+    // === РџР»РѕС‚РЅРѕСЃС‚СЊ
+    /// @brief РњРѕРґСѓР»СЊ СѓРїСЂСѓРіРѕСЃС‚Рё Р¶РёРґРєРѕСЃС‚Рё, РџР°
+    /// Р—РЅР°С‡РµРЅРёРµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РїСЂРёРІРµРґРµРЅРѕ РїРѕ [Р›СѓСЂСЊРµ 2017], СЃС‚СЂ. 77
     double fluid_elasticity_modulus{ 1.5e9 };
-    /// @brief Номинальное давление, при котором фиксировалась плотность, Па
+    /// @brief РќРѕРјРёРЅР°Р»СЊРЅРѕРµ РґР°РІР»РµРЅРёРµ, РїСЂРё РєРѕС‚РѕСЂРѕРј С„РёРєСЃРёСЂРѕРІР°Р»Р°СЃСЊ РїР»РѕС‚РЅРѕСЃС‚СЊ, РџР°
     double nominal_pressure{ ATMOSPHERIC_PRESSURE };
-    /// @brief Номинальная температура, при которой фиксировалась плотность, K
+    /// @brief РќРѕРјРёРЅР°Р»СЊРЅР°СЏ С‚РµРјРїРµСЂР°С‚СѓСЂР°, РїСЂРё РєРѕС‚РѕСЂРѕР№ С„РёРєСЃРёСЂРѕРІР°Р»Р°СЃСЊ РїР»РѕС‚РЅРѕСЃС‚СЊ, K
     double nominal_temperature{ 20 + KELVIN_OFFSET };
 
 
-    // === Теплофизика
-    /// @brief Теплоемкость, Дж*кг-1*К-1
+    // === РўРµРїР»РѕС„РёР·РёРєР°
+    /// @brief РўРµРїР»РѕРµРјРєРѕСЃС‚СЊ, Р”Р¶*РєРі-1*Рљ-1
     double heat_capacity = 2000;
-    /// @brief Температура застывания, градусы K
+    /// @brief РўРµРјРїРµСЂР°С‚СѓСЂР° Р·Р°СЃС‚С‹РІР°РЅРёСЏ, РіСЂР°РґСѓСЃС‹ K
     double pour_temperature{ 12 + KELVIN_OFFSET };
 
-    /// @brief Коэффициент сжимаемости для жидкости (1/Па)
-    /// Коэффициент, учитывающий изменение плотности жидкости при отклонении давления от номинального
-    /// В документах обозначает как \beta_\rho
+    /// @brief РљРѕСЌС„С„РёС†РёРµРЅС‚ СЃР¶РёРјР°РµРјРѕСЃС‚Рё РґР»СЏ Р¶РёРґРєРѕСЃС‚Рё (1/РџР°)
+    /// РљРѕСЌС„С„РёС†РёРµРЅС‚, СѓС‡РёС‚С‹РІР°СЋС‰РёР№ РёР·РјРµРЅРµРЅРёРµ РїР»РѕС‚РЅРѕСЃС‚Рё Р¶РёРґРєРѕСЃС‚Рё РїСЂРё РѕС‚РєР»РѕРЅРµРЅРёРё РґР°РІР»РµРЅРёСЏ РѕС‚ РЅРѕРјРёРЅР°Р»СЊРЅРѕРіРѕ
+    /// Р’ РґРѕРєСѓРјРµРЅС‚Р°С… РѕР±РѕР·РЅР°С‡Р°РµС‚ РєР°Рє \beta_\rho
     double get_compression_ratio() const {
         return 1 / fluid_elasticity_modulus;
     }
 
 };
 
-/// @brief Профиль свойств флюида
+/// @brief РџСЂРѕС„РёР»СЊ СЃРІРѕР№СЃС‚РІ С„Р»СЋРёРґР°
 struct fluid_properties_profile_t :
     fluid_properties_dynamic<const vector<double>&, const vector<array<double, 3>>&>,
     fluid_properties_static
 {
-    // здесь все функции зависят от координаты (индекса на профиле)
+    // Р·РґРµСЃСЊ РІСЃРµ С„СѓРЅРєС†РёРё Р·Р°РІРёСЃСЏС‚ РѕС‚ РєРѕРѕСЂРґРёРЅР°С‚С‹ (РёРЅРґРµРєСЃР° РЅР° РїСЂРѕС„РёР»Рµ)
 
     fluid_properties_profile_t(const vector<double>& nominal_density,
         const vector<array<double, 3>>& viscosity_approximation)
@@ -299,7 +299,7 @@ struct fluid_properties_profile_t :
 
     }
 
-    /// @brief Возвращает вязкость
+    /// @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ РІСЏР·РєРѕСЃС‚СЊ
     /// @param grid_index 
     /// @param temperature 
     /// @return 
@@ -315,5 +315,5 @@ struct fluid_properties_t :
     fluid_properties_dynamic<double, double>,
     fluid_properties_static
 {
-    // здесь все функции не зависят от координаты
+    // Р·РґРµСЃСЊ РІСЃРµ С„СѓРЅРєС†РёРё РЅРµ Р·Р°РІРёСЃСЏС‚ РѕС‚ РєРѕРѕСЂРґРёРЅР°С‚С‹
 };

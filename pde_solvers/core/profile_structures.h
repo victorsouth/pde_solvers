@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 using std::vector;
 
@@ -23,7 +23,7 @@ inline static T _interpolate(T* values, double interpolation_offset)
         return linear_interpolation<T>(values[-1], values[0], 1 + p);
 }
 
-/// @brief Возвращает указатели на нулевые элементы профилей, хранящиеся в array
+/// @brief В¬РѕР·РІСЂР°С‰Р°РµС‚ СѓРєР°Р·Р°С‚РµР»Рё РЅР° РЅСѓР»РµРІС‹Рµ СЌР»РµРјРµРЅС‚С‹ РїСЂРѕС„РёР»РµР№, С…СЂР°РЅВ¤С‰РёРµСЃВ¤ РІ array
 /// @tparam DataType 
 /// @param profiles 
 /// @return 
@@ -34,9 +34,9 @@ inline array<vector<DataType>*, Dimension> get_profiles_pointers(array<vector<Da
 }
 
 
-/// @brief Собирает из составной профиль
-/// Из скалярных профилей собрать векторный профиль: double -> array<double, Dim>
-/// Из векторных профилей собрать матричный профиль: array<double, Dim> -> array<array<double, Dim>, Dim>
+/// @brief вЂ”РѕР±РёСЂР°РµС‚ РёР· СЃРѕСЃС‚Р°РІРЅРѕР№ РїСЂРѕС„РёР»СЊ
+/// В»Р· СЃРєР°Р»В¤СЂРЅС‹С… РїСЂРѕС„РёР»РµР№ СЃРѕР±СЂР°С‚СЊ РІРµРєС‚РѕСЂРЅС‹Р№ РїСЂРѕС„РёР»СЊ: double -> array<double, Dim>
+/// В»Р· РІРµРєС‚РѕСЂРЅС‹С… РїСЂРѕС„РёР»РµР№ СЃРѕР±СЂР°С‚СЊ РјР°С‚СЂРёС‡РЅС‹Р№ РїСЂРѕС„РёР»СЊ: array<double, Dim> -> array<array<double, Dim>, Dim>
 template <typename T, size_t Dimension>
 class profile_wrapper {
 protected:
@@ -62,7 +62,7 @@ public:
 
     }
 
-    /// @brief Длина профиля (для совместимости с std::vector)
+    /// @brief Ж’Р»РёРЅР° РїСЂРѕС„РёР»В¤ (РґР»В¤ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ std::vector)
     size_t size() const {
         return n;
     }
@@ -167,11 +167,11 @@ inline profile_wrapper<double, 1>::profile_wrapper(array<vector<double>*, 1>* pr
 }
 
 
-/// @brief Шаблонный слой, определяющий нужное количество профилей по точкам и ячейкам
-/// Используется для генерации слоя расчетных переменных и слоев вспомогательных структур
-/// Скалярный профиль на точках
-/// Скалярный профиль на ячейках
-/// Векторный профиль (заданной размерности)
+/// @brief РЋР°Р±Р»РѕРЅРЅС‹Р№ СЃР»РѕР№, РѕРїСЂРµРґРµР»В¤СЋС‰РёР№ РЅСѓР¶РЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ РїСЂРѕС„РёР»РµР№ РїРѕ С‚РѕС‡РєР°Рј Рё В¤С‡РµР№РєР°Рј
+/// В»СЃРїРѕР»СЊР·СѓРµС‚СЃВ¤ РґР»В¤ РіРµРЅРµСЂР°С†РёРё СЃР»РѕВ¤ СЂР°СЃС‡РµС‚РЅС‹С… РїРµСЂРµРјРµРЅРЅС‹С… Рё СЃР»РѕРµРІ РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹С… СЃС‚СЂСѓРєС‚СѓСЂ
+/// вЂ”РєР°Р»В¤СЂРЅС‹Р№ РїСЂРѕС„РёР»СЊ РЅР° С‚РѕС‡РєР°С…
+/// вЂ”РєР°Р»В¤СЂРЅС‹Р№ РїСЂРѕС„РёР»СЊ РЅР° В¤С‡РµР№РєР°С…
+/// В¬РµРєС‚РѕСЂРЅС‹Р№ РїСЂРѕС„РёР»СЊ (Р·Р°РґР°РЅРЅРѕР№ СЂР°Р·РјРµСЂРЅРѕСЃС‚Рё)
 template <size_t PointScalar, size_t CellScalar = 0,
     size_t PointVector = 0, size_t PointVectorDimension = 0,
     size_t CellVector = 0, size_t CellVectorDimension = 0>
@@ -181,13 +181,13 @@ struct templated_layer
     typedef typename fixed_system_types<CellVectorDimension>::var_type cell_vector_type;
 
 
-    /// @brief Список скалярных профилей на границах ячеек
+    /// @brief вЂ”РїРёСЃРѕРє СЃРєР°Р»В¤СЂРЅС‹С… РїСЂРѕС„РёР»РµР№ РЅР° РіСЂР°РЅРёС†Р°С… В¤С‡РµРµРє
     array<vector<double>, PointScalar> point_double;
-    /// @brief Список скалярных профилей в ячейках
+    /// @brief вЂ”РїРёСЃРѕРє СЃРєР°Р»В¤СЂРЅС‹С… РїСЂРѕС„РёР»РµР№ РІ В¤С‡РµР№РєР°С…
     array<vector<double>, CellScalar> cell_double;
-    /// @brief Список векторных профилей на границах ячеек
+    /// @brief вЂ”РїРёСЃРѕРє РІРµРєС‚РѕСЂРЅС‹С… РїСЂРѕС„РёР»РµР№ РЅР° РіСЂР°РЅРёС†Р°С… В¤С‡РµРµРє
     array<vector<point_vector_type>, PointVector> point_vector;
-    /// @brief Список векторных профилей в ячейках
+    /// @brief вЂ”РїРёСЃРѕРє РІРµРєС‚РѕСЂРЅС‹С… РїСЂРѕС„РёР»РµР№ РІ В¤С‡РµР№РєР°С…
     array<vector<cell_vector_type>, CellVector> cell_vector;
 
     templated_layer(size_t point_count)
@@ -200,17 +200,17 @@ struct templated_layer
     }
 };
 
-/// @brief Составной слой, включающий в себя слой переменных и слои со специальными структурам
+/// @brief вЂ”РѕСЃС‚Р°РІРЅРѕР№ СЃР»РѕР№, РІРєР»СЋС‡Р°СЋС‰РёР№ РІ СЃРµР±В¤ СЃР»РѕР№ РїРµСЂРµРјРµРЅРЅС‹С… Рё СЃР»РѕРё СЃРѕ СЃРїРµС†РёР°Р»СЊРЅС‹РјРё СЃС‚СЂСѓРєС‚СѓСЂР°Рј
 /// @tparam Variables 
 /// @tparam ...Ts 
 template <typename VarLayer, typename... SpecificLayers>
 struct composite_layer_t {
-    /// @brief Целевые переменные
+    /// @brief Г·РµР»РµРІС‹Рµ РїРµСЂРµРјРµРЅРЅС‹Рµ
     VarLayer vars;
-    /// @brief Все специальные структуры
+    /// @brief В¬СЃРµ СЃРїРµС†РёР°Р»СЊРЅС‹Рµ СЃС‚СЂСѓРєС‚СѓСЂС‹
     std::tuple<SpecificLayers...> specific;
 
-    /// @brief Возвращает ссылку на специальные структуры с заданным номером (SpecificDataNumber) в кортеже
+    /// @brief В¬РѕР·РІСЂР°С‰Р°РµС‚ СЃСЃС‹Р»РєСѓ РЅР° СЃРїРµС†РёР°Р»СЊРЅС‹Рµ СЃС‚СЂСѓРєС‚СѓСЂС‹ СЃ Р·Р°РґР°РЅРЅС‹Рј РЅРѕРјРµСЂРѕРј (SpecificDataNumber) РІ РєРѕСЂС‚РµР¶Рµ
     template <unsigned SpecificDataNumber>
     auto& get_specific() {
         return std::get<SpecificDataNumber>(specific);

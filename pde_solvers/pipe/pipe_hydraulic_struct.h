@@ -1,37 +1,37 @@
-#pragma once
+п»ї#pragma once
 
-/// @brief Упрощенные параметры трубы
+/// @brief РЈРїСЂРѕС‰РµРЅРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ С‚СЂСѓР±С‹
 struct simple_pipe_properties {
     double length = 12000;
     double dx = 1000;
     double elevation = 0;
     double diameter = 0.7;
-    /// @brief Количество сегментов при дроблении длины length с шагом dx 
-    /// с округлением до ближайшего
+    /// @brief РљРѕР»РёС‡РµСЃС‚РІРѕ СЃРµРіРјРµРЅС‚РѕРІ РїСЂРё РґСЂРѕР±Р»РµРЅРёРё РґР»РёРЅС‹ length СЃ С€Р°РіРѕРј dx 
+    /// СЃ РѕРєСЂСѓРіР»РµРЅРёРµРј РґРѕ Р±Р»РёР¶Р°Р№С€РµРіРѕ
     size_t get_segment_count() const {
         return static_cast<size_t>(0.5 + length / dx);
     }
 };
 
-/// @brief Сущность профиля трубы
+/// @brief РЎСѓС‰РЅРѕСЃС‚СЊ РїСЂРѕС„РёР»СЏ С‚СЂСѓР±С‹
 struct PipeProfile {
-    /// @brief Координатные отметки, м
+    /// @brief РљРѕРѕСЂРґРёРЅР°С‚РЅС‹Рµ РѕС‚РјРµС‚РєРё, Рј
     vector<double> coordinates;
-    /// @brief Высотные отметки, м
+    /// @brief Р’С‹СЃРѕС‚РЅС‹Рµ РѕС‚РјРµС‚РєРё, Рј
     vector<double> heights;
-    /// @brief Несущая способность, Па
+    /// @brief РќРµСЃСѓС‰Р°СЏ СЃРїРѕСЃРѕР±РЅРѕСЃС‚СЊ, РџР°
     vector<double> capacity;
-    /// @brief Длина участка трубы, м
+    /// @brief Р”Р»РёРЅР° СѓС‡Р°СЃС‚РєР° С‚СЂСѓР±С‹, Рј
     double getLength() const
     {
         return coordinates.back() - coordinates.front();
     }
-    /// @brief Количество границ расчетной сетки
+    /// @brief РљРѕР»РёС‡РµСЃС‚РІРѕ РіСЂР°РЅРёС† СЂР°СЃС‡РµС‚РЅРѕР№ СЃРµС‚РєРё
     size_t getPointCount() const
     {
         return coordinates.size();
     }
-    /// @brief Создает профиль с линейным уклоном по параметрам в начале и в конце
+    /// @brief РЎРѕР·РґР°РµС‚ РїСЂРѕС„РёР»СЊ СЃ Р»РёРЅРµР№РЅС‹Рј СѓРєР»РѕРЅРѕРј РїРѕ РїР°СЂР°РјРµС‚СЂР°Рј РІ РЅР°С‡Р°Р»Рµ Рё РІ РєРѕРЅС†Рµ
     /// @param segment_count 
     /// @param x_begin 
     /// @param x_end 
@@ -61,40 +61,40 @@ struct PipeProfile {
     }
 };
 
-/// @brief Параметры стенки трубы
+/// @brief РџР°СЂР°РјРµС‚СЂС‹ СЃС‚РµРЅРєРё С‚СЂСѓР±С‹
 struct pipe_wall_model_t {
-    /// @brief Внутренний диаметр, м
+    /// @brief Р’РЅСѓС‚СЂРµРЅРЅРёР№ РґРёР°РјРµС‚СЂ, Рј
     double diameter{ 0.8 };
-    /// @brief Толщина стенок, м
-    double wallThickness{ 10e-3 }; // 10 мм
-    /// @brief Эквивалентная шероховатость, м (не в мм!)
-    double equivalent_roughness{ 0.125e-3 }; // перепроверить по РД
-    /// @brief Номинальное давление, при котором фиксировался диаметр, Па
-    double nominal_pressure{ 101325 }; // что если номинальное давление для нефти отличается?
-    /// @brief Модуль упругости Юнга материала труб 
-    /// (значение: Лурье 2017, стр. 92)
+    /// @brief РўРѕР»С‰РёРЅР° СЃС‚РµРЅРѕРє, Рј
+    double wallThickness{ 10e-3 }; // 10 РјРј
+    /// @brief Р­РєРІРёРІР°Р»РµРЅС‚РЅР°СЏ С€РµСЂРѕС…РѕРІР°С‚РѕСЃС‚СЊ, Рј (РЅРµ РІ РјРј!)
+    double equivalent_roughness{ 0.125e-3 }; // РїРµСЂРµРїСЂРѕРІРµСЂРёС‚СЊ РїРѕ Р Р”
+    /// @brief РќРѕРјРёРЅР°Р»СЊРЅРѕРµ РґР°РІР»РµРЅРёРµ, РїСЂРё РєРѕС‚РѕСЂРѕРј С„РёРєСЃРёСЂРѕРІР°Р»СЃСЏ РґРёР°РјРµС‚СЂ, РџР°
+    double nominal_pressure{ 101325 }; // С‡С‚Рѕ РµСЃР»Рё РЅРѕРјРёРЅР°Р»СЊРЅРѕРµ РґР°РІР»РµРЅРёРµ РґР»СЏ РЅРµС„С‚Рё РѕС‚Р»РёС‡Р°РµС‚СЃСЏ?
+    /// @brief РњРѕРґСѓР»СЊ СѓРїСЂСѓРіРѕСЃС‚Рё Р®РЅРіР° РјР°С‚РµСЂРёР°Р»Р° С‚СЂСѓР± 
+    /// (Р·РЅР°С‡РµРЅРёРµ: Р›СѓСЂСЊРµ 2017, СЃС‚СЂ. 92)
     double wall_elasticity_modulus{ 2e11 };
-    /// @brief коэффициент упругости Пуассона
-    /// Значение по умолчанию взято из [Лурье 2017], стр. 93
+    /// @brief РєРѕСЌС„С„РёС†РёРµРЅС‚ СѓРїСЂСѓРіРѕСЃС‚Рё РџСѓР°СЃСЃРѕРЅР°
+    /// Р—РЅР°С‡РµРЅРёРµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РІР·СЏС‚Рѕ РёР· [Р›СѓСЂСЊРµ 2017], СЃС‚СЂ. 93
     double poissonStrain{ 0.28 };
 
-    /// @brief Коэффициент сжимаемости для трубы (1/Па)
-    /// Коэффициент, учитывающий изменение площади сечения при отклонении давления от номинального
-    /// В документах обозначает как \beta_S
+    /// @brief РљРѕСЌС„С„РёС†РёРµРЅС‚ СЃР¶РёРјР°РµРјРѕСЃС‚Рё РґР»СЏ С‚СЂСѓР±С‹ (1/РџР°)
+    /// РљРѕСЌС„С„РёС†РёРµРЅС‚, СѓС‡РёС‚С‹РІР°СЋС‰РёР№ РёР·РјРµРЅРµРЅРёРµ РїР»РѕС‰Р°РґРё СЃРµС‡РµРЅРёСЏ РїСЂРё РѕС‚РєР»РѕРЅРµРЅРёРё РґР°РІР»РµРЅРёСЏ РѕС‚ РЅРѕРјРёРЅР°Р»СЊРЅРѕРіРѕ
+    /// Р’ РґРѕРєСѓРјРµРЅС‚Р°С… РѕР±РѕР·РЅР°С‡Р°РµС‚ РєР°Рє \beta_S
     double getCompressionRatio() const {
         return diameter * (1 - poissonStrain * poissonStrain) / (wall_elasticity_modulus * wallThickness);
     }
-    /// @brief Относительная шероховатость
+    /// @brief РћС‚РЅРѕСЃРёС‚РµР»СЊРЅР°СЏ С€РµСЂРѕС…РѕРІР°С‚РѕСЃС‚СЊ
     double relativeRoughness() const {
         return equivalent_roughness / diameter;
     }
-    /// @brief Площадь сечения \S_0, м^2
+    /// @brief РџР»РѕС‰Р°РґСЊ СЃРµС‡РµРЅРёСЏ \S_0, Рј^2
     double getArea() const
     {
         return (M_PI * diameter * diameter) / 4;
     }
 
-    /// @brief Площадь сечения \S, зависящая от давления, м^2
+    /// @brief РџР»РѕС‰Р°РґСЊ СЃРµС‡РµРЅРёСЏ \S, Р·Р°РІРёСЃСЏС‰Р°СЏ РѕС‚ РґР°РІР»РµРЅРёСЏ, Рј^2
     /// \param oil
     /// \param area
     /// \param pressure
@@ -107,32 +107,32 @@ struct pipe_wall_model_t {
     }
 };
 
-/// @brief Параметры адаптации (в тепловых зонах есть еще!!)
+/// @brief РџР°СЂР°РјРµС‚СЂС‹ Р°РґР°РїС‚Р°С†РёРё (РІ С‚РµРїР»РѕРІС‹С… Р·РѕРЅР°С… РµСЃС‚СЊ РµС‰Рµ!!)
 struct adaptation_parameters {
-    /// @brief Адаптация трения для коррекции формулы Лямбды
+    /// @brief РђРґР°РїС‚Р°С†РёСЏ С‚СЂРµРЅРёСЏ РґР»СЏ РєРѕСЂСЂРµРєС†РёРё С„РѕСЂРјСѓР»С‹ Р›СЏРјР±РґС‹
     double friction{ 1 };
-    /// @brief Поправка на состояние трубопровода
+    /// @brief РџРѕРїСЂР°РІРєР° РЅР° СЃРѕСЃС‚РѕСЏРЅРёРµ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґР°
     double diameter{ 1 };
-    /// @brief Поправка на коэффициент теплообмена флюида
+    /// @brief РџРѕРїСЂР°РІРєР° РЅР° РєРѕСЌС„С„РёС†РёРµРЅС‚ С‚РµРїР»РѕРѕР±РјРµРЅР° С„Р»СЋРёРґР°
     double heat_capacity{ 1 };
 };
 
 
-/// @brief Сущность трубы
+/// @brief РЎСѓС‰РЅРѕСЃС‚СЊ С‚СЂСѓР±С‹
 template <typename AdaptationParameters>
 struct pipe_properties_t
 {
-    /// @brief Профиль для расчета (сетка). Не исходный профиль
+    /// @brief РџСЂРѕС„РёР»СЊ РґР»СЏ СЂР°СЃС‡РµС‚Р° (СЃРµС‚РєР°). РќРµ РёСЃС…РѕРґРЅС‹Р№ РїСЂРѕС„РёР»СЊ
     PipeProfile profile;
-    /// @brief Модель для расчета стенок
+    /// @brief РњРѕРґРµР»СЊ РґР»СЏ СЂР°СЃС‡РµС‚Р° СЃС‚РµРЅРѕРє
     pipe_wall_model_t wall;
-    /// @brief Параметры адаптации
+    /// @brief РџР°СЂР°РјРµС‚СЂС‹ Р°РґР°РїС‚Р°С†РёРё
     AdaptationParameters adaptation;
-    /// @brief Формула расчета гидравлического сопротивления
+    /// @brief Р¤РѕСЂРјСѓР»Р° СЂР°СЃС‡РµС‚Р° РіРёРґСЂР°РІР»РёС‡РµСЃРєРѕРіРѕ СЃРѕРїСЂРѕС‚РёРІР»РµРЅРёСЏ
     double(*resistance_function)(double, double) { hydraulic_resistance_isaev };
 
-    /// @brief Скорость звука в жидкости, м^2/с
-    /// TODO: указать источник литературы
+    /// @brief РЎРєРѕСЂРѕСЃС‚СЊ Р·РІСѓРєР° РІ Р¶РёРґРєРѕСЃС‚Рё, Рј^2/СЃ
+    /// TODO: СѓРєР°Р·Р°С‚СЊ РёСЃС‚РѕС‡РЅРёРє Р»РёС‚РµСЂР°С‚СѓСЂС‹
     double getSoundVelocity(const OilParameters& oil) const
     {
         double beta_S = wall.getCompressionRatio();
@@ -141,7 +141,7 @@ struct pipe_properties_t
         return c;
     }
 
-    /// @brief Скорость звука в жидкости
+    /// @brief РЎРєРѕСЂРѕСЃС‚СЊ Р·РІСѓРєР° РІ Р¶РёРґРєРѕСЃС‚Рё
     double get_sound_velocity(double beta_rho, double nominal_density) const
     {
         double beta_S = wall.getCompressionRatio();
@@ -149,7 +149,7 @@ struct pipe_properties_t
         return c;
     }
 
-    /// @brief Умозрительная площадь сечения \A, которая нужна, чтобы поместить жидкость при номинальных условиях, м^2
+    /// @brief РЈРјРѕР·СЂРёС‚РµР»СЊРЅР°СЏ РїР»РѕС‰Р°РґСЊ СЃРµС‡РµРЅРёСЏ \A, РєРѕС‚РѕСЂР°СЏ РЅСѓР¶РЅР°, С‡С‚РѕР±С‹ РїРѕРјРµСЃС‚РёС‚СЊ Р¶РёРґРєРѕСЃС‚СЊ РїСЂРё РЅРѕРјРёРЅР°Р»СЊРЅС‹С… СѓСЃР»РѕРІРёСЏС…, Рј^2
     /// \param oil
     /// \param pressureArea
     /// \param density
@@ -158,7 +158,7 @@ struct pipe_properties_t
     {
         return (density / oil.density()) * pressureArea;
     }
-    /// @brief Чувствительность к давлению? \theta
+    /// @brief Р§СѓРІСЃС‚РІРёС‚РµР»СЊРЅРѕСЃС‚СЊ Рє РґР°РІР»РµРЅРёСЋ? \theta
     /// \param oil
     /// \param pressure
     /// \return
@@ -168,20 +168,20 @@ struct pipe_properties_t
             * (pressure - wall.nominal_pressure);
     }
 
-    /// @brief Трубопровод по умолчанию 
+    /// @brief РўСЂСѓР±РѕРїСЂРѕРІРѕРґ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ 
     inline static pipe_properties_t<AdaptationParameters> build_simple_pipe(
         const simple_pipe_properties& simple)
     {
         pipe_properties_t<AdaptationParameters> pipe;
 
-        double Pcapacity = 10e6; // несущая способность
+        double Pcapacity = 10e6; // РЅРµСЃСѓС‰Р°СЏ СЃРїРѕСЃРѕР±РЅРѕСЃС‚СЊ
         size_t segment_count = simple.get_segment_count();
         pipe.profile = PipeProfile::create(segment_count, 0, simple.length, 0, simple.elevation, Pcapacity);
         pipe.wall.equivalent_roughness = 0.0001;
 
-        // это диаметр внутренний
+        // СЌС‚Рѕ РґРёР°РјРµС‚СЂ РІРЅСѓС‚СЂРµРЅРЅРёР№
         pipe.wall.diameter = 0.7;
-        // это толщина одной стенки, к внешнему надо прибавлять удвоенную толщину
+        // СЌС‚Рѕ С‚РѕР»С‰РёРЅР° РѕРґРЅРѕР№ СЃС‚РµРЅРєРё, Рє РІРЅРµС€РЅРµРјСѓ РЅР°РґРѕ РїСЂРёР±Р°РІР»СЏС‚СЊ СѓРґРІРѕРµРЅРЅСѓСЋ С‚РѕР»С‰РёРЅСѓ
         pipe.wall.wallThickness = 0.01;
         return pipe;
     }

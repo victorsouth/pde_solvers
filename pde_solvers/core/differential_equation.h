@@ -1,19 +1,19 @@
-#pragma once
+п»ї#pragma once
 
 
-/// @brief Дифференциальное уравнение
+/// @brief Р”РёС„С„РµСЂРµРЅС†РёР°Р»СЊРЅРѕРµ СѓСЂР°РІРЅРµРЅРёРµ
 template <size_t Dimension>
 class differential_equation_t
 {
 public:
-    /// @brief Возвращает известную уравнению сетку
+    /// @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ РёР·РІРµСЃС‚РЅСѓСЋ СѓСЂР°РІРЅРµРЅРёСЋ СЃРµС‚РєСѓ
     virtual const std::vector<double>& get_grid() const = 0;
 };
 
 
 
 
-/// @brief Обыкновенное дифференциальное уравнение - базовый класс
+/// @brief РћР±С‹РєРЅРѕРІРµРЅРЅРѕРµ РґРёС„С„РµСЂРµРЅС†РёР°Р»СЊРЅРѕРµ СѓСЂР°РІРЅРµРЅРёРµ - Р±Р°Р·РѕРІС‹Р№ РєР»Р°СЃСЃ
 template <size_t Dimension>
 class ode_t : public differential_equation_t<Dimension> {
 public:
@@ -22,17 +22,17 @@ public:
     typedef typename fixed_system_types<Dimension>::equation_coeffs_type equation_coeffs_type;
 
 public:
-    /// @brief Возвращает правую часть системы уравнений dx/dt = f(x)
+    /// @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ РїСЂР°РІСѓСЋ С‡Р°СЃС‚СЊ СЃРёСЃС‚РµРјС‹ СѓСЂР°РІРЅРµРЅРёР№ dx/dt = f(x)
     /// @param grid_index 
     /// @param point_vector 
-    /// @return Значение правой части ОДУ
+    /// @return Р—РЅР°С‡РµРЅРёРµ РїСЂР°РІРѕР№ С‡Р°СЃС‚Рё РћР”РЈ
     virtual right_party_type ode_right_party(
         size_t grid_index, const var_type& point_vector) const = 0;
 };
 
 
 
-/// @brief Уравнение в частных производных
+/// @brief РЈСЂР°РІРЅРµРЅРёРµ РІ С‡Р°СЃС‚РЅС‹С… РїСЂРѕРёР·РІРѕРґРЅС‹С…
 template <size_t Dimension>
 class pde_t : public ode_t<Dimension>
 {
@@ -51,10 +51,10 @@ public:
         size_t grid_index, const var_type& point_vector) const = 0;
 
 
-    /// @brief Получение собственных чисел и соответствующих им ЛЕВЫХ собственных векторов
+    /// @brief РџРѕР»СѓС‡РµРЅРёРµ СЃРѕР±СЃС‚РІРµРЅРЅС‹С… С‡РёСЃРµР» Рё СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёС… РёРј Р›Р•Р’Р«РҐ СЃРѕР±СЃС‚РІРµРЅРЅС‹С… РІРµРєС‚РѕСЂРѕРІ
     /// \param curr
     /// \param index
-    /// \return Список собственных чисел, список собственных векторов
+    /// \return РЎРїРёСЃРѕРє СЃРѕР±СЃС‚РІРµРЅРЅС‹С… С‡РёСЃРµР», СЃРїРёСЃРѕРє СЃРѕР±СЃС‚РІРµРЅРЅС‹С… РІРµРєС‚РѕСЂРѕРІ
     virtual std::pair<var_type, equation_coeffs_type> GetLeftEigens(
         size_t index, const var_type& u) const = 0;
 

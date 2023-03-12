@@ -1,7 +1,7 @@
-#pragma once
+п»ї#pragma once
 
 
-/// @brief Гидравлическое сопротивление по Шифринсону
+/// @brief Р“РёРґСЂР°РІР»РёС‡РµСЃРєРѕРµ СЃРѕРїСЂРѕС‚РёРІР»РµРЅРёРµ РїРѕ РЁРёС„СЂРёРЅСЃРѕРЅСѓ
 /// \param reynolds_number
 /// \param relative_roughness
 /// \return
@@ -10,7 +10,7 @@ inline double hydraulic_resistance_shifrinson(double reynolds_number, double rel
     return 0.11 * pow(relative_roughness, 0.25);
 }
 
-/// @brief Гидравлическое сопротивление по Альтушулю
+/// @brief Р“РёРґСЂР°РІР»РёС‡РµСЃРєРѕРµ СЃРѕРїСЂРѕС‚РёРІР»РµРЅРёРµ РїРѕ РђР»СЊС‚СѓС€СѓР»СЋ
 /// @param reynolds_number 
 /// @param relative_roughness 
 /// @return 
@@ -20,8 +20,8 @@ inline double hydraulic_resistance_altshul(double reynolds_number, double relati
 }
 
 
-/// @brief Расчет гидравлического сопротивления в широком диапазоне чисел Рейнольдса
-/// Квадратичное трение по формуле Исаева [Морозова, Коршак, ф-ла (1)]
+/// @brief Р Р°СЃС‡РµС‚ РіРёРґСЂР°РІР»РёС‡РµСЃРєРѕРіРѕ СЃРѕРїСЂРѕС‚РёРІР»РµРЅРёСЏ РІ С€РёСЂРѕРєРѕРј РґРёР°РїР°Р·РѕРЅРµ С‡РёСЃРµР» Р РµР№РЅРѕР»СЊРґСЃР°
+/// РљРІР°РґСЂР°С‚РёС‡РЅРѕРµ С‚СЂРµРЅРёРµ РїРѕ С„РѕСЂРјСѓР»Рµ РСЃР°РµРІР° [РњРѕСЂРѕР·РѕРІР°, РљРѕСЂС€Р°Рє, С„-Р»Р° (1)]
 /// @param reynolds_number 
 /// @param relative_roughness 
 /// @return 
@@ -31,19 +31,19 @@ inline double hydraulic_resistance_isaev(double reynolds_number, double relative
 
     double lam;
 
-    // Формулы по РД-75.180.00-КТН-258-10. 
-    // В конце нет форулы для больших чисел Рейнольдса
+    // Р¤РѕСЂРјСѓР»С‹ РїРѕ Р Р”-75.180.00-РљРўРќ-258-10. 
+    // Р’ РєРѕРЅС†Рµ РЅРµС‚ С„РѕСЂСѓР»С‹ РґР»СЏ Р±РѕР»СЊС€РёС… С‡РёСЃРµР» Р РµР№РЅРѕР»СЊРґСЃР°
 
     if (Re < 1) {
-        lam = 64; // Стокс при Re = 1
+        lam = 64; // РЎС‚РѕРєСЃ РїСЂРё Re = 1
     }
     else if (Re < 2320)
     {
-        lam = 64 / Re; // Стокс 
+        lam = 64 / Re; // РЎС‚РѕРєСЃ 
     }
     else if (Re < 4000)
     {
-        // Стокс + Блазиус, сглаженный переход
+        // РЎС‚РѕРєСЃ + Р‘Р»Р°Р·РёСѓСЃ, СЃРіР»Р°Р¶РµРЅРЅС‹Р№ РїРµСЂРµС…РѕРґ
         double gm = 1 - exp(-0.002 * (Re - 2320));
         lam = 64 / Re * (1 - gm) + 0.3164 / pow(Re, 0.25) * gm;
     }
@@ -53,20 +53,20 @@ inline double hydraulic_resistance_isaev(double reynolds_number, double relative
     //}
     else if (Re < 560 / Ke)
     {
-        // Исаев по [Морозова, Коршак], ф-ла (1)
+        // РСЃР°РµРІ РїРѕ [РњРѕСЂРѕР·РѕРІР°, РљРѕСЂС€Р°Рє], С„-Р»Р° (1)
         lam = 1.0 / sqr(-1.8 * log10(6.8 / Re + pow(Ke / 3.7, 1.1)));
     }
     else
     {
-        // Шифринсон
+        // РЁРёС„СЂРёРЅСЃРѕРЅ
         lam = 0.11 * pow(Ke, 0.25);
     }
 
     return lam;
 }
 
-/// @brief Стационарный расчет трубопровода по граничным давлениям для заданной системы 
-/// уравнений методом Эйлера
+/// @brief РЎС‚Р°С†РёРѕРЅР°СЂРЅС‹Р№ СЂР°СЃС‡РµС‚ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґР° РїРѕ РіСЂР°РЅРёС‡РЅС‹Рј РґР°РІР»РµРЅРёСЏРј РґР»СЏ Р·Р°РґР°РЅРЅРѕР№ СЃРёСЃС‚РµРјС‹ 
+/// СѓСЂР°РІРЅРµРЅРёР№ РјРµС‚РѕРґРѕРј Р­Р№Р»РµСЂР°
 /// @tparam PipeModel 
 /// @param model 
 /// @param Pin 
@@ -86,7 +86,7 @@ inline double solve_pipe_PP(PipeModel& model, double Pin, double Pout,
     fixed_scalar_wrapper_t f(g, 1e-3);
 
     fixed_solver_parameters_t<1, 0> parameters;
-    parameters.constraints.relative_boundary = 50; // ограничение на шаг по расходу
+    parameters.constraints.relative_boundary = 50; // РѕРіСЂР°РЅРёС‡РµРЅРёРµ РЅР° С€Р°Рі РїРѕ СЂР°СЃС…РѕРґСѓ
     fixed_solver_result_t<1> result;
     fixed_newton_raphson<1>::solve_dense(f, { 0 }, parameters, &result);
 

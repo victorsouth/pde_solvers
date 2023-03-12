@@ -1,6 +1,6 @@
-#pragma once
+п»ї#pragma once
 
-/// @brief Специфический слой
+/// @brief РЎРїРµС†РёС„РёС‡РµСЃРєРёР№ СЃР»РѕР№
 /// @tparam LayerType 
 template <typename LayerType>
 class custom_buffer_t

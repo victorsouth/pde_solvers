@@ -1,12 +1,12 @@
 #pragma once
 
 
-/// @brief Решение ОДУ методом Эйлера со схемой предиктор-корректор
-/// @param ode Система ОДУ
-/// @param direction Направление расчета: +1 по ходу индексов, -1 против хода индексов
-/// @param initial_condition Начальное условие. 
-/// Если direction = +1, то это левое граничное условие, если direction = -1, то правое
-/// @param _result Буфер для записи результата
+/// @brief Р РµС€РµРЅРёРµ РћР”РЈ РјРµС‚РѕРґРѕРј Р­Р№Р»РµСЂР° СЃРѕ СЃС…РµРјРѕР№ РїСЂРµРґРёРєС‚РѕСЂ-РєРѕСЂСЂРµРєС‚РѕСЂ
+/// @param ode РЎРёСЃС‚РµРјР° РћР”РЈ
+/// @param direction РќР°РїСЂР°РІР»РµРЅРёРµ СЂР°СЃС‡РµС‚Р°: +1 РїРѕ С…РѕРґСѓ РёРЅРґРµРєСЃРѕРІ, -1 РїСЂРѕС‚РёРІ С…РѕРґР° РёРЅРґРµРєСЃРѕРІ
+/// @param initial_condition РќР°С‡Р°Р»СЊРЅРѕРµ СѓСЃР»РѕРІРёРµ. 
+/// Р•СЃР»Рё direction = +1, С‚Рѕ СЌС‚Рѕ Р»РµРІРѕРµ РіСЂР°РЅРёС‡РЅРѕРµ СѓСЃР»РѕРІРёРµ, РµСЃР»Рё direction = -1, С‚Рѕ РїСЂР°РІРѕРµ
+/// @param _result Р‘СѓС„РµСЂ РґР»СЏ Р·Р°РїРёСЃРё СЂРµР·СѓР»СЊС‚Р°С‚Р°
 template <size_t Dimension, typename ResultBuffer>
 inline void solve_euler_corrector(
     ode_t<Dimension>& ode,
@@ -31,7 +31,7 @@ inline void solve_euler_corrector(
 
     //after_calc_event(start_index, result[start_index]);
 
-    for (int index = start_index; index != end_index /*крайний индекс пропускается и это правильно*/; index += direction) {
+    for (int index = start_index; index != end_index /*РєСЂР°Р№РЅРёР№ РёРЅРґРµРєСЃ РїСЂРѕРїСѓСЃРєР°РµС‚СЃСЏ Рё СЌС‚Рѕ РїСЂР°РІРёР»СЊРЅРѕ*/; index += direction) {
         int next_index = index + direction;
 
         vector_type u_prev = result[index];

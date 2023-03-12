@@ -1,23 +1,23 @@
-#pragma once
+п»ї#pragma once
 
 //using std::array;
 using std::pair;
 
-///// @brief Структура-родитель всех task_traits
+///// @brief РЎС‚СЂСѓРєС‚СѓСЂР°-СЂРѕРґРёС‚РµР»СЊ РІСЃРµС… task_traits
 ///// \tparam Dimension
 //template <size_t Dimension>
 //struct task_traits
 //{
-//    // TODO добавить var_layer_data, specific_layer
+//    // TODO РґРѕР±Р°РІРёС‚СЊ var_layer_data, specific_layer
 //};
 
-/// @brief Описание типов данных для метода характеристик заданной размерности
+/// @brief РћРїРёСЃР°РЅРёРµ С‚РёРїРѕРІ РґР°РЅРЅС‹С… РґР»СЏ РјРµС‚РѕРґР° С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРє Р·Р°РґР°РЅРЅРѕР№ СЂР°Р·РјРµСЂРЅРѕСЃС‚Рё
 template <size_t Dimension>
 struct moc_task_traits 
 {
-    typedef templated_layer<Dimension/*переменные*/, 0, 0, 0, 0, 0> var_layer_data;
-    typedef templated_layer<Dimension/*собственные числа*/, 0,
-        Dimension /*собств. векторы*/, Dimension /*размерность собств. векторов*/,
+    typedef templated_layer<Dimension/*РїРµСЂРµРјРµРЅРЅС‹Рµ*/, 0, 0, 0, 0, 0> var_layer_data;
+    typedef templated_layer<Dimension/*СЃРѕР±СЃС‚РІРµРЅРЅС‹Рµ С‡РёСЃР»Р°*/, 0,
+        Dimension /*СЃРѕР±СЃС‚РІ. РІРµРєС‚РѕСЂС‹*/, Dimension /*СЂР°Р·РјРµСЂРЅРѕСЃС‚СЊ СЃРѕР±СЃС‚РІ. РІРµРєС‚РѕСЂРѕРІ*/,
         0, 0> specific_layer;
 };
 
@@ -28,18 +28,18 @@ struct layer_wrapper {
 };
 
 
-/// @brief Обертка над составным слоем для метода характеристик
+/// @brief РћР±РµСЂС‚РєР° РЅР°Рґ СЃРѕСЃС‚Р°РІРЅС‹Рј СЃР»РѕРµРј РґР»СЏ РјРµС‚РѕРґР° С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРє
 template <size_t Dimension>
 struct moc_layer_wrapper : layer_wrapper<Dimension> {
     typedef typename fixed_system_types<Dimension>::var_type vector_type;
     typedef typename moc_task_traits<Dimension>::var_layer_data var_layer_data;
     typedef typename moc_task_traits<Dimension>::specific_layer specific_layer_data;
 
-    /// @brief Значения рассчитываемых параметров
+    /// @brief Р—РЅР°С‡РµРЅРёСЏ СЂР°СЃСЃС‡РёС‚С‹РІР°РµРјС‹С… РїР°СЂР°РјРµС‚СЂРѕРІ
     profile_wrapper<double, Dimension> values;
-    /// @brief Собственные числа. 
+    /// @brief РЎРѕР±СЃС‚РІРµРЅРЅС‹Рµ С‡РёСЃР»Р°. 
     profile_wrapper<double, Dimension> eigenval;
-    /// @brief Собственные векторы (левые). 
+    /// @brief РЎРѕР±СЃС‚РІРµРЅРЅС‹Рµ РІРµРєС‚РѕСЂС‹ (Р»РµРІС‹Рµ). 
     profile_wrapper<vector_type, Dimension> eigenvec;
 
     moc_layer_wrapper(
@@ -103,18 +103,18 @@ public:
     typedef typename fixed_system_types<Dimension>::var_type vector_type;
 
 
-    /// @brief ДУЧП
+    /// @brief Р”РЈР§Рџ
     pde_t<Dimension>& pde;
-    /// @brief Сетка, полученная от ДУЧП
+    /// @brief РЎРµС‚РєР°, РїРѕР»СѓС‡РµРЅРЅР°СЏ РѕС‚ Р”РЈР§Рџ
     const vector<double>& grid;
-    /// @brief Количество точек сетки
+    /// @brief РљРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕС‡РµРє СЃРµС‚РєРё
     const size_t n;
 
     moc_layer_wrapper<Dimension>& curr;
     moc_layer_wrapper<Dimension>& prev;
 
 protected:
-    /// @brief Надо очень подробно задокументировать нотацию и ограничения использования
+    /// @brief РќР°РґРѕ РѕС‡РµРЅСЊ РїРѕРґСЂРѕР±РЅРѕ Р·Р°РґРѕРєСѓРјРµРЅС‚РёСЂРѕРІР°С‚СЊ РЅРѕС‚Р°С†РёСЋ Рё РѕРіСЂР°РЅРёС‡РµРЅРёСЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ
     /// @param lambda 
     /// @param grid 
     /// @return 
@@ -179,11 +179,11 @@ public:
     }
 
 public:
-    /// @brief Формирует уравнение на характеристической линии, заданной индексом eigenval_index
-    /// li * u_new = li * (u_old + dt*b) [обозначим si = li * (u_old + dt*b)]
+    /// @brief Р¤РѕСЂРјРёСЂСѓРµС‚ СѓСЂР°РІРЅРµРЅРёРµ РЅР° С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёС‡РµСЃРєРѕР№ Р»РёРЅРёРё, Р·Р°РґР°РЅРЅРѕР№ РёРЅРґРµРєСЃРѕРј eigenval_index
+    /// li * u_new = li * (u_old + dt*b) [РѕР±РѕР·РЅР°С‡РёРј si = li * (u_old + dt*b)]
     /// li * u_new = si
-    /// Выполняет линейную интерполяцию значений с учетом шага dt и величины собственного числа
-    /// @param time_step Величина временного шага
+    /// Р’С‹РїРѕР»РЅСЏРµС‚ Р»РёРЅРµР№РЅСѓСЋ РёРЅС‚РµСЂРїРѕР»СЏС†РёСЋ Р·РЅР°С‡РµРЅРёР№ СЃ СѓС‡РµС‚РѕРј С€Р°РіР° dt Рё РІРµР»РёС‡РёРЅС‹ СЃРѕР±СЃС‚РІРµРЅРЅРѕРіРѕ С‡РёСЃР»Р°
+    /// @param time_step Р’РµР»РёС‡РёРЅР° РІСЂРµРјРµРЅРЅРѕРіРѕ С€Р°РіР°
     /// @param eigenval_index 
     /// @param grid_index 
     /// @return 
@@ -200,8 +200,8 @@ public:
         vector_type li = eigenvecs.interpolate_dimension(eigenval_index, grid_index, p);
         vector_type u_old = values.interpolate(grid_index, p);
 
-        // тут не совсем логично, grid_index не учитывает интерполяцию
-        // может быть добавить туда смещение, вроде: getSourceTerm(grid_index, p, u_old); 
+        // С‚СѓС‚ РЅРµ СЃРѕРІСЃРµРј Р»РѕРіРёС‡РЅРѕ, grid_index РЅРµ СѓС‡РёС‚С‹РІР°РµС‚ РёРЅС‚РµСЂРїРѕР»СЏС†РёСЋ
+        // РјРѕР¶РµС‚ Р±С‹С‚СЊ РґРѕР±Р°РІРёС‚СЊ С‚СѓРґР° СЃРјРµС‰РµРЅРёРµ, РІСЂРѕРґРµ: getSourceTerm(grid_index, p, u_old); 
         vector_type b = pde.getSourceTerm(grid_index, u_old);
 
         //L[eigenval_index] = li;
@@ -225,7 +225,7 @@ public:
         return make_pair(L, S);
     }
 
-    /// @brief Расчет всех точек нового слоя (работает только с гидроударом)
+    /// @brief Р Р°СЃС‡РµС‚ РІСЃРµС… С‚РѕС‡РµРє РЅРѕРІРѕРіРѕ СЃР»РѕСЏ (СЂР°Р±РѕС‚Р°РµС‚ С‚РѕР»СЊРєРѕ СЃ РіРёРґСЂРѕСѓРґР°СЂРѕРј)
     /// \param time_step
     /// \param left_boundary
     /// \param right_boundary
@@ -233,7 +233,7 @@ public:
         const pair<vector_type, double>& right_boundary,
         double time_step = std::numeric_limits<double>::quiet_NaN())
     {
-        time_step = step_inner(time_step); // если отдать в step_inner dt = nan, то он его пересчитает в шаг по Куранту!
+        time_step = step_inner(time_step); // РµСЃР»Рё РѕС‚РґР°С‚СЊ РІ step_inner dt = nan, С‚Рѕ РѕРЅ РµРіРѕ РїРµСЂРµСЃС‡РёС‚Р°РµС‚ РІ С€Р°Рі РїРѕ РљСѓСЂР°РЅС‚Сѓ!
 
         pair<vector_type, double> eq_left =
             get_characteristic_equation(time_step, 0, 0);
@@ -247,8 +247,8 @@ public:
         return time_step;
     }
 
-    /// @brief Опциональный расчет граничных условий, в зависимости от наклона характеристик
-    /// Реализация только для размерности 1
+    /// @brief РћРїС†РёРѕРЅР°Р»СЊРЅС‹Р№ СЂР°СЃС‡РµС‚ РіСЂР°РЅРёС‡РЅС‹С… СѓСЃР»РѕРІРёР№, РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ РЅР°РєР»РѕРЅР° С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРє
+    /// Р РµР°Р»РёР·Р°С†РёСЏ С‚РѕР»СЊРєРѕ РґР»СЏ СЂР°Р·РјРµСЂРЅРѕСЃС‚Рё 1
     /// @param time_step 
     /// @param left_boundary 
     /// @param right_boundary 
@@ -314,8 +314,8 @@ public:
     }
 
 
-    /// @brief Расчет внутренних точек нового слоя
-    /// Также считает собственные числа, векторы для ВСЕХ точек
+    /// @brief Р Р°СЃС‡РµС‚ РІРЅСѓС‚СЂРµРЅРЅРёС… С‚РѕС‡РµРє РЅРѕРІРѕРіРѕ СЃР»РѕСЏ
+    /// РўР°РєР¶Рµ СЃС‡РёС‚Р°РµС‚ СЃРѕР±СЃС‚РІРµРЅРЅС‹Рµ С‡РёСЃР»Р°, РІРµРєС‚РѕСЂС‹ РґР»СЏ Р’РЎР•РҐ С‚РѕС‡РµРє
     /// \param time_step
     double step_inner(double time_step = std::numeric_limits<double>::quiet_NaN())
     {
@@ -333,7 +333,7 @@ public:
 
         for (int index = index_from; index <= index_to; ++index)
         {
-            // li * u_new = li * (u_old - dt*b) [обозначим si = li * (u_old - dt*b)]
+            // li * u_new = li * (u_old - dt*b) [РѕР±РѕР·РЅР°С‡РёРј si = li * (u_old - dt*b)]
             // L * u_new = S
             auto [L, S] = get_characteristic_equations(time_step, index);
             
@@ -344,16 +344,16 @@ public:
         return time_step;
     }
 
-    /// @brief Расчет внутренних точек нового слоя методом второго порядка
-    /// Реализация только для размерности 1
-    /// Учитывает, что конфигураций характеристики могут позволить рассчитать граничные точки
-    /// Также считает собственные числа, векторы для ВСЕХ точек
+    /// @brief Р Р°СЃС‡РµС‚ РІРЅСѓС‚СЂРµРЅРЅРёС… С‚РѕС‡РµРє РЅРѕРІРѕРіРѕ СЃР»РѕСЏ РјРµС‚РѕРґРѕРј РІС‚РѕСЂРѕРіРѕ РїРѕСЂСЏРґРєР°
+    /// Р РµР°Р»РёР·Р°С†РёСЏ С‚РѕР»СЊРєРѕ РґР»СЏ СЂР°Р·РјРµСЂРЅРѕСЃС‚Рё 1
+    /// РЈС‡РёС‚С‹РІР°РµС‚, С‡С‚Рѕ РєРѕРЅС„РёРіСѓСЂР°С†РёР№ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєРё РјРѕРіСѓС‚ РїРѕР·РІРѕР»РёС‚СЊ СЂР°СЃСЃС‡РёС‚Р°С‚СЊ РіСЂР°РЅРёС‡РЅС‹Рµ С‚РѕС‡РєРё
+    /// РўР°РєР¶Рµ СЃС‡РёС‚Р°РµС‚ СЃРѕР±СЃС‚РІРµРЅРЅС‹Рµ С‡РёСЃР»Р°, РІРµРєС‚РѕСЂС‹ РґР»СЏ Р’РЎР•РҐ С‚РѕС‡РµРє
     /// \param time_step
     double step2_inner(double time_step = std::numeric_limits<double>::quiet_NaN());
 
-    /// @brief Опциональный расчет граничных условий, в зависимости от наклона характеристик
-    /// Реализация только для размерности 1. 
-    /// Метод второго порядка
+    /// @brief РћРїС†РёРѕРЅР°Р»СЊРЅС‹Р№ СЂР°СЃС‡РµС‚ РіСЂР°РЅРёС‡РЅС‹С… СѓСЃР»РѕРІРёР№, РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ РЅР°РєР»РѕРЅР° С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРє
+    /// Р РµР°Р»РёР·Р°С†РёСЏ С‚РѕР»СЊРєРѕ РґР»СЏ СЂР°Р·РјРµСЂРЅРѕСЃС‚Рё 1. 
+    /// РњРµС‚РѕРґ РІС‚РѕСЂРѕРіРѕ РїРѕСЂСЏРґРєР°
     /// @param time_step 
     /// @param left_boundary 
     /// @param right_boundary 
@@ -363,7 +363,7 @@ public:
     {
         step2_inner(time_step);
 
-        // Внутренний шаг считает
+        // Р’РЅСѓС‚СЂРµРЅРЅРёР№ С€Р°Рі СЃС‡РёС‚Р°РµС‚
         auto& eigenval = prev.eigenval;
         if (eigenval(0) > 0) {
             curr.values(0) = solve_linear_system(left_boundary);
@@ -400,7 +400,7 @@ inline double moc_solver<1>::step2_inner(double time_step)
     {
         const double& eigenval = eigenvals.profile(0)[grid_index];
         if (grid_index == 0 && eigenval > 0) {
-            // надо брать точку с координатой i = -1
+            // РЅР°РґРѕ Р±СЂР°С‚СЊ С‚РѕС‡РєСѓ СЃ РєРѕРѕСЂРґРёРЅР°С‚РѕР№ i = -1
             continue;
         }
         if (grid_index == grid.size() - 1 && eigenval < 0) {
@@ -409,29 +409,29 @@ inline double moc_solver<1>::step2_inner(double time_step)
 
         double p = characteristic_interpolation_offset(time_step, &eigenval, dl);
 
-        // предиктор
+        // РїСЂРµРґРёРєС‚РѕСЂ
         vector_type u_old;
         vector_type rp1;
         double absp = abs(p);
         if (absp < eps || abs(1.0 - absp) < eps) {
-            // характеристика точно между двумя точками: либо косая, либо вертикальная
+            // С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєР° С‚РѕС‡РЅРѕ РјРµР¶РґСѓ РґРІСѓРјСЏ С‚РѕС‡РєР°РјРё: Р»РёР±Рѕ РєРѕСЃР°СЏ, Р»РёР±Рѕ РІРµСЂС‚РёРєР°Р»СЊРЅР°СЏ
             size_t index = static_cast<size_t>(grid_index + p + 0.5);
             u_old = prev_values(index);
             rp1 = pde.getSourceTerm(index, u_old);
         }
         else {
-            // интерполяция правой части
+            // РёРЅС‚РµСЂРїРѕР»СЏС†РёСЏ РїСЂР°РІРѕР№ С‡Р°СЃС‚Рё
             size_t grida = static_cast<size_t>(grid_index + sgn(p));
             size_t gridb = grid_index;
             vector_type rp1a = pde.getSourceTerm(grida, prev_values(grida));
             vector_type rp1b = pde.getSourceTerm(gridb, prev_values(gridb));
-            rp1 = rp1a * absp + rp1b * (1 - absp); // проверка: если p = 0, то берем b(grid_index)
+            rp1 = rp1a * absp + rp1b * (1 - absp); // РїСЂРѕРІРµСЂРєР°: РµСЃР»Рё p = 0, С‚Рѕ Р±РµСЂРµРј b(grid_index)
             u_old = prev_values.interpolate(grid_index, p);
         }
 
         vector_type u_estimate = u_old + time_step * rp1;
 
-        // корректор
+        // РєРѕСЂСЂРµРєС‚РѕСЂ
         double rp2 = pde.getSourceTerm(grid_index, u_estimate);
         curr_values(grid_index) = u_old + time_step * 0.5 * (rp1 + rp2);
 
