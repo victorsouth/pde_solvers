@@ -65,4 +65,30 @@ inline double hydraulic_resistance_isaev(double reynolds_number, double relative
     return lam;
 }
 
+/// @brief Стационарный расчет трубопровода по граничным давлениям для заданной системы 
+/// уравнений методом Эйлера
+/// @tparam PipeModel 
+/// @param model 
+/// @param Pin 
+/// @param Pout 
+/// @param layer 
+/// @return 
+template <typename PipeModel>
+inline double solve_pipe_PP(PipeModel& model, double Pin, double Pout,
+    profile_wrapper<double, 2>* layer)
+{
+    auto g = [&](double G)
+    {
+        solve_euler_corrector<2>(model, -1, { Pout, G }, layer);
+        double Pin_calc = layer->profile(0).front();
+        return Pin - Pin_calc;
+    };
+    fixed_scalar_wrapper_t f(g, 1e-3);
 
+    fixed_solver_parameters_t<1, 0> parameters;
+    parameters.constraints.relative_boundary = 50; // ограничение на шаг по расходу
+    fixed_solver_result_t<1> result;
+    fixed_newton_raphson<1>::solve_dense(f, { 0 }, parameters, &result);
+
+    return result.argument;
+}

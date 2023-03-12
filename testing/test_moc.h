@@ -2,9 +2,47 @@
 
 
 
-TEST(MOC_Solver, UseCase)
+/// @brief Базовый пример использования метода характеристик для уравнения адвекции
+TEST(MOC_Solver, UseCase_Advection)
 {
+    simple_pipe_properties simple_pipe;
+    simple_pipe.length = 50e3;
+    simple_pipe.dx = 1000;
 
+    PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
+
+    // Одна переменная, и структуры метода характеристик для нее
+    typedef composite_layer_t<templated_layer<1>,
+        moc_solver<1>::specific_layer> single_var_moc_t;
+
+    custom_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
+
+    buffer.advance(+1);
+    single_var_moc_t& prev = buffer.previous();
+    single_var_moc_t& next = buffer.current();
+    auto& l = prev.vars.point_double[0];
+    l = vector<double>(l.size(), 1); // инициализация начальной "концентрации", равной 1
+
+    moc_layer_wrapper<1> moc_prev(l, prev.get_specific<0>());
+    moc_layer_wrapper<1> moc_next(next.vars.point_double[0], next.get_specific<0>());
+
+    vector<double> Q(pipe.profile.getPointCount(), 0.5); // задаем по трубе расход 0.5 м3/с
+    PipeQAdvection advection_model(pipe, Q);
+
+    moc_solver<1> solver(advection_model, moc_prev, moc_next);
+
+    double dt = solver.prepare_step();
+    double c_in = 2; // "концентрация" на входе
+    solver.step_optional_boundaries(dt, make_pair(1.0, c_in), make_pair(1.0, c_in));
+
+    auto& c_new = next.vars.point_double[0];
+}
+
+
+/// @brief Расчет уравнений стационарного, затем нестационарного течения слабосжимаемой жидкости
+/// методом характеристик
+TEST(MOC_Solver, UseCase_Waterhammer)
+{
     typedef templated_layer<2> layer_variables_type;
     typedef moc_solver<2>::specific_layer layer_moc_type;
 

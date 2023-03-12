@@ -1,6 +1,17 @@
 #pragma once
 
-
+/// @brief Упрощенные параметры трубы
+struct simple_pipe_properties {
+    double length = 12000;
+    double dx = 1000;
+    double elevation = 0;
+    double diameter = 0.7;
+    /// @brief Количество сегментов при дроблении длины length с шагом dx 
+    /// с округлением до ближайшего
+    size_t get_segment_count() const {
+        return static_cast<size_t>(0.5 + length / dx);
+    }
+};
 
 /// @brief Сущность профиля трубы
 struct PipeProfile {
@@ -20,7 +31,14 @@ struct PipeProfile {
     {
         return coordinates.size();
     }
-
+    /// @brief Создает профиль с линейным уклоном по параметрам в начале и в конце
+    /// @param segment_count 
+    /// @param x_begin 
+    /// @param x_end 
+    /// @param z_begin 
+    /// @param z_end 
+    /// @param capacity 
+    /// @return 
     static PipeProfile create(size_t segment_count,
         double x_begin, double x_end, double z_begin, double z_end,
         double capacity)
@@ -108,15 +126,13 @@ struct pipe_properties_t
     PipeProfile profile;
     /// @brief Модель для расчета стенок
     pipe_wall_model_t wall;
-
     /// @brief Параметры адаптации
     AdaptationParameters adaptation;
-
-
+    /// @brief Формула расчета гидравлического сопротивления
     double(*resistance_function)(double, double) { hydraulic_resistance_isaev };
 
-
     /// @brief Скорость звука в жидкости, м^2/с
+    /// TODO: указать источник литературы
     double getSoundVelocity(const OilParameters& oil) const
     {
         double beta_S = wall.getCompressionRatio();
@@ -138,19 +154,38 @@ struct pipe_properties_t
     /// \param pressureArea
     /// \param density
     /// \return
-    double getNominalArea(OilParameters oil, double pressureArea, double density) const
+    double getNominalArea(const OilParameters& oil, double pressureArea, double density) const
     {
         return (density / oil.density()) * pressureArea;
     }
-    /// @brief \teta
+    /// @brief Чувствительность к давлению? \theta
     /// \param oil
     /// \param pressure
     /// \return
-    double getTeta(OilParameters oil, double pressure) const
+    double getTeta(const OilParameters& oil, double pressure) const
     {
         return 1 + (oil.density.getCompressionRatio() + wall.getCompressionRatio())
             * (pressure - wall.nominal_pressure);
     }
+
+    /// @brief Трубопровод по умолчанию 
+    inline static pipe_properties_t<AdaptationParameters> build_simple_pipe(
+        const simple_pipe_properties& simple)
+    {
+        pipe_properties_t<AdaptationParameters> pipe;
+
+        double Pcapacity = 10e6; // несущая способность
+        size_t segment_count = simple.get_segment_count();
+        pipe.profile = PipeProfile::create(segment_count, 0, simple.length, 0, simple.elevation, Pcapacity);
+        pipe.wall.equivalent_roughness = 0.0001;
+
+        // это диаметр внутренний
+        pipe.wall.diameter = 0.7;
+        // это толщина одной стенки, к внешнему надо прибавлять удвоенную толщину
+        pipe.wall.wallThickness = 0.01;
+        return pipe;
+    }
+
 };
 
 typedef pipe_properties_t<adaptation_parameters> PipeProperties;
