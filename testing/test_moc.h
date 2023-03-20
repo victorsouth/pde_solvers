@@ -1,6 +1,10 @@
 ﻿#pragma once
 
+TEST(MOC_Solver, Buffer_Sample)
+{
+    templated_layer<1> tl(10);
 
+}
 
 /// @brief Базовый пример использования метода характеристик для уравнения адвекции
 TEST(MOC_Solver, UseCase_Advection)
