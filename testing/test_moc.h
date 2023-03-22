@@ -15,7 +15,7 @@ TEST(MOC_Solver, UseCase_Advection)
 
     PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
 
-    // Одна переменная, и структуры метода характеристик для нее
+    // Одна переменная, и структуры метода характеристик для нееm
     typedef composite_layer_t<templated_layer<1>,
         moc_solver<1>::specific_layer> single_var_moc_t;
 
