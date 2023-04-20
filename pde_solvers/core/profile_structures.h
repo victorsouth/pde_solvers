@@ -23,7 +23,7 @@ inline static T _interpolate(T* values, double interpolation_offset)
         return linear_interpolation<T>(values[-1], values[0], 1 + p);
 }
 
-/// @brief ¬озвращает указатели на нулевые элементы профилей, хран¤щиес¤ в array
+/// @brief Возвращает указатели на нулевые элементы профилей, хранящиеся в array
 /// @tparam DataType 
 /// @param profiles 
 /// @return 
@@ -34,9 +34,9 @@ inline array<vector<DataType>*, Dimension> get_profiles_pointers(array<vector<Da
 }
 
 
-/// @brief —обирает из составной профиль
-/// »з скал¤рных профилей собрать векторный профиль: double -> array<double, Dim>
-/// »з векторных профилей собрать матричный профиль: array<double, Dim> -> array<array<double, Dim>, Dim>
+/// @brief Собирает из составной профиль
+/// Из скалярных профилей собрать векторный профиль: double -> array<double, Dim>
+/// Из векторных профилей собрать матричный профиль: array<double, Dim> -> array<array<double, Dim>, Dim>
 template <typename T, size_t Dimension>
 class profile_wrapper {
 protected:
@@ -62,7 +62,7 @@ public:
 
     }
 
-    /// @brief ƒлина профил¤ (дл¤ совместимости с std::vector)
+    /// @brief Длина профиля (для совместимости с std::vector)
     size_t size() const {
         return n;
     }
@@ -185,9 +185,9 @@ struct templated_layer
     array<vector<double>, PointScalar> point_double;
     /// @brief Список скалярных профилей в ячейках
     array<vector<double>, CellScalar> cell_double;
-    /// @brief —писок векторных профилей на границах ¤чеек
+    /// @brief Список векторных профилей на границах ячеек
     array<vector<point_vector_type>, PointVector> point_vector;
-    /// @brief —писок векторных профилей в ¤чейках
+    /// @brief Список векторных профилей в ячейках
     array<vector<cell_vector_type>, CellVector> cell_vector;
 
     templated_layer(size_t point_count)
@@ -200,17 +200,17 @@ struct templated_layer
     }
 };
 
-/// @brief —оставной слой, включающий в себ¤ слой переменных и слои со специальными структурам
+/// @brief Составной слой, включающий в себя слой переменных и слои со специальными структурам
 /// @tparam Variables 
 /// @tparam ...Ts 
 template <typename VarLayer, typename... SpecificLayers>
 struct composite_layer_t {
-    /// @brief ÷елевые переменные
+    /// @brief Целевые переменные
     VarLayer vars;
-    /// @brief ¬се специальные структуры
+    /// @brief Все специальные структуры
     std::tuple<SpecificLayers...> specific;
 
-    /// @brief ¬озвращает ссылку на специальные структуры с заданным номером (SpecificDataNumber) в кортеже
+    /// @brief Возвращает ссылку на специальные структуры с заданным номером (SpecificDataNumber) в кортеже
     template <unsigned SpecificDataNumber>
     auto& get_specific() {
         return std::get<SpecificDataNumber>(specific);

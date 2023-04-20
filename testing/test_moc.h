@@ -73,13 +73,10 @@ TEST(MOC_Solver, UseCase_Advection)
     auto& l = prev.vars.point_double[0];
     l = vector<double>(l.size(), 1); // инициализация начальной "концентрации", равной 1
 
-    moc_layer_wrapper<1> moc_prev(l, prev.get_specific<0>());
-    moc_layer_wrapper<1> moc_next(next.vars.point_double[0], next.get_specific<0>());
-
     vector<double> Q(pipe.profile.getPointCount(), 0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);
 
-    moc_solver<1> solver(advection_model, moc_prev, moc_next);
+    moc_solver<1> solver(advection_model, prev, next);
 
     double dt = solver.prepare_step();
     double c_in = 2; // "концентрация" на входе

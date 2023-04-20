@@ -94,14 +94,14 @@ struct moc_layer_wrapper : layer_wrapper<Dimension> {
 
 };
 
-
+/// @brief Расчетчик метода характеристик
+/// @tparam Dimension Размерность задачи
 template <size_t Dimension>
 class moc_solver {
 public:
     typedef typename moc_task_traits<Dimension>::specific_layer specific_layer;
     typedef typename fixed_system_types<Dimension>::matrix_type matrix_type;
     typedef typename fixed_system_types<Dimension>::var_type vector_type;
-
 
     /// @brief ДУЧП
     pde_t<Dimension>& pde;
@@ -110,8 +110,8 @@ public:
     /// @brief Количество точек сетки
     const size_t n;
 
-    moc_layer_wrapper<Dimension>& curr;
-    moc_layer_wrapper<Dimension>& prev;
+    moc_layer_wrapper<Dimension> curr;
+    moc_layer_wrapper<Dimension> prev;
 
 protected:
     /// @brief Надо очень подробно задокументировать нотацию и ограничения использования
@@ -166,6 +166,15 @@ protected:
     }
 
 public:
+    /// @brief Конструктор для простых слоев - 
+    /// когда в слое только один блок целевых переменных и один блок служебных данных
+    /// @param pde Экземпляр уравнения
+    /// @param prev Прошлый слой (начальные условия)
+    /// @param curr Новый, рассчитываемый слой
+    moc_solver(pde_t<Dimension>& pde,
+        composite_layer_t<templated_layer<Dimension>, moc_solver<Dimension>::specific_layer>& prev,
+        composite_layer_t<templated_layer<Dimension>, moc_solver<Dimension>::specific_layer>& curr);
+
     moc_solver(pde_t<Dimension>& pde,
         moc_layer_wrapper<Dimension>& prev,
         moc_layer_wrapper<Dimension>& curr)
@@ -373,6 +382,19 @@ public:
         }
     }
 };
+
+template <>
+moc_solver<1>::moc_solver(pde_t<1>& pde,
+    composite_layer_t<templated_layer<1>, moc_solver<1>::specific_layer>& prev,
+    composite_layer_t<templated_layer<1>, moc_solver<1>::specific_layer>& curr)
+    : pde(pde)
+    , grid(pde.get_grid())
+    , n(pde.get_grid().size())
+    , prev(prev.vars.point_double[0], prev.get_specific<0>())
+    , curr(curr.vars.point_double[0], curr.get_specific<0>())
+{
+
+}
 
 template <>
 inline std::pair<moc_solver<1>::matrix_type, moc_solver<1>::vector_type>
