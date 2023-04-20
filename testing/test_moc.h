@@ -1,10 +1,56 @@
 ﻿#pragma once
 
-TEST(MOC_Solver, Buffer_Sample)
+TEST(MOC_Solver, TemplatedLayer1)
 {
-    templated_layer<1> tl(10);
+    templated_layer<1> tl1(10); // 1 профиль с точками размерности 10
+    templated_layer<2> tl2(10); // 2 профиля с точками размерности 10
 
+    templated_layer<0, 1> tl_cell1(10); // 1 профиль с ячейками размерности 9 (10 точек = 9 ячеек)
+    templated_layer<0, 2> tl_cell2(10); // 2 профиля с ячейками размерности 9 (10 точек = 9 ячеек)
 }
+
+TEST(MOC_Solver, MOC_Layer)
+{
+    //Слой переменных
+    typedef templated_layer<1> var_layer; 
+    
+    //Слой служебных данных - 1 буфер под точки, 1 буфер под вектор 9 (специфики метода хар-к)
+    moc_solver<1>::specific_layer moc_layer(10); 
+
+    //Обобщенный - слой переменных Vars + сколько угодно служебных Specific
+    composite_layer_t<var_layer,
+        moc_solver<1>::specific_layer> composite_layer(10);
+
+    //Текущий и предыдущий слой, каждый из которых представляет собой composite_layer (Var+Specific)
+    custom_buffer_t<composite_layer_t<templated_layer<1>, moc_solver<1>::specific_layer>> buffer(2, 10);
+
+    //Получение текущего/предыдущего слоя
+    const composite_layer_t<var_layer, moc_solver<1>::specific_layer>& prev = buffer.previous();
+    composite_layer_t<var_layer, moc_solver<1>::specific_layer>& next = buffer.current();
+
+    //Жвижение на слой вперед 
+    buffer.advance(+1);
+}
+
+TEST(MOC_Solver, MOC_Layer_Refactor)
+{
+    // Профиль переменных
+    typedef templated_layer<1> target_var_t;
+
+    // Слой: переменных Vars + сколько угодно служебных Specific
+    typedef composite_layer_t<target_var_t, moc_solver<1>::specific_layer> layer_t;
+
+    //Текущий и предыдущий слой, каждый из которых представляет собой composite_layer (Var+Specific)
+    custom_buffer_t<layer_t> buffer(2, 10);
+
+    //Получение текущего/предыдущего слоя
+    const layer_t& prev = buffer.previous();
+    layer_t& next = buffer.current();
+
+    //Жвижение на слой вперед 
+    buffer.advance(+1);
+}
+
 
 /// @brief Базовый пример использования метода характеристик для уравнения адвекции
 TEST(MOC_Solver, UseCase_Advection)

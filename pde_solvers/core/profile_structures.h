@@ -167,11 +167,11 @@ inline profile_wrapper<double, 1>::profile_wrapper(array<vector<double>*, 1>* pr
 }
 
 
-/// @brief Ўаблонный слой, определ¤ющий нужное количество профилей по точкам и ¤чейкам
-/// »спользуетс¤ дл¤ генерации сло¤ расчетных переменных и слоев вспомогательных структур
-/// —кал¤рный профиль на точках
-/// —кал¤рный профиль на ¤чейках
-/// ¬екторный профиль (заданной размерности)
+/// @brief Шаблонный слой, определяющий нужное количество профилей по точкам и ячейкам
+/// Используется для генерации слоя расчетных переменных и слоев вспомогательных структур
+/// Скалярный профиль на точках
+/// Скалярный профиль на ячейках
+/// Векторный профиль (заданной размерности)
 template <size_t PointScalar, size_t CellScalar = 0,
     size_t PointVector = 0, size_t PointVectorDimension = 0,
     size_t CellVector = 0, size_t CellVectorDimension = 0>
@@ -181,9 +181,9 @@ struct templated_layer
     typedef typename fixed_system_types<CellVectorDimension>::var_type cell_vector_type;
 
 
-    /// @brief —писок скал¤рных профилей на границах ¤чеек
+    /// @brief Список скалярных профилей на границах ячеек
     array<vector<double>, PointScalar> point_double;
-    /// @brief —писок скал¤рных профилей в ¤чейках
+    /// @brief Список скалярных профилей в ячейках
     array<vector<double>, CellScalar> cell_double;
     /// @brief —писок векторных профилей на границах ¤чеек
     array<vector<point_vector_type>, PointVector> point_vector;
