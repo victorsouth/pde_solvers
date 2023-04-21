@@ -295,6 +295,19 @@ public:
     }
 
 
+    static double get_max_abs(double v)
+    {
+        return abs(v);
+    }
+
+    static double get_max_abs(const std::array<double, Dimension>& v)
+    {
+        double max_egenval = -std::numeric_limits<double>::infinity();
+        for (double eval : v) {
+            max_egenval = std::max(max_egenval, abs(eval));
+        }
+        return max_egenval;
+    }
 
     static double get_max(double v)
     {
@@ -317,8 +330,8 @@ public:
         double max_egenval = 0;
         for (size_t grid_index = 0; grid_index < grid.size(); ++grid_index) {
             auto [val, vec] = pde.GetLeftEigens(grid_index, values(grid_index));
-
-            max_egenval = std::max(max_egenval, get_max(val));
+            
+            max_egenval = std::max(max_egenval, get_max_abs(val));
             eigenval(grid_index) = val;
             eigenvec(grid_index) = vec;
         }
