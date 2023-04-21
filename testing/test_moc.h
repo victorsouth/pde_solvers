@@ -47,7 +47,7 @@ TEST(MOC_Solver, MOC_Layer_Refactor)
     const layer_t& prev = buffer.previous();
     layer_t& next = buffer.current();
 
-    //Жвижение на слой вперед 
+    //Движение на слой вперед 
     buffer.advance(+1);
 }
 
@@ -73,7 +73,7 @@ TEST(MOC_Solver, UseCase_Advection)
     auto& l = prev.vars.point_double[0];
     l = vector<double>(l.size(), 1); // инициализация начальной "концентрации", равной 1
 
-    vector<double> Q(pipe.profile.getPointCount(), 0.5); // задаем по трубе расход 0.5 м3/с
+    vector<double> Q(pipe.profile.getPointCount(), -0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);
 
     moc_solver<1> solver(advection_model, prev, next);
