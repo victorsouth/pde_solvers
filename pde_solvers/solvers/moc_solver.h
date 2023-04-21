@@ -259,6 +259,15 @@ public:
     /// @brief Опциональный расчет граничных условий, в зависимости от наклона характеристик
     /// Реализация только для размерности 1
     /// @param time_step 
+    /// @param left_value 
+    /// @param right_value 
+    void step_optional_boundaries(double time_step,
+        const double& left_value,
+        const double& right_value);
+
+    /// @brief Опциональный расчет граничных условий, в зависимости от наклона характеристик
+    /// Реализация только для размерности 1
+    /// @param time_step 
     /// @param left_boundary 
     /// @param right_boundary 
     void step_optional_boundaries(double time_step,
@@ -286,6 +295,19 @@ public:
     }
 
 
+    static double get_max_abs(double v)
+    {
+        return abs(v);
+    }
+
+    static double get_max_abs(const std::array<double, Dimension>& v)
+    {
+        double max_egenval = -std::numeric_limits<double>::infinity();
+        for (double eval : v) {
+            max_egenval = std::max(max_egenval, abs(eval));
+        }
+        return max_egenval;
+    }
 
     static double get_max(double v)
     {
@@ -308,8 +330,8 @@ public:
         double max_egenval = 0;
         for (size_t grid_index = 0; grid_index < grid.size(); ++grid_index) {
             auto [val, vec] = pde.GetLeftEigens(grid_index, values(grid_index));
-
-            max_egenval = std::max(max_egenval, get_max(val));
+            
+            max_egenval = std::max(max_egenval, get_max_abs(val));
             eigenval(grid_index) = val;
             eigenvec(grid_index) = vec;
         }
@@ -403,6 +425,14 @@ inline std::pair<moc_solver<1>::matrix_type, moc_solver<1>::vector_type>
     return get_characteristic_equation(time_step, 0, grid_index);
 }
 
+template <>
+inline void moc_solver<1>::step_optional_boundaries(
+    double time_step, const double& left_value, const double& right_value)
+{
+    step_optional_boundaries(time_step, 
+        std::make_pair(1.0, left_value), 
+        std::make_pair(1.0, right_value));
+}
 
 template <>
 inline double moc_solver<1>::step2_inner(double time_step)
