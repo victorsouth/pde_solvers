@@ -30,7 +30,7 @@ TEST(MOC_Solver, UseCase_Advection)
 
     double dt = solver.prepare_step();
     double c_in = 2; // "концентрация" на входе
-    solver.step_optional_boundaries(dt, make_pair(1.0, c_in), make_pair(1.0, c_in));
+    solver.step_optional_boundaries(dt, c_in, c_in);
 
     auto& c_new = next.vars.point_double[0];
 }
