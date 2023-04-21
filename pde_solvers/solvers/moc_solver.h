@@ -259,6 +259,15 @@ public:
     /// @brief Опциональный расчет граничных условий, в зависимости от наклона характеристик
     /// Реализация только для размерности 1
     /// @param time_step 
+    /// @param left_value 
+    /// @param right_value 
+    void step_optional_boundaries(double time_step,
+        const double& left_value,
+        const double& right_value);
+
+    /// @brief Опциональный расчет граничных условий, в зависимости от наклона характеристик
+    /// Реализация только для размерности 1
+    /// @param time_step 
     /// @param left_boundary 
     /// @param right_boundary 
     void step_optional_boundaries(double time_step,
@@ -403,6 +412,14 @@ inline std::pair<moc_solver<1>::matrix_type, moc_solver<1>::vector_type>
     return get_characteristic_equation(time_step, 0, grid_index);
 }
 
+template <>
+inline void moc_solver<1>::step_optional_boundaries(
+    double time_step, const double& left_value, const double& right_value)
+{
+    step_optional_boundaries(time_step, 
+        std::make_pair(1.0, left_value), 
+        std::make_pair(1.0, right_value));
+}
 
 template <>
 inline double moc_solver<1>::step2_inner(double time_step)
