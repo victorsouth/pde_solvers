@@ -1,17 +1,69 @@
 ﻿#pragma once
 
+TEST(MOC_Solver, TemplatedLayer1)
+{
+    templated_layer<1> tl1(10); // 1 профиль с точками размерности 10
+    templated_layer<2> tl2(10); // 2 профиля с точками размерности 10
+
+    templated_layer<0, 1> tl_cell1(10); // 1 профиль с ячейками размерности 9 (10 точек = 9 ячеек)
+    templated_layer<0, 2> tl_cell2(10); // 2 профиля с ячейками размерности 9 (10 точек = 9 ячеек)
+}
+
+TEST(MOC_Solver, MOC_Layer)
+{
+    //Слой переменных
+    typedef templated_layer<1> var_layer; 
+    
+    //Слой служебных данных - 1 буфер под точки, 1 буфер под вектор 9 (специфики метода хар-к)
+    moc_solver<1>::specific_layer moc_layer(10); 
+
+    //Обобщенный - слой переменных Vars + сколько угодно служебных Specific
+    composite_layer_t<var_layer,
+        moc_solver<1>::specific_layer> composite_layer(10);
+
+    //Текущий и предыдущий слой, каждый из которых представляет собой composite_layer (Var+Specific)
+    custom_buffer_t<composite_layer_t<templated_layer<1>, moc_solver<1>::specific_layer>> buffer(2, 10);
+
+    //Получение текущего/предыдущего слоя
+    const composite_layer_t<var_layer, moc_solver<1>::specific_layer>& prev = buffer.previous();
+    composite_layer_t<var_layer, moc_solver<1>::specific_layer>& next = buffer.current();
+
+    //Жвижение на слой вперед 
+    buffer.advance(+1);
+}
+
+TEST(MOC_Solver, MOC_Layer_Refactor)
+{
+    // Профиль переменных
+    typedef templated_layer<1> target_var_t;
+
+    // Слой: переменных Vars + сколько угодно служебных Specific
+    typedef composite_layer_t<target_var_t, moc_solver<1>::specific_layer> layer_t;
+
+    //Текущий и предыдущий слой, каждый из которых представляет собой composite_layer (Var+Specific)
+    custom_buffer_t<layer_t> buffer(2, 10);
+
+    //Получение текущего/предыдущего слоя
+    const layer_t& prev = buffer.previous();
+    layer_t& next = buffer.current();
+
+    //Движение на слой вперед 
+    buffer.advance(+1);
+}
 
 
 /// @brief Базовый пример использования метода характеристик для уравнения адвекции
 TEST(MOC_Solver, UseCase_Advection)
 {
+    // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
     simple_pipe_properties simple_pipe;
     simple_pipe.length = 50e3;
+    simple_pipe.diameter = 0.7;
     simple_pipe.dx = 1000;
 
     PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
 
-    // Одна переменная, и структуры метода характеристик для нее
+    // Одна переменная, и структуры метода характеристик для нееm
     typedef composite_layer_t<templated_layer<1>,
         moc_solver<1>::specific_layer> single_var_moc_t;
 
@@ -20,8 +72,8 @@ TEST(MOC_Solver, UseCase_Advection)
     buffer.advance(+1);
     single_var_moc_t& prev = buffer.previous();
     single_var_moc_t& next = buffer.current();
-    auto& l = prev.vars.point_double[0];
-    l = vector<double>(l.size(), 1); // инициализация начальной "концентрации", равной 1
+    auto& rho_initial = prev.vars.point_double[0];
+    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
 
     vector<double> Q(pipe.profile.getPointCount(), -0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);
@@ -29,8 +81,9 @@ TEST(MOC_Solver, UseCase_Advection)
     moc_solver<1> solver(advection_model, prev, next);
 
     double dt = solver.prepare_step();
-    double c_in = 2; // "концентрация" на входе
-    solver.step_optional_boundaries(dt, c_in, c_in);
+    double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
+    double rho_out = 860; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
+    solver.step_optional_boundaries(dt, rho_in, rho_out);
 
     auto& c_new = next.vars.point_double[0];
 }

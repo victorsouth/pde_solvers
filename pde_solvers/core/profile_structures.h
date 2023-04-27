@@ -200,7 +200,7 @@ struct templated_layer
     }
 };
 
-/// @brief Составной слой, включающий в себя слой переменных и слои со специальными структурам
+/// @brief Составной слой, включающий в себя слой переменных и слои со специальными структурами
 /// @tparam Variables 
 /// @tparam ...Ts 
 template <typename VarLayer, typename... SpecificLayers>

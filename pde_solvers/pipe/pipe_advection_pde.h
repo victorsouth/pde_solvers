@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-/// @brief Уравление адвекции на основе объемного расхода
+/// @brief Уравление адвекции (транспортное уравнение) на основе объемного расхода
 class PipeQAdvection : public pde_t<1>
 {
 public:
@@ -59,8 +59,7 @@ public:
         return std::make_pair(v, v);
     }
 
-    /// @brief Правая часть уравнения притока тепла
-    /// по документу "Полный вывод НЕизотермических уравнений...", формула (8)
+    /// @brief Правая часть уравнения адвекция - нулевая
     virtual right_party_type getSourceTerm(
         size_t grid_index, const var_type& point_var) const override
     {
