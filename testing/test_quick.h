@@ -39,13 +39,20 @@ TEST(UpstreamDifferencing, Develop)
     auto& U = prev.vars.cell_double[0];
     auto& U_new = next.vars.cell_double[0]; //
 
-    U[0] = rho_in;
-    U[U.size() - 1] = rho_out;
-    double v_in = advection_model.getEquationsCoeffs(0, U[0]);
-    F[0] = v_in * U[0];
-    double v_out = advection_model.getEquationsCoeffs(F.size()-1, U[U.size()-1]);
-    F[F.size()-1] = v_out * U[U.size()-1];
+    double dt = 60; // 1 минута
 
+    // –асчет потоков на границе на основе граничных условий
+    double v_in = advection_model.getEquationsCoeffs(0, U[0]);
+    double v_out = advection_model.getEquationsCoeffs(F.size() - 1, U[U.size() - 1]);
+    if (v_in >= 0) {
+        F.front() = v_in * rho_in;
+    }
+    if (v_out <= 0) {
+        F.back() = v_out * rho_out;
+    }
+    
+
+    // –асчет потоков на границе по правилу донорской €чейки
     for (size_t cell = 0; cell < U.size(); ++cell) {
         double u = U[cell];
         double v_cell = advection_model.getEquationsCoeffs(cell, u);//не совсем корректно, скорость в €чейке беретс€ из скорости на ее левой границе
@@ -59,13 +66,14 @@ TEST(UpstreamDifferencing, Develop)
             double v_left = advection_model.getEquationsCoeffs(left_point, u);
             F[left_point] = u * v_left;
         }
-        U_new[cell] = U[cell] + ((F[cell] - F[cell + 1]) / v_cell);
     }
 
-    
-
-    //next_spec.point_double[0].
-
+    const auto& grid = advection_model.get_grid();
+    for (size_t cell = 0; cell < U.size(); ++cell) {
+        double dx = grid[cell + 1] - grid[cell]; // €чейки обычно одинаковой длины, но мало ли..
+        U_new[cell] = U[cell] + dt / dx * ((F[cell] - F[cell + 1]));
+    }
+   
     //ƒвижение на слой вперед 
-    buffer.advance(+1);
+    //buffer.advance(+1);
 }
