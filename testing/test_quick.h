@@ -86,7 +86,7 @@ public:
         // Расчет потоков на границе по правилу донорской ячейки
         for (size_t cell = 0; cell < U.size(); ++cell) {
             double u = U[cell];
-            double v_cell = pde.getEquationsCoeffs(cell, u);//не совсем корректно, скорость в ячейке берется из скорости на ее левой границе
+            double v_cell = pde.getEquationsCoeffs(cell, u); // не совсем корректно, скорость в ячейке берется из скорости на ее левой границе
             if (v_cell > 0) {
                 size_t right_point = cell + 1;
                 double v_right = pde.getEquationsCoeffs(right_point, u);
@@ -181,7 +181,7 @@ TEST_F(UpstreamDifferencing, Develop)
 
 
 
-/// @brief Разработка метода прямых разностей по [Leonard 1979]
+/// @brief Разработка метода QUICK по [Leonard 1979]
 TEST(QUICK, Develop)
 {
     // Профиль переменных
@@ -250,13 +250,13 @@ TEST(QUICK, Develop)
         double v_cell = advection_model.getEquationsCoeffs(cell, u);//не совсем корректно, скорость в ячейке берется из скорости на ее левой границе
         if (v_cell > 0) {
             size_t right_point = cell + 2;
-            double v_right = advection_model.getEquationsCoeffs(right_point, u);
-            u = (U[cell + 1] + U[cell + 2]) / 2 - (U[cell] + U[cell + 2] - 2 * U[cell + 1]) / 8;
+            double v_right = advection_model.getEquationsCoeffs(right_point, U[right_point]);
+            u = (U[cell + 1] + U[cell + 2]) / 2 - (U[cell] + U[cell + 2] - 2 * U[cell + 1]) / 8;  // расчёт v_right поставить после?
             F[right_point] = u * v_right;
         }
         else {
             size_t left_point = cell + 1;
-            double v_left = advection_model.getEquationsCoeffs(left_point, u);
+            double v_left = advection_model.getEquationsCoeffs(left_point, U[left_point]);
             u = (U[cell + 1] + U[cell]) / 2 - (U[cell + 2] + U[cell] - 2 * U[cell + 1]) / 8;
             F[left_point] = u * v_left;
         }
