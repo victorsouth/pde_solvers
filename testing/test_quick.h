@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+using namespace std;
 
 /// @brief Описание типов данных для метода конечных объемов на основе upstream differencing 
 template <size_t Dimension>
@@ -42,7 +43,7 @@ public:
     /// @param buffer Буфер слоев
     upstream_fv_solver(pde_t<1>& pde,
         custom_buffer_t<composite_layer_t<var_layer_data, specific_layer>>& buffer)
-        : upstream_fv_solver(pde, buffer.current(), buffer.previous())
+        : upstream_fv_solver(pde, buffer.previous(), buffer.current())
     {}
     
     /// @brief Конструктор для простых слоев - 
@@ -177,6 +178,40 @@ TEST_F(UpstreamDifferencing, Develop)
     upstream_fv_solver solver(*advection_model, prev, next);
     solver.step(dt, rho_in, rho_out);
 
+}
+
+
+
+/// @brief Пример вывода в файл через
+TEST_F(UpstreamDifferencing, UseCaseStepDensity)
+{
+    string path = prepare_test_folder();
+    std::ofstream output(path + "output.csv");
+
+    vector<double> rho_in{ 860, 860, 860, 860, 860, 860, 860, 860, 860, 860 };
+    double rho_out = 870;
+    double dt = 60; // 1 минута
+    double t = 0;
+
+    for (size_t index = 0; index < rho_in.size(); ++index) {
+        if (index == 0) {
+            layer_t& prev = buffer->previous();
+            prev.vars.print(t, output);
+        }
+
+        t += dt;
+       
+        upstream_fv_solver solver(*advection_model, *buffer);
+        solver.step(dt, rho_in[index], rho_out);
+
+        layer_t& next = buffer->current();
+        next.vars.print(t, output);
+
+        buffer->advance(+1);
+
+    }
+    output.flush();
+    output.close();
 }
 
 

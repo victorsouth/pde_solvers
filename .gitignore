@@ -321,3 +321,5 @@ __pycache__/
 *.xsd.cs
 
 /bin
+/testing_out/UpstreamDifferencing.UseCaseStepDensity/*/*
+/testing_out/UpstreamDifferencing.UseCaseStepDensity/*.csv

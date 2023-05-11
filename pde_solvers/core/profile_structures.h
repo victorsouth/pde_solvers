@@ -198,6 +198,44 @@ struct templated_layer
     {
 
     }
+
+    /// @brief Вывод профилей points и cells в файл (векторы point_vector, cell_vector не выводятся) 
+    /// формат:
+    ///  время; [cells или points]; название переменной; группа; размерность; [значения] #end-of-line
+    /// @param t Время
+    /// @param os Поток для вывода
+    void print(double t, std::ostream& os) {
+        auto print_vector = [&](const vector<double>& data) {
+            if (data.empty())
+                return;
+            os << data[0];
+            std::for_each(data.begin() + 1, data.end(),
+                [&](double value)
+                {
+                    os << "; " << value;
+                });
+        };
+
+        constexpr size_t point_group_number = 1;
+        for (size_t index = 0; index < point_double.size(); ++index) {
+            std::string units = "_"; // неизвестно, какие единицы
+            std::stringstream varname;
+            varname << "PointDouble" << index;
+            os << t << ";points; " << varname.str() << "; " << point_group_number << "; " << units << "; ";
+            print_vector(point_double[index]);
+            os << std::endl;
+        }
+
+        constexpr size_t cell_group_number = 2;
+        for (size_t index = 0; index < cell_double.size(); ++index) {
+            std::string units = "_"; // неизвестно, какие единицы
+            std::stringstream varname;
+            varname << "CellDouble" << index;
+            os << t << ";cells; " << varname.str() << "; " << cell_group_number << "; " << units << "; ";
+            print_vector(cell_double[index]);
+            os << std::endl;
+        }
+    }
 };
 
 /// @brief Составной слой, включающий в себя слой переменных и слои со специальными структурами
