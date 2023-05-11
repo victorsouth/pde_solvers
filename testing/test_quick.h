@@ -179,7 +179,12 @@ TEST_F(UpstreamDifferencing, Develop)
 
 }
 
-
+double quick_border_approximation(double U_L, double U_C, double U_R)
+{
+    double Ub_linear = (U_C + U_R) / 2;
+    double Ub_cubic_correction = - (U_L + U_R - 2 * U_C) / 8;
+    return Ub_linear + Ub_cubic_correction;
+}
 
 /// @brief Разработка метода QUICK по [Leonard 1979]
 TEST(QUICK, Develop)
@@ -199,7 +204,7 @@ TEST(QUICK, Develop)
 
     PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
 
-    vector<double> Q(pipe.profile.getPointCount(), 0.5); // задаем по трубе расход 0.5 м3/с
+    vector<double> Q(pipe.profile.getPointCount(), -0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);
 
     //Текущий и предыдущий слой, каждый из которых представляет собой composite_layer (Var+Specific)
@@ -210,9 +215,7 @@ TEST(QUICK, Develop)
     layer_t& next = buffer.current();
 
     double rho_in = 860;
-    double rho_befor_in = 860;
     double rho_out = 870;
-    double rho_after_out = 870;
 
     prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
 
@@ -225,41 +228,52 @@ TEST(QUICK, Develop)
 
     // Расчет потоков на границе на основе граничных условий
     double v_in = advection_model.getEquationsCoeffs(0, U[0]);
-    double v_after_in = advection_model.getEquationsCoeffs(1, U[1]);
     double v_out = advection_model.getEquationsCoeffs(F.size() - 1, U[U.size() - 1]);
-    double v_befor_out = advection_model.getEquationsCoeffs(F.size() - 2, U[U.size() - 2]);
-
-    double rho_after_in = (U[0] + U[1]) / 2 - (rho_befor_in + U[1] - 2 * U[0]) / 8;
-    double rho_befor_out = (U[U.size() - 1] + U[U.size() - 2]) / 2 - (rho_after_out + U[U.size() - 2] - 2 * U[U.size() - 1]) / 8;
 
     if (v_in >= 0) {
         F.front() = v_in * rho_in;
-        F[1] = v_after_in * rho_after_in;
-        F.back() = v_out * rho_out;
     }
     if (v_out <= 0) {
         F.back() = v_out * rho_out;
-        F[F.size() - 1] = v_befor_out * rho_befor_out;
-        F.front() = v_in * rho_in;
     }
 
+    double v_pipe = advection_model.getEquationsCoeffs(0, U[0]);//не совсем корректно, скорость в ячейке берется из скорости на ее левой границе
 
-    // Расчет потоков на границе по правилу донорской ячейки
-    for (size_t cell = 0; cell < U.size() - 2; ++cell) {
-        double u = U[cell];
-        double v_cell = advection_model.getEquationsCoeffs(cell, u);//не совсем корректно, скорость в ячейке берется из скорости на ее левой границе
-        if (v_cell > 0) {
-            size_t right_point = cell + 2;
-            double v_right = advection_model.getEquationsCoeffs(right_point, U[right_point]);
-            u = (U[cell + 1] + U[cell + 2]) / 2 - (U[cell] + U[cell + 2] - 2 * U[cell + 1]) / 8;  // расчёт v_right поставить после?
-            F[right_point] = u * v_right;
+    if (v_pipe >= 0) {
+        // Расчет потоков на границе по правилу QUICK
+        for (size_t cell = 0; cell < U.size(); ++cell) {
+            size_t right_border = cell + 1;
+            double Vb = v_pipe; // предположили, что скорость на границе во всех точках трубы одна и та же
+            double Ub;
+            if (cell == 0) {
+                Ub = quick_border_approximation(U[cell], U[cell], U[cell + 1]); // костыль U_L = U_C
+            }
+            else if (cell == U.size() - 1) {
+                Ub = quick_border_approximation(U[cell - 1], U[cell], U[cell]); // костыль U_R = U_C
+            }
+            else {
+                Ub = quick_border_approximation(U[cell - 1], U[cell], U[cell + 1]); // честный расчет
+            }
+            F[right_border] = Ub * Vb;
         }
-        else {
-            size_t left_point = cell + 1;
-            double v_left = advection_model.getEquationsCoeffs(left_point, U[left_point]);
-            u = (U[cell + 1] + U[cell]) / 2 - (U[cell + 2] + U[cell] - 2 * U[cell + 1]) / 8;
-            F[left_point] = u * v_left;
+    }
+    else {
+        for (size_t cell = 0; cell < U.size(); ++cell) {
+            size_t left_border = cell;
+            double Vb = v_pipe; // предположили, что скорость на границе во всех точках трубы одна и та же
+            double Ub;
+            if (cell == 0) {
+                Ub = quick_border_approximation(U[cell + 1], U[cell], U[cell]); // костыль U_L = U_C
+            }
+            else if (cell == U.size() - 1) {
+                Ub = quick_border_approximation(U[cell], U[cell], U[cell - 1]); // костыль U_R = U_C
+            }
+            else {
+                Ub = quick_border_approximation(U[cell + 1], U[cell], U[cell - 1]); // честный расчет
+            }
+            F[left_border] = Ub * Vb;
         }
+
     }
 
     const auto& grid = advection_model.get_grid();
