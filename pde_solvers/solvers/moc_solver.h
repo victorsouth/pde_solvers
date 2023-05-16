@@ -406,7 +406,7 @@ public:
 };
 
 template <>
-moc_solver<1>::moc_solver(pde_t<1>& pde,
+inline moc_solver<1>::moc_solver(pde_t<1>& pde,
     composite_layer_t<templated_layer<1>, moc_solver<1>::specific_layer>& prev,
     composite_layer_t<templated_layer<1>, moc_solver<1>::specific_layer>& curr)
     : pde(pde)
