@@ -3,7 +3,7 @@
 
 TEST(Static_Hydraulic_Solver, UseCase)
 {
-    typedef templated_layer<2> layer_variables_type;
+    typedef profile_collection_t<2> layer_variables_type;
     typedef moc_solver<2>::specific_layer layer_moc_type;
 
     typedef composite_layer_t<layer_variables_type, layer_moc_type> composite_layer_type;

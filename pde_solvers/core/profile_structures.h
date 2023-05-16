@@ -175,7 +175,7 @@ inline profile_wrapper<double, 1>::profile_wrapper(array<vector<double>*, 1>* pr
 template <size_t PointScalar, size_t CellScalar = 0,
     size_t PointVector = 0, size_t PointVectorDimension = 0,
     size_t CellVector = 0, size_t CellVectorDimension = 0>
-struct templated_layer
+struct profile_collection_t
 {
     typedef typename fixed_system_types<PointVectorDimension>::var_type point_vector_type;
     typedef typename fixed_system_types<CellVectorDimension>::var_type cell_vector_type;
@@ -190,7 +190,7 @@ struct templated_layer
     /// @brief Список векторных профилей в ячейках
     array<vector<cell_vector_type>, CellVector> cell_vector;
 
-    templated_layer(size_t point_count)
+    profile_collection_t(size_t point_count)
         : point_double{ array_maker<vector<double>, PointScalar>::make_array(vector<double>(point_count)) }
         , point_vector{ array_maker<vector<point_vector_type>, PointVector>::make_array(vector<point_vector_type>(point_count)) }
         , cell_double{ array_maker<vector<double>, CellScalar>::make_array(vector<double>(point_count - 1)) }
