@@ -324,3 +324,4 @@ __pycache__/
 /testing_out/UpstreamDifferencing.UseCaseStepDensity/*/*
 /testing_out/UpstreamDifferencing.UseCaseStepDensity/*.csv
 /testing_out/QUICK.UseCaseStepDensity/*.csv
+/testing_out/QUICK.UseCaseStepDensity/*/*.png
