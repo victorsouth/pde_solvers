@@ -6,6 +6,7 @@
 /// "Схема Годунова для уравнения с постоянным сечением.docx"
 class PipeModelPGConstArea : public pde_t<2>
 {
+public:
     using pde_t<2>::equation_coeffs_type;
     using pde_t<2>::right_party_type;
     using pde_t<2>::var_type;
