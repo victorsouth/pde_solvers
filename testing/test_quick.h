@@ -386,32 +386,50 @@ TEST_F(UpstreamDifferencing, UseCaseStepDensity)
 TEST_F(QUICK, UseCaseStepDensity)
 {
     string path = prepare_test_folder();
-    std::ofstream output(path + "output.csv");
 
-    vector<double> rho_in{ 860, 860, 860, 860, 860, 860, 860, 860, 860, 860 };
+
+    double rho_in = 860;
     double rho_out = 870;
-    double dt = 60; // 1 минута
-    double t = 0;
+    double t = 0; // текущее время
+    double T = 50000; // период моделирования
 
-    for (size_t index = 0; index < rho_in.size(); ++index) {
-        if (index == 0) {
-            layer_t& prev = buffer->previous();
-            prev.vars.print(t, output);
+    const auto& x = advection_model->get_grid();
+    double dx = x[1] - x[0];
+    double v = advection_model->getEquationsCoeffs(0, 0);
+    double dt_ideal = dx / v;
+
+
+    for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
+        //double dt = 60; // 1 минута
+        double dt = Cr * dt_ideal; // время в долях от Куранта
+
+        std::stringstream filename;
+        filename << path << "output Cr=" << Cr << ".csv";
+        std::ofstream output(filename.str());
+
+
+        size_t N = static_cast<int>(T / dt);
+        for (size_t index = 0; index < N; ++index) {
+            if (index == 0) {
+                layer_t& prev = buffer->previous();
+                prev.vars.print(t, output);
+            }
+
+            t += dt;
+
+            quick_fv_solver solver(*advection_model, *buffer);
+            solver.step(dt, rho_in, rho_out);
+
+            layer_t& next = buffer->current();
+            next.vars.print(t, output);
+
+            buffer->advance(+1);
+
         }
-
-        t += dt;
-
-        quick_fv_solver solver(*advection_model, *buffer);
-        solver.step(dt, rho_in[index], rho_out);
-
-        layer_t& next = buffer->current();
-        next.vars.print(t, output);
-
-        buffer->advance(+1);
-
+        output.flush();
+        output.close();
     }
-    output.flush();
-    output.close();
+
 }
 
 /// @brief Разработка метода QUICK по [Leonard 1979]
