@@ -1,4 +1,4 @@
-﻿# header only library
+# header only library
 # for install, dependencies and correct include path
 project(pde_solvers)
 cmake_minimum_required(VERSION 3.10)
