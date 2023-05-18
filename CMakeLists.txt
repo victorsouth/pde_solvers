@@ -1,4 +1,4 @@
-# header only library
+﻿# header only library
 # for install, dependencies and correct include path
 project(pde_solvers)
 cmake_minimum_required(VERSION 3.10)
@@ -30,7 +30,7 @@ target_link_libraries(${PROJECT_NAME} INTERFACE fixed_solvers::fixed_solvers)
 target_include_directories(${PROJECT_NAME}
     INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include/pde_solvers>
+    $<INSTALL_INTERFACE:include>
 )
 add_library(pde_solvers::pde_solvers ALIAS pde_solvers)
 
