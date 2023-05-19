@@ -390,7 +390,6 @@ TEST_F(QUICK, UseCaseStepDensity)
 
     double rho_in = 860;
     double rho_out = 870;
-    double t = 0; // текущее время
     double T = 50000; // период моделирования
 
     const auto& x = advection_model->get_grid();
@@ -400,6 +399,13 @@ TEST_F(QUICK, UseCaseStepDensity)
 
 
     for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
+        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
+        buffer = std::make_unique<custom_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+
+        layer_t& prev = buffer->previous();
+        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
+
+        double t = 0; // текущее время
         //double dt = 60; // 1 минута
         double dt = Cr * dt_ideal; // время в долях от Куранта
 
