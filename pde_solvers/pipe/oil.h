@@ -311,9 +311,14 @@ struct fluid_properties_profile_t :
 
 };
 
+namespace pde_solvers { // по хорошему, все убрать в этот неймспейс
+;
+
 struct fluid_properties_t :
     fluid_properties_dynamic<double, double>,
     fluid_properties_static
 {
     // здесь все функции не зависят от координаты
 };
+
+}

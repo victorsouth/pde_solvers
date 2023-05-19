@@ -5,8 +5,8 @@
 template <size_t Dimension>
 struct godunov_task_traits 
 {
-    typedef templated_layer<Dimension/*переменные*/, 0, 0, 0, 0, 0> var_layer_data;
-    typedef templated_layer<
+    typedef profile_collection_t<Dimension/*переменные*/, 0, 0, 0, 0, 0> var_layer_data;
+    typedef profile_collection_t<
         /* альфы слева и справа от границ */ Dimension * 2,
         /* значени¤ параметров, собственные числа в ¤чейках, линейна¤ реконструкци¤ в ¤чейках: */ Dimension * 3,
         /* значени¤ параметра ERP (слева, справа), решение задачи –имана, потоки на границах ¤чеек: */ 4, Dimension,

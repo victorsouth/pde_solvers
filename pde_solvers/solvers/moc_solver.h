@@ -15,8 +15,8 @@ using std::pair;
 template <size_t Dimension>
 struct moc_task_traits 
 {
-    typedef templated_layer<Dimension/*переменные*/, 0, 0, 0, 0, 0> var_layer_data;
-    typedef templated_layer<Dimension/*собственные числа*/, 0,
+    typedef profile_collection_t<Dimension/*переменные*/, 0, 0, 0, 0, 0> var_layer_data;
+    typedef profile_collection_t<Dimension/*собственные числа*/, 0,
         Dimension /*собств. векторы*/, Dimension /*размерность собств. векторов*/,
         0, 0> specific_layer;
 };
@@ -172,8 +172,8 @@ public:
     /// @param prev Прошлый слой (начальные условия)
     /// @param curr Новый, рассчитываемый слой
     moc_solver(pde_t<Dimension>& pde,
-        composite_layer_t<templated_layer<Dimension>, moc_solver<Dimension>::specific_layer>& prev,
-        composite_layer_t<templated_layer<Dimension>, moc_solver<Dimension>::specific_layer>& curr);
+        composite_layer_t<profile_collection_t<Dimension>, moc_solver<Dimension>::specific_layer>& prev,
+        composite_layer_t<profile_collection_t<Dimension>, moc_solver<Dimension>::specific_layer>& curr);
 
     moc_solver(pde_t<Dimension>& pde,
         moc_layer_wrapper<Dimension>& prev,
