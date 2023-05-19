@@ -6,8 +6,8 @@ using namespace std;
 template <size_t Dimension>
 struct upstream_fv_solver_traits
 {
-    typedef templated_layer<0, Dimension/*переменные - ячейки*/, 0, 0, 0, 0> var_layer_data;
-    typedef templated_layer<Dimension /*потоки F*/, 0,
+    typedef profile_collection_t<0, Dimension/*переменные - ячейки*/, 0, 0, 0, 0> var_layer_data;
+    typedef profile_collection_t<Dimension /*потоки F*/, 0,
         0, 0,
         0, 0> specific_layer;
 };
@@ -16,8 +16,8 @@ struct upstream_fv_solver_traits
 template <size_t Dimension>
 struct quick_fv_solver_traits
 {
-    typedef templated_layer<0, Dimension/*переменные - ячейки*/, 0, 0, 0, 0> var_layer_data;
-    typedef templated_layer<Dimension /*потоки F*/, 0,
+    typedef profile_collection_t<0, Dimension/*переменные - ячейки*/, 0, 0, 0, 0> var_layer_data;
+    typedef profile_collection_t<Dimension /*потоки F*/, 0,
         0, 0,
         0, 0> specific_layer;
 };
@@ -442,8 +442,8 @@ TEST_F(QUICK, UseCaseStepDensity)
 TEST(QUICK, Develop)
 {
     // Профиль переменных
-    typedef templated_layer<0, 1> target_var_t;
-    typedef templated_layer<1, 0> specific_data_t;
+    typedef profile_collection_t<0, 1> target_var_t;
+    typedef profile_collection_t<1, 0> specific_data_t;
 
     // Слой: переменных Vars + сколько угодно служебных Specific
     typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
