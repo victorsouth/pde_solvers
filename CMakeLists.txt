@@ -6,7 +6,9 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 17)#23?
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+if(NOT TARGET fixed_solvers::fixed_solvers)
 find_package(fixed_solvers)
+endif()
 
 set(HEADERS
     pde_solvers/pde_solvers.h  pde_solvers/pipe.h
@@ -48,7 +50,7 @@ install(EXPORT pde_solversTargets NAMESPACE pde_solvers::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/pde_solvers
 )
 # generate the config file that is includes the exports
-configure_package_config_file(${CMAKE_SOURCE_DIR}/Config.cmake.in
+configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
     "${CMAKE_CURRENT_BINARY_DIR}/pde_solversConfig.cmake"
     INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/pde_solvers"
     NO_SET_AND_CHECK_MACRO
