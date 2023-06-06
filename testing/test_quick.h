@@ -141,7 +141,7 @@ double quickest_border_approximation(double U_L, double U_C, double U_R, double 
     double Grad = (U_R - U_C) / dx;
     double Curv = (U_L + U_R - 2 * U_C) / (dx * dx);
     double Ub_correction_first_order = -(dx * Cour * Grad) / 2 ;
-    double Ub_correction_second_order = dx * dx * (hi - (1 - (Cour * Cour)) / 3) * Curv;
+    double Ub_correction_second_order = (dx * dx * (hi - (1 - (Cour * Cour)) / 3) * Curv) / 2;
     return Ub_linear + Ub_correction_first_order + Ub_correction_second_order;
 }
 
