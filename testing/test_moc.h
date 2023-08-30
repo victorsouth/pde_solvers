@@ -89,6 +89,60 @@ TEST(MOC_Solver, UseCase_Advection)
 }
 
 
+TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Buffer)
+{
+    // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
+    simple_pipe_properties simple_pipe;
+    simple_pipe.length = 50e3;
+    simple_pipe.diameter = 0.7;
+    simple_pipe.dx = 1000;
+
+    PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
+
+    // Одна переменная, и структуры метода характеристик для нее
+    typedef composite_layer_t<profile_collection_t<2>> density_sulfur_layer_t; //тип данных для слоя плотности и серы, 2 - количество профилей
+
+    custom_buffer_t<density_sulfur_layer_t> buffer(2, pipe.profile.getPointCount()); //2 - количество слоев, getPointCount - размерность 
+                                                                                     // каждого профиля в каждом слое
+    density_sulfur_layer_t& prev = buffer.previous();
+    density_sulfur_layer_t& curr = buffer.current();
+    vector<double>& rho_prev = prev.vars.point_double[0]; //0 - нулевой профиль слоя prev
+    rho_prev = vector<double>(rho_prev.size(), 850);
+    vector<double>& rho_curr = curr.vars.point_double[0]; //0 - нулевой профиль слоя curr
+    rho_curr = vector<double>(rho_curr.size(), 860);
+
+    buffer.advance(+1);
+    density_sulfur_layer_t& prev2 = buffer.previous(); //prev2==curr, начальные условия для следующего расчета
+    density_sulfur_layer_t& curr2 = buffer.current();  //curr2==prev, поскольку prev теперь не нужен, его можно использовать для рез. след. расчета
+}
+
+TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Calculation)
+{
+    // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
+    simple_pipe_properties simple_pipe;
+    simple_pipe.length = 50e3;
+    simple_pipe.diameter = 0.7;
+    simple_pipe.dx = 1000;
+
+    PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
+
+    // Одна переменная, и структуры метода характеристик для нее
+    typedef composite_layer_t<profile_collection_t<2>> density_sulfur_layer_t; //тип данных для слоя плотности и серы, 2 - количество профилей
+
+    custom_buffer_t<density_sulfur_layer_t> buffer(2, pipe.profile.getPointCount()); //2 - количество слоев, getPointCount - размерность 
+    // каждого профиля в каждом слое
+    density_sulfur_layer_t& prev = buffer.previous();
+    density_sulfur_layer_t& curr = buffer.current();
+    vector<double>& rho_prev = prev.vars.point_double[0]; //0 - нулевой профиль слоя prev
+    rho_prev = vector<double>(rho_prev.size(), 850);
+    vector<double>& rho_curr = curr.vars.point_double[0]; //0 - нулевой профиль слоя curr
+    rho_curr = vector<double>(rho_curr.size(), 860);
+
+    buffer.advance(+1);
+    density_sulfur_layer_t& prev2 = buffer.previous(); //prev2==curr, начальные условия для следующего расчета
+    density_sulfur_layer_t& curr2 = buffer.current();  //curr2==prev, поскольку prev теперь не нужен, его можно использовать для рез. след. расчета
+}
+
 /// @brief Расчет уравнений стационарного, затем нестационарного течения слабосжимаемой жидкости
 /// методом характеристик
 TEST(MOC_Solver, UseCase_Waterhammer)
