@@ -133,14 +133,98 @@ TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Calculation)
     // каждого профиля в каждом слое
     density_sulfur_layer_t& prev = buffer.previous();
     density_sulfur_layer_t& curr = buffer.current();
+
     vector<double>& rho_prev = prev.vars.point_double[0]; //0 - нулевой профиль слоя prev
     rho_prev = vector<double>(rho_prev.size(), 850);
-    vector<double>& rho_curr = curr.vars.point_double[0]; //0 - нулевой профиль слоя curr
-    rho_curr = vector<double>(rho_curr.size(), 860);
+    vector<double>& sulfur_prev = prev.vars.point_double[1]; //1 - первый профиль слоя prev
+    sulfur_prev = vector<double>(sulfur_prev.size(), 1.55);
+    
+    vector<double>& rho_curr = curr.vars.point_double[0]; //0 - нулевой профиль слоя prev
+    rho_curr = vector<double>(rho_curr.size(), 0);
+    vector<double>& sulfur_curr = curr.vars.point_double[1]; //1 - первый профиль слоя prev
+    sulfur_curr = vector<double>(sulfur_curr.size(), 0);
 
-    buffer.advance(+1);
-    density_sulfur_layer_t& prev2 = buffer.previous(); //prev2==curr, начальные условия для следующего расчета
-    density_sulfur_layer_t& curr2 = buffer.current();  //curr2==prev, поскольку prev теперь не нужен, его можно использовать для рез. след. расчета
+
+    //double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
+    //double rho_out = 860; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
+    //double sulfur_in = 1.45; // плотность нефти, закачиваемой на входе трубы при положительном расходе
+    //double sulfur_out = 1.65; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
+
+    //simple_moc_solver 
+    int n = 51;//количество точек
+    int N = 5;//кол-во шагов
+
+    vector<double> flow(N, 0.5);
+    vector<double> rho_in(N, 840);
+    vector<double> rho_out(N, 860);
+    vector<double> sulfur_in(N, 1.45);
+    vector<double> sulfur_out(N, 1.65);
+    vector<vector<double>> oil_in = {rho_in, sulfur_in};
+    vector<vector<double>> oil_out = {rho_out, sulfur_out};
+    
+    ofstream fout_rho("layers_rho.txt");
+    ofstream fout_sulfur("layers_sulfur.txt");
+    for (int i = 0; i < N; i++)
+    {
+        if (flow[i] > 0)
+        {
+
+            for (int l = 0; l < n - 1; l++)
+                rho_curr[l + 1] = rho_prev[l];
+            rho_curr[0] = oil_in[0][N - 1 - i];
+
+            for (int l = 0; l < n - 1; l++)
+                sulfur_curr[l + 1] = sulfur_prev[l];
+            sulfur_curr[0] = oil_in[1][N - 1 - i];
+        }
+        else
+        {
+
+            for (int l = n - 1; l > 0; l--)
+                rho_curr[l - 1] = rho_prev[l];
+            rho_curr[n - i] = oil_out[0][i];
+
+
+            for (int l = n - 1; l > 0; l--)
+                sulfur_curr[l - 1] = sulfur_prev[l];
+            sulfur_curr[n - i] = oil_out[1][i];
+        }
+        
+
+
+        if (i == 0)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                fout_rho << rho_prev[j] << "\t";
+                fout_sulfur << sulfur_prev[j] << "\t";
+            }
+            fout_rho << "\n";
+            fout_sulfur << "\n";
+        }
+        for (int j = 0; j < n; j++)
+        {
+            fout_rho << rho_curr[j] << "\t";
+            fout_sulfur << sulfur_curr[j] << "\t";
+        }
+        fout_rho << "\n";
+        fout_sulfur << "\n";
+        
+        //rho_prev = rho_curr;
+        //sulfur_prev = sulfur_curr;
+
+        buffer.advance(+1);
+        prev = buffer.previous();
+        curr = buffer.current();
+        rho_prev = prev.vars.point_double[0];
+        rho_curr = curr.vars.point_double[0];
+        sulfur_prev = prev.vars.point_double[1];
+        sulfur_curr = curr.vars.point_double[1];
+    }
+    fout_rho.close();
+    fout_sulfur.close();
+    //density_sulfur_layer_t& prev2 = buffer.previous(); //prev2==curr, начальные условия для следующего расчета
+    //density_sulfur_layer_t& curr2 = buffer.current();  //curr2==prev, поскольку prev теперь не нужен, его можно использовать для рез. след. расчета
 }
 
 /// @brief Расчет уравнений стационарного, затем нестационарного течения слабосжимаемой жидкости
