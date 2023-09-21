@@ -14,7 +14,7 @@ using namespace std;
 
 #include "test_moc.h"
 
-//#include "test_simple_moc.h"
+#include "test_simple_moc.h"
 
 #include "test_static_pipe_solver.h"
 

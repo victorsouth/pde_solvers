@@ -26,7 +26,7 @@
     <ClInclude Include="..\testing\test_static_pipe_solver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="test_simple_moc.h">
+    <ClInclude Include="..\testing\test_simple_moc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
