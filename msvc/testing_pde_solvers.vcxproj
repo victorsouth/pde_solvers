@@ -23,7 +23,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\testing\test_moc.h" />
-    <ClInclude Include="..\testing\test_simple_moc.h" />
     <ClInclude Include="..\testing\test_static_pipe_solver.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
