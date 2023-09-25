@@ -227,6 +227,74 @@ TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Calculation)
     //density_sulfur_layer_t& curr2 = buffer.current();  //curr2==prev, поскольку prev теперь не нужен, его можно использовать для рез. след. расчета
 }
 
+TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Calculation_Class)
+{
+    // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
+    simple_pipe_properties simple_pipe;
+    simple_pipe.length = 50e3;
+    simple_pipe.diameter = 0.7;
+    simple_pipe.dx = 1000;
+
+    PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
+
+    int N = 5;
+    transport_equation_solver simple_solver(N, simple_pipe.length, simple_pipe.dx);
+    int n = simple_solver.get_point_count(simple_pipe.length, simple_pipe.dx);
+
+    // Одна переменная, и структуры метода характеристик для нее
+    typedef composite_layer_t<profile_collection_t<2>> density_sulfur_layer_t; //тип данных для слоя плотности и серы, 2 - количество профилей
+
+    custom_buffer_t<density_sulfur_layer_t> buffer(2, pipe.profile.getPointCount()); //2 - количество слоев, getPointCount - размерность 
+    // каждого профиля в каждом слое
+    density_sulfur_layer_t& prev = buffer.previous();
+    density_sulfur_layer_t& curr = buffer.current();
+
+    vector<double>& rho_prev = prev.vars.point_double[0]; //0 - нулевой профиль слоя prev
+    rho_prev = vector<double>(rho_prev.size(), 850);
+    vector<double>& sulfur_prev = prev.vars.point_double[1]; //1 - первый профиль слоя prev
+    sulfur_prev = vector<double>(sulfur_prev.size(), 1.55);
+
+    vector<double>& rho_curr = curr.vars.point_double[0]; //0 - нулевой профиль слоя prev
+    rho_curr = vector<double>(rho_curr.size(), 0);
+    vector<double>& sulfur_curr = curr.vars.point_double[1]; //1 - первый профиль слоя prev
+    sulfur_curr = vector<double>(sulfur_curr.size(), 0);
+
+    vector<double> flow(N, 0.5);
+    vector<double> rho_in(N, 840);
+    vector<double> rho_out(N, 860);
+    vector<double> sulfur_in(N, 1.45);
+    vector<double> sulfur_out(N, 1.65);
+    string filename_rho = "layers_rho.txt";
+    string filename_sulfur = "layers_sulfur.txt";
+
+    for (int i = 0; i < N; i++)
+    {
+        simple_solver.simple_moc_solver(i, rho_prev, rho_curr, rho_in, rho_out, flow);
+        simple_solver.print_layers(i, rho_prev, rho_curr, filename_rho);
+        buffer.advance(+1);
+        prev = buffer.previous();
+        curr = buffer.current();
+        rho_prev = prev.vars.point_double[0];
+        rho_curr = curr.vars.point_double[0];
+        sulfur_prev = prev.vars.point_double[1];
+        sulfur_curr = curr.vars.point_double[1];
+    }
+
+    for (int i = 0; i < N; i++)
+    {
+        simple_solver.simple_moc_solver(i, sulfur_prev, sulfur_curr, sulfur_in, sulfur_out, flow);
+        simple_solver.print_layers(i, sulfur_prev, sulfur_curr, filename_sulfur);
+        buffer.advance(+1);
+        prev = buffer.previous();
+        curr = buffer.current();
+        sulfur_prev = prev.vars.point_double[0];
+        sulfur_curr = curr.vars.point_double[0];
+        sulfur_prev = prev.vars.point_double[1];
+        sulfur_curr = curr.vars.point_double[1];
+    }
+}
+
+
 /// @brief Расчет уравнений стационарного, затем нестационарного течения слабосжимаемой жидкости
 /// методом характеристик
 TEST(MOC_Solver, UseCase_Waterhammer)

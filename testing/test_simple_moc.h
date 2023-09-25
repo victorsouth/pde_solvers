@@ -16,22 +16,19 @@ public:
 	}
 
 
-	vector<vector<double>> simple_moc_solver(int step, vector<double> layer_prev, vector<double> layer_curr, vector<double> oil_in, vector<double> oil_out, double flow)
+	vector<vector<double>> simple_moc_solver(int step, vector<double> layer_prev, vector<double> layer_curr, vector<double> oil_in, vector<double> oil_out, vector<double> flow)
 	{
-		int i;
-		if (flow[i] > 0)
+		if (flow[step] > 0)
 		{
-
 			for (int l = 0; l < n - 1; l++)
 				layer_curr[l + 1] = layer_prev[l];
-			layer_curr[0] = oil_in[0][N - 1 - i];
+			layer_curr[0] = oil_in[N - 1 - step];
 		}
 		else
 		{
 			for (int l = n - 1; l > 0; l--)
 				layer_curr[l - 1] = layer_prev[l];
-			layer_curr[n - i] = oil_out[0][i];
-
+			layer_curr[n - step] = oil_out[step];
 		}
 	}
 
@@ -51,8 +48,8 @@ public:
 		return layer_curr;
 	}
 
-	void print_layers(int step, vector<double> layer_prev, vector<double> layer_curr) {
-		ofstream fout("layers.txt");
+	void print_layers(int step, vector<double> layer_prev, vector<double> layer_curr, string filename) {
+		ofstream fout(filename);
 		if (step == 0)
 		{
 			for (int j = 0; j < n; j++)
@@ -71,7 +68,6 @@ public:
 private:
 	int N;
 	int n;
-
 	vector<double> layer_prev;
 	vector<double> layer_curr;
 };
