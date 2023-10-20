@@ -327,3 +327,4 @@ __pycache__/
 /testing_out/QUICK.UseCaseStepDensity/*/*.png
 /testing_out/QUICKEST.UseCaseStepDensity
 /testing_out/QUICKEST_ULTIMATE.UseCaseStepDensity
+/out/build/x64-Debug
