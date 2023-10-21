@@ -75,7 +75,7 @@ TEST(MOC_Solver, UseCase_Advection)
     auto& rho_initial = prev.vars.point_double[0];
     rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
 
-    vector<double> Q(pipe.profile.getPointCount(), -0.5); // задаем по трубе расход 0.5 м3/с
+    vector<double> Q(pipe.profile.getPointCount(), 0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);
 
     moc_solver<1> solver(advection_model, prev, next);
@@ -86,6 +86,8 @@ TEST(MOC_Solver, UseCase_Advection)
     solver.step_optional_boundaries(dt, rho_in, rho_out);
 
     auto& c_new = next.vars.point_double[0];
+
+    auto& c_old = prev.vars.point_double[0];
 }
 
 
@@ -228,30 +230,36 @@ TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Calculation)
 }
 
 
-
+/// @brief описание
 class transport_equation_solver {
 public:
-
-    transport_equation_solver(int steps, double pipe_len, double step_len)
+    /// @brief 
+    /// @param pipe_len 
+    /// @param step_len 
+    /// @param floww 
+    /// @param layer_prev 
+    /// @param layer_curr 
+    transport_equation_solver(double pipe_len, double step_len, double floww, vector<double>& layer_prev, vector<double>& layer_curr)
+        :layer_prev(layer_prev), layer_curr(layer_curr)
     {
-        N = steps;
         n = static_cast<int>(pipe_len / step_len + 0.5) + 1;//считаем количество точек
+        flow = floww;
+
     }
 
-
-    vector<vector<double>> simple_moc_solver(int step, vector<double> layer_prev, vector<double> layer_curr, vector<double> oil_in, vector<double> oil_out, vector<double> flow)
+    void simple_step(double oil_in, double oil_out)
     {
-        if (flow[step] > 0)
+        if (flow > 0)
         {
             for (int l = 0; l < n - 1; l++)
                 layer_curr[l + 1] = layer_prev[l];
-            layer_curr[0] = oil_in[N - 1 - step];
+            layer_curr[0] = oil_in;
         }
         else
         {
             for (int l = n - 1; l > 0; l--)
                 layer_curr[l - 1] = layer_prev[l];
-            layer_curr[n - step] = oil_out[step];
+            layer_curr[n] = oil_out;
         }
     }
 
@@ -259,28 +267,8 @@ public:
         return n;
     }
 
-    int get_steps() {
-        return N;
-    }
-
-    vector<double> get_layer_prev() const {
-        return layer_prev;
-    }
-
-    vector<double> get_layer_curr() const {
-        return layer_curr;
-    }
-
-    void print_layers(int step, vector<double> layer_prev, vector<double> layer_curr, string filename) {
-        ofstream fout(filename);
-        if (step == 0)
-        {
-            for (int j = 0; j < n; j++)
-            {
-                fout << layer_prev[j] << "\t";
-            }
-            fout << "\n";
-        }
+    void print_layers(vector<double> layer_curr, string filename) {
+        ofstream fout(filename, ios::app);
         for (int j = 0; j < n; j++)
         {
             fout << layer_curr[j] << "\t";
@@ -289,10 +277,10 @@ public:
     }
 
 private:
-    int N;
+    double flow;
     int n;
-    vector<double> layer_prev;
-    vector<double> layer_curr;
+    vector<double>& layer_prev;
+    vector<double>& layer_curr;
 };
 
 TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Calculation_Class)
@@ -303,11 +291,10 @@ TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Calculation_Class)
     simple_pipe.diameter = 0.7;
     simple_pipe.dx = 1000;
 
-    PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
+    double pipe_len = 50e3;
+    //double step_len = simple_pipe.dx;
 
-    int N = 5;
-    transport_equation_solver simple_solver(N, simple_pipe.length, simple_pipe.dx);
-    int n = simple_solver.get_point_count(simple_pipe.length, simple_pipe.dx);
+    PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
 
     // Одна переменная, и структуры метода характеристик для нее
     typedef composite_layer_t<profile_collection_t<2>> density_sulfur_layer_t; //тип данных для слоя плотности и серы, 2 - количество профилей
@@ -321,45 +308,31 @@ TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Calculation_Class)
     rho_prev = vector<double>(rho_prev.size(), 850);
     vector<double>& sulfur_prev = prev.vars.point_double[1]; //1 - первый профиль слоя prev
     sulfur_prev = vector<double>(sulfur_prev.size(), 1.55);
-
     vector<double>& rho_curr = curr.vars.point_double[0]; //0 - нулевой профиль слоя prev
-    rho_curr = vector<double>(rho_curr.size(), 0);
+    rho_curr = vector<double>(rho_curr.size(), 850);
     vector<double>& sulfur_curr = curr.vars.point_double[1]; //1 - первый профиль слоя prev
-    sulfur_curr = vector<double>(sulfur_curr.size(), 0);
+    sulfur_curr = vector<double>(sulfur_curr.size(), 1.55);
 
-    vector<double> flow(N, 0.5);
-    vector<double> rho_in(N, 840);
-    vector<double> rho_out(N, 860);
-    vector<double> sulfur_in(N, 1.45);
-    vector<double> sulfur_out(N, 1.65);
-    string filename_rho = "layers_rho.txt";
-    string filename_sulfur = "layers_sulfur.txt";
+    double flow = 0.5;
+    double rho_in = 840;
+    double rho_out = 860;
+    double sulfur_in = 1.45;
+    double sulfur_out = 1.65;
+    string filename_rho = "layers_rho_2.txt";
+    string filename_sulfur = "layers_sulfur_2.txt";
 
-    for (int i = 0; i < N; i++)
-    {
-        simple_solver.simple_moc_solver(i, rho_prev, rho_curr, rho_in, rho_out, flow);
-        simple_solver.print_layers(i, rho_prev, rho_curr, filename_rho);
-        buffer.advance(+1);
-        prev = buffer.previous();
-        curr = buffer.current();
-        rho_prev = prev.vars.point_double[0];
-        rho_curr = curr.vars.point_double[0];
-        sulfur_prev = prev.vars.point_double[1];
-        sulfur_curr = curr.vars.point_double[1];
-    }
 
-    for (int i = 0; i < N; i++)
-    {
-        simple_solver.simple_moc_solver(i, sulfur_prev, sulfur_curr, sulfur_in, sulfur_out, flow);
-        simple_solver.print_layers(i, sulfur_prev, sulfur_curr, filename_sulfur);
-        buffer.advance(+1);
-        prev = buffer.previous();
-        curr = buffer.current();
-        sulfur_prev = prev.vars.point_double[0];
-        sulfur_curr = curr.vars.point_double[0];
-        sulfur_prev = prev.vars.point_double[1];
-        sulfur_curr = curr.vars.point_double[1];
-    }
+
+    transport_equation_solver simple_solver(simple_pipe.length, simple_pipe.dx, flow, rho_curr, rho_prev);
+    
+
+    simple_solver.simple_step(rho_in, rho_out);
+    
+    buffer.advance(+1);
+
+    //prev = buffer.previous();
+    //curr = buffer.current();
+
 }
 
 
