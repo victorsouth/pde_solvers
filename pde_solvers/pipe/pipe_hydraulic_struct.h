@@ -180,7 +180,7 @@ struct pipe_properties_t
         pipe.wall.equivalent_roughness = 0.0001;
 
         // это диаметр внутренний
-        pipe.wall.diameter = 0.7;
+        pipe.wall.diameter = simple.diameter;
         // это толщина одной стенки, к внешнему надо прибавлять удвоенную толщину
         pipe.wall.wallThickness = 0.01;
         return pipe;
