@@ -230,23 +230,24 @@ TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Calculation)
 }
 
 
-/// @brief описание
+/// @brief класс, созданный для решения транспортного уравнения
 class transport_equation_solver {
 public:
-    /// @brief 
-    /// @param pipe_len 
-    /// @param step_len 
-    /// @param floww 
-    /// @param layer_prev 
-    /// @param layer_curr 
-    transport_equation_solver(double pipe_len, double step_len, double floww, vector<double>& layer_prev, vector<double>& layer_curr)
-        :layer_prev(layer_prev), layer_curr(layer_curr)
+    /// @brief конструктор солвера, в который передается ссылка на предыдущий слой, ссылка на след слой. конструктор не выполняет расчет, он запоминает ссылки на буфер
+    /// @param pipe_len длина участка 
+    /// @param step_len длина шага
+    /// @param flow расход
+    /// @param layer_prev предыдущий слой
+    /// @param layer_curr текущий слой
+    transport_equation_solver(double pipe_len, double step_len, double& flow, vector<double>& layer_prev, vector<double>& layer_curr)
+        :layer_prev(layer_prev), layer_curr(layer_curr), flow(flow)
     {
         n = static_cast<int>(pipe_len / step_len + 0.5) + 1;//считаем количество точек
-        flow = floww;
 
     }
-
+    /// @brief метод, делающий реальный расчет, в него передаются два граничных условия
+    /// @param oil_in левое граничное условие
+    /// @param oil_out правое граничное условие
     void simple_step(double oil_in, double oil_out)
     {
         if (flow > 0)
@@ -262,11 +263,13 @@ public:
             layer_curr[n] = oil_out;
         }
     }
-
-    int get_point_count(double pipe_len, double step_len) const {
+    /// @brief метод получения количество точек
+    int get_point_count() const {
         return n;
     }
-
+    /// @brief метод печати слоя, путь файлов - (папка с проектами)\pde_solvers\msvc
+    /// @param layer_curr слой для печати
+    /// @param filename название файла
     void print_layers(vector<double> layer_curr, string filename) {
         ofstream fout(filename, ios::app);
         for (int j = 0; j < n; j++)
@@ -277,7 +280,7 @@ public:
     }
 
 private:
-    double flow;
+    double& flow;
     int n;
     vector<double>& layer_prev;
     vector<double>& layer_curr;
@@ -313,25 +316,24 @@ TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Calculation_Class)
     vector<double>& sulfur_curr = curr.vars.point_double[1]; //1 - первый профиль слоя prev
     sulfur_curr = vector<double>(sulfur_curr.size(), 1.55);
 
-    double flow = 0.5;
+    double flow = 0.5;  //задаем расход положительным, краевые условия слева
     double rho_in = 840;
     double rho_out = 860;
     double sulfur_in = 1.45;
     double sulfur_out = 1.65;
-    string filename_rho = "layers_rho_2.txt";
-    string filename_sulfur = "layers_sulfur_2.txt";
+    string filename_rho = "layer_rho.txt";
+    string filename_sulfur = "layer_sulfur.txt";
 
 
 
     transport_equation_solver simple_solver(simple_pipe.length, simple_pipe.dx, flow, rho_curr, rho_prev);
-    
-
     simple_solver.simple_step(rho_in, rho_out);
-    
+    transport_equation_solver simple_solver(simple_pipe.length, simple_pipe.dx, flow, sulfur_curr, sulfur_prev);
+    simple_solver.simple_step(sulfur_in, sulfur_out);
     buffer.advance(+1);
 
-    //prev = buffer.previous();
-    //curr = buffer.current();
+    simple_solver.print_layers(rho_curr, filename_rho);
+    simple_solver.print_layers(sulfur_curr, filename_sulfur);
 
 }
 
