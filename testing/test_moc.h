@@ -22,7 +22,7 @@ TEST(MOC_Solver, MOC_Layer)
         moc_solver<1>::specific_layer> composite_layer(10);
 
     //Текущий и предыдущий слой, каждый из которых представляет собой composite_layer (Var+Specific)
-    custom_buffer_t<composite_layer_t<profile_collection_t<1>, moc_solver<1>::specific_layer>> buffer(2, 10);
+    layer_container_t<composite_layer_t<profile_collection_t<1>, moc_solver<1>::specific_layer>> buffer(2, 10);
 
     //Получение текущего/предыдущего слоя
     const composite_layer_t<var_layer, moc_solver<1>::specific_layer>& prev = buffer.previous();
@@ -41,7 +41,7 @@ TEST(MOC_Solver, MOC_Layer_Refactor)
     typedef composite_layer_t<target_var_t, moc_solver<1>::specific_layer> layer_t;
 
     //Текущий и предыдущий слой, каждый из которых представляет собой composite_layer (Var+Specific)
-    custom_buffer_t<layer_t> buffer(2, 10);
+    layer_container_t<layer_t> buffer(2, 10);
 
     //Получение текущего/предыдущего слоя
     const layer_t& prev = buffer.previous();
@@ -67,7 +67,7 @@ TEST(MOC_Solver, UseCase_Advection)
     typedef composite_layer_t<profile_collection_t<1>,
         moc_solver<1>::specific_layer> single_var_moc_t;
 
-    custom_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
+    layer_container_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
 
     buffer.advance(+1);
     single_var_moc_t& prev = buffer.previous();
@@ -98,7 +98,7 @@ TEST(MOC_Solver, UseCase_Waterhammer)
 
     typedef composite_layer_t<layer_variables_type, layer_moc_type> composite_layer_type;
 
-    custom_buffer_t<composite_layer_type> buffer(2, 3);
+    layer_container_t<composite_layer_type> buffer(2, 3);
 
     pipe_properties_t pipe;
     pipe.profile.coordinates = { 0, 1000, 2000 };
