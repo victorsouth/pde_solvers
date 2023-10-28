@@ -8,7 +8,7 @@
 #endif
 #define TECHNICAL_ATMOSPHERE 98097.0
 
-#include "core/custom_buffer.h"
+#include "core/ring_buffer.h"
 #include "core/differential_equation.h"
 #include "core/profile_structures.h"
 

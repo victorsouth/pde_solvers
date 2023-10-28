@@ -239,8 +239,8 @@ struct profile_collection_t
 };
 
 /// @brief Составной слой, включающий в себя слой переменных и слои со специальными структурами
-/// @tparam Variables 
-/// @tparam ...Ts 
+/// @tparam VarLayer Тип слоя с целевыми переменными
+/// @tparam ...SpecificLayers Типы слоев со специальными слоями
 template <typename VarLayer, typename... SpecificLayers>
 struct composite_layer_t {
     /// @brief Целевые переменные

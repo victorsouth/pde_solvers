@@ -4,9 +4,10 @@
 /// Организует циклическую смену буферов
 /// Наиболее типичное использование - организация двух слоев 
 /// как текущий/предыдущий с простым переключением
+/// https://en.wikipedia.org/wiki/Circular_buffer
 /// @tparam LayerType Тип слоя
 template <typename LayerType>
-class layer_container_t {
+class ring_buffer_t {
     /// @brief Буфер слоев
     vector<LayerType> layers;
     /// @brief Индекс текущего слоя
@@ -25,7 +26,7 @@ public:
     /// @brief Конструктор с инициализацией буфера слоев по переданному слою layer
     /// @param layer_count Количество слоев в буфере
     /// @param layer Слой для инициализации
-    layer_container_t(size_t layer_count, const LayerType& layer)
+    ring_buffer_t(size_t layer_count, const LayerType& layer)
         : layers(layer_count, layer)
     {
     }
@@ -33,7 +34,7 @@ public:
     /// @param layer_count Количество
     /// @param profile_length Передается в конструктор LayerType 
     /// TODO: уточнить, перепроверить
-    layer_container_t(size_t layer_count, size_t profile_length)
+    ring_buffer_t(size_t layer_count, size_t profile_length)
         : layers(layer_count, profile_length)
     {
     }

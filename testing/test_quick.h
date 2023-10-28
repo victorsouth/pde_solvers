@@ -18,7 +18,7 @@ protected:
     /// @brief Профиль расхода
     vector<double> Q;
     std::unique_ptr<PipeQAdvection> advection_model;
-    std::unique_ptr<custom_buffer_t<layer_t>> buffer;
+    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
 protected:
     
     /// @brief Подготовка к расчету для семейства тестов
@@ -32,7 +32,7 @@ protected:
 
         Q = vector<double> (pipe.profile.getPointCount(), 0.5);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<custom_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -54,7 +54,7 @@ protected:
     /// @brief Профиль расхода
     vector<double> Q;
     std::unique_ptr<PipeQAdvection> advection_model;
-    std::unique_ptr<custom_buffer_t<layer_t>> buffer;
+    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
 protected:
 
     /// @brief Подготовка к расчету для семейства тестов
@@ -68,7 +68,7 @@ protected:
 
         Q = vector<double>(pipe.profile.getPointCount(), 0.5);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<custom_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -90,7 +90,7 @@ protected:
     /// @brief Профиль расхода
     vector<double> Q;
     std::unique_ptr<PipeQAdvection> advection_model;
-    std::unique_ptr<custom_buffer_t<layer_t>> buffer;
+    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
 protected:
 
     /// @brief Подготовка к расчету для семейства тестов
@@ -104,7 +104,7 @@ protected:
 
         Q = vector<double>(pipe.profile.getPointCount(), 0.5);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<custom_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -126,7 +126,7 @@ protected:
     /// @brief Профиль расхода
     vector<double> Q;
     std::unique_ptr<PipeQAdvection> advection_model;
-    std::unique_ptr<custom_buffer_t<layer_t>> buffer;
+    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
 protected:
 
     /// @brief Подготовка к расчету для семейства тестов
@@ -143,7 +143,7 @@ protected:
 
         Q = vector<double>(pipe.profile.getPointCount(), 0.5);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<custom_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -204,7 +204,7 @@ TEST_F(UpstreamDifferencing, UseCaseStepDensity)
 
     for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<custom_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -259,7 +259,7 @@ TEST_F(QUICK, UseCaseStepDensity)
 
     for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<custom_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -315,7 +315,7 @@ TEST_F(QUICKEST, UseCaseStepDensity)
 
     for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<custom_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -372,7 +372,7 @@ TEST_F(QUICKEST_ULTIMATE, UseCaseStepDensity)
 
     for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<custom_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
