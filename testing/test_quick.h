@@ -14,7 +14,7 @@ protected:
     typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
 protected:
     /// @brief Параметры трубы
-    PipeProperties pipe;
+    pipe_properties_t pipe;
     /// @brief Профиль расхода
     vector<double> Q;
     std::unique_ptr<PipeQAdvection> advection_model;
@@ -28,7 +28,7 @@ protected:
         simple_pipe.length = 50e3;
         simple_pipe.diameter = 0.7;
         simple_pipe.dx = 1000;
-        pipe = PipeProperties::build_simple_pipe(simple_pipe);
+        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
         Q = vector<double> (pipe.profile.getPointCount(), 0.5);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
@@ -50,7 +50,7 @@ protected:
     typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
 protected:
     /// @brief Параметры трубы
-    PipeProperties pipe;
+    pipe_properties_t pipe;
     /// @brief Профиль расхода
     vector<double> Q;
     std::unique_ptr<PipeQAdvection> advection_model;
@@ -64,7 +64,7 @@ protected:
         simple_pipe.length = 50e3;
         simple_pipe.diameter = 0.7;
         simple_pipe.dx = 1000;
-        pipe = PipeProperties::build_simple_pipe(simple_pipe);
+        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
         Q = vector<double>(pipe.profile.getPointCount(), 0.5);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
@@ -86,7 +86,7 @@ protected:
     typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
 protected:
     /// @brief Параметры трубы
-    PipeProperties pipe;
+    pipe_properties_t pipe;
     /// @brief Профиль расхода
     vector<double> Q;
     std::unique_ptr<PipeQAdvection> advection_model;
@@ -100,7 +100,7 @@ protected:
         simple_pipe.length = 50e3;
         simple_pipe.diameter = 0.7;
         simple_pipe.dx = 1000;
-        pipe = PipeProperties::build_simple_pipe(simple_pipe);
+        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
         Q = vector<double>(pipe.profile.getPointCount(), 0.5);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
@@ -122,7 +122,7 @@ protected:
     typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
 protected:
     /// @brief Параметры трубы
-    PipeProperties pipe;
+    pipe_properties_t pipe;
     /// @brief Профиль расхода
     vector<double> Q;
     std::unique_ptr<PipeQAdvection> advection_model;
@@ -139,7 +139,7 @@ protected:
         //simple_pipe.diameter = 0.514; // тест трубы 700км
         simple_pipe.dx = 1000;
         //simple_pipe.dx = 100; // тест трубы 700км
-        pipe = PipeProperties::build_simple_pipe(simple_pipe);
+        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
         Q = vector<double>(pipe.profile.getPointCount(), 0.5);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
@@ -313,7 +313,7 @@ TEST(QUICK, Develop)
     simple_pipe.diameter = 0.7;
     simple_pipe.dx = 1000;
 
-    PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
     vector<double> Q(pipe.profile.getPointCount(), -0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);
@@ -548,7 +548,7 @@ TEST(QUICKEST, Develop)
     simple_pipe.diameter = 0.7;
     simple_pipe.dx = 1000;
 
-    PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
     vector<double> Q(pipe.profile.getPointCount(), 0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);

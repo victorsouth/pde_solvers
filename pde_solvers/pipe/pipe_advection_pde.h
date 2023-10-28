@@ -19,7 +19,7 @@ public:
         , Q(vol_flow)
     {}
 
-    const PipeProperties& get_pipe() const
+    const pipe_properties_t& get_pipe() const
     {
         return pipe;
     }
