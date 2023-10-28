@@ -14,7 +14,7 @@ set(HEADERS
     pde_solvers/pde_solvers.h  pde_solvers/pipe.h
     )
 set(HEADERS_CORE
-    pde_solvers/core/custom_buffer.h  pde_solvers/core/differential_equation.h  pde_solvers/core/profile_structures.h
+    pde_solvers/core/ring_buffer.h  pde_solvers/core/differential_equation.h  pde_solvers/core/profile_structures.h
     )
 set(HEADERS_PIPE
     pde_solvers/pipe/oil.h  pde_solvers/pipe/pipe_advection_pde.h  pde_solvers/pipe/pipe_hydraulic_computations.h  pde_solvers/pipe/pipe_hydraulic_pde.h  pde_solvers/pipe/pipe_hydraulic_struct.h

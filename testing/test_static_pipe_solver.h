@@ -8,7 +8,7 @@ TEST(Static_Hydraulic_Solver, UseCase)
 
     typedef composite_layer_t<layer_variables_type, layer_moc_type> composite_layer_type;
 
-    custom_buffer_t<composite_layer_type> buffer(2, 3);
+    ring_buffer_t<composite_layer_type> buffer(2, 3);
 
     pipe_properties_t pipe;
     pipe.profile.coordinates = { 0, 1000, 2000 };

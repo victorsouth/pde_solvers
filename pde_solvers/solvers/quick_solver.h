@@ -70,7 +70,7 @@ public:
     /// @param pde ДУЧП
     /// @param buffer Буфер слоев
     upstream_fv_solver(pde_t<1>& pde,
-        custom_buffer_t<composite_layer_t<var_layer_data, specific_layer>>& buffer)
+        ring_buffer_t<composite_layer_t<var_layer_data, specific_layer>>& buffer)
         : upstream_fv_solver(pde, buffer.previous(), buffer.current())
     {}
 
@@ -218,7 +218,7 @@ public:
     /// @param pde ДУЧП
     /// @param buffer Буфер слоев
     quick_fv_solver(pde_t<1>& pde,
-        custom_buffer_t<composite_layer_t<var_layer_data, specific_layer>>& buffer)
+        ring_buffer_t<composite_layer_t<var_layer_data, specific_layer>>& buffer)
         : quick_fv_solver(pde, buffer.previous(), buffer.current())
     {}
 
@@ -335,7 +335,7 @@ public:
     /// @param pde ДУЧП
     /// @param buffer Буфер слоев
     quickest_fv_solver(pde_t<1>& pde,
-        custom_buffer_t<composite_layer_t<var_layer_data, specific_layer>>& buffer)
+        ring_buffer_t<composite_layer_t<var_layer_data, specific_layer>>& buffer)
         : quickest_fv_solver(pde, buffer.previous(), buffer.current())
     {}
 
@@ -452,7 +452,7 @@ public:
     /// @param pde ДУЧП
     /// @param buffer Буфер слоев
     quickest_ultimate_fv_solver(pde_t<1>& pde,
-        custom_buffer_t<composite_layer_t<var_layer_data, specific_layer>>& buffer)
+        ring_buffer_t<composite_layer_t<var_layer_data, specific_layer>>& buffer)
         : quickest_ultimate_fv_solver(pde, buffer.previous(), buffer.current())
     {}
 
