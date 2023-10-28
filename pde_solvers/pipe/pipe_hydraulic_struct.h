@@ -99,7 +99,7 @@ struct pipe_wall_model_t {
     /// \param area
     /// \param pressure
     /// \return
-    double getPressureArea(const OilParameters& oil, double nominalArea, double pressure) const
+    double getPressureArea(const oil_parameters_t& oil, double nominalArea, double pressure) const
     {
         double beta_rho = getCompressionRatio();
         double multiplier = (1 + beta_rho * (pressure - nominal_pressure));
@@ -120,7 +120,7 @@ struct adaptation_parameters {
 
 /// @brief Сущность трубы
 template <typename AdaptationParameters>
-struct pipe_properties_t
+struct pipe_properties
 {
     /// @brief Профиль для расчета (сетка). Не исходный профиль
     PipeProfile profile;
@@ -133,7 +133,7 @@ struct pipe_properties_t
 
     /// @brief Скорость звука в жидкости, м^2/с
     /// TODO: указать источник литературы
-    double getSoundVelocity(const OilParameters& oil) const
+    double getSoundVelocity(const oil_parameters_t& oil) const
     {
         double beta_S = wall.getCompressionRatio();
         double beta_rho = oil.density.getCompressionRatio();
@@ -154,7 +154,7 @@ struct pipe_properties_t
     /// \param pressureArea
     /// \param density
     /// \return
-    double getNominalArea(const OilParameters& oil, double pressureArea, double density) const
+    double getNominalArea(const oil_parameters_t& oil, double pressureArea, double density) const
     {
         return (density / oil.density()) * pressureArea;
     }
@@ -162,17 +162,17 @@ struct pipe_properties_t
     /// \param oil
     /// \param pressure
     /// \return
-    double getTeta(const OilParameters& oil, double pressure) const
+    double getTeta(const oil_parameters_t& oil, double pressure) const
     {
         return 1 + (oil.density.getCompressionRatio() + wall.getCompressionRatio())
             * (pressure - wall.nominal_pressure);
     }
 
     /// @brief Трубопровод по умолчанию 
-    inline static pipe_properties_t<AdaptationParameters> build_simple_pipe(
+    inline static pipe_properties<AdaptationParameters> build_simple_pipe(
         const simple_pipe_properties& simple)
     {
-        pipe_properties_t<AdaptationParameters> pipe;
+        pipe_properties<AdaptationParameters> pipe;
 
         double Pcapacity = 10e6; // несущая способность
         size_t segment_count = simple.get_segment_count();
@@ -188,4 +188,4 @@ struct pipe_properties_t
 
 };
 
-typedef pipe_properties_t<adaptation_parameters> PipeProperties;
+typedef pipe_properties<adaptation_parameters> pipe_properties_t;
