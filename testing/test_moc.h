@@ -61,7 +61,7 @@ TEST(MOC_Solver, UseCase_Advection)
     simple_pipe.diameter = 0.7;
     simple_pipe.dx = 1000;
 
-    PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
     // Одна переменная, и структуры метода характеристик для нееm
     typedef composite_layer_t<profile_collection_t<1>,
@@ -100,11 +100,11 @@ TEST(MOC_Solver, UseCase_Waterhammer)
 
     custom_buffer_t<composite_layer_type> buffer(2, 3);
 
-    PipeProperties pipe;
+    pipe_properties_t pipe;
     pipe.profile.coordinates = { 0, 1000, 2000 };
     pipe.profile.heights = pipe.profile.capacity = vector<double>(pipe.profile.coordinates.size(), 0);
 
-    OilParameters oil;
+    oil_parameters_t oil;
     PipeModelPGConstArea pipeModel(pipe, oil);
 
     profile_wrapper<double, 2> start_layer(get_profiles_pointers(buffer.current().vars.point_double));

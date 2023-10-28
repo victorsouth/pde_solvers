@@ -9,11 +9,11 @@ public:
     using pde_t<1>::var_type;
 protected:
     /// @brief Труба
-    const PipeProperties& pipe;
+    const pipe_properties_t& pipe;
     /// @brief Объемный расход
     const vector<double>& Q;
 public:
-    PipeQAdvection(const PipeProperties& pipe,
+    PipeQAdvection(const pipe_properties_t& pipe,
         const vector<double>& vol_flow)
         : pipe(pipe)
         , Q(vol_flow)

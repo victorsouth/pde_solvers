@@ -11,11 +11,11 @@ public:
     using pde_t<2>::right_party_type;
     using pde_t<2>::var_type;
 protected:
-    PipeProperties pipe;
-    OilParameters oil;
+    pipe_properties_t pipe;
+    oil_parameters_t oil;
 
 public:
-    PipeModelPGConstArea(const PipeProperties& pipe, const OilParameters& oil)
+    PipeModelPGConstArea(const pipe_properties_t& pipe, const oil_parameters_t& oil)
         : pipe(pipe)
         , oil(oil)
     {
@@ -306,7 +306,8 @@ private:
     /// @brief Температура посчитанная неким внешним алгоритимом. В данной модели предполагается заданной
     const vector<double>& temperature;
 public:
-    PipeModelPGConstAreaNonIsothermal(const PipeProperties& pipe, const OilParameters& oil, const vector<double>& temperature)
+    PipeModelPGConstAreaNonIsothermal(const pipe_properties_t& pipe, 
+        const oil_parameters_t& oil, const vector<double>& temperature)
         : PipeModelPGConstArea(pipe, oil)
         , temperature(temperature)
     {
@@ -344,7 +345,7 @@ class PipeModelPQConstAreaSortedNonisothermal : public pde_t<2>
     using pde_t<2>::var_type;
 protected:
     /// @brief Параметры трубы
-    const PipeProperties& pipe;
+    const pipe_properties_t& pipe;
     /// @brief Профиль свойств жидкости
     const fluid_properties_profile_t& oil;
     /// @brief Профиль температуры
@@ -352,7 +353,8 @@ protected:
 
 public:
     PipeModelPQConstAreaSortedNonisothermal(
-        const PipeProperties& pipe, const fluid_properties_profile_t& oil, const vector<double>& temperature)
+        const pipe_properties_t& pipe, const fluid_properties_profile_t& oil, 
+        const vector<double>& temperature)
         : pipe(pipe)
         , oil(oil)
         , temperature(temperature)
