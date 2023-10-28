@@ -101,7 +101,7 @@ struct oil_heat_parameters_t {
 
 
 /// @brief Сущность нефти
-struct OilParameters
+struct oil_parameters_t
 {
     /// @brief Модель плотности
     oil_density_parameters_t density;

@@ -10,11 +10,11 @@ TEST(Static_Hydraulic_Solver, UseCase)
 
     custom_buffer_t<composite_layer_type> buffer(2, 3);
 
-    PipeProperties pipe;
+    pipe_properties_t pipe;
     pipe.profile.coordinates = { 0, 1000, 2000 };
     pipe.profile.heights = pipe.profile.capacity = vector<double>(pipe.profile.coordinates.size(), 0);
 
-    OilParameters oil;
+    oil_parameters_t oil;
     PipeModelPGConstArea pipeModel(pipe, oil);
 
     profile_wrapper<double, 2> start_layer(get_profiles_pointers(buffer.current().vars.point_double));
