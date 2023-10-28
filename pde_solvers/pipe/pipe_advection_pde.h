@@ -19,6 +19,11 @@ public:
         , Q(vol_flow)
     {}
 
+    const pipe_properties_t& get_pipe() const
+    {
+        return pipe;
+    }
+
     /// @brief Возвращает известную уравнению сетку
     virtual const vector<double>& get_grid() const override {
         return pipe.profile.coordinates;

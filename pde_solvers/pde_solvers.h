@@ -15,6 +15,7 @@
 #include "solvers/moc_solver.h"
 #include "solvers/ode_solver.h"
 #include "solvers/godunov_solver.h"
+#include "solvers/quick_solver.h"
 
 #include "pipe/oil.h"
 #include "pipe/pipe_hydraulic_computations.h"
