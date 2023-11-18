@@ -353,6 +353,43 @@ TEST_F(QUICKEST, UseCaseStepDensity)
 
 }
 
+//TEST_MOC
+/// @brief Базовый пример использования метода характеристик для уравнения адвекции
+TEST(MOC_Solver, MOC_Compare_With_QUICK)
+{
+    // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
+    simple_pipe_properties simple_pipe;
+    simple_pipe.length = 50e3;
+    simple_pipe.diameter = 0.7;
+    simple_pipe.dx = 1000;
+
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
+
+    // Одна переменная, и структуры метода характеристик для нееm
+    typedef composite_layer_t<profile_collection_t<1>,
+        moc_solver<1>::specific_layer> single_var_moc_t;
+
+    ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
+
+    buffer.advance(+1);
+    single_var_moc_t& prev = buffer.previous();
+    single_var_moc_t& next = buffer.current();
+    auto& rho_initial = prev.vars.point_double[0];
+    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
+
+    vector<double> Q(pipe.profile.getPointCount(), -0.5); // задаем по трубе расход 0.5 м3/с
+    PipeQAdvection advection_model(pipe, Q);
+
+    moc_solver<1> solver(advection_model, prev, next);
+
+    double dt = solver.prepare_step();
+    double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
+    double rho_out = 860; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
+    solver.step_optional_boundaries(dt, rho_in, rho_out);
+
+    auto& c_new = next.vars.point_double[0];
+}
+
 /// @brief Пример вывода в файл через
 TEST_F(QUICKEST_ULTIMATE, UseCaseStepDensity)
 {
