@@ -22,6 +22,7 @@
     <ClCompile Include="..\testing\test_main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\testing\test_diffusion.h" />
     <ClInclude Include="..\testing\test_moc.h" />
     <ClInclude Include="..\testing\test_quick.h" />
     <ClInclude Include="..\testing\test_static_pipe_solver.h" />
