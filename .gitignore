@@ -328,9 +328,4 @@ __pycache__/
 /testing_out/QUICKEST.UseCaseStepDensity
 /testing_out/QUICKEST_ULTIMATE.UseCaseStepDensity
 /out/build/x64-Debug
-/msvc/CL.txt
-/msvc/time.txt
-/msvc/testing_pde_solvers.vcxproj
-/msvc/testing_pde_solvers.vcxproj.filters
-/msvc/testing_pde_solvers.vcxproj
-/msvc/testing_pde_solvers.vcxproj.filters
+/msvc/*.txt
