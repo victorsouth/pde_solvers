@@ -169,3 +169,54 @@ TEST(TransportCourant, Test2_Concentration)
     fout << CL;
     fout.close();
 }
+
+/// @brief Проверка расчета концентрации на выходе трубы, сравнение со старой моделью
+TEST(TransportCourant, Test3_Concentration_Compare)
+{
+    double L = 400000; // Участок длиной 400 км
+    double v = 0.3609;  // Скорость потока
+    //size_t T = 1108320; //Время движения по участку трубы L, (Расчет от длины трубы и скорости продукта)
+    double T = L / v;
+
+    double K = 0.1;
+    // Восстановление коэффициента диффузии по данным из статьи
+    //double Pe = 1438000; // Число Пекле
+    //double L = 400000; // Участок длиной 400 км
+    //double K = 0.1;// v* L / Pe;
+
+    double Pe = v * L / K;
+
+    double dt = 60;   // Шаг временного подсчёта концентрации - такой же как в методе характеристик
+
+    double t_change = 3000;
+    //size_t n_change = static_cast<size_t>(t_change / dt + 0.5); // Момент времени скачка по параметру на входе
+
+    // Количество шагов для 1.5 периода времени прохождения партии по трубе (чтобы увидеть динамику)
+    size_t N = 120;// 1.5 * T / dt;
+    //size_t N =  1.5 * T / dt;
+
+    VectorXd CinParams(3);
+    CinParams << 0, 0.5, t_change; // Параметры скачка - с чего на что и когда
+    //VectorXd Cin = create_boundary(0, 0.5, N, n_change, n_change);
+
+
+    // Задание массива времени или конкретного времени
+    VectorXd t = VectorXd::Zero(N);
+    for (size_t i = 0; i < N; i++)
+    {
+        t(i) = (i + 1 + 18480) * dt; //Конец трубы
+    }
+
+    double delta_t = 1; // точность расчета интеграла (шаг в секундах)
+    VectorXd CL = compute_C_experiment2(t, CinParams, v, L, K, delta_t);
+
+    ////вывод в файлы
+    std::ofstream fout;
+    fout.open("time2.txt");
+    fout << t;
+    fout.close();
+
+    fout.open("CL2.txt");
+    fout << CL;
+    fout.close();
+}
