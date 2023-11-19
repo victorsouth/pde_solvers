@@ -28,9 +28,11 @@ inline std::string prepare_test_folder()
     return path;
 }
 
+#include "test_diffusion.h"
 #include "test_moc.h"
 #include "test_quick.h"
 #include "test_static_pipe_solver.h"
+
 
 
 
