@@ -12,6 +12,10 @@
 #include <fstream>
 #include <filesystem>
 
+
+#include <time.h>
+#include <algorithm>
+
 /// @brief Возвращает тестовую строку в формате TestBundle.TestName
 inline std::string get_test_string() {
     auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();

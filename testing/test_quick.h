@@ -25,9 +25,12 @@ protected:
     virtual void SetUp() override {
         // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
         simple_pipe_properties simple_pipe;
-        simple_pipe.length = 50e3;
-        simple_pipe.diameter = 0.7;
-        simple_pipe.dx = 1000;
+        //simple_pipe.length = 50e3;
+        simple_pipe.length = 700e3; // тест трубы 700км
+        //simple_pipe.diameter = 0.7;
+        simple_pipe.diameter = 0.514; // тест трубы 700км
+        //simple_pipe.dx = 1000;
+        simple_pipe.dx = 100; // тест трубы 700км
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
         Q = vector<double> (pipe.profile.getPointCount(), 0.5);
@@ -61,9 +64,12 @@ protected:
     virtual void SetUp() override {
         // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
         simple_pipe_properties simple_pipe;
-        simple_pipe.length = 50e3;
-        simple_pipe.diameter = 0.7;
-        simple_pipe.dx = 1000;
+        //simple_pipe.length = 50e3;
+        simple_pipe.length = 700e3; // тест трубы 700км
+        //simple_pipe.diameter = 0.7;
+        simple_pipe.diameter = 0.514; // тест трубы 700км
+        //simple_pipe.dx = 1000;
+        simple_pipe.dx = 100; // тест трубы 700км
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
         Q = vector<double>(pipe.profile.getPointCount(), 0.5);
@@ -97,9 +103,12 @@ protected:
     virtual void SetUp() override {
         // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
         simple_pipe_properties simple_pipe;
-        simple_pipe.length = 50e3;
-        simple_pipe.diameter = 0.7;
-        simple_pipe.dx = 1000;
+        //simple_pipe.length = 50e3;
+        simple_pipe.length = 700e3; // тест трубы 700км
+        //simple_pipe.diameter = 0.7;
+        simple_pipe.diameter = 0.514; // тест трубы 700км
+        //simple_pipe.dx = 1000;
+        simple_pipe.dx = 100; // тест трубы 700км
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
         Q = vector<double>(pipe.profile.getPointCount(), 0.5);
@@ -133,12 +142,12 @@ protected:
     virtual void SetUp() override {
         // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
         simple_pipe_properties simple_pipe;
-        simple_pipe.length = 50e3;
-        //simple_pipe.length = 700e3; // тест трубы 700км
-        simple_pipe.diameter = 0.7;
-        //simple_pipe.diameter = 0.514; // тест трубы 700км
-        simple_pipe.dx = 1000;
-        //simple_pipe.dx = 100; // тест трубы 700км
+        //simple_pipe.length = 50e3;
+        simple_pipe.length = 700e3; // тест трубы 700км
+        //simple_pipe.diameter = 0.7;
+        simple_pipe.diameter = 0.514; // тест трубы 700км
+        //simple_pipe.dx = 1000;
+        simple_pipe.dx = 100; // тест трубы 700км
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
         Q = vector<double>(pipe.profile.getPointCount(), 0.5);
@@ -359,9 +368,18 @@ TEST(MOC_Solver, MOC_Compare_With_QUICK)
 {
     // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
     simple_pipe_properties simple_pipe;
-    simple_pipe.length = 50e3;
-    simple_pipe.diameter = 0.7;
-    simple_pipe.dx = 1000;
+    //simple_pipe.length = 50e3;
+    simple_pipe.length = 700e3; // тест трубы 700км
+    //simple_pipe.diameter = 0.7;
+    simple_pipe.diameter = 0.514; // тест трубы 700км
+    //simple_pipe.dx = 1000;
+    simple_pipe.dx = 100; // тест трубы 700км
+
+    string path = prepare_test_folder();
+
+    double rho_in = 860;
+    double rho_out = 870;
+    double T = 50000; // период моделирования
 
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
@@ -369,25 +387,56 @@ TEST(MOC_Solver, MOC_Compare_With_QUICK)
     typedef composite_layer_t<profile_collection_t<1>,
         moc_solver<1>::specific_layer> single_var_moc_t;
 
-    ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
+    /// @brief Профиль расхода
+    vector<double> Q;
+    std::unique_ptr<PipeQAdvection> advection_model;
+    std::unique_ptr<ring_buffer_t<single_var_moc_t>> buffer;
 
-    buffer.advance(+1);
-    single_var_moc_t& prev = buffer.previous();
-    single_var_moc_t& next = buffer.current();
-    auto& rho_initial = prev.vars.point_double[0];
-    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
+    const auto& x = advection_model->get_grid();
+    double dx = x[1] - x[0];
+    double v = advection_model->getEquationsCoeffs(0, 0);
+    double dt_ideal = abs(dx / v);
 
-    vector<double> Q(pipe.profile.getPointCount(), -0.5); // задаем по трубе расход 0.5 м3/с
-    PipeQAdvection advection_model(pipe, Q);
+    Q = vector<double>(pipe.profile.getPointCount(), 0.5);
+    advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
 
-    moc_solver<1> solver(advection_model, prev, next);
+    for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
+        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
+        buffer = std::make_unique<ring_buffer_t<single_var_moc_t>>(2, pipe.profile.getPointCount());
+        
+        single_var_moc_t& prev = buffer->previous();
+        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
 
-    double dt = solver.prepare_step();
-    double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
-    double rho_out = 860; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
-    solver.step_optional_boundaries(dt, rho_in, rho_out);
+        double t = 0; // текущее время
+        //double dt = 60; // 1 минута
+        double dt = Cr * dt_ideal; // время в долях от Куранта
 
-    auto& c_new = next.vars.point_double[0];
+        std::stringstream filename;
+        filename << path << "output Cr=" << Cr << ".csv";
+        std::ofstream output(filename.str());
+
+
+        size_t N = static_cast<int>(T / dt);
+        for (size_t index = 0; index < N; ++index) {
+            if (index == 0) {
+                single_var_moc_t& prev = buffer->previous();
+                prev.vars.print(t, output);
+            }
+
+            t += dt;
+
+            moc_solver<1> solver(advection_model, prev, next);
+            solver.step(dt, rho_in, rho_out);
+
+            single_var_moc_t& next = buffer->current();
+            next.vars.print(t, output);
+
+            buffer->advance(+1);
+
+        }
+        output.flush();
+        output.close();
+    }
 }
 
 /// @brief Пример вывода в файл через
