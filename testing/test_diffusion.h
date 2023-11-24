@@ -173,12 +173,21 @@ TEST(TransportCourant, Test2_Concentration)
 /// @brief Проверка расчета концентрации на выходе трубы, сравнение со старой моделью
 TEST(TransportCourant, Test3_Concentration_Compare)
 {
-    double L = 400000; // Участок длиной 400 км
-    double v = 0.3609;  // Скорость потока
+    double L = 700000; // Участок длиной 700 км
+    double v = 2.4096;//0.3609;  // Скорость потока
+    double diameter = 0.514;
     //size_t T = 1108320; //Время движения по участку трубы L, (Расчет от длины трубы и скорости продукта)
     double T = L / v;
+    /// @brief кинематическая вязкость
+    double nu = 6e-7;
+    double Re = v * diameter / nu;
+    /// шероховатость
+    double delta = 15e-5;
+    double lambda = 0.11 * pow(((68 / Re) + (delta / diameter)),0.25);
 
-    double K = 0.1;
+
+
+    double K = 3.211 * sqrt(lambda) * v * diameter;//0.1;
     // Восстановление коэффициента диффузии по данным из статьи
     //double Pe = 1438000; // Число Пекле
     //double L = 400000; // Участок длиной 400 км
@@ -188,12 +197,12 @@ TEST(TransportCourant, Test3_Concentration_Compare)
 
     double dt = 60;   // Шаг временного подсчёта концентрации - такой же как в методе характеристик
 
-    double t_change = 3000;
+    double t_change = 60;
     //size_t n_change = static_cast<size_t>(t_change / dt + 0.5); // Момент времени скачка по параметру на входе
 
     // Количество шагов для 1.5 периода времени прохождения партии по трубе (чтобы увидеть динамику)
-    size_t N = 120;// 1.5 * T / dt;
-    //size_t N =  1.5 * T / dt;
+    //size_t N = 120;// 1.5 * T / dt;
+    size_t N =  1.2 * T / dt;
 
     VectorXd CinParams(3);
     CinParams << 0, 0.5, t_change; // Параметры скачка - с чего на что и когда
@@ -204,6 +213,7 @@ TEST(TransportCourant, Test3_Concentration_Compare)
     VectorXd t = VectorXd::Zero(N);
     for (size_t i = 0; i < N; i++)
     {
+        //t(i) = (i + 1 + 18480) * dt; //Конец трубы
         t(i) = (i + 1 + 18480) * dt; //Конец трубы
     }
 
