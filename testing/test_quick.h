@@ -387,7 +387,46 @@ TEST(MOC_Solver, MOC_Compare_With_QUICK)
     typedef composite_layer_t<profile_collection_t<1>,
         moc_solver<1>::specific_layer> single_var_moc_t;
 
-    /// @brief Профиль расхода
+
+    vector<double> Q(pipe.profile.getPointCount(), 0.5); // задаем по трубе расход 0.5 м3/с
+    PipeQAdvection advection_model(pipe, Q);
+    
+    const auto& x = advection_model.get_grid();
+    double dx = x[1] - x[0];
+    double v = advection_model.getEquationsCoeffs(0, 0);
+    double dt_ideal = abs(dx / v);
+    
+
+
+    for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
+        PipeQAdvection advection_model(pipe, Q);
+        ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
+        single_var_moc_t& prev = buffer.previous();
+        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
+        double t = 0; // текущее время
+        double dt = Cr * dt_ideal; // время в долях от Куранта
+        std::stringstream filename;
+        filename << path << "output Cr=" << Cr << ".csv";
+        std::ofstream output(filename.str());
+        size_t N = static_cast<int>(T / dt);
+        for (size_t index = 0; index < N; ++index) {
+            if (index == 0) {
+                single_var_moc_t& prev = buffer.previous();
+            }
+
+            t += dt;
+            moc_solver<1> solver(advection_model, prev, next);
+            solver.step_optional_boundaries(dt, rho_in, rho_out);
+
+            single_var_moc_t& next = buffer.current();
+            next.vars.print(t, output);
+
+            buffer.advance(+1);
+        }
+        output.flush();
+        output.close();
+    }
+   /* /// @brief Профиль расхода
     vector<double> Q;
     std::unique_ptr<PipeQAdvection> advection_model;
     std::unique_ptr<ring_buffer_t<single_var_moc_t>> buffer;
@@ -436,7 +475,7 @@ TEST(MOC_Solver, MOC_Compare_With_QUICK)
         }
         output.flush();
         output.close();
-    }
+    }*/
 }
 
 /// @brief Пример вывода в файл через
