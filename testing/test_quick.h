@@ -24,13 +24,7 @@ protected:
     /// @brief Подготовка к расчету для семейства тестов
     virtual void SetUp() override {
         // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
-        simple_pipe_properties simple_pipe;
-        //simple_pipe.length = 50e3;
-        simple_pipe.length = 700e3; // тест трубы 700км
-        //simple_pipe.diameter = 0.7;
-        simple_pipe.diameter = 0.514; // тест трубы 700км
-        //simple_pipe.dx = 100;
-        simple_pipe.dx = 100; // тест трубы 700км
+        simple_pipe_properties simple_pipe = simple_pipe_properties::sample_district();
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
         Q = vector<double> (pipe.profile.getPointCount(), 0.5);
