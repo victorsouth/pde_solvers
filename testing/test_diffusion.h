@@ -380,14 +380,26 @@ public:
     /// @param delta_t ѕериод дискретизации входного временного р€да, он же используетс€ в интеграле
     /// @param input ¬ременной р€д параметра на входе
     /// @param v —корость потока
+    /// @param use_offset_trick »спользовать обход проблемы с нулевыми начальными услови€ми 
+    /// (это корректно, т.к. модель линейна)
     /// @return ¬ыходной временной р€д параметра дл€ моментов времени t_output
     vector<double> solve(
         const vector<double>& t_output,
-        double delta_t, const vector<double>& input,
-        double v)
+        double delta_t, vector<double> input,
+        double v, bool use_offset_trick)
     {
         double pipe_length = pipe.profile.getLength();
         double K = calc_diffusion_coefficient(pipe, oil, v);
+
+        double offset = 0;
+        if (use_offset_trick) {
+            offset = input[0];
+            // переводим input в приращени€ относительно начального смещени€
+            for (double& in : input) {
+                in -= offset;
+            }
+        }
+
 
         vector<double> output(t_output.size());
 
@@ -400,6 +412,13 @@ public:
             output[i] = value_at_ti;
         }
 
+        if (use_offset_trick) {
+            // учитываем, что 0 по выходу соответствует величине offset
+            for (double& out : output) {
+                out += offset;
+            }
+        }
+
         return output;
     }
 
@@ -408,15 +427,14 @@ public:
 /// @brief ѕроверка расчета концентрации на выходе трубы, сравнение со старой моделью
 TEST(DiffusionSolver, UseCase)
 {
-    auto simple_pipe = simple_pipe_properties::sample_section();
+    auto simple_pipe = simple_pipe_properties::sample_district();
     auto pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
     pipe.wall.equivalent_roughness = 15e-5;
     oil_parameters_t oil;
     oil.viscosity.nominal_viscosity = 6e-7;
 
-    //double v = 2.4096;
-    double v = 0.3609;  //проверка алгоритма 
-    size_t T = 1108340; //проверка алгоритма
+    double v = 2.4096; 
+    size_t T = 290505; //проверка алгоритма
 
     // «адание массива моментов времени дл€ расчета выходного параметра
     double dt = 60;   // Ўаг временного подсчЄта концентрации - такой же как в методе характеристик
@@ -426,7 +444,7 @@ TEST(DiffusionSolver, UseCase)
     for (size_t i = 0; i < N; i++)
     {
         //t(i) = (i + 1 + 18480) * dt; // онец трубы
-        t[i] = (i + 1 + 18420) * dt; // онец трубы
+        t[i] = (i + 1 + 4800) * dt; // онец трубы
     }
 
     // точность расчета интеграла (шаг в секундах)
@@ -436,10 +454,10 @@ TEST(DiffusionSolver, UseCase)
     double t_change = 60;
     size_t n_change = static_cast<size_t>(t_change / delta_t + 0.5) + 1;
     size_t input_size = static_cast<size_t>(t.back() / delta_t + 0.5);
-    vector<double> input = create_boundary2(0, 0.5, input_size, n_change, n_change);
+    vector<double> input = create_boundary2(850, 860, input_size, n_change, n_change);
 
     diffusion_transport_solver solver(pipe, oil);
-    vector<double> output = solver.solve(t, delta_t, input, v);
+    vector<double> output = solver.solve(t, delta_t, input, v, true);
 
     ////вывод в файлы
     std::ofstream fout;
