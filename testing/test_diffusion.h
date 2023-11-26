@@ -77,34 +77,27 @@ VectorXd compute_C_experiment(VectorXd t, const VectorXd& x, double Pe, size_t T
 /// @brief Старый тест расчета концентрации на выходе трубы (из prac4)
 TEST(TransportCourant, Test2_Concentration)
 {
-    double L = 700000; // Участок длиной 700 км
-    double v = 2.4096;//0.3609;  // Скорость потока
-    double diameter = 0.514;
-    double T = L / v;
-    /// @brief кинематическая вязкость
-    double nu = 6e-7;
-    double Re = v * diameter / nu;
-    /// шероховатость
-    double delta = 15e-5;
-    double lambda = 0.11 * pow(((68 / Re) + (delta / diameter)), 0.25);
-    double K = 3.211 * sqrt(lambda) * v * diameter;//0.1;
-    double Pe = v * L / K;
+    size_t dt = 60;   // Шаг временного подсчёта концентрации (сек)
+    size_t L = 400000; // Участок длиной 400 км
+    size_t T = 1108320; //Время движения по участку трубы L, (Расчет от длины трубы и скорости продукта)
+    // double v = 0.3609;  // Скорость потока
 
-    double dt = 60;   // Шаг временного подсчёта концентрации (сек)
-
+    // size_t len = (T + (3600*2)) / dt;  // Глубина расчёта (рассматриваемый горизонт времени)
+    size_t len = (3600 * 2) / dt;  // Глубина расчёта (рассматриваемый горизонт времени)
+    double Pe = 1438000; // Число Пекле
     // size_t len = (T + (3600*2)) / dt;  // Глубина расчёта (рассматриваемый горизонт времени)
     //size_t len = (3600 * 2) / dt;  // Глубина расчёта (рассматриваемый горизонт времени)
     double N = 1.2 * T / dt;
     // Задание массива времени или конкретного времени
-    VectorXd t = VectorXd::Zero(N);
-    for (size_t i = 0; i < N; i++)
+    VectorXd t = VectorXd::Zero(len);
+    for (size_t i = 0; i < len; i++)
     {
         t(i) = (i + 1 + 18480) * dt; //Конец трубы
     }
 
     // Задание профиля или конкретная координаты
-    VectorXd x = VectorXd::Zero(N);
-    for (size_t i = 0; i < N; i++)
+    VectorXd x = VectorXd::Zero(len);
+    for (size_t i = 0; i < len; i++)
     {
         // x задано постоянным при расчете можно наоборот задать постоянным t в зависимости от динамики или профиля
         x(i) = L; // Конец трубы
@@ -113,7 +106,7 @@ TEST(TransportCourant, Test2_Concentration)
     // Расчет концентрации
     //double Pe = 1438000; // Число Пекле
     double del = 1; // Точность численного метода интегрирования (сек)
-    VectorXd CL = compute_C_experiment(t, x, Pe, T, L, del, N);
+    VectorXd CL = compute_C_experiment(t, x, Pe, T, L, del, len);
 
     //вывод в файлы
     std::ofstream fout;
@@ -421,17 +414,19 @@ TEST(DiffusionSolver, UseCase)
     oil_parameters_t oil;
     oil.viscosity.nominal_viscosity = 6e-7;
 
-    double v = 2.4096;
-
+    //double v = 2.4096;
+    double v = 0.3609;  //проверка алгоритма 
+    size_t T = 1108340; //проверка алгоритма
 
     // Задание массива моментов времени для расчета выходного параметра
     double dt = 60;   // Шаг временного подсчёта концентрации - такой же как в методе характеристик
-    size_t N = 0; // 1.2 * T / dt;
+    size_t N = 1.2 * T / dt; //проверка алгоритма 
+    N = (3600 * 2) / dt; //проверка алгоритма 
     vector<double> t(N);
     for (size_t i = 0; i < N; i++)
     {
         //t(i) = (i + 1 + 18480) * dt; //Конец трубы
-        t[i] = (i + 1 + 18480) * dt; //Конец трубы
+        t[i] = (i + 1 + 18420) * dt; //Конец трубы
     }
 
     // точность расчета интеграла (шаг в секундах)

@@ -25,7 +25,7 @@ struct simple_pipe_properties {
     static simple_pipe_properties sample_section()
     {
         simple_pipe_properties simple_pipe;
-        simple_pipe.length = 50e3;
+        simple_pipe.length = 400e3;
         simple_pipe.diameter = 0.7;
         simple_pipe.dx = 100;
         return simple_pipe;
