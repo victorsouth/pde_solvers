@@ -329,3 +329,5 @@ __pycache__/
 /testing_out/QUICKEST_ULTIMATE.UseCaseStepDensity
 /out/build/x64-Debug
 /msvc/*.txt
+/research/graphs.asv
+/testing_out/MOC_Solver.MOC_Compare_With_QUICK/output Cr=0.5.csv
