@@ -198,7 +198,7 @@ TEST_F(UpstreamDifferencing, UseCaseStepDensity)
 
     double rho_in = 860;
     double rho_out = 870;
-    double T = 50000; // период моделирования
+    double T = 350000; // период моделирования
 
     const auto& x = advection_model->get_grid();
     double dx = x[1] - x[0];
@@ -252,7 +252,7 @@ TEST_F(QUICK, UseCaseStepDensity)
 
     double rho_in = 860;
     double rho_out = 870;
-    double T = 50000; // период моделирования
+    double T = 350000; // период моделирования
 
     const auto& x = advection_model->get_grid();
     double dx = x[1] - x[0];
@@ -308,7 +308,7 @@ TEST_F(QUICKEST, UseCaseStepDensity)
 
     double rho_in = 860;
     double rho_out = 870;
-    double T = 50000; // период моделирования
+    double T = 350000; // период моделирования
 
     const auto& x = advection_model->get_grid();
     double dx = x[1] - x[0];
@@ -374,7 +374,7 @@ TEST(MOC_Solver, MOC_Compare_With_QUICK)
 
     double rho_in = 860;
     double rho_out = 870;
-    double T = 50000; // период моделирования
+    double T = 350000; // период моделирования
 
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
@@ -434,7 +434,7 @@ TEST_F(QUICKEST_ULTIMATE, UseCaseStepDensity)
 
     double rho_in = 860;
     double rho_out = 870;
-    double T = 50000; // период моделирования
+    double T = 350000; // период моделирования
     //double T = 800000; // период моделирования (тест трубы 700км)
 
     const auto& x = advection_model->get_grid();
