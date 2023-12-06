@@ -443,7 +443,7 @@ TEST_F(QUICKEST_ULTIMATE, UseCaseStepDensity)
     double dt_ideal = abs(dx / v);
 
 
-    for (double Cr = 0.5; Cr < 0.51; Cr += 0.05) {
+    for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
         buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
 
