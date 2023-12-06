@@ -331,3 +331,6 @@ __pycache__/
 /msvc/*.txt
 /research/graphs.asv
 /testing_out/MOC_Solver.MOC_Compare_With_QUICK/output Cr=0.5.csv
+/research/part1.asv
+/research/part2.asv
+/research/part3.asv
