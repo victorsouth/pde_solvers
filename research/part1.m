@@ -17,6 +17,7 @@ data_2 = readtable(fullpath_2);
 
 % Извлечение значений моментов времени
 t = table2array(data_1(:, 1));
+t = t/3600;
 % Находим номер строки в момент врмени начиная от 39350
 y = table2array(data_1(:, end));
 
@@ -27,6 +28,7 @@ hold on;
 
 % Извлечение значений моментов времени
 t = table2array(data_2(:, 1));
+t = t/3600;
 % Находим номер строки в момент врмени начиная от 39350
 y = table2array(data_2(:, end));
 
@@ -40,21 +42,38 @@ fname_2 = 'CL2.txt';
 relativePath_3 = fullfile('msvc');
 fullpath_3_1 = fullfile(upperPath, relativePath_3, fname_1);
 fullpath_3_2 = fullfile(upperPath, relativePath_3, fname_2);
-t = load(fullpath_3_1);
-y = load(fullpath_3_2);
+t_middle = load(fullpath_3_1);
+rho_middle = load(fullpath_3_2);
+t_start(1) = 282060; %до 288060.000000
+rho_start(1) = 850;
+i = 1;
+while t_start(i) < 288060.00 - 60
+    i=i+1;
+    t_start(i)=t_start(i-1)+60;
+    rho_start(i) = 850;
+end
+t_end(1) = 295200.000000 + 60;
+rho_end(1) = 860;
+for i = 1:99
+    t_end(i+1) = t_end(i) + 60;
+    rho_end(i+1) = 860;
+end
+% Извлечение значений моментов времени
 
+t = [t_start t_middle t_end];
+t = t/3600;
+% Находим номер строки в момент врмени начиная от 39350
+
+y = [rho_start rho_middle rho_end];
 
 
 plot(t, y, LineWidth = 2, LineStyle = "--", Color='r');
 hold on;
 
 data_3 = readtable(fullpath_3);
-
-% Извлечение значений моментов времени
 t = table2array(data_3(:, 1));
-% Находим номер строки в момент врмени начиная от 39350
+t = t/3600;
 y = table2array(data_3(:, end));
-
 % Построение графика
 
 plot(t, y, LineWidth = 1, LineStyle = "-", Color='0 0 0');
@@ -68,10 +87,10 @@ legend('UpstreamDifferencing', 'Метод характеристик', 'Физ�
 
 grid on
 
-xlim([284000 298000])
+xlim([284000/3600 298000/3600])
 
 ylim([848 864])
 
-xlabel('t')
+xlabel('t, ч', 'FontSize', 18)
 
-ylabel('rho')
+ylabel('\rho, кг/см3', 'FontSize', 18)
