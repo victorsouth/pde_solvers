@@ -143,28 +143,6 @@ inline VectorXd create_boundary(double initial_value, double final_value,
 }
 
 
-inline vector<double> create_boundary2(double initial_value, double final_value,
-    size_t length, size_t start_change, size_t end_change)
-{
-    vector<double> result(length);
-    for (size_t index = 0; index < start_change; ++index) {
-        result[index] = initial_value;
-    }
-
-    end_change = std::max(start_change, end_change);
-
-    for (size_t index = start_change; index < end_change; ++index) {
-        result[index] = initial_value + (final_value - initial_value) * (index - start_change) / (end_change - start_change);
-    }
-
-    for (size_t index = end_change; index < length; ++index) {
-        result[index] = final_value;
-    }
-    return result;
-
-}
-
-
 /// @brief Расчет движения партии для заданных моментов времени и заданных координат
 VectorXd compute_C_experiment2(
     const VectorXd& t, const VectorXd& C0_params,
@@ -360,6 +338,30 @@ private:
 
 
 public:
+    
+    static vector<double> create_boundary(double initial_value, double final_value,
+        size_t length, size_t start_change, size_t end_change)
+    {
+        vector<double> result(length);
+        for (size_t index = 0; index < start_change; ++index) {
+            result[index] = initial_value;
+        }
+
+        end_change = std::max(start_change, end_change);
+
+        for (size_t index = start_change; index < end_change; ++index) {
+            result[index] = initial_value + (final_value - initial_value) * (index - start_change) / (end_change - start_change);
+        }
+
+        for (size_t index = end_change; index < length; ++index) {
+            result[index] = final_value;
+        }
+        return result;
+
+    }
+
+
+
     static double calc_diffusion_coefficient(
         const pipe_properties_t& pipe, const oil_parameters_t& oil, double v
     )
@@ -454,7 +456,8 @@ TEST(DiffusionSolver, UseCase)
     double t_change = 60;
     size_t n_change = static_cast<size_t>(t_change / delta_t + 0.5) + 1;
     size_t input_size = static_cast<size_t>(t.back() / delta_t + 0.5);
-    vector<double> input = create_boundary2(850, 860, input_size, n_change, n_change);
+    vector<double> input = 
+        diffusion_transport_solver::create_boundary(850, 860, input_size, n_change, n_change);
 
     diffusion_transport_solver solver(pipe, oil);
     vector<double> output = solver.solve(t, delta_t, input, v, true);

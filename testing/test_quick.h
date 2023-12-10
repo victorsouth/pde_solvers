@@ -391,7 +391,7 @@ TEST(MOC_Solver, MOC_Compare_With_QUICK)
     double v = advection_model.getEquationsCoeffs(0, 0);
     double dt_ideal = abs(dx / v);
 
-    for (double Cr = 0.5; Cr < 0.51; Cr += 0.05) {
+    for (double Cr = 0.05; Cr < 0.51; Cr += 0.05) {
         PipeQAdvection advection_model(pipe, Q);
         ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
         buffer.advance(+1);
