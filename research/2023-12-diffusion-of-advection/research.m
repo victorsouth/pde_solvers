@@ -68,4 +68,19 @@ xlabel('t, ч', 'FontSize',18)
 
 ylabel('\rho, кг/м^3', 'FontSize',18)
 
-saveas(gcf,'Part 3.png')
+hold off
+
+% Настройка размера графика
+fig = gcf;
+fig.Position = [0, 0, 1920, 1080]; % [x, y, width, height]
+
+% Изменение цвета фона
+fig.Color = [1, 1, 1]; % Белый фон
+
+% Добавление легенды и увеличение ее масштаба
+legend('show');
+lgd = legend;
+lgd.FontSize = 14; % Размер шрифта
+fullpath = fullfile(upperPath, relativePath, 'Part 3.png');
+
+saveas(gcf, fullpath)
