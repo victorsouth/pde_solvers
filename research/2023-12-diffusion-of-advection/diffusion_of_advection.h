@@ -14,33 +14,35 @@ protected: // здесь пока копим параметры эксперим
     const double density_final{ 860 };
     const double volumetric_flow{ 0.5 };
     const double experiment_time = 350000; 
-
+    // Момент времени когда область смеси наполовину своей длины пройдёт через конец трубопровода
+    double physical_diffusion_center_time; 
 protected:
     /// @brief Параметры трубы
     pipe_properties_t pipe;
-
+    /// @brief Параметры нефти
     oil_parameters_t oil;
 
     /// @brief Профиль расхода
     vector<double> Q;
+    /// @brief Уравнение адвекции
     std::unique_ptr<PipeQAdvection> advection_model;
+    /// @brief Буфер, содержащий в себе слои
     std::unique_ptr<ring_buffer_t<layer_t>> buffer;
 protected:
 
     /// @brief Подготовка к расчету для семейства тестов
     virtual void SetUp() override {
+        // Инициализация модели трубы
         simple_pipe_properties simple_pipe = simple_pipe_properties::sample_district();
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
         
         pipe.wall.equivalent_roughness = 15e-5; // нужно только для моделирования физической диффузии!
-        oil.viscosity.nominal_viscosity = 6e-7; // аналогично
+        oil.viscosity.nominal_viscosity = 6e-7; // и для расчёта границ физической диффузии
 
+        // Инициализация профиля расхода
         Q = vector<double>(pipe.profile.getPointCount(), volumetric_flow);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
         buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
-
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), density_initial);
     }
     
     /// @brief Расчет вытеснения первой партии нефтью с другой плотностью 
@@ -56,17 +58,15 @@ protected:
         double Cr, double T, const string& path)
     {
         // Фиктивное граничное условие на выходе. Реально в эксперименте не задействуется
-        double rho_out = 870; 
+        double rho_out = 870;
+
+        // Задаём исходные значения
+        layer_t& prev = buffer->previous();
+        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), density_initial);
 
         const auto& x = advection_model->get_grid();
         double dx = x[1] - x[0];
-        double dt_ideal = abs(dx / v);
-
-        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
-
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), rho_initial);
+        double dt_ideal = abs(dx / v); // Расчёт идеального шага по времени
 
         double t = 0; // текущее время
 
@@ -74,24 +74,25 @@ protected:
 
         std::stringstream filename;
         filename << path << "output Cr=" << Cr << ".csv";
-        std::ofstream output(filename.str());
-
+        std::ofstream output(filename.str()); // Открытие файла для записи
+        output << "time;Density" << std::endl;
 
         size_t N = static_cast<int>(T / dt);
         for (size_t index = 0; index < N; ++index) {
             if (index == 0) {
                 layer_t& prev = buffer->previous();
-                prev.vars.print(t, output);
+                // Вывод значения плотности в конце трубы в начале моделирования
+                output << t << ';' << prev.vars.cell_double[0].back() << std::endl; 
             }
 
-            t += dt;
+            t += dt; 
 
             quickest_ultimate_fv_solver solver(*advection_model, *buffer);
-            solver.step(dt, rho_final, rho_out);
+            solver.step(dt, rho_final, rho_out); // Шаг расчёта
 
             layer_t& next = buffer->current();
-            next.vars.print(t, output);
-
+            // Вывод значения плотности в конце трубы на каждом шаге моделирования
+            output << t << ';' << next.vars.cell_double[0].back() << std::endl;
 
             buffer->advance(+1);
 
@@ -100,6 +101,62 @@ protected:
         output.close();
     }
 
+    /// @brief Осуществляет поиск момента времени
+    /// когда область смеси наполовину своей длины пройдёт через конец трубопровода
+    /// @param time Временной ряд, по которому была рассчитана модель физической диффузии
+    /// @param parameter Рассчитанная модель физической диффузии на выходе трубопровода
+    void calc_physical_diffusion_center(const vector<double>& time, const vector<double>& parameter)
+    {
+        double eps = 0.0001; // Точность для определения начала и конца области диффузии
+        double start_diff; // момент времени начала прохождения области смеси через конец трубопровода
+        double end_diff; // момент времени конца прохождения области смеси через конец трубопровода
+        
+        for (size_t index = 0; index < parameter.size(); ++index)
+        {
+            if ((abs(parameter[index] - density_initial) < eps) && (abs(parameter[index + 1] - density_initial) >= eps))
+            {
+                start_diff = time[index];
+                break;
+            }
+        }
+
+        for (size_t index = parameter.size() - 1; index > 0; --index)
+        {
+            if ((abs(parameter[index] - density_final) < eps) && (abs(parameter[index - 1] - density_final) >= eps))
+            {
+                end_diff = time[index];
+                break;
+            }
+        }
+        
+        physical_diffusion_center_time = (start_diff + end_diff) / 2;
+    }
+
+    /// @brief Получения временного диапазона, в котором область смеси 
+    /// проходит через конец трубопровода
+    /// @param dt_out Шаг по времени
+    /// @return возвращает временной ряд интересующего нас периода
+    vector<double> build_density_out_time_of_interest(double dt_out)
+    {
+        // чтобы не считать лишнего, делаем расчет для самых интересных двух часов
+        size_t N = static_cast<size_t>((3600 * 2) / dt_out);
+        vector<double> t(N);
+        for (size_t i = 0; i < N; i++)
+        {
+            t[i] = (i + 1 + 4800) * dt_out; //Конец трубы
+        }
+        return t;
+    }
+
+    /// @brief Расчёт модели физической диффузии
+    /// В результате получаем изменение плотности на выходе трубопровода за два часа,
+    /// за которые область смешения проходит через конец трубы
+    /// Результат записывается в файл output "output physical.csv"
+    /// @param rho_initial Плотность исходной нефти (вытесняемой)
+    /// @param rho_final Плотность вытесняющей нефти
+    /// @param t Выбранный отрезок времени - два часа
+    /// @param v Скорость движения нефти в трубопроводе
+    /// @param path Путь, куда пишется результат расчета
     void calc_physical_diffusion_model(
         double rho_initial, double rho_final,
         const vector<double>& t, double v, const string& path)
@@ -121,24 +178,57 @@ protected:
         std::stringstream filename;
         filename << path << "output physical.csv";
         std::ofstream output(filename.str());
-
-        for (size_t index = 0; index < density_output.size(); ++index) {
+        
+        for (size_t index = 0; index < density_output.size(); ++index) {          
             output << t[index] << ";" << density_output[index] << std::endl;
         }
         output.close();
         output.flush();
+
+        calc_physical_diffusion_center(t, density_output); // Поиск временного центра области смешения
     }
 
-    vector<double> build_density_out_time_of_interest(double dt_out)
+    /// @brief Расчёт длины области смеси
+    /// @param speed Скорость движения среды в трубопроводе
+    /// @return Возвращает длину области смеси в метрах
+    double calc_physical_diffusion_length(const double speed)
     {
-        // чтобы не считать лишнего, делаем расчет для самых интересных двух часов
-        size_t N = (3600 * 2) / dt_out; 
-        vector<double> t(N);
-        for (size_t i = 0; i < N; i++)
-        {
-            t[i] = (i + 1 + 4800) * dt_out; //Конец трубы
-        }
-        return t;
+        // Расчёт относительной шероховатости
+        double eps = pipe.wall.relativeRoughness();
+        // Расчёт числа Рейнольдса
+        double Re = speed * pipe.wall.diameter / oil.viscosity.nominal_viscosity;
+        // Расчёт гидравлического сопротивления
+        double lambda = pipe.resistance_function(Re, eps);
+
+        double L = pipe.profile.getLength();
+        double S = M_PI * pow(pipe.wall.diameter, 2) / 4; 
+
+        double kc_v = 3.211 * sqrt(lambda) * pipe.wall.diameter;
+        double vc = 6.58 * S * sqrt(kc_v) * sqrt(L);
+        return vc / S;
+    }
+
+    /// @brief Расчёт временных границ области смеси
+    /// Моменты, когда область смешения начинает и заканчивает проходить через конец трубопровода
+    /// записываются в файл "physical_diffusion.txt"
+    /// @param speed Скорость движения среды в трубопроводе
+    /// @param path Путь, куда сохраняются результы
+    void calc_physical_diffusion_boundaries(const double& speed, const string& path)
+    {
+        double boundaries[2];
+        double diff_length = calc_physical_diffusion_length(speed); // расчёт длины области смеси
+
+        boundaries[0] = physical_diffusion_center_time - diff_length / (speed * 2);
+        boundaries[1] = physical_diffusion_center_time + diff_length / (speed * 2);
+
+        std::stringstream filename;
+        filename << path << "physical_diffusion.txt";
+        std::ofstream output(filename.str());
+
+        output << boundaries[0] << "," << boundaries[1] << std::endl;
+        
+        output.close();
+        output.flush();
     }
 };
 
@@ -147,14 +237,18 @@ protected:
 /// не хуже физической
 /// Строятся графики QUICKEST-ULTIMATE для разных Cr
 /// Для сравнения строится также график с физической диффузией
-/// !! Возможно, здесь же построить границы для физической диффузии 
+/// Производится расчёт границ для физической диффузии 
 /// по модели смесеобразования
 TEST_F(DiffusionOfAdvection, CompareQuickestDiffusion)
 {
+    // Создаём папку с результатами и получаем путь к ней
     string path = prepare_research_folder();
 
+    // Получаем значение скорости для эксперимента
     double v = advection_model->getEquationsCoeffs(0, 0);
 
+    // Производим моделирование движения партий методом QUICKEST-ULTIMATE
+    // для разных чисел Cr
     for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
         calc_quickest_with_cr(density_initial, density_final, v,
             Cr, experiment_time, path);
@@ -163,7 +257,9 @@ TEST_F(DiffusionOfAdvection, CompareQuickestDiffusion)
     // Задание массива моментов времени для расчета выходного параметра
     double dt_out = 60;
     vector<double> t_out = build_density_out_time_of_interest(dt_out);
+    // Расчёт физической диффузии
     calc_physical_diffusion_model(density_initial, density_final, t_out, v, path);
 
-
+    // Расчёт временных границ области смеси
+    calc_physical_diffusion_boundaries(v, path);
 }
