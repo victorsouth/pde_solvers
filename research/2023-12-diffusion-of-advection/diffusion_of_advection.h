@@ -193,18 +193,10 @@ protected:
     /// @return Возвращает длину области смеси в метрах
     double calc_physical_diffusion_length(const double speed)
     {
-        // Расчёт относительной шероховатости
-        double eps = pipe.wall.relativeRoughness();
-        // Расчёт числа Рейнольдса
-        double Re = speed * pipe.wall.diameter / oil.viscosity.nominal_viscosity;
-        // Расчёт гидравлического сопротивления
-        double lambda = pipe.resistance_function(Re, eps);
-
         double L = pipe.profile.getLength();
         double S = M_PI * pow(pipe.wall.diameter, 2) / 4; 
-
-        double kc_v = 3.211 * sqrt(lambda) * pipe.wall.diameter;
-        double vc = 6.58 * S * sqrt(kc_v) * sqrt(L);
+        double kc_v = diffusion_transport_solver::calc_diffusion_coefficient(pipe, oil, speed) / speed;
+        double vc = 6.58 * S * sqrt(kc_v) * sqrt(L); // Расчёт объёма смеси из учебника Лурье 2012, с. 409
         return vc / S;
     }
 
