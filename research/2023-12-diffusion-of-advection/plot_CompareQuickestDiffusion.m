@@ -18,42 +18,37 @@ function main()
 end
 
 function [fname, graphname, fullpath] = generateFileNames(upperPath, relativePath, n)
-    fname = cell(1, 19);
-    graphname = cell(1, 21);
-    fullpath = cell(1, 19);
 
-    for i = 1:19
+    %количество файлов - 2 файла, output physical и output Cr=1
+    numfiles = length(dir(fullfile(upperPath, relativePath, '*.csv'))) - 2; 
+    fname = cell(1, numfiles);
+    graphname = cell(1, numfiles + 2);
+    fullpath = cell(1, numfiles);
+
+    for i = 1:numfiles
         n_str = num2str(n);
         fname{i} = strcat('output Cr=', n_str, '.csv');
         graphname{i} = strcat('Cr = ', n_str);
         n = n + 0.05;
     end
 
-    for i = 1:19
+    for i = 1:numfiles
         fullpath{i} = fullfile(upperPath, relativePath, fname{i});
     end
 
-    fname{20} = 'output physical.csv';
-    fullpath{20} = fullfile(upperPath, relativePath, fname{20});
-    graphname{20} = 'Физ. диффузия';
-
-    fname{21} = 'physical_diffusion.txt';
-    fullpath{21} = fullfile(upperPath, relativePath, fname{21});
-    graphname{21} = 'Границы физ. диффузии';
+    fname{numfiles+1} = 'output physical.csv';
+    fullpath{numfiles+1} = fullfile(upperPath, relativePath, fname{numfiles+1});
+    graphname{numfiles+1} = 'Физ. диффузия';
+    graphname{numfiles+2} = 'Границы физ. диффузии';
 end
 
 function plotGraphs(fullpath)
     figure;
-
-    for i = 1:19
+    numfiles = length(fullfile(fullpath)); 
+    for i = 1:numfiles
         data = readtable(fullpath{i});
         plotData(data);
     end
-
-    fname = 'output physical.csv';
-    data = readtable(fullpath{20});
-    plotData(data);
-
 
     grid on;
     xlim([80.5 81]);
