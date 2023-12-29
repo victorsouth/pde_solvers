@@ -59,7 +59,7 @@ TEST(MOC_Solver, UseCase_Advection)
     simple_pipe_properties simple_pipe;
     simple_pipe.length = 50e3;
     simple_pipe.diameter = 0.7;
-    simple_pipe.dx = 1000;
+    simple_pipe.dx = 100;
 
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
@@ -75,7 +75,7 @@ TEST(MOC_Solver, UseCase_Advection)
     auto& rho_initial = prev.vars.point_double[0];
     rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
 
-    vector<double> Q(pipe.profile.getPointCount(), -0.5); // задаем по трубе расход 0.5 м3/с
+    vector<double> Q(pipe.profile.getPointCount(), 0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);
 
     moc_solver<1> solver(advection_model, prev, next);

@@ -11,6 +11,25 @@ struct simple_pipe_properties {
     size_t get_segment_count() const {
         return static_cast<size_t>(0.5 + length / dx);
     }
+    /// @brief Имитация ТУ для расчетов движения партий
+    /// длина 700км, диаметр 514мм, горизонтальная, сетка 100 м
+    static simple_pipe_properties sample_district() {
+        simple_pipe_properties simple_pipe;
+        simple_pipe.length = 700e3; 
+        simple_pipe.diameter = 0.514;
+        simple_pipe.dx = 100; 
+        return simple_pipe;
+    }
+    /// @brief Имитация участка трубы для синтетических проверок расчетов движения партий
+    /// 50км, диаметр 700мм, сетка 100м.
+    static simple_pipe_properties sample_section()
+    {
+        simple_pipe_properties simple_pipe;
+        simple_pipe.length = 400e3;
+        simple_pipe.diameter = 0.7;
+        simple_pipe.dx = 100;
+        return simple_pipe;
+    }
 };
 
 /// @brief Сущность профиля трубы

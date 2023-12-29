@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\DiffusionOfAdvection">
+      <UniqueIdentifier>{696b10b9-e02f-48c9-9fe2-4ff58dae5ee8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\testing\test_main.cpp">
@@ -28,6 +31,12 @@
     </ClInclude>
     <ClInclude Include="..\testing\test_quick.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\testing\test_diffusion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\research\2023-12-diffusion-of-advection\diffusion_of_advection.h">
+      <Filter>Header Files\DiffusionOfAdvection</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
