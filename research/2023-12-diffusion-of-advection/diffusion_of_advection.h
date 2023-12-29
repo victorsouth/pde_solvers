@@ -46,7 +46,7 @@ protected:
     }
     
     /// @brief Расчет вытеснения первой партии нефтью с другой плотностью 
-    /// Расчет выполняетс яметодом Quickest Ultimate для заданного числа Куранта
+    /// Расчет выполняется методом Quickest Ultimate для заданного числа Куранта
     /// Результат расчетных профилей записывается в файл вида "output Cr.csv"
     /// @param rho_initial Плотность исходной нефти (вытесняемой)
     /// @param rho_final Плотность вытесняющей нефти
@@ -132,7 +132,7 @@ protected:
         physical_diffusion_center_time = (start_diff + end_diff) / 2;
     }
 
-    /// @brief Получения временного диапазона, в котором область смеси 
+    /// @brief Получения временного диапазона, в котором область смеси двух партий нефти
     /// проходит через конец трубопровода
     /// @param dt_out Шаг по времени
     /// @return возвращает временной ряд интересующего нас периода
@@ -188,7 +188,7 @@ protected:
         calc_physical_diffusion_center(t, density_output); // Поиск временного центра области смешения
     }
 
-    /// @brief Расчёт длины области смеси
+    /// @brief Расчёт длины области смеси двух партий нефти
     /// @param speed Скорость движения среды в трубопроводе
     /// @return Возвращает длину области смеси в метрах
     double calc_physical_diffusion_length(const double speed)
@@ -196,11 +196,11 @@ protected:
         double L = pipe.profile.getLength();
         double S = M_PI * pow(pipe.wall.diameter, 2) / 4; 
         double kc_v = diffusion_transport_solver::calc_diffusion_coefficient(pipe, oil, speed) / speed;
-        double vc = 6.58 * S * sqrt(kc_v) * sqrt(L); // Расчёт объёма смеси из учебника Лурье 2012, с. 409
+        double vc = 6.58 * S * sqrt(kc_v) * sqrt(L); // Расчёт объёма смеси, формула из учебника Лурье 2012, с. 409
         return vc / S;
     }
 
-    /// @brief Расчёт временных границ области смеси
+    /// @brief Расчёт временных границ области смеси двух партий нефти
     /// Моменты, когда область смешения начинает и заканчивает проходить через конец трубопровода
     /// записываются в файл "physical_diffusion.txt"
     /// @param speed Скорость движения среды в трубопроводе
