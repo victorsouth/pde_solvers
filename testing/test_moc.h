@@ -64,21 +64,22 @@ TEST(MOC_Solver, UseCase_Advection)
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
     // Одна переменная, и структуры метода характеристик для нееm
-    typedef composite_layer_t<profile_collection_t<1>,
-        moc_solver<1>::specific_layer> single_var_moc_t;
+    typedef composite_layer_t<profile_collection_t<1>, moc_solver<1>::specific_layer> single_var_moc_t;
 
     ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
+
+    auto& rho_initial = buffer.previous().vars.point_double[0];
+    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
 
     buffer.advance(+1);
     single_var_moc_t& prev = buffer.previous();
     single_var_moc_t& next = buffer.current();
-    auto& rho_initial = prev.vars.point_double[0];
-    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
 
     vector<double> Q(pipe.profile.getPointCount(), -0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);
 
-    moc_solver<1> solver(advection_model, prev, next);
+    moc_solver<1> solver(advection_model, 
+        prev.vars.point_double[0], next.vars.point_double[0], prev.specific);
 
     double dt = solver.prepare_step();
     double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
@@ -86,6 +87,83 @@ TEST(MOC_Solver, UseCase_Advection)
     solver.step_optional_boundaries(dt, rho_in, rho_out);
 
     auto& c_new = next.vars.point_double[0];
+}
+
+/// @brief Проблемно-ориентированный слой
+/// Задача про плотность и вязкость
+struct density_viscosity_layer
+{
+    vector<double> density;
+    vector<double> viscosity;
+    moc_solver<1>::specific_layer moc_specific;
+
+    density_viscosity_layer(size_t point_count)
+        : density(point_count)
+        , viscosity(point_count)
+        , moc_specific(point_count)
+    {
+
+    }
+    static moc_layer_wrapper<1> get_density_moc_wrapper(density_viscosity_layer& layer)
+    {
+        return moc_layer_wrapper<1>(layer.density, layer.moc_specific);
+    }
+    static moc_layer_wrapper<1> get_viscosity_moc_wrapper(density_viscosity_layer& layer)
+    {
+        return moc_layer_wrapper<1>(layer.viscosity, layer.moc_specific);
+    }
+};
+
+
+
+/// @brief Базовый пример использования метода характеристик для уравнения адвекции
+TEST(MOC_Solver, UseCase_Advection2)
+{
+    // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
+    simple_pipe_properties simple_pipe;
+    simple_pipe.length = 50e3;
+    simple_pipe.diameter = 0.7;
+    simple_pipe.dx = 1000;
+
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
+
+    ring_buffer_t<density_viscosity_layer> buffer(2, pipe.profile.getPointCount());
+
+    auto& rho_initial = buffer[0].density;
+    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
+
+    auto& viscosity_initial = buffer[0].viscosity;
+    viscosity_initial = vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
+
+
+    vector<double> Q(pipe.profile.getPointCount(), -0.5); // задаем по трубе расход 0.5 м3/с
+    PipeQAdvection advection_model(pipe, Q);
+
+
+    {
+        auto density_buffer = buffer.get_custom_buffer(&density_viscosity_layer::get_density_moc_wrapper);
+        moc_solver<1> solver(advection_model, density_buffer);
+
+        double dt = solver.prepare_step();
+        double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
+        double rho_out = 860; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
+        solver.step_optional_boundaries(dt, rho_in, rho_out);
+    }
+
+    {
+        auto viscosity_buffer = buffer.get_custom_buffer(&density_viscosity_layer::get_viscosity_moc_wrapper);
+        moc_solver<1> solver(advection_model, viscosity_buffer);
+
+        double dt = solver.prepare_step();
+        double visc_in = 2e-5; 
+        double visc_out = 0.5e-5;
+        solver.step_optional_boundaries(dt, visc_in, visc_out);
+    }
+
+
+    auto& curr = buffer[0];
+
+
 }
 
 
