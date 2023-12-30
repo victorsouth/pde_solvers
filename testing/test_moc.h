@@ -126,18 +126,15 @@ TEST(MOC_Solver, UseCase_Advection2)
     simple_pipe.dx = 1000;
 
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
+    vector<double> Q(pipe.profile.getPointCount(), -0.5); // задаем по трубе расход 0.5 м3/с
+    PipeQAdvection advection_model(pipe, Q);
 
     ring_buffer_t<density_viscosity_layer> buffer(2, pipe.profile.getPointCount());
 
     auto& rho_initial = buffer[0].density;
-    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
-
     auto& viscosity_initial = buffer[0].viscosity;
+    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
     viscosity_initial = vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
-
-
-    vector<double> Q(pipe.profile.getPointCount(), -0.5); // задаем по трубе расход 0.5 м3/с
-    PipeQAdvection advection_model(pipe, Q);
 
 
     {
