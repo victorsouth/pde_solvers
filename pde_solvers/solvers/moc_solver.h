@@ -142,8 +142,8 @@ class moc_solver<1>
 {
 public:
     typedef typename moc_task_traits<1>::specific_layer specific_layer;
-    typedef typename fixed_system_types<1>::matrix_type matrix_type;
-    typedef typename fixed_system_types<1>::var_type vector_type;
+    //typedef typename fixed_system_types<1>::matrix_type matrix_type;
+    //typedef typename fixed_system_types<1>::var_type vector_type;
 
 protected:
     /// @brief ДУЧП
@@ -152,11 +152,19 @@ protected:
     const vector<double>& grid;
     /// @brief Количество точек сетки
     const size_t n;
+    /// @brief Предыдущий слой (начальные условия)
     vector<double>& prev;
+    /// @brief Рассчитываемый слой (он же новый, следующий, текущий)
     vector<double>& curr;
+    /// @brief Вспомогательный буфер для расчета собственных чисел 
     vector<double>& eigenvals;
 
 public:
+    /// @brief Базовый конструктор, наиболее детальный
+    /// @param pde ДУЧП
+    /// @param prev Предыдуший слой
+    /// @param curr Новый слой
+    /// @param eigenvals Буфер для расчета собственных чисел (рекомендуется относить к прошлому слою)
     moc_solver(pde_t<1>& pde,
         vector<double>& prev,
         vector<double>& curr,
@@ -168,47 +176,30 @@ public:
         , prev(prev)
         , curr(curr)
         , eigenvals(eigenvals)
-    {
-
-    }
-
-    moc_solver(pde_t<1>& pde,
-        vector<double>& prev,
-        vector<double>& curr,
-        std::tuple<vector<double>>& eigenvals
-    )
-        : moc_solver(pde, prev, curr, std::get<0>(eigenvals))
-    {
-
-    }
-
-    moc_solver(pde_t<1>& pde,
-        ring_buffer_t<moc_layer_wrapper<1>>& buffer)
-        : moc_solver(pde, buffer[-1], buffer[0])
-    {}
-
-
+    { }
+    /// @brief Конструктор на основе слове представленных через MOC-обертку
     moc_solver(pde_t<1>& pde,
         moc_layer_wrapper<1>& prev,
         moc_layer_wrapper<1>& curr)
-        : pde(pde)
-        , grid(pde.get_grid())
-        , n(pde.get_grid().size())
-        , prev(prev.values)
-        , curr(curr.values)
-        , eigenvals(prev.eigenval)
-    {
-
-    }
-
+        : moc_solver(pde, prev.values, curr.values, prev.eigenval)
+    { }
+    /// @brief Конструктор на основе буфера оберток 
+    /// (созданного с помощью ring_buffer_t::get_custom_buffer)
     moc_solver(pde_t<1>& pde,
-        std::array<moc_layer_wrapper<1>, 2>& layers)
-        : moc_solver(pde, layers[0], layers[1])
-    {
-
-    }
-
-
+        ring_buffer_t<moc_layer_wrapper<1>>& buffer)
+        : moc_solver(pde, buffer[-1], buffer[0])
+    { }
+    /// @brief Конструктор, заточенный для удобства выдергивания специфического слоя, если он один в буфере
+    /// Очень специфический
+    moc_solver(pde_t<1>& pde, vector<double>& prev, vector<double>& curr,
+        std::tuple<vector<double>>& eigenvals)
+        : moc_solver(pde, prev, curr, std::get<0>(eigenvals))
+    { }
+    /// @brief Расчет собственных чисел и на их основе расчет шага
+    /// по Куранту dtCr (т.е. dt, при котором Cr=1).
+    /// Если желаемый шаг превышает шаг по Куранту dtCr, либо не задан (time_step = nan),
+    /// то возвращается шаг dtCr
+    /// Иначе - возвращается time_step
     double prepare_step(double time_step = std::numeric_limits<double>::quiet_NaN()) {
         auto& values = prev;
 
@@ -226,7 +217,7 @@ public:
         }
         return time_step;
     }
-
+    /// @brief Расчет смещения при неточном попадании линий характеристик между точками сетки
     double characteristic_interpolation_offset(double dt, const double* lambda, const double* grid) const
     {
         //  linear interpolation
@@ -251,7 +242,8 @@ public:
             return p;
         }
     }
-
+    /// @brief Расчет внутренних точек методом первого порядка
+    /// (с учетом наклона характеристик)
     double step_inner(double time_step = std::numeric_limits<double>::quiet_NaN())
     {
         time_step = prepare_step(time_step);
@@ -282,14 +274,10 @@ public:
 
         return time_step;
     }
-
-    /// @brief Опциональный расчет граничных условий, в зависимости от наклона характеристик
-    /// Реализация только для размерности 1
-    /// @param time_step 
-    /// @param left_boundary 
-    /// @param right_boundary 
+    /// @brief Опциональный расчет нового слоя, учитываюшего граничные условия, 
+    /// в зависимости от наклона характеристик
     void step_optional_boundaries(
-        double time_step, const double& left_value, const double& right_value)
+        double time_step, double left_value, double right_value)
     {
         step_inner(time_step);
         if (eigenvals[0] > 0) {
@@ -298,76 +286,82 @@ public:
         if (eigenvals[n - 1] < 0) {
             curr[n - 1] = right_value;
         }
-
     }
-
-    double step2_inner(double time_step)
+    /// @brief Расчет внутренних точек нового слоя методом второго порядка
+    /// Учитывает, что конфигураций характеристики могут позволить рассчитать граничные точки
+    /// Также считает собственные числа, векторы для ВСЕХ точек
+    double step2_inner(double time_step = std::numeric_limits<double>::quiet_NaN())
     {
         time_step = prepare_step(time_step);
 
-        throw std::runtime_error("not impl");
+        auto prev_values = profile_wrapper<double, 1>(prev);
+        //auto& curr_values = curr;
 
+        constexpr double eps = 1e-8;
 
-        //auto& eigenvals = prev.eigenval;
-        //auto& eigenvecs = prev.eigenvec;
-        //auto& prev_values = prev.values;
-        //auto& curr_values = curr.values;
+        double dl = grid[1] - grid[0];
 
-        //constexpr double eps = 1e-8;
+        for (int grid_index = 0; grid_index < grid.size(); ++grid_index)
+        {
+            const double& eigenval = eigenvals[grid_index];
+            if (grid_index == 0 && eigenval > 0) {
+                // надо брать точку с координатой i = -1
+                continue;
+            }
+            if (grid_index == grid.size() - 1 && eigenval < 0) {
+                continue;
+            }
 
-        //double dl = grid[1] - grid[0];
+            double p = characteristic_interpolation_offset(time_step, &eigenval, &grid[grid_index]);
 
-        //for (int grid_index = 0; grid_index < grid.size(); ++grid_index)
-        //{
-        //    const double& eigenval = eigenvals.profile(0)[grid_index];
-        //    if (grid_index == 0 && eigenval > 0) {
-        //        // надо брать точку с координатой i = -1
-        //        continue;
-        //    }
-        //    if (grid_index == grid.size() - 1 && eigenval < 0) {
-        //        continue;
-        //    }
+            // предиктор
+            double u_old;
+            double rp1;
+            double absp = abs(p);
+            if (absp < eps || abs(1.0 - absp) < eps) {
+                // характеристика точно между двумя точками: либо косая, либо вертикальная
+                size_t index = static_cast<size_t>(grid_index + p + 0.5);
+                u_old = prev[index];
+                rp1 = pde.getSourceTerm(index, u_old);
+            }
+            else {
+                // интерполяция правой части
+                size_t grida = static_cast<size_t>(grid_index + sgn(p));
+                size_t gridb = grid_index;
+                double rp1a = pde.getSourceTerm(grida, prev_values[grida]);
+                double rp1b = pde.getSourceTerm(gridb, prev_values[gridb]);
+                rp1 = rp1a * absp + rp1b * (1 - absp); // проверка: если p = 0, то берем b(grid_index)
+                u_old = prev_values.interpolate(grid_index, p);
+            }
 
-        //    double p = characteristic_interpolation_offset(time_step, &eigenval, dl);
+            double u_estimate = u_old + time_step * rp1;
 
-        //    // предиктор
-        //    vector_type u_old;
-        //    vector_type rp1;
-        //    double absp = abs(p);
-        //    if (absp < eps || abs(1.0 - absp) < eps) {
-        //        // характеристика точно между двумя точками: либо косая, либо вертикальная
-        //        size_t index = static_cast<size_t>(grid_index + p + 0.5);
-        //        u_old = prev_values(index);
-        //        rp1 = pde.getSourceTerm(index, u_old);
-        //    }
-        //    else {
-        //        // интерполяция правой части
-        //        size_t grida = static_cast<size_t>(grid_index + sgn(p));
-        //        size_t gridb = grid_index;
-        //        vector_type rp1a = pde.getSourceTerm(grida, prev_values(grida));
-        //        vector_type rp1b = pde.getSourceTerm(gridb, prev_values(gridb));
-        //        rp1 = rp1a * absp + rp1b * (1 - absp); // проверка: если p = 0, то берем b(grid_index)
-        //        u_old = prev_values.interpolate(grid_index, p);
-        //    }
+            // корректор
+            double rp2 = pde.getSourceTerm(grid_index, u_estimate);
+            curr[grid_index] = u_old + time_step * 0.5 * (rp1 + rp2);
 
-        //    vector_type u_estimate = u_old + time_step * rp1;
+            if (!isfinite(rp1) || !isfinite(rp2) || !isfinite(u_estimate) || !isfinite(u_old)) {
+                throw std::logic_error("infinite value");
+            }
 
-        //    // корректор
-        //    double rp2 = pde.getSourceTerm(grid_index, u_estimate);
-        //    curr_values(grid_index) = u_old + time_step * 0.5 * (rp1 + rp2);
+        }
 
-        //    if (!isfinite(rp1) || !isfinite(rp2) || !isfinite(u_estimate) || !isfinite(u_old)) {
-        //        throw std::logic_error("infinite value");
-        //    }
-
-        //    //auto diff1 = u_estimate - prev_values(grid_index);
-        //    //auto diff2 = curr_values(grid_index) - prev_values(grid_index);
-        //    //int dummy = 1;
-        //}
-
-        //return time_step;
+        return time_step;
     }
+    /// @brief Опциональный расчет граничных условий, в зависимости от наклона характеристик
+    /// Метод второго порядка
+    void step2_optional_boundaries(double time_step,
+        double left_value, double right_value)
+    {
+        step2_inner(time_step);
 
+        if (eigenvals[0] > 0) {
+            curr[0] = left_value;
+        }
+        if (eigenvals[n - 1] < 0) {
+            curr[n - 1] = right_value;
+        }
+    }
 };
 
 /// @brief Расчетчик метода характеристик
@@ -625,34 +619,7 @@ public:
         return time_step;
     }
 
-    /// @brief Расчет внутренних точек нового слоя методом второго порядка
-    /// Реализация только для размерности 1
-    /// Учитывает, что конфигураций характеристики могут позволить рассчитать граничные точки
-    /// Также считает собственные числа, векторы для ВСЕХ точек
-    /// \param time_step
-    double step2_inner(double time_step = std::numeric_limits<double>::quiet_NaN());
 
-    /// @brief Опциональный расчет граничных условий, в зависимости от наклона характеристик
-    /// Реализация только для размерности 1. 
-    /// Метод второго порядка
-    /// @param time_step 
-    /// @param left_boundary 
-    /// @param right_boundary 
-    void step2_optional_boundaries(double time_step,
-        const pair<vector_type, double>& left_boundary,
-        const pair<vector_type, double>& right_boundary)
-    {
-        step2_inner(time_step);
-
-        // Внутренний шаг считает
-        auto& eigenval = prev.eigenval;
-        if (eigenval(0) > 0) {
-            curr.values(0) = solve_linear_system(left_boundary);
-        }
-        if (eigenval(n - 1) < 0) {
-            curr.values(n - 1) = solve_linear_system(right_boundary);
-        }
-    }
 };
 
 
