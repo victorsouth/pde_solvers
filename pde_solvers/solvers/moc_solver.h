@@ -195,6 +195,16 @@ public:
         std::tuple<vector<double>>& eigenvals)
         : moc_solver(pde, prev, curr, std::get<0>(eigenvals))
     { }
+    /// @brief Еще один специфический конструктор, когда composite_layer_t содержит только одну задачу
+    moc_solver(pde_t<1>& pde,
+        composite_layer_t<profile_collection_t<1>, moc_solver<1>::specific_layer>& prev,
+        composite_layer_t<profile_collection_t<1>, moc_solver<1>::specific_layer>& curr)
+        : moc_solver(pde, prev.vars.point_double[0], curr.vars.point_double[0], prev.specific)
+    {
+
+    }
+
+
     /// @brief Расчет собственных чисел и на их основе расчет шага
     /// по Куранту dtCr (т.е. dt, при котором Cr=1).
     /// Если желаемый шаг превышает шаг по Куранту dtCr, либо не задан (time_step = nan),
