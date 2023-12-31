@@ -23,8 +23,9 @@ protected:
         return (current_layer + layers.size() - 1) % layers.size();
     }
 public:
-    ring_buffer_t(const vector<LayerType>& layers)
+    ring_buffer_t(const vector<LayerType>& layers, size_t current_layer)
         : layers(layers)
+        , current_layer(current_layer)
     {
 
     }
@@ -89,7 +90,7 @@ public:
             selected_layers.emplace_back(selector(layer));
         }
 
-        ring_buffer_t<ResultType> result(selected_layers);
+        ring_buffer_t<ResultType> result(selected_layers, current_layer);
         return result;
     }
 

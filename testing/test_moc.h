@@ -93,10 +93,13 @@ TEST(MOC_Solver, UseCase_Advection)
 /// Задача про плотность и вязкость
 struct density_viscosity_layer
 {
+    /// @brief Профиль плотности
     vector<double> density;
+    /// @brief Профиль вязкости
     vector<double> viscosity;
+    /// @brief Профиль вспомогательных расчетов для МХ (и для вязкости, и для плотности)
     moc_solver<1>::specific_layer moc_specific;
-
+    /// @brief Конструктор на заданное количество точек
     density_viscosity_layer(size_t point_count)
         : density(point_count)
         , viscosity(point_count)
@@ -104,10 +107,13 @@ struct density_viscosity_layer
     {
 
     }
+    /// @brief Подготовка плотности для расчета по методу характеристик
+    /// Оборачивает профиль плотности и вспомогательный расчет МХ в обертку для МХ
     static moc_layer_wrapper<1> get_density_moc_wrapper(density_viscosity_layer& layer)
     {
         return moc_layer_wrapper<1>(layer.density, layer.moc_specific);
     }
+    /// @brief Подготовка вязкости для расчета методом характеристик moc_solver
     static moc_layer_wrapper<1> get_viscosity_moc_wrapper(density_viscosity_layer& layer)
     {
         return moc_layer_wrapper<1>(layer.viscosity, layer.moc_specific);
@@ -117,7 +123,7 @@ struct density_viscosity_layer
 
 
 /// @brief Базовый пример использования метода характеристик для уравнения адвекции
-TEST(MOC_Solver, UseCase_Advection2)
+TEST(MOC_Solver, UseCase_Advection_Density_Viscosity)
 {
     // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
     simple_pipe_properties simple_pipe;
@@ -136,6 +142,7 @@ TEST(MOC_Solver, UseCase_Advection2)
     rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
     viscosity_initial = vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
 
+    buffer.advance(+1);
 
     {
         auto density_buffer = buffer.get_custom_buffer(&density_viscosity_layer::get_density_moc_wrapper);
