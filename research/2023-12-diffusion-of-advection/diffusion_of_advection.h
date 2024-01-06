@@ -48,12 +48,12 @@ protected:
     /// @brief Расчет вытеснения первой партии нефтью с другой плотностью 
     /// Расчет выполняется методом QUICKEST или QUICKEST-ULTIMATE для заданного числа Куранта
     /// Результат расчетных профилей записывается в файл вида "output Cr.csv"
+    /// @tparam Solver Шаблон солвера для расчёта диффузии
     /// @param rho_initial Плотность исходной нефти (вытесняемой)
     /// @param rho_final Плотность вытесняющей нефти
     /// @param Cr Число Куранта
     /// @param T Период моделирования
     /// @param path Путь, куда пишется результат расчета
-    /// @param method Переменная, определяющая метод
     template <typename Solver>
     void calc_quickest_with_cr(double rho_initial, double rho_final, double v,
         double Cr, double T, const string& path)
