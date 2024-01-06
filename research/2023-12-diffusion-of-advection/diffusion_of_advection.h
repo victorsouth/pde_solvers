@@ -45,8 +45,19 @@ protected:
         buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
     }
     
+    /// @brief Расчет вытеснения первой партии нефтью с другой плотностью 
+    /// Расчет выполняется методом QUICKEST или QUICKEST-ULTIMATE для заданного числа Куранта
+    /// Результат расчетных профилей записывается в файл вида "output Cr.csv"
+    /// @param rho_initial Плотность исходной нефти (вытесняемой)
+    /// @param rho_final Плотность вытесняющей нефти
+    /// @param Cr Число Куранта
+    /// @param T Период моделирования
+    /// @param path Путь, куда пишется результат расчета
+    /// @param method Переменная, определяющая метод
+    /// 1 - метод QUICKEST
+    /// 0 - метод QUICKEST-ULTIMATE
     void calc_quickest_with_cr(double rho_initial, double rho_final, double v,
-        double Cr, double T, const string& path)
+        double Cr, double T, const string& path, int method = 1)
     {
         // Фиктивное граничное условие на выходе. Реально в эксперименте не задействуется
         double rho_out = 870;
@@ -64,7 +75,10 @@ protected:
         double dt = Cr * dt_ideal; // время в долях от Куранта
 
         std::stringstream filename;
-        filename << path << "output quickest Cr=" << Cr << ".csv";
+        if (method)
+            filename << path << "output quickest Cr=" << Cr << ".csv";
+        else
+            filename << path << "output Cr=" << Cr << ".csv";
         std::ofstream output(filename.str()); // Открытие файла для записи
         output << "time;Density" << std::endl;
 
@@ -77,65 +91,17 @@ protected:
             }
 
             t += dt;
-
-            quickest_fv_solver solver(*advection_model, *buffer);
-            solver.step(dt, rho_final, rho_out); // Шаг расчёта
-
-            layer_t& next = buffer->current();
-            // Вывод значения плотности в конце трубы на каждом шаге моделирования
-            output << t << ';' << next.vars.cell_double[0].back() << std::endl;
-
-            buffer->advance(+1);
-
-        }
-        output.flush();
-        output.close();
-    }
-
-    /// @brief Расчет вытеснения первой партии нефтью с другой плотностью 
-    /// Расчет выполняется методом Quickest Ultimate для заданного числа Куранта
-    /// Результат расчетных профилей записывается в файл вида "output Cr.csv"
-    /// @param rho_initial Плотность исходной нефти (вытесняемой)
-    /// @param rho_final Плотность вытесняющей нефти
-    /// @param Cr Число Куранта
-    /// @param T Период моделирования
-    /// @param path Путь, куда пишется результат расчета
-    void calc_quickest_ultimate_with_cr(
-        double rho_initial, double rho_final, double v,
-        double Cr, double T, const string& path)
-    {
-        // Фиктивное граничное условие на выходе. Реально в эксперименте не задействуется
-        double rho_out = 870;
-
-        // Задаём исходные значения
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), density_initial);
-
-        const auto& x = advection_model->get_grid();
-        double dx = x[1] - x[0];
-        double dt_ideal = abs(dx / v); // Расчёт идеального шага по времени
-
-        double t = 0; // текущее время
-
-        double dt = Cr * dt_ideal; // время в долях от Куранта
-
-        std::stringstream filename;
-        filename << path << "output Cr=" << Cr << ".csv";
-        std::ofstream output(filename.str()); // Открытие файла для записи
-        output << "time;Density" << std::endl;
-
-        size_t N = static_cast<int>(T / dt);
-        for (size_t index = 0; index < N; ++index) {
-            if (index == 0) {
-                layer_t& prev = buffer->previous();
-                // Вывод значения плотности в конце трубы в начале моделирования
-                output << t << ';' << prev.vars.cell_double[0].back() << std::endl; 
+            if (method)
+            {
+                quickest_fv_solver solver(*advection_model, *buffer);
+                solver.step(dt, rho_final, rho_out); // Шаг расчёта
             }
-
-            t += dt; 
-
-            quickest_ultimate_fv_solver solver(*advection_model, *buffer);
-            solver.step(dt, rho_final, rho_out); // Шаг расчёта
+            else
+            {
+                quickest_ultimate_fv_solver solver(*advection_model, *buffer);
+                solver.step(dt, rho_final, rho_out); // Шаг расчёта
+            }
+            
 
             layer_t& next = buffer->current();
             // Вывод значения плотности в конце трубы на каждом шаге моделирования
@@ -289,8 +255,8 @@ TEST_F(DiffusionOfAdvection, CompareQuickestDiffusion)
     // Производим моделирование движения партий методом QUICKEST-ULTIMATE
     // для разных чисел Cr
     for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
-        calc_quickest_ultimate_with_cr(density_initial, density_final, v,
-            Cr, experiment_time, path);
+        calc_quickest_with_cr(density_initial, density_final, v,
+            Cr, experiment_time, path, 0);
     }
 
     // Задание массива моментов времени для расчета выходного параметра
@@ -306,7 +272,7 @@ TEST_F(DiffusionOfAdvection, CompareQuickestDiffusion)
 /// @brief Расчет, демонстрирующий, что QUICKEST-ULTIMATE лучше описывает диффузию 
 /// по сравенению с методом QUICKEST
 /// Строятся графики QUICKEST-ULTIMATE, QUICKEST для Cr = 0.5 
-/// и графки Аналитического решения (QUICKEST-ULTIMATE для Cr = 1)
+/// и график Аналитического решения (QUICKEST-ULTIMATE для Cr = 1)
 TEST_F(DiffusionOfAdvection, CompareQuickestAndQuickestUltimateDiffusion)
 {
     // Создаём папку с результатами и получаем путь к ней
@@ -314,17 +280,22 @@ TEST_F(DiffusionOfAdvection, CompareQuickestAndQuickestUltimateDiffusion)
 
     // Получаем значение скорости для эксперимента
     double v = advection_model->getEquationsCoeffs(0, 0);
+
     // Строим для Cr = 1
-    double Cr = 1;
+    double Cr = 0.5;
 
-    //Расчёт методом QUICKEST-UlTIMATE для Cr = 1
-    calc_quickest_ultimate_with_cr(density_initial, density_final, v,
-        Cr, experiment_time, path);
-
-    Cr = 0.5;
-    calc_quickest_ultimate_with_cr(density_initial, density_final, v,
-        Cr, experiment_time, path);
-
+    // Расчёт методом QUICKEST-UlTIMATE для Cr = 0.5
     calc_quickest_with_cr(density_initial, density_final, v,
-        Cr, experiment_time, path);
+        Cr, experiment_time, path, 0);
+
+    // Расчёт методом QUICKEST для Cr = 0.5
+    calc_quickest_with_cr(density_initial, density_final, v,
+        Cr, experiment_time, path, 1);
+
+    // Строим для Cr = 1
+    Cr = 1;
+
+    // Расчёт методом QUICKEST-UlTIMATE для Cr = 1
+    calc_quickest_with_cr(density_initial, density_final, v,
+        Cr, experiment_time, path, 0);
 }
