@@ -190,6 +190,10 @@ struct profile_collection_t
     /// @brief Список векторных профилей в ячейках
     array<vector<cell_vector_type>, CellVector> cell_vector;
 
+    vector<double>& get_point_profile(size_t profile_index) {
+        return point_double[profile_index];
+    }
+
     profile_collection_t(size_t point_count)
         : point_double{ array_maker<vector<double>, PointScalar>::make_array(vector<double>(point_count)) }
         , point_vector{ array_maker<vector<point_vector_type>, PointVector>::make_array(vector<point_vector_type>(point_count)) }
