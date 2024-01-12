@@ -78,7 +78,7 @@ protected:
         if (method)
             filename << path << "output quickest Cr=" << Cr << ".csv";
         else
-            filename << path << "output Cr=" << Cr << ".csv";
+            filename << path << "output quickest-ultimate Cr=" << Cr << ".csv";
         std::ofstream output(filename.str()); // Открытие файла для записи
         output << "time;Density" << std::endl;
 
