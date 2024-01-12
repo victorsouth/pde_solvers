@@ -23,6 +23,13 @@ protected:
         return (current_layer + layers.size() - 1) % layers.size();
     }
 public:
+    ring_buffer_t(const vector<LayerType>& layers, size_t current_layer)
+        : layers(layers)
+        , current_layer(current_layer)
+    {
+
+    }
+        
     /// @brief Конструктор с инициализацией буфера слоев по переданному слою layer
     /// @param layer_count Количество слоев в буфере
     /// @param layer Слой для инициализации
@@ -57,6 +64,10 @@ public:
     void advance(int offset) {
         current_layer = advanced_layer_index(offset);
     }
+
+    LayerType& operator[](int offset) { return layers[advanced_layer_index(offset)]; }
+    const LayerType& operator[](int offset) const { return layers[advanced_layer_index(offset)]; }
+
     /// @brief Ссылка на текущий слой 
     LayerType& current() { return layers[current_layer]; }
     /// @brief Константная ссылка на текущий слой
@@ -65,4 +76,22 @@ public:
     LayerType& previous() { return layers[previous_layer_index()]; }
     /// @brief Константная ссылка на предыдущий слой 
     const LayerType& previous() const { return layers[previous_layer_index()]; }
+
+    template <typename Selector>
+    auto get_custom_buffer(Selector selector)
+    {
+        auto& buffer = *this;
+
+        typedef std::invoke_result_t<Selector, LayerType&> ResultType;
+
+        std::vector<ResultType> selected_layers; 
+        selected_layers.reserve(layers.size());
+        for (auto& layer : layers) {
+            selected_layers.emplace_back(selector(layer));
+        }
+
+        ring_buffer_t<ResultType> result(selected_layers, current_layer);
+        return result;
+    }
+
 };
