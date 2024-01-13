@@ -46,15 +46,16 @@ protected:
     }
     
     /// @brief Расчет вытеснения первой партии нефтью с другой плотностью 
-    /// Расчет выполняется методом Quickest Ultimate для заданного числа Куранта
+    /// Расчет выполняется методом QUICKEST или QUICKEST-ULTIMATE для заданного числа Куранта
     /// Результат расчетных профилей записывается в файл вида "output Cr.csv"
+    /// @tparam Solver Шаблон солвера для расчёта диффузии
     /// @param rho_initial Плотность исходной нефти (вытесняемой)
     /// @param rho_final Плотность вытесняющей нефти
     /// @param Cr Число Куранта
     /// @param T Период моделирования
     /// @param path Путь, куда пишется результат расчета
-    void calc_quickest_with_cr(
-        double rho_initial, double rho_final, double v,
+    template <typename Solver>
+    void calc_quickest_with_cr(double rho_initial, double rho_final, double v,
         double Cr, double T, const string& path)
     {
         // Фиктивное граничное условие на выходе. Реально в эксперименте не задействуется
@@ -72,8 +73,13 @@ protected:
 
         double dt = Cr * dt_ideal; // время в долях от Куранта
 
+        string method = typeid(Solver).name();
+
         std::stringstream filename;
-        filename << path << "output Cr=" << Cr << ".csv";
+        if (method.find("ultimate") == std::string::npos)
+            filename << path << "output quickest Cr=" << Cr << ".csv";
+        else
+            filename << path << "output quickest-ultimate Cr=" << Cr << ".csv";
         std::ofstream output(filename.str()); // Открытие файла для записи
         output << "time;Density" << std::endl;
 
@@ -82,12 +88,12 @@ protected:
             if (index == 0) {
                 layer_t& prev = buffer->previous();
                 // Вывод значения плотности в конце трубы в начале моделирования
-                output << t << ';' << prev.vars.cell_double[0].back() << std::endl; 
+                output << t << ';' << prev.vars.cell_double[0].back() << std::endl;
             }
 
-            t += dt; 
+            t += dt;
 
-            quickest_ultimate_fv_solver solver(*advection_model, *buffer);
+            Solver solver(*advection_model, *buffer);
             solver.step(dt, rho_final, rho_out); // Шаг расчёта
 
             layer_t& next = buffer->current();
@@ -242,7 +248,7 @@ TEST_F(DiffusionOfAdvection, CompareQuickestDiffusion)
     // Производим моделирование движения партий методом QUICKEST-ULTIMATE
     // для разных чисел Cr
     for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
-        calc_quickest_with_cr(density_initial, density_final, v,
+        calc_quickest_with_cr<quickest_ultimate_fv_solver>(density_initial, density_final, v,
             Cr, experiment_time, path);
     }
 
@@ -254,4 +260,35 @@ TEST_F(DiffusionOfAdvection, CompareQuickestDiffusion)
 
     // Расчёт временных границ области смеси
     calc_physical_diffusion_boundaries(v, path);
+}
+
+/// @brief Расчет, демонстрирующий, что QUICKEST-ULTIMATE лучше описывает диффузию 
+/// по сравенению с методом QUICKEST
+/// Строятся графики QUICKEST-ULTIMATE, QUICKEST для Cr = 0.5 
+/// и график Аналитического решения (QUICKEST-ULTIMATE для Cr = 1)
+TEST_F(DiffusionOfAdvection, CompareQuickestAndQuickestUltimateDiffusion)
+{
+    // Создаём папку с результатами и получаем путь к ней
+    string path = prepare_research_folder();
+
+    // Получаем значение скорости для эксперимента
+    double v = advection_model->getEquationsCoeffs(0, 0);
+
+    // Строим для Cr = 1
+    double Cr = 0.5;
+
+    // Расчёт методом QUICKEST-UlTIMATE для Cr = 0.5
+    calc_quickest_with_cr<quickest_ultimate_fv_solver>(density_initial, density_final, v,
+        Cr, experiment_time, path);
+
+    // Расчёт методом QUICKEST для Cr = 0.5
+    calc_quickest_with_cr<quickest_fv_solver>(density_initial, density_final, v,
+        Cr, experiment_time, path);
+
+    // Строим для Cr = 1
+    Cr = 1;
+
+    // Расчёт методом QUICKEST-UlTIMATE для Cr = 1
+    calc_quickest_with_cr<quickest_ultimate_fv_solver>(density_initial, density_final, v,
+        Cr, experiment_time, path);
 }
