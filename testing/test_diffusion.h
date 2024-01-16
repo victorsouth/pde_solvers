@@ -1,6 +1,21 @@
 #pragma once
 
 
+template <typename ContainerType, typename StreamType>
+inline StreamType& send_stream(StreamType& o, const ContainerType& x)
+{
+    for (typename ContainerType::const_iterator i = x.begin(); i != x.end(); i++) {
+        if (i != x.begin())
+            o << "; ";
+        o << std::fixed << (*i);
+    }
+    return o;
+}
+
+template <typename StreamType>
+inline StreamType& operator<<(StreamType& o, const vector<double>& x) {
+    return send_stream<vector<double>>(o, x);
+}
 
 
 

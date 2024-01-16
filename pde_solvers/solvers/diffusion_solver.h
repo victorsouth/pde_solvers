@@ -66,7 +66,7 @@ private:
         return C;
     }
 
-
+    // TODO: Написать комментарий
     static double calc_diffusive_transport(double t, double x, double delta_t,
         double v, double L, double K,
         const vector<double>& input)
@@ -87,6 +87,7 @@ private:
 
 public:
 
+    // TODO: Написать комментарий
     static vector<double> create_boundary(double initial_value, double final_value,
         size_t length, size_t start_change, size_t end_change)
     {
@@ -108,8 +109,7 @@ public:
 
     }
 
-
-
+    // TODO: Написать комментарий
     static double calc_diffusion_coefficient(
         const pipe_properties_t& pipe, const oil_parameters_t& oil, double v
     )
