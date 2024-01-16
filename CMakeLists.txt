@@ -20,7 +20,11 @@ set(HEADERS_PIPE
     pde_solvers/pipe/oil.h  pde_solvers/pipe/pipe_advection_pde.h  pde_solvers/pipe/pipe_hydraulic_computations.h  pde_solvers/pipe/pipe_hydraulic_pde.h  pde_solvers/pipe/pipe_hydraulic_struct.h
     )
 set(HEADERS_SOLVERS
-    pde_solvers/solvers/godunov_solver.h  pde_solvers/solvers/moc_solver.h  pde_solvers/solvers/ode_solver.h  pde_solvers/solvers/quick_solver.h
+     pde_solvers/solvers/diffusion_solver.h 
+     pde_solvers/solvers/godunov_solver.h  
+     pde_solvers/solvers/moc_solver.h  
+     pde_solvers/solvers/ode_solver.h  
+     pde_solvers/solvers/quick_solver.h
 )
 
 if("3.19.0" VERSION_LESS ${CMAKE_VERSION})
