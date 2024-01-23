@@ -1,9 +1,7 @@
 ﻿#pragma once
 
-using std::vector;
 
-
-
+namespace pde_solvers {
 
 template <typename T>
 inline static T linear_interpolation(T f1, T f2, double p)
@@ -263,3 +261,5 @@ struct composite_layer_t {
         , specific((sizeof(SpecificLayers), point_count)...)
     {}
 };
+
+}

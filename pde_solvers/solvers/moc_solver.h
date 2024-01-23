@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+namespace pde_solvers {
+
 //using std::array;
 using std::pair;
 
@@ -633,3 +635,4 @@ public:
 };
 
 
+}

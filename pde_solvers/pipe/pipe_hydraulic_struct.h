@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+namespace pde_solvers {
+
 /// @brief Упрощенные параметры трубы
 struct simple_pipe_properties {
     double length = 12000;
@@ -208,3 +210,5 @@ struct pipe_properties
 };
 
 typedef pipe_properties<adaptation_parameters> pipe_properties_t;
+
+}

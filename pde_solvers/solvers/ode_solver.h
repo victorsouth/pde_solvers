@@ -1,5 +1,8 @@
 #pragma once
 
+
+namespace pde_solvers {
+
 /// @brief Решение ОДУ методом Эйлера первого порядка (без предиктора-корректора)
 /// @param ode Система ОДУ
 /// @param direction Направление расчета: +1 по ходу индексов, -1 против хода индексов
@@ -100,3 +103,4 @@ inline void solve_euler_corrector(
 
 
 
+}

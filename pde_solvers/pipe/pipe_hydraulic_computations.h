@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+namespace pde_solvers {
 
 /// @brief Гидравлическое сопротивление по Шифринсону
 /// \param reynolds_number
@@ -91,4 +92,5 @@ inline double solve_pipe_PP(PipeModel& model, double Pin, double Pout,
     fixed_newton_raphson<1>::solve_dense(f, { 0 }, parameters, &result);
 
     return result.argument;
+}
 }

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+namespace pde_solvers {
 
 /// @brief ¬спомогательные структуры данных, необходимые дл¤ расчетной задачи по методу √одунова
 template <size_t Dimension>
@@ -75,3 +76,4 @@ struct godunov_layer_wrapper : layer_wrapper<Dimension> {
 //    {}
 //};
 
+}
