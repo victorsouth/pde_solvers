@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+namespace pde_solvers {
+
 /// @brief Описание типов данных для метода конечных объемов на основе upstream differencing 
 template <size_t Dimension>
 struct upstream_fv_solver_traits
@@ -538,3 +540,5 @@ public:
 
     }
 };
+
+}

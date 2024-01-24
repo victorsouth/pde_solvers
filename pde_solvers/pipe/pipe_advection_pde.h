@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+namespace pde_solvers {
+
 /// @brief Уравление адвекции (транспортное уравнение) на основе объемного расхода
 class PipeQAdvection : public pde_t<1>
 {
@@ -82,3 +84,5 @@ public:
         throw std::logic_error("not implemented");
     }
 };
+
+}

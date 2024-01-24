@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+namespace pde_solvers {
 
 /// @brief Дифференциальное уравнение
 template <size_t Dimension>
@@ -78,3 +79,5 @@ public:
         return result;
     }
 };
+
+}
