@@ -334,3 +334,4 @@ __pycache__/
 /research_out/DiffusionOfAdvection/CompareQuickestDiffusion
 *.csv
 *.png
+*.txt
