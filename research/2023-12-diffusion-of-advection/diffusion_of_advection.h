@@ -76,10 +76,15 @@ protected:
         string method = typeid(Solver).name();
 
         std::stringstream filename;
-        if (method.find("ultimate") == std::string::npos)
-            filename << path << "output quickest Cr=" << Cr << ".csv";
-        else
+        if (method.find("ultimate") != std::string::npos) {
             filename << path << "output quickest-ultimate Cr=" << Cr << ".csv";
+        }
+        else if (method.find("upstream") != std::string::npos) {
+            filename << path << "output upstream Cr=" << Cr << ".csv";
+        }
+        else {
+            filename << path << "output quickest Cr=" << Cr << ".csv";
+        }
         std::ofstream output(filename.str()); // Открытие файла для записи
         output << "time;Density" << std::endl;
 
@@ -228,6 +233,60 @@ protected:
         output.close();
         output.flush();
     }
+    void calc_moc_with_cr(double rho_initial, double rho_final, double v,
+        double Cr, double T, const string& path)
+    {
+        // Фиктивное граничное условие на выходе. Реально в эксперименте не задействуется
+        double rho_out = 870;
+
+        // Одна переменная, и структуры метода характеристик для нее
+        typedef composite_layer_t<profile_collection_t<1>,
+            moc_solver<1>::specific_layer> single_var_moc_t;
+        
+        ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
+        single_var_moc_t& prev = buffer.previous();
+        prev.vars.point_double[0] = vector<double>(prev.vars.point_double[0].size(), density_initial);
+
+        vector<double> Q(pipe.profile.getPointCount(), 0.5); // задаем по трубе расход 0.5 м3/с
+        PipeQAdvection advection_model(pipe, Q);
+
+        const auto& x = advection_model.get_grid();
+        double dx = x[1] - x[0];
+        double dt_ideal = abs(dx / v);
+        
+        double t = 0; // текущее время
+
+        double dt = Cr * dt_ideal; // время в долях от Куранта
+        
+        auto& layer_t = prev.vars.point_double[0];
+        layer_t = vector<double>(layer_t.size(), 850);
+
+        std::stringstream filename;
+        filename << path << "output MOC Cr=" << Cr << ".csv";
+        std::ofstream output(filename.str());
+        output << "time;Density" << std::endl;
+
+        size_t N = static_cast<int>(T / dt);
+        for (size_t index = 0; index < N; ++index) {
+            if (index == 0) {
+                single_var_moc_t& prev = buffer.previous();
+            }
+
+            t += dt;
+
+            moc_solver<1> solver(advection_model, buffer.previous(), buffer.current());
+            solver.step_optional_boundaries(dt, rho_final, rho_out); // Шаг расчёта
+
+            single_var_moc_t& next = buffer.current();
+            // Вывод значения плотности в конце трубы на каждом шаге моделирования
+            output << t << ';' << next.vars.point_double[0].back() << std::endl;
+
+            buffer.advance(+1);
+
+        }
+        output.flush();
+        output.close();
+    }
 };
 
 
@@ -291,4 +350,45 @@ TEST_F(DiffusionOfAdvection, CompareQuickestAndQuickestUltimateDiffusion)
     // Расчёт методом QUICKEST-UlTIMATE для Cr = 1
     calc_quickest_with_cr<quickest_ultimate_fv_solver>(density_initial, density_final, v,
         Cr, experiment_time, path);
+}
+
+/// @brief Расчет, демонстрирующий, что Upstream Differencing и метод характеристик
+/// имеют численную диффузию хуже физической
+/// Строятся графики Upstream Differencing, метод характеристик для Cr = 0.5 
+/// и график Аналитического решения (Upstream Differencing для Cr = 1)
+/// Так же строится график физической диффузии
+TEST_F(DiffusionOfAdvection, CompareUpstreamDiffAndMOC)
+{
+    // Создаём папку с результатами и получаем путь к ней
+    string path = prepare_research_folder();
+
+    // Получаем значение скорости для эксперимента
+    double v = advection_model->getEquationsCoeffs(0, 0);
+
+    // Строим для Cr = 1
+    double Cr = 0.5;
+
+    // Расчёт методом Upstream Differencing для Cr = 0.5
+    calc_quickest_with_cr<upstream_fv_solver>(density_initial, density_final, v,
+        Cr, experiment_time, path);
+
+    // Расчёт методом характеристик для Cr = 0.5
+    calc_moc_with_cr(density_initial, density_final, v,
+        Cr, experiment_time, path);
+
+    // Строим для Cr = 1
+    Cr = 1;
+
+    // Расчёт методом Upstream Differencing для Cr = 1, аналитическое решение
+    calc_quickest_with_cr<upstream_fv_solver>(density_initial, density_final, v,
+        Cr, experiment_time, path);
+
+    // Задание массива моментов времени для расчета выходного параметра
+    double dt_out = 60;
+    vector<double> t_out = build_density_out_time_of_interest(dt_out);
+    // Расчёт физической диффузии
+    calc_physical_diffusion_model(density_initial, density_final, t_out, v, path);
+
+    // Расчёт временных границ области смеси
+    calc_physical_diffusion_boundaries(v, path);
 }
