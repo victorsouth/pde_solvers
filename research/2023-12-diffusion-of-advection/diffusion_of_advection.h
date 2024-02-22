@@ -79,10 +79,10 @@ protected:
     /// @brief Расчет вытеснения первой партии нефтью с другой плотностью 
     /// Расчет выполняется методом QUICKEST или QUICKEST-ULTIMATE для заданного числа Куранта
     /// Результат расчетных профилей записывается в файл вида "output Cr.csv"
-    /// Дополнительно присутствует метод характеристик
     /// @tparam Solver Шаблон солвера для расчёта диффузии
     /// @param rho_initial Плотность исходной нефти (вытесняемой)
     /// @param rho_final Плотность вытесняющей нефти
+    /// @param v Скорость движения нефти в трубопроводе
     /// @param Cr Число Куранта
     /// @param T Период моделирования
     /// @param path Путь, куда пишется результат расчета
@@ -105,22 +105,6 @@ protected:
 
         double dt = Cr * dt_ideal; // время в долях от Куранта
 
-        // для случая, если будет считаться метод характеристик
-        
-        // Одна переменная, и структуры метода характеристик для нееm
-        typedef composite_layer_t<profile_collection_t<1>,
-            moc_solver<1>::specific_layer> single_var_moc_t;
-        // буфер, содержащий в себе слои
-        ring_buffer_t<single_var_moc_t> buffer_moc(2, pipe.profile.getPointCount());
-        // объявляем переменную
-        single_var_moc_t& prev_moc = buffer_moc.previous();
-        // задаем исходные значения
-        prev_moc.vars.point_double[0] = vector<double>(prev_moc.vars.point_double[0].size(), density_initial);
-        // профиль расхода
-        vector<double> Q(pipe.profile.getPointCount(), 0.5);
-        // уравнение адвекции
-        PipeQAdvection advection_model_moc(pipe, Q);
-
         string filename = get_courant_research_filename<Solver>(path, Cr);
 
         std::ofstream output(filename); // Открытие файла для записи
@@ -129,35 +113,18 @@ protected:
         size_t N = static_cast<int>(T / dt);
         for (size_t index = 0; index < N; ++index) {
             if (index == 0) {
-                if (std::is_same<Solver, moc_solver<1>>::value) {
-                    //layer_t& prev = buffer->previous();
-                    single_var_moc_t& prev_moc = buffer_moc.previous();
-                    // Вывод значения плотности в конце трубы на каждом шаге моделирования
-                    output << t << ';' << prev_moc.vars.point_double[0].back() << std::endl;
-                }
-                else {
-                    layer_t& prev = buffer->previous();
-                    // Вывод значения плотности в конце трубы в начале моделирования
-                    output << t << ';' << prev.vars.cell_double[0].back() << std::endl;
-                }
+                layer_t& prev = buffer->previous();
+                // Вывод значения плотности в конце трубы в начале моделирования
+                output << t << ';' << prev.vars.cell_double[0].back() << std::endl;
+                
             }
             t += dt;
-            if constexpr (std::is_same<Solver, moc_solver<1>>::value) {
-                Solver solver_moc(advection_model_moc, buffer_moc.previous(), buffer_moc.current());
-                solver_moc.step_optional_boundaries(dt, rho_final, rho_out); // Шаг расчёта
-                single_var_moc_t& next_moc = buffer_moc.current();
-                // Вывод значения плотности в конце трубы на каждом шаге моделирования
-                output << t << ';' << next_moc.vars.point_double[0].back() << std::endl;
-                buffer_moc.advance(+1);
-            }
-            else {
-                Solver solver(*advection_model, *buffer);
-                solver.step(dt, rho_final, rho_out); // Шаг расчёта
-                layer_t& next = buffer->current();
-                // Вывод значения плотности в конце трубы на каждом шаге моделирования
-                output << t << ';' << next.vars.cell_double[0].back() << std::endl;
-                buffer->advance(+1);
-            }
+            Solver solver(*advection_model, *buffer);
+            solver.step(dt, rho_final, rho_out); // Шаг расчёта
+            layer_t& next = buffer->current();
+            // Вывод значения плотности в конце трубы на каждом шаге моделирования
+            output << t << ';' << next.vars.cell_double[0].back() << std::endl;
+            buffer->advance(+1);
         }
         output.flush();
         output.close();
@@ -167,7 +134,7 @@ protected:
     /// когда область смеси наполовину своей длины пройдёт через конец трубопровода
     /// @param time Временной ряд, по которому была рассчитана модель физической диффузии
     /// @param parameter Рассчитанная модель физической диффузии на выходе трубопровода
-    void calc_physical_diffusion_center(const vector<double>& time, const vector<double>& parameter)
+    double calc_physical_diffusion_center(const vector<double>& time, const vector<double>& parameter) const
     {
         double eps = 0.0001; // Точность для определения начала и конца области диффузии
         double start_diff; // момент времени начала прохождения области смеси через конец трубопровода
@@ -190,8 +157,13 @@ protected:
                 break;
             }
         }
+
+        if (start_diff == 0) {
+            // Задаем значение start_diff по умолчанию чтобы не возвращался мусор
+            start_diff = time[0];
+        }
         
-        physical_diffusion_center_time = (start_diff + end_diff) / 2;
+        return (start_diff + end_diff) / 2;
     }
 
     /// @brief Получения временного диапазона, в котором область смеси двух партий нефти
@@ -247,7 +219,7 @@ protected:
         output.close();
         output.flush();
 
-        calc_physical_diffusion_center(t, density_output); // Поиск временного центра области смешения
+        physical_diffusion_center_time = calc_physical_diffusion_center(t, density_output); // Поиск временного центра области смешения
     }
 
     /// @brief Расчёт длины области смеси двух партий нефти
@@ -274,7 +246,6 @@ protected:
 
         boundaries[0] = physical_diffusion_center_time - diff_length / (speed * 2);
         boundaries[1] = physical_diffusion_center_time + diff_length / (speed * 2);
-
         std::stringstream filename;
         filename << path << "physical_diffusion.txt";
         std::ofstream output(filename.str());
@@ -283,6 +254,74 @@ protected:
         
         output.close();
         output.flush();
+    }
+
+    /// @brief Расчет вытеснения первой партии нефтью с другой плотностью 
+    /// Расчет выполняется методом характеристик для заданного числа Куранта
+    /// Результат расчетных профилей записывается в файл вида "output Cr.csv"
+    /// @tparam Solver Шаблон солвера для расчёта диффузии
+    /// @param rho_initial Плотность исходной нефти (вытесняемой)
+    /// @param rho_final Плотность вытесняющей нефти
+    /// @param v Скорость движения нефти в трубопроводе
+    /// @param Cr Число Куранта
+    /// @param T Период моделирования
+    /// @param path Путь, куда пишется результат расчета
+    template <typename Solver>
+    void calc_moc_with_cr(double rho_initial, double rho_final, double v,
+        double Cr, double T, const string& path)
+    {
+        // Фиктивное граничное условие на выходе. Реально в эксперименте не задействуется
+        double rho_out = 870;
+
+        // Одна переменная, и структуры метода характеристик для нее
+        typedef composite_layer_t<profile_collection_t<1>,
+            moc_solver<1>::specific_layer> single_var_moc_t;
+        // буфер, содержащий в себе слои
+        ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
+        // объявляем переменную
+        single_var_moc_t& prev = buffer.previous();
+        // задаем исходные значения
+        prev.vars.point_double[0] = vector<double>(prev.vars.point_double[0].size(), density_initial);
+        // профиль расхода
+        vector<double> Q(pipe.profile.getPointCount(), 0.5);
+        // уравнение адвекции
+        PipeQAdvection advection_model(pipe, Q);
+
+        const auto& x = advection_model.get_grid();
+        double dx = x[1] - x[0];
+        double dt_ideal = abs(dx / v);
+
+        double t = 0; // текущее время
+
+        double dt = Cr * dt_ideal; // время в долях от Куранта
+
+        string filename = get_courant_research_filename<Solver>(path, Cr);
+
+        std::ofstream output(filename); // Открытие файла для записи
+        output << "time;Density" << std::endl;
+
+        size_t N = static_cast<int>(T / dt);
+        for (size_t index = 0; index < N; ++index) {
+            if (index == 0) {
+                single_var_moc_t& prev = buffer.previous();
+                // Вывод значения плотности в конце трубы на каждом шаге моделирования
+                output << t << ';' << prev.vars.point_double[0].back() << std::endl;
+            }
+
+            t += dt;
+
+            Solver solver(advection_model, buffer.previous(), buffer.current());
+            solver.step_optional_boundaries(dt, rho_final, rho_out); // Шаг расчёта
+
+            single_var_moc_t& next = buffer.current();
+            // Вывод значения плотности в конце трубы на каждом шаге моделирования
+            output << t << ';' << next.vars.point_double[0].back() << std::endl;
+
+            buffer.advance(+1);
+
+        }
+        output.flush();
+        output.close();
     }
 };
 
@@ -370,7 +409,7 @@ TEST_F(DiffusionOfAdvection, CompareUpstreamDiffAndMOC)
         Cr, experiment_time, path);
 
     // Расчёт методом характеристик для Cr = 0.5
-    calc_quickest_with_cr<moc_solver<1>>(density_initial, density_final, v,
+    calc_moc_with_cr<moc_solver<1>>(density_initial, density_final, v,
         Cr, experiment_time, path);
 
     // Строим для Cr = 1
