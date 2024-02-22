@@ -1,14 +1,10 @@
 ﻿#pragma once
 
+
+
+
 /// @brief Тесты для солвера quickest_ultimate_fv_solver
 class DiffusionOfAdvection : public ::testing::Test {
-protected:
-    // Профиль переменных
-    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
-    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
-
-    // Слой: переменных Vars + сколько угодно служебных Specific
-    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
 protected: // здесь пока копим параметры эксперимента
     const double density_initial{ 850 };
     const double density_final{ 860 };
@@ -21,13 +17,11 @@ protected:
     pipe_properties_t pipe;
     /// @brief Параметры нефти
     oil_parameters_t oil;
-
     /// @brief Профиль расхода
     vector<double> Q;
     /// @brief Уравнение адвекции
     std::unique_ptr<PipeQAdvection> advection_model;
-    /// @brief Буфер, содержащий в себе слои
-    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
+
 protected:
 
     /// @brief Подготовка к расчету для семейства тестов
@@ -42,7 +36,7 @@ protected:
         // Инициализация профиля расхода
         Q = vector<double>(pipe.profile.getPointCount(), volumetric_flow);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+
     }
     
     /// @brief Формирует имя файл для результатов исследования разных численных метов
@@ -93,8 +87,16 @@ protected:
         // Фиктивное граничное условие на выходе. Реально в эксперименте не задействуется
         double rho_out = 870;
 
+        // Профиль целевых и служебных переменных для квикеста
+        typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
+        typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
+        typedef composite_layer_t<target_var_t, specific_data_t> quickest_advection_layer_t;
+
+        //std::unique_ptr<ring_buffer_t<quickest_advection_layer_t>> buffer;
+        ring_buffer_t<quickest_advection_layer_t> buffer(2, pipe.profile.getPointCount());
+
         // Задаём исходные значения
-        layer_t& prev = buffer->previous();
+        quickest_advection_layer_t& prev = buffer.previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), density_initial);
 
         const auto& x = advection_model->get_grid();
@@ -109,22 +111,18 @@ protected:
 
         std::ofstream output(filename); // Открытие файла для записи
         output << "time;Density" << std::endl;
+        // Вывод значения плотности в конце трубы в начале моделирования
+        output << t << ';' << prev.vars.cell_double[0].back() << std::endl;
 
         size_t N = static_cast<int>(T / dt);
         for (size_t index = 0; index < N; ++index) {
-            if (index == 0) {
-                layer_t& prev = buffer->previous();
-                // Вывод значения плотности в конце трубы в начале моделирования
-                output << t << ';' << prev.vars.cell_double[0].back() << std::endl;
-                
-            }
             t += dt;
-            Solver solver(*advection_model, *buffer);
+            Solver solver(*advection_model, buffer);
             solver.step(dt, rho_final, rho_out); // Шаг расчёта
-            layer_t& next = buffer->current();
+            quickest_advection_layer_t& next = buffer.current();
             // Вывод значения плотности в конце трубы на каждом шаге моделирования
             output << t << ';' << next.vars.cell_double[0].back() << std::endl;
-            buffer->advance(+1);
+            buffer.advance(+1);
         }
         output.flush();
         output.close();
@@ -281,12 +279,8 @@ protected:
         single_var_moc_t& prev = buffer.previous();
         // задаем исходные значения
         prev.vars.point_double[0] = vector<double>(prev.vars.point_double[0].size(), density_initial);
-        // профиль расхода
-        vector<double> Q(pipe.profile.getPointCount(), 0.5);
-        // уравнение адвекции
-        PipeQAdvection advection_model(pipe, Q);
 
-        const auto& x = advection_model.get_grid();
+        const auto& x = advection_model->get_grid();
         double dx = x[1] - x[0];
         double dt_ideal = abs(dx / v);
 
@@ -298,18 +292,14 @@ protected:
 
         std::ofstream output(filename); // Открытие файла для записи
         output << "time;Density" << std::endl;
+        // Вывод значения плотности в начале моделирования
+        output << t << ';' << prev.vars.point_double[0].back() << std::endl;
 
         size_t N = static_cast<int>(T / dt);
         for (size_t index = 0; index < N; ++index) {
-            if (index == 0) {
-                single_var_moc_t& prev = buffer.previous();
-                // Вывод значения плотности в конце трубы на каждом шаге моделирования
-                output << t << ';' << prev.vars.point_double[0].back() << std::endl;
-            }
-
             t += dt;
 
-            Solver solver(advection_model, buffer.previous(), buffer.current());
+            Solver solver(*advection_model, buffer.previous(), buffer.current());
             solver.step_optional_boundaries(dt, rho_final, rho_out); // Шаг расчёта
 
             single_var_moc_t& next = buffer.current();
