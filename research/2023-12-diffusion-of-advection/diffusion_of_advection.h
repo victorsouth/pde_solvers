@@ -45,6 +45,37 @@ protected:
         buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
     }
     
+    /// @brief Формирует имя файл для результатов исследования разных численных метов
+    /// @tparam Solver Класс солвера
+    /// @param path Путь, в котором формируется файл
+    /// @param Cr Число куранта
+    /// @return Путь к файлу в заивисимости от указанного класса солвера
+    template <typename Solver>
+    static std::string get_courant_research_filename(const string& path, double Cr)
+    {
+        std::stringstream filename;
+        if constexpr (std::is_same<Solver, quickest_ultimate_fv_solver>::value) {
+            filename << path << "output ultimate Cr=" << Cr << ".csv";
+        }
+        else if constexpr (std::is_same<Solver, upstream_fv_solver>::value) {
+            filename << path << "output upstream Cr=" << Cr << ".csv";
+        }
+        else if constexpr (std::is_same<Solver, quickest_fv_solver>::value) {
+            filename << path << "output quickest Cr = " << Cr << ".csv";
+        }
+        else if constexpr (std::is_same<Solver, quick_fv_solver>::value) {
+            filename << path << "output quick Cr = " << Cr << ".csv";
+        }
+        else if constexpr (std::is_same<Solver, moc_solver<1>>::value)
+        {
+            filename << path << "output MOC Cr=" << Cr << ".csv";
+        }
+        else {
+            throw std::runtime_error("Please specify filename for solver type");
+        }
+        return filename.str();
+    }
+
     /// @brief Расчет вытеснения первой партии нефтью с другой плотностью 
     /// Расчет выполняется методом QUICKEST или QUICKEST-ULTIMATE для заданного числа Куранта
     /// Результат расчетных профилей записывается в файл вида "output Cr.csv"
@@ -90,25 +121,9 @@ protected:
         // уравнение адвекции
         PipeQAdvection advection_model_moc(pipe, Q);
 
-        string method = typeid(Solver).name();
+        string filename = get_courant_research_filename<Solver>(path, Cr);
 
-        std::stringstream filename;
-        if (std::is_same<Solver, quickest_ultimate_fv_solver>::value) {
-            filename << path << "output ultimate Cr=" << Cr << ".csv";
-        }
-        else if (std::is_same<Solver, upstream_fv_solver>::value) {
-            filename << path << "output upstream Cr=" << Cr << ".csv";
-        }
-        else if (std::is_same<Solver, quickest_fv_solver>::value) {
-            filename << path << "output quickest Cr = " << Cr << ".csv";
-        }
-        else if (std::is_same<Solver, quick_fv_solver>::value) {
-            filename << path << "output quick Cr = " << Cr << ".csv";
-        }
-        else {
-            filename << path << "output MOC Cr=" << Cr << ".csv";
-        }
-        std::ofstream output(filename.str()); // Открытие файла для записи
+        std::ofstream output(filename); // Открытие файла для записи
         output << "time;Density" << std::endl;
 
         size_t N = static_cast<int>(T / dt);
