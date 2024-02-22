@@ -137,8 +137,8 @@ protected:
     double calc_physical_diffusion_center(const vector<double>& time, const vector<double>& parameter) const
     {
         double eps = 0.0001; // Точность для определения начала и конца области диффузии
-        double start_diff = 0; // момент времени начала прохождения области смеси через конец трубопровода
-        double end_diff; // момент времени конца прохождения области смеси через конец трубопровода
+        double start_diff = std::numeric_limits<double>::quiet_NaN(); // момент времени начала прохождения области смеси через конец трубопровода
+        double end_diff = std::numeric_limits<double>::quiet_NaN(); // момент времени конца прохождения области смеси через конец трубопровода
         
         for (size_t index = 0; index < parameter.size(); ++index)
         {
@@ -158,13 +158,8 @@ protected:
             }
         }
 
-        if (start_diff == 0) {
-            // Проверяем на нулевое значение
-            if (time[0] == 0) {
-                throw std::runtime_error("Нулевое значение времени в начале процесса");
-            }
-            // Задаем значение start_diff по умолчанию чтобы не возвращался мусор
-            start_diff = time[0];
+        if (!std::isfinite(start_diff) || !std::isfinite(end_diff)) {
+            throw std::runtime_error("Не заданы моменты времени");
         }
         
         return (start_diff + end_diff) / 2;
