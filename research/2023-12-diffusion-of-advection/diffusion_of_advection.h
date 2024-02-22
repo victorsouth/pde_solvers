@@ -140,7 +140,7 @@ protected:
         double start_diff = std::numeric_limits<double>::quiet_NaN(); // момент времени начала прохождения области смеси через конец трубопровода
         double end_diff = std::numeric_limits<double>::quiet_NaN(); // момент времени конца прохождения области смеси через конец трубопровода
         
-        for (size_t index = 0; index < parameter.size(); ++index)
+        for (size_t index = 0; index < parameter.size() - 1; ++index)
         {
             if ((abs(parameter[index] - density_initial) < eps) && (abs(parameter[index + 1] - density_initial) >= eps))
             {
