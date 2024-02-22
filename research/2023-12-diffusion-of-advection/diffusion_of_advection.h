@@ -137,7 +137,7 @@ protected:
     double calc_physical_diffusion_center(const vector<double>& time, const vector<double>& parameter) const
     {
         double eps = 0.0001; // Точность для определения начала и конца области диффузии
-        double start_diff; // момент времени начала прохождения области смеси через конец трубопровода
+        double start_diff = 0; // момент времени начала прохождения области смеси через конец трубопровода
         double end_diff; // момент времени конца прохождения области смеси через конец трубопровода
         
         for (size_t index = 0; index < parameter.size(); ++index)
