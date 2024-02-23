@@ -1,14 +1,10 @@
 ﻿#pragma once
 
+
+
+
 /// @brief Тесты для солвера quickest_ultimate_fv_solver
 class DiffusionOfAdvection : public ::testing::Test {
-protected:
-    // Профиль переменных
-    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
-    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
-
-    // Слой: переменных Vars + сколько угодно служебных Specific
-    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
 protected: // здесь пока копим параметры эксперимента
     const double density_initial{ 850 };
     const double density_final{ 860 };
@@ -21,13 +17,11 @@ protected:
     pipe_properties_t pipe;
     /// @brief Параметры нефти
     oil_parameters_t oil;
-
     /// @brief Профиль расхода
     vector<double> Q;
     /// @brief Уравнение адвекции
     std::unique_ptr<PipeQAdvection> advection_model;
-    /// @brief Буфер, содержащий в себе слои
-    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
+
 protected:
 
     /// @brief Подготовка к расчету для семейства тестов
@@ -42,15 +36,47 @@ protected:
         // Инициализация профиля расхода
         Q = vector<double>(pipe.profile.getPointCount(), volumetric_flow);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+
     }
     
+    /// @brief Формирует имя файл для результатов исследования разных численных метов
+    /// @tparam Solver Класс солвера
+    /// @param path Путь, в котором формируется файл
+    /// @param Cr Число куранта
+    /// @return Путь к файлу в заивисимости от указанного класса солвера
+    template <typename Solver>
+    static std::string get_courant_research_filename(const string& path, double Cr)
+    {
+        std::stringstream filename;
+        if constexpr (std::is_same<Solver, quickest_ultimate_fv_solver>::value) {
+            filename << path << "output ultimate Cr=" << Cr << ".csv";
+        }
+        else if constexpr (std::is_same<Solver, upstream_fv_solver>::value) {
+            filename << path << "output upstream Cr=" << Cr << ".csv";
+        }
+        else if constexpr (std::is_same<Solver, quickest_fv_solver>::value) {
+            filename << path << "output quickest Cr = " << Cr << ".csv";
+        }
+        else if constexpr (std::is_same<Solver, quick_fv_solver>::value) {
+            filename << path << "output quick Cr = " << Cr << ".csv";
+        }
+        else if constexpr (std::is_same<Solver, moc_solver<1>>::value)
+        {
+            filename << path << "output MOC Cr=" << Cr << ".csv";
+        }
+        else {
+            throw std::runtime_error("Please specify filename for solver type");
+        }
+        return filename.str();
+    }
+
     /// @brief Расчет вытеснения первой партии нефтью с другой плотностью 
     /// Расчет выполняется методом QUICKEST или QUICKEST-ULTIMATE для заданного числа Куранта
     /// Результат расчетных профилей записывается в файл вида "output Cr.csv"
     /// @tparam Solver Шаблон солвера для расчёта диффузии
     /// @param rho_initial Плотность исходной нефти (вытесняемой)
     /// @param rho_final Плотность вытесняющей нефти
+    /// @param v Скорость движения нефти в трубопроводе
     /// @param Cr Число Куранта
     /// @param T Период моделирования
     /// @param path Путь, куда пишется результат расчета
@@ -61,8 +87,16 @@ protected:
         // Фиктивное граничное условие на выходе. Реально в эксперименте не задействуется
         double rho_out = 870;
 
+        // Профиль целевых и служебных переменных для квикеста
+        typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
+        typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
+        typedef composite_layer_t<target_var_t, specific_data_t> quickest_advection_layer_t;
+
+        //std::unique_ptr<ring_buffer_t<quickest_advection_layer_t>> buffer;
+        ring_buffer_t<quickest_advection_layer_t> buffer(2, pipe.profile.getPointCount());
+
         // Задаём исходные значения
-        layer_t& prev = buffer->previous();
+        quickest_advection_layer_t& prev = buffer.previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), density_initial);
 
         const auto& x = advection_model->get_grid();
@@ -73,35 +107,22 @@ protected:
 
         double dt = Cr * dt_ideal; // время в долях от Куранта
 
-        string method = typeid(Solver).name();
+        string filename = get_courant_research_filename<Solver>(path, Cr);
 
-        std::stringstream filename;
-        if (method.find("ultimate") == std::string::npos)
-            filename << path << "output quickest Cr=" << Cr << ".csv";
-        else
-            filename << path << "output quickest-ultimate Cr=" << Cr << ".csv";
-        std::ofstream output(filename.str()); // Открытие файла для записи
+        std::ofstream output(filename); // Открытие файла для записи
         output << "time;Density" << std::endl;
+        // Вывод значения плотности в конце трубы в начале моделирования
+        output << t << ';' << prev.vars.cell_double[0].back() << std::endl;
 
         size_t N = static_cast<int>(T / dt);
         for (size_t index = 0; index < N; ++index) {
-            if (index == 0) {
-                layer_t& prev = buffer->previous();
-                // Вывод значения плотности в конце трубы в начале моделирования
-                output << t << ';' << prev.vars.cell_double[0].back() << std::endl;
-            }
-
             t += dt;
-
-            Solver solver(*advection_model, *buffer);
+            Solver solver(*advection_model, buffer);
             solver.step(dt, rho_final, rho_out); // Шаг расчёта
-
-            layer_t& next = buffer->current();
+            quickest_advection_layer_t& next = buffer.current();
             // Вывод значения плотности в конце трубы на каждом шаге моделирования
             output << t << ';' << next.vars.cell_double[0].back() << std::endl;
-
-            buffer->advance(+1);
-
+            buffer.advance(+1);
         }
         output.flush();
         output.close();
@@ -111,13 +132,13 @@ protected:
     /// когда область смеси наполовину своей длины пройдёт через конец трубопровода
     /// @param time Временной ряд, по которому была рассчитана модель физической диффузии
     /// @param parameter Рассчитанная модель физической диффузии на выходе трубопровода
-    void calc_physical_diffusion_center(const vector<double>& time, const vector<double>& parameter)
+    double calc_physical_diffusion_center(const vector<double>& time, const vector<double>& parameter) const
     {
         double eps = 0.0001; // Точность для определения начала и конца области диффузии
-        double start_diff; // момент времени начала прохождения области смеси через конец трубопровода
-        double end_diff; // момент времени конца прохождения области смеси через конец трубопровода
+        double start_diff = std::numeric_limits<double>::quiet_NaN(); // момент времени начала прохождения области смеси через конец трубопровода
+        double end_diff = std::numeric_limits<double>::quiet_NaN(); // момент времени конца прохождения области смеси через конец трубопровода
         
-        for (size_t index = 0; index < parameter.size(); ++index)
+        for (size_t index = 0; index < parameter.size() - 1; ++index)
         {
             if ((abs(parameter[index] - density_initial) < eps) && (abs(parameter[index + 1] - density_initial) >= eps))
             {
@@ -134,8 +155,12 @@ protected:
                 break;
             }
         }
+
+        if (!std::isfinite(start_diff) || !std::isfinite(end_diff)) {
+            throw std::runtime_error("Не заданы моменты времени");
+        }
         
-        physical_diffusion_center_time = (start_diff + end_diff) / 2;
+        return (start_diff + end_diff) / 2;
     }
 
     /// @brief Получения временного диапазона, в котором область смеси двух партий нефти
@@ -191,7 +216,7 @@ protected:
         output.close();
         output.flush();
 
-        calc_physical_diffusion_center(t, density_output); // Поиск временного центра области смешения
+        physical_diffusion_center_time = calc_physical_diffusion_center(t, density_output); // Поиск временного центра области смешения
     }
 
     /// @brief Расчёт длины области смеси двух партий нефти
@@ -218,7 +243,6 @@ protected:
 
         boundaries[0] = physical_diffusion_center_time - diff_length / (speed * 2);
         boundaries[1] = physical_diffusion_center_time + diff_length / (speed * 2);
-
         std::stringstream filename;
         filename << path << "physical_diffusion.txt";
         std::ofstream output(filename.str());
@@ -227,6 +251,66 @@ protected:
         
         output.close();
         output.flush();
+    }
+
+    /// @brief Расчет вытеснения первой партии нефтью с другой плотностью 
+    /// Расчет выполняется методом характеристик для заданного числа Куранта
+    /// Результат расчетных профилей записывается в файл вида "output Cr.csv"
+    /// @tparam Solver Шаблон солвера для расчёта диффузии
+    /// @param rho_initial Плотность исходной нефти (вытесняемой)
+    /// @param rho_final Плотность вытесняющей нефти
+    /// @param v Скорость движения нефти в трубопроводе
+    /// @param Cr Число Куранта
+    /// @param T Период моделирования
+    /// @param path Путь, куда пишется результат расчета
+    template <typename Solver>
+    void calc_moc_with_cr(double rho_initial, double rho_final, double v,
+        double Cr, double T, const string& path)
+    {
+        // Фиктивное граничное условие на выходе. Реально в эксперименте не задействуется
+        double rho_out = 870;
+
+        // Одна переменная, и структуры метода характеристик для нее
+        typedef composite_layer_t<profile_collection_t<1>,
+            moc_solver<1>::specific_layer> single_var_moc_t;
+        // буфер, содержащий в себе слои
+        ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
+        // объявляем переменную
+        single_var_moc_t& prev = buffer.previous();
+        // задаем исходные значения
+        prev.vars.point_double[0] = vector<double>(prev.vars.point_double[0].size(), density_initial);
+
+        const auto& x = advection_model->get_grid();
+        double dx = x[1] - x[0];
+        double dt_ideal = abs(dx / v);
+
+        double t = 0; // текущее время
+
+        double dt = Cr * dt_ideal; // время в долях от Куранта
+
+        string filename = get_courant_research_filename<Solver>(path, Cr);
+
+        std::ofstream output(filename); // Открытие файла для записи
+        output << "time;Density" << std::endl;
+        // Вывод значения плотности в начале моделирования
+        output << t << ';' << prev.vars.point_double[0].back() << std::endl;
+
+        size_t N = static_cast<int>(T / dt);
+        for (size_t index = 0; index < N; ++index) {
+            t += dt;
+
+            Solver solver(*advection_model, buffer.previous(), buffer.current());
+            solver.step_optional_boundaries(dt, rho_final, rho_out); // Шаг расчёта
+
+            single_var_moc_t& next = buffer.current();
+            // Вывод значения плотности в конце трубы на каждом шаге моделирования
+            output << t << ';' << next.vars.point_double[0].back() << std::endl;
+
+            buffer.advance(+1);
+
+        }
+        output.flush();
+        output.close();
     }
 };
 
@@ -291,4 +375,45 @@ TEST_F(DiffusionOfAdvection, CompareQuickestAndQuickestUltimateDiffusion)
     // Расчёт методом QUICKEST-UlTIMATE для Cr = 1
     calc_quickest_with_cr<quickest_ultimate_fv_solver>(density_initial, density_final, v,
         Cr, experiment_time, path);
+}
+
+/// @brief Расчет, демонстрирующий, что Upstream Differencing и метод характеристик
+/// имеют численную диффузию хуже физической
+/// Строятся графики Upstream Differencing, метод характеристик для Cr = 0.5 
+/// и график Аналитического решения (Upstream Differencing для Cr = 1)
+/// Так же строится график физической диффузии
+TEST_F(DiffusionOfAdvection, CompareUpstreamDiffAndMOC)
+{
+    // Создаём папку с результатами и получаем путь к ней
+    string path = prepare_research_folder();
+
+    // Получаем значение скорости для эксперимента
+    double v = advection_model->getEquationsCoeffs(0, 0);
+
+    // Строим для Cr = 1
+    double Cr = 0.5;
+
+    // Расчёт методом Upstream Differencing для Cr = 0.5
+    calc_quickest_with_cr<upstream_fv_solver>(density_initial, density_final, v,
+        Cr, experiment_time, path);
+
+    // Расчёт методом характеристик для Cr = 0.5
+    calc_moc_with_cr<moc_solver<1>>(density_initial, density_final, v,
+        Cr, experiment_time, path);
+
+    // Строим для Cr = 1
+    Cr = 1;
+
+    // Расчёт методом Upstream Differencing для Cr = 1, аналитическое решение
+    calc_quickest_with_cr<upstream_fv_solver>(density_initial, density_final, v,
+        Cr, experiment_time, path);
+
+    // Задание массива моментов времени для расчета выходного параметра
+    double dt_out = 60;
+    vector<double> t_out = build_density_out_time_of_interest(dt_out);
+    // Расчёт физической диффузии
+    calc_physical_diffusion_model(density_initial, density_final, t_out, v, path);
+
+    // Расчёт временных границ области смеси
+    calc_physical_diffusion_boundaries(v, path);
 }
