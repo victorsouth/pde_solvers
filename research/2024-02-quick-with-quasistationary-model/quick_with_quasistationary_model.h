@@ -278,51 +278,51 @@ void print_layers(const double dt,
 
 
 /// @brief Тесты для солвера quickest_ultimate_fv_solver
-class QuickWithQuasiStationaryModel : public ::testing::Test {
-protected:
-    // Профиль переменных
-    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
-    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
-
-    // Слой: переменных Vars + сколько угодно служебных Specific
-    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
-protected:
-    /// @brief Параметры трубы
-    pipe_properties_t pipe;
-    /// @brief Профиль расхода
-    vector<double> Q;
-    std::unique_ptr<PipeQAdvection> advection_model;
-    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
-    std::unique_ptr<ring_buffer_t<layer_t>> buffer_nu;
-protected:
-
-    /// @brief Подготовка к расчету для семейства тестов
-    virtual void SetUp() override {
-        // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
-        simple_pipe_properties simple_pipe;
-        //simple_pipe.length = 50e3;
-        simple_pipe.length = 700e3; // тест трубы 700км
-        //simple_pipe.diameter = 0.7;
-        simple_pipe.diameter = 0.514; // тест трубы 700км
-        //simple_pipe.dx = 100;
-        simple_pipe.dx = 100; // тест трубы 700км
-        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-
-        Q = vector<double>(pipe.profile.getPointCount(), 0.5);
-        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        //buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
-
-        //layer_t& prev = buffer->previous();
-
-        //buffer_nu = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
-
-        //layer_t& prev = buffer_nu->previous();
-        //prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
-    }
-};
+//class QuickWithQuasiStationaryModel : public ::testing::Test {
+//protected:
+//    // Профиль переменных
+//    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
+//    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
+//
+//    // Слой: переменных Vars + сколько угодно служебных Specific
+//    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
+//protected:
+//    /// @brief Параметры трубы
+//    pipe_properties_t pipe;
+//    /// @brief Профиль расхода
+//    vector<double> Q;
+//    std::unique_ptr<PipeQAdvection> advection_model;
+//    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
+//    std::unique_ptr<ring_buffer_t<layer_t>> buffer_nu;
+//protected:
+//
+//    /// @brief Подготовка к расчету для семейства тестов
+//    virtual void SetUp() override {
+//        // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
+//        simple_pipe_properties simple_pipe;
+//        //simple_pipe.length = 50e3;
+//        simple_pipe.length = 700e3; // тест трубы 700км
+//        //simple_pipe.diameter = 0.7;
+//        simple_pipe.diameter = 0.514; // тест трубы 700км
+//        //simple_pipe.dx = 100;
+//        simple_pipe.dx = 100; // тест трубы 700км
+//        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
+//
+//        Q = vector<double>(pipe.profile.getPointCount(), 0.5);
+//        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
+//        //buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+//
+//        //layer_t& prev = buffer->previous();
+//
+//        //buffer_nu = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+//
+//        //layer_t& prev = buffer_nu->previous();
+//        //prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
+//    }
+//};
 
 /// @brief Пример вывода в файл через
-TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
+TEST_F(QUICKEST_ULTIMATE, TimeRowsTask)
 {
     string path = prepare_test_folder();
     // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
@@ -353,7 +353,7 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     for (double time = 0.0; time <= T; time += dis(gen))
         time_row_for_rho.push_back(time);
     vector<double> time_rho_in_row = vector<double>(time_row_for_rho.size(), rho);
-    for (size_t i = time_row_for_rho.size()/2; i <= time_row_for_rho.size() - 1; i++)
+    for (size_t i = 0/*time_row_for_rho.size() / 2*/; i <= time_row_for_rho.size() - 1; i++)
     {
         time_rho_in_row[i] = rho_in;//rho - abs(rho * 0.001 * std::rand() / RAND_MAX);
     }
@@ -396,22 +396,21 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 
 
     ///////////////////////////////////////////////////////////////////////////////////
-    
 
-    advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-    buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+    /*advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
+    buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());*/
 
     layer_t& prev = buffer->previous();
 
-    buffer_nu = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+    //buffer_nu = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
 
-    layer_t& prev_nu = buffer_nu->previous();
+    //layer_t& prev_nu = buffer_nu->previous();
 
     prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), rho);
-    prev_nu.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), nu);
+    //prev_nu.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), nu);
 
     vector<double> new_time_row, new_time_p_in_row, new_time_p_out_row, new_time_Q_row, p_profile, initial_p_profile;
-    vector<double> diff_p_profile = vector<double>(pipe.n);
+    vector<double> diff_p_profile = vector<double>(my_pipe.n);
     vector<vector<double>> rho_and_nu_in = vector<vector<double>>(2);
     vector<vector<double>> rho_and_nu_out = vector<vector<double>>(2);
 
@@ -425,30 +424,30 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     wstring nu_profile_file = folder_path + L"\\nu_profile.csv";
     wstring diff_p_profile_file = folder_path + L"\\diff_p_profile.csv";
 
-    std::stringstream filename;
-    filename << path << "output Cr=" << Cr << ".csv";
-    std::ofstream output(filename.str());
+    //std::stringstream filename;
+    //filename << path << "output Cr=" << Cr << ".csv";
+    //std::ofstream output(filename.str());
 
     do {
         new_time_row.push_back(t);
-        my_task.Q = linear_interpolator(time_row_for_Q, time_Q_row, dt);
+        my_task.Q = linear_interpolator(time_row_for_Q, time_Q_row, t);
         new_time_Q_row.push_back(my_task.Q);
-        rho_and_nu_in[0].push_back(linear_interpolator(time_row_for_rho, time_rho_in_row, dt));
-        rho_and_nu_in[1].push_back(linear_interpolator(time_row_for_nu, time_nu_in_row, dt));
+        rho_and_nu_in[0].push_back(linear_interpolator(time_row_for_rho, time_rho_in_row, t));
+        rho_and_nu_in[1].push_back(linear_interpolator(time_row_for_nu, time_nu_in_row, t));
 
-        rho_and_nu_out[0].push_back(linear_interpolator(time_row_for_rho, time_rho_out_row, dt));
-        rho_and_nu_out[1].push_back(linear_interpolator(time_row_for_nu, time_nu_out_row, dt));
+        rho_and_nu_out[0].push_back(linear_interpolator(time_row_for_rho, time_rho_out_row, t));
+        rho_and_nu_out[1].push_back(linear_interpolator(time_row_for_nu, time_nu_out_row, t));
 
-        new_time_p_in_row.push_back(linear_interpolator(time_row_for_p_in, time_p_in_row, dt));
+        new_time_p_in_row.push_back(linear_interpolator(time_row_for_p_in, time_p_in_row, t));
 
         Cr = calc_speed(my_task.Q, simple_pipe.diameter) * dt_ideal / dx;
 
 
         if (t == 0) {
             layer_t& prev = buffer->previous();
-            prev.vars.print(t, output);
-            layer_t& prev_nu = buffer_nu->previous();
-            prev_nu.vars.print(t, output);
+            //prev.vars.print(t, output);
+            //layer_t& prev_nu = buffer_nu->previous();
+            //prev_nu.vars.print(t, output);
         }
 
         t += dt;
@@ -456,16 +455,19 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
         quickest_ultimate_fv_solver solver_rho(*advection_model, *buffer);
         solver_rho.step(dt, rho_and_nu_in[0].back(), rho_and_nu_out[0].back());
 
-        quickest_ultimate_fv_solver solver_nu(*advection_model, *buffer_nu);
-        solver_nu.step(dt, rho_and_nu_in[1].back(), rho_and_nu_out[1].back());
-
-        my_task.rho_profile = buffer->current();
-        my_task.nu_profile = buffer_nu->current();
-
+        //quickest_ultimate_fv_solver solver_nu(*advection_model, *buffer_nu);
+        //solver_nu.step(dt, rho_and_nu_in[1].back(), rho_and_nu_out[1].back());
         layer_t& next = buffer->current();
-        next.vars.print(t, output);
-        layer_t& next_nu = buffer_nu->current();
-        next_nu.vars.print(t, output);
+        my_task.rho_profile = next.vars.cell_double[0];
+
+
+        //my_task.nu_profile = prev_nu.vars.cell_double[0];
+
+
+        
+        //next.vars.print(t, output);
+        //layer_t& next_nu = buffer_nu->current();
+       // next_nu.vars.print(t, output);
 
         buffer->advance(+1);
             
@@ -474,7 +476,7 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 
         //все готово для следующего шага, интерполированная скорость есть
     } while (t < T);
-    output.flush();
-    output.close();
+    //output.flush();
+    //output.close();
     ///////////////////////////////////////////////////////////////////////////////////
 }
