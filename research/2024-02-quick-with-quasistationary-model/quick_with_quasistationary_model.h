@@ -293,6 +293,7 @@ protected:
     vector<double> Q;
     std::unique_ptr<PipeQAdvection> advection_model;
     std::unique_ptr<ring_buffer_t<layer_t>> buffer;
+    std::unique_ptr<ring_buffer_t<layer_t>> buffer_nu;
 protected:
 
     /// @brief Подготовка к расчету для семейства тестов
@@ -309,10 +310,14 @@ protected:
 
         Q = vector<double>(pipe.profile.getPointCount(), 0.5);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        //buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
 
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
+        //layer_t& prev = buffer->previous();
+
+        //buffer_nu = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+
+        //layer_t& prev = buffer_nu->previous();
+        //prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
     }
 };
 
@@ -397,12 +402,28 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
 
     layer_t& prev = buffer->previous();
-    prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
+
+    buffer_nu = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+
+    layer_t& prev_nu = buffer_nu->previous();
+
+    prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), rho);
+    prev_nu.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), nu);
 
     vector<double> new_time_row, new_time_p_in_row, new_time_p_out_row, new_time_Q_row, p_profile, initial_p_profile;
+    vector<double> diff_p_profile = vector<double>(pipe.n);
+    vector<vector<double>> rho_and_nu_in = vector<vector<double>>(2);
+    vector<vector<double>> rho_and_nu_out = vector<vector<double>>(2);
 
     double t = 0; // текущее время
     double dt = Cr * dt_ideal; // время в долях от Куранта
+    euler_solver_with_MOC e_solver(my_pipe, my_task);
+
+    wstring folder_path = L"research\\2024_02_block_3\\task_2_SDKU\\research_out";
+    wstring p_profile_file = folder_path + L"\\p_profile.csv";
+    wstring rho_profile_file = folder_path + L"\\rho_profile.csv";
+    wstring nu_profile_file = folder_path + L"\\nu_profile.csv";
+    wstring diff_p_profile_file = folder_path + L"\\diff_p_profile.csv";
 
     std::stringstream filename;
     filename << path << "output Cr=" << Cr << ".csv";
@@ -410,20 +431,41 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 
     do {
         new_time_row.push_back(t);
-        Cr = time_v_row[0] * dt_ideal / dx;
+        my_task.Q = linear_interpolator(time_row_for_Q, time_Q_row, dt);
+        new_time_Q_row.push_back(my_task.Q);
+        rho_and_nu_in[0].push_back(linear_interpolator(time_row_for_rho, time_rho_in_row, dt));
+        rho_and_nu_in[1].push_back(linear_interpolator(time_row_for_nu, time_nu_in_row, dt));
+
+        rho_and_nu_out[0].push_back(linear_interpolator(time_row_for_rho, time_rho_out_row, dt));
+        rho_and_nu_out[1].push_back(linear_interpolator(time_row_for_nu, time_nu_out_row, dt));
+
+        new_time_p_in_row.push_back(linear_interpolator(time_row_for_p_in, time_p_in_row, dt));
+
+        Cr = calc_speed(my_task.Q, simple_pipe.diameter) * dt_ideal / dx;
+
+
         if (t == 0) {
             layer_t& prev = buffer->previous();
             prev.vars.print(t, output);
+            layer_t& prev_nu = buffer_nu->previous();
+            prev_nu.vars.print(t, output);
         }
 
         t += dt;
 
-        quickest_ultimate_fv_solver solver(*advection_model, *buffer);
-        solver.step(dt, rho_in, rho_out);
+        quickest_ultimate_fv_solver solver_rho(*advection_model, *buffer);
+        solver_rho.step(dt, rho_and_nu_in[0].back(), rho_and_nu_out[0].back());
+
+        quickest_ultimate_fv_solver solver_nu(*advection_model, *buffer_nu);
+        solver_nu.step(dt, rho_and_nu_in[1].back(), rho_and_nu_out[1].back());
+
+        my_task.rho_profile = buffer->current();
+        my_task.nu_profile = buffer_nu->current();
 
         layer_t& next = buffer->current();
         next.vars.print(t, output);
-
+        layer_t& next_nu = buffer_nu->current();
+        next_nu.vars.print(t, output);
 
         buffer->advance(+1);
             
