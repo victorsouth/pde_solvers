@@ -1,5 +1,7 @@
 #include <random>
 #include <algorithm>
+
+
 const double g = 9.81, pi = M_PI;
 using namespace std;
 
@@ -106,29 +108,29 @@ double calc_tau(double hydraulic_resistance, double rho, double speed)
 }
 
 /// @brief Класс, решающий задачи PQ, QP методом Эйлера
-class euler_solver_with_MOC
+class euler_solver
 {
-    const my_pipe_parameters& pipe;
-    const my_task_parameters& task;
+    const my_pipe_parameters& my_pipe;
+    const my_task_parameters& my_task;
 public:
-    euler_solver_with_MOC(const my_pipe_parameters& pipe, const my_task_parameters& task) :
-        pipe(pipe), task(task)
+    euler_solver(const my_pipe_parameters& my_pipe, const my_task_parameters& my_task) :
+        my_pipe(my_pipe), my_task(my_task)
     {
     }
     /// @brief Метод нахождения входного давления
     /// @return Pвх
     vector<double> euler_solver_PQ()
     {
-        double delta_z = (pipe.z_L - pipe.z_0) / (pipe.n - 1);
-        double speed = calc_speed(task.Q, pipe.internal_diameter);
-        vector<double> p_profile = vector<double>(pipe.n);
-        p_profile[0] = task.p_0;
-        for (int i = 1; i < pipe.n; i++)
+        double delta_z = (my_pipe.z_L - my_pipe.z_0) / (my_pipe.n - 1);
+        double speed = calc_speed(my_task.Q, my_pipe.internal_diameter);
+        vector<double> p_profile = vector<double>(my_pipe.n);
+        p_profile[0] = my_task.p_0;
+        for (int i = 1; i < my_pipe.n - 1; i++)
         {
-            double Re = calc_Re(speed, pipe.internal_diameter, task.nu_profile[i]);
-            double hydraulic_resistance = hydraulic_resistance_altshul(Re, pipe.roughness);
-            double tau = calc_tau(hydraulic_resistance, task.rho_profile[i], speed);
-            p_profile[i] = p_profile[i - 1] + pipe.h * ((-4 / pipe.internal_diameter) * tau - task.rho_profile[i] * g * (delta_z / pipe.h));
+            double Re = calc_Re(speed, my_pipe.internal_diameter, my_task.nu_profile[i]);
+            double hydraulic_resistance = hydraulic_resistance_isaev(Re, my_pipe.roughness);
+            double tau = calc_tau(hydraulic_resistance, my_task.rho_profile[i], speed);
+            p_profile[i] = p_profile[i - 1] + my_pipe.h * ((-4 / my_pipe.internal_diameter) * tau - my_task.rho_profile[i] * g * (delta_z / my_pipe.h));
 
         }
         return p_profile;
@@ -137,16 +139,16 @@ public:
     /// @return Pвых
     vector<double> euler_solver_QP()
     {
-        double delta_z = (pipe.z_L - pipe.z_0) / (pipe.n - 1);
-        double speed = calc_speed(task.Q, pipe.internal_diameter);
-        vector<double> p_profile = vector<double>(pipe.n);
-        p_profile[pipe.n - 1] = task.p_L;
-        for (int i = pipe.n - 2; i >= 0; i--)
+        double delta_z = (my_pipe.z_L - my_pipe.z_0) / (my_pipe.n - 1);
+        double speed = calc_speed(my_task.Q, my_pipe.internal_diameter);
+        vector<double> p_profile = vector<double>(my_pipe.n);
+        p_profile[my_pipe.n - 1] = my_task.p_L;
+        for (int i = my_pipe.n - 2; i >= 0; i--)
         {
-            double Re = calc_Re(speed, pipe.internal_diameter, task.nu_profile[i]);
-            double hydraulic_resistance = hydraulic_resistance_altshul(Re, pipe.roughness);
-            double tau = calc_tau(hydraulic_resistance, task.rho_profile[i], speed);
-            p_profile[i] = p_profile[i + 1] - pipe.h * ((-4 / pipe.internal_diameter) * tau - task.rho_profile[i] * g * (delta_z / pipe.h));
+            double Re = calc_Re(speed, my_pipe.internal_diameter, my_task.nu_profile[i]);
+            double hydraulic_resistance = hydraulic_resistance_isaev(Re, my_pipe.roughness);
+            double tau = calc_tau(hydraulic_resistance, my_task.rho_profile[i], speed);
+            p_profile[i] = p_profile[i + 1] - my_pipe.h * ((-4 / my_pipe.internal_diameter) * tau - my_task.rho_profile[i] * g * (delta_z / my_pipe.h));
 
         }
         return p_profile;
@@ -170,7 +172,7 @@ public:
     {
         my_task_parameters temp_task = task; // Временная структура
         temp_task.Q = x; // во временной структуре используем Q для нашего уравнения невязки, эта Q будет идти в солвер
-        euler_solver_with_MOC e_solver(pipe, temp_task); // Объявляем переменную класса солвера Эйлером
+        euler_solver e_solver(pipe, temp_task); // Объявляем переменную класса солвера Эйлером
 
         p_profile = e_solver.euler_solver_PQ(); // Считаем профиль давлений Эйлером
         return (p_profile.back() - task.p_L);
@@ -277,206 +279,171 @@ void print_layers(const double dt,
 }
 
 
+
+
 /// @brief Тесты для солвера quickest_ultimate_fv_solver
-//class QuickWithQuasiStationaryModel : public ::testing::Test {
-//protected:
-//    // Профиль переменных
-//    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
-//    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
-//
-//    // Слой: переменных Vars + сколько угодно служебных Specific
-//    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
-//protected:
-//    /// @brief Параметры трубы
-//    pipe_properties_t pipe;
-//    /// @brief Профиль расхода
-//    vector<double> Q;
-//    std::unique_ptr<PipeQAdvection> advection_model;
-//    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
-//    std::unique_ptr<ring_buffer_t<layer_t>> buffer_nu;
-//protected:
-//
-//    /// @brief Подготовка к расчету для семейства тестов
-//    virtual void SetUp() override {
-//        // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
-//        simple_pipe_properties simple_pipe;
-//        //simple_pipe.length = 50e3;
-//        simple_pipe.length = 700e3; // тест трубы 700км
-//        //simple_pipe.diameter = 0.7;
-//        simple_pipe.diameter = 0.514; // тест трубы 700км
-//        //simple_pipe.dx = 100;
-//        simple_pipe.dx = 100; // тест трубы 700км
-//        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-//
-//        Q = vector<double>(pipe.profile.getPointCount(), 0.5);
-//        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-//        //buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
-//
-//        //layer_t& prev = buffer->previous();
-//
-//        //buffer_nu = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
-//
-//        //layer_t& prev = buffer_nu->previous();
-//        //prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
-//    }
-//};
+/// @brief Тесты для солвера quickest_ultimate_fv_solver
+class QuickWithQuasiStationaryModel : public ::testing::Test {
+protected:
+    // Профиль переменных
+    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
+    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
+
+    // Слой: переменных Vars + сколько угодно служебных Specific
+    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
+protected:
+    /// @brief Параметры трубы
+    pipe_properties_t pipe;
+    /// @brief Профиль расхода
+    vector<double> Q_profile;
+    std::unique_ptr<PipeQAdvection> advection_model;
+    std::unique_ptr<ring_buffer_t<layer_t>> buffer, buffer_nu;
+protected:
+
+    /// @brief Подготовка к расчету для семейства тестов
+    virtual void SetUp() override {
+        // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
+        simple_pipe_properties simple_pipe;
+        //simple_pipe.length = 50e3;
+        simple_pipe.length = 700e3; // тест трубы 700км
+        //simple_pipe.diameter = 0.7;
+        simple_pipe.diameter = 0.514; // тест трубы 700км
+        //simple_pipe.dx = 100;
+        simple_pipe.dx = 100; // тест трубы 700км
+        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
+
+        std::srand(std::time(nullptr));
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<double> dis(7.0, 10.0);
+
+        Q_profile = vector<double>(pipe.profile.getPointCount(), 0.2);
+        for (size_t i = 1; i <= Q_profile.size()/2; i++)
+        {
+            Q_profile[i] = 0.2 - abs(0.2 * 0.001 * std::rand() / RAND_MAX);
+        }
+
+        for (size_t i = Q_profile.size() / 2 + 1; i <= Q_profile.size() - 1; i++)
+        {
+            Q_profile[i] = 0.1 - abs(0.1 * 0.001 * std::rand() / RAND_MAX);
+        }
+
+        advection_model = std::make_unique<PipeQAdvection>(pipe, Q_profile);
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer_nu = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+
+        layer_t& prev = buffer->previous();
+        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
+
+        layer_t& prev_nu = buffer_nu->previous();
+        prev_nu.vars.cell_double[0] = vector<double>(prev_nu.vars.cell_double[0].size(), 15e-6);
+    }
+};
+
+/// @brief Уравнение трубы для задачи PQ
+class Pipe_model_for_PQ_t : public ode_t<1>
+{
+public:
+    using ode_t<1>::equation_coeffs_type;
+    using ode_t<1>::right_party_type;
+    using ode_t<1>::var_type;
+protected:
+    vector<double>& rho_profile;
+    vector<double>& nu_profile;
+    pipe_properties_t& pipe;
+    double flow;
+
+public:
+    /// @brief Констуктор уравнения трубы
+    /// @param pipe Ссылка на сущность трубы
+    /// @param oil Ссылка на сущность нефти
+    /// @param flow Объемный расход
+    Pipe_model_for_PQ_t(pipe_properties_t& pipe, vector<double>& rho_profile, vector<double>& nu_profile, double flow)
+        : pipe(pipe)
+        , rho_profile(rho_profile)
+        , nu_profile(nu_profile)
+        , flow(flow)
+    {
+
+    }
+
+    /// @brief Возвращает известную уравнению сетку
+    virtual const vector<double>& get_grid() const override {
+        return pipe.profile.coordinates;
+    }
+
+    /// @brief Возвращает значение правой части ДУ
+    /// @param grid_index Обсчитываемый индекс расчетной сетки
+    /// @param point_vector Начальные условия
+    /// @return Значение правой части ДУ в точке point_vector
+    virtual right_party_type ode_right_party(
+        size_t grid_index, const var_type& point_vector) const override
+    {
+        double rho = rho_profile[grid_index];
+        double S_0 = pipe.wall.getArea();
+        double v = flow / (S_0);
+        double Re = v * pipe.wall.diameter / nu_profile[grid_index];
+        double lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
+        double tau_w = lambda / 8 * rho * v * abs(v);
+        /// Обработка индекса в случае расчетов на границах трубы
+        /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
+        grid_index = grid_index == 0 ? grid_index + 1 : grid_index;
+        grid_index = grid_index == pipe.profile.heights.size() - 1 ? grid_index - 1 : grid_index;
+
+        double height_derivative = (pipe.profile.heights[grid_index] - pipe.profile.heights[grid_index - 1]) /
+            (pipe.profile.coordinates[grid_index] - pipe.profile.coordinates[grid_index - 1]);
+
+        return { ((-4) / pipe.wall.diameter) * tau_w - rho * M_G * height_derivative };
+    }
+};
 
 /// @brief Пример вывода в файл через
-TEST_F(QUICKEST_ULTIMATE, TimeRowsTask)
+TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 {
-    string path = prepare_test_folder();
     // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
     simple_pipe_properties simple_pipe;
     //simple_pipe.length = 50e3;
     simple_pipe.length = 700e3; // тест трубы 700км
+    // Создаем сущность трубы
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
+    // Создаем сущность нефти
+    oil_parameters_t oil;
+
+    const double len = pipe.profile.getLength();
     //simple_pipe.diameter = 0.7;
     simple_pipe.diameter = 0.514; // тест трубы 700км
     const auto& x = advection_model->get_grid();
     double dx = x[1] - x[0];
     double v = advection_model->getEquationsCoeffs(0, 0);
+
     double delta_d = 0.01, abs_roughness = 15e-6, z_0 = 50, z_L = 100,
         rho = 850, nu = 15e-6, p_0 = 6e6, p_L = 0.0;
     my_pipe_parameters my_pipe{ simple_pipe.length, simple_pipe.diameter, delta_d, abs_roughness, z_0, z_L, dx };
-    double Q = calc_flow(v, my_pipe.internal_diameter);
-    my_task_parameters my_task{ my_pipe, rho, nu, p_0, p_L, Q, {}, {} };
 
-    std::srand(std::time(nullptr));
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<double> dis(7.0, 10.0);
+    my_task_parameters my_task{ my_pipe, rho, nu, p_0, p_L, {}, {}, {} };
 
-    double rho_in = 860;
-    double rho_out = 870;
-    double T = 350000; // период моделирования
-
-    vector<double> time_row_for_rho;
-    for (double time = 0.0; time <= T; time += dis(gen))
-        time_row_for_rho.push_back(time);
-    vector<double> time_rho_in_row = vector<double>(time_row_for_rho.size(), rho);
-    for (size_t i = 0/*time_row_for_rho.size() / 2*/; i <= time_row_for_rho.size() - 1; i++)
-    {
-        time_rho_in_row[i] = rho_in;//rho - abs(rho * 0.001 * std::rand() / RAND_MAX);
-    }
-
-    vector<double> time_row_for_nu;
-    for (double time = 0.0; time <= T; time += dis(gen))
-        time_row_for_nu.push_back(time);
-    vector<double> time_nu_in_row = vector<double>(time_row_for_nu.size(), nu);
-    for (size_t i = 1; i <= time_row_for_nu.size() - 1; i++)
-    {
-        time_nu_in_row[i] = nu;//nu - abs(nu * 0.1 * std::rand() / RAND_MAX);
-    }
-
-    vector<double> time_rho_out_row = vector<double>(time_row_for_rho.size(), rho);
-    vector<double> time_nu_out_row = vector<double>(time_row_for_nu.size(), nu);
-
-    vector<double> time_row_for_p_in;
-    for (double time = 0.0; time <= T; time += dis(gen))
-        time_row_for_p_in.push_back(time);
-    vector<double> time_p_in_row = vector<double>(time_row_for_p_in.size(), p_0);
-    for (size_t i = 1; i <= time_row_for_p_in.size() - 1; i++)
-    {
-        time_p_in_row[i] = p_0;//p_0 - abs(p_0 * 2e-4 * std::rand() / RAND_MAX);
-    }
-
-    vector<double> time_row_for_Q;
-    for (double time = 0.0; time <= T; time += dis(gen))
-        time_row_for_Q.push_back(time);
-    vector<double> time_Q_row = vector<double>(time_row_for_Q.size(), v);
-    for (size_t i = 1; i <= time_row_for_Q.size() - 1; i++)
-    {
-        time_Q_row[i] = v - abs(v * 0.1 * std::rand() / RAND_MAX);
-    }
-    
-    double Q_max = *std::max_element(time_Q_row.begin(), time_Q_row.end());
-    double v_max = calc_speed(Q_max, simple_pipe.diameter);
-
-    double dt_ideal = abs(dx / v_max);
-    double Cr = v_max * dt_ideal / dx; // равен 1, взяли максимальную скорость
-
-
-    ///////////////////////////////////////////////////////////////////////////////////
-
-    /*advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-    buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());*/
+    // Задаем объемнй расход нефти, [м3/с]
+    double Q = calc_flow(v,simple_pipe.diameter);
 
     layer_t& prev = buffer->previous();
-
-    //buffer_nu = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
-
-    //layer_t& prev_nu = buffer_nu->previous();
-
     prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), rho);
-    //prev_nu.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), nu);
 
-    vector<double> new_time_row, new_time_p_in_row, new_time_p_out_row, new_time_Q_row, p_profile, initial_p_profile;
-    vector<double> diff_p_profile = vector<double>(my_pipe.n);
-    vector<vector<double>> rho_and_nu_in = vector<vector<double>>(2);
-    vector<vector<double>> rho_and_nu_out = vector<vector<double>>(2);
+    layer_t& prev_nu = buffer_nu->previous();
+    prev_nu.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), nu);
 
-    double t = 0; // текущее время
-    double dt = Cr * dt_ideal; // время в долях от Куранта
-    euler_solver_with_MOC e_solver(my_pipe, my_task);
+    Pipe_model_for_PQ_t pipeModel(pipe, prev.vars.cell_double[0], prev_nu.vars.cell_double[0], Q);
+    // Задаем конечное давление
+    double Pin = 6e6;
 
-    wstring folder_path = L"research\\2024_02_block_3\\task_2_SDKU\\research_out";
-    wstring p_profile_file = folder_path + L"\\p_profile.csv";
-    wstring rho_profile_file = folder_path + L"\\rho_profile.csv";
-    wstring nu_profile_file = folder_path + L"\\nu_profile.csv";
-    wstring diff_p_profile_file = folder_path + L"\\diff_p_profile.csv";
-
-    //std::stringstream filename;
-    //filename << path << "output Cr=" << Cr << ".csv";
-    //std::ofstream output(filename.str());
-
-    do {
-        new_time_row.push_back(t);
-        my_task.Q = linear_interpolator(time_row_for_Q, time_Q_row, t);
-        new_time_Q_row.push_back(my_task.Q);
-        rho_and_nu_in[0].push_back(linear_interpolator(time_row_for_rho, time_rho_in_row, t));
-        rho_and_nu_in[1].push_back(linear_interpolator(time_row_for_nu, time_nu_in_row, t));
-
-        rho_and_nu_out[0].push_back(linear_interpolator(time_row_for_rho, time_rho_out_row, t));
-        rho_and_nu_out[1].push_back(linear_interpolator(time_row_for_nu, time_nu_out_row, t));
-
-        new_time_p_in_row.push_back(linear_interpolator(time_row_for_p_in, time_p_in_row, t));
-
-        Cr = calc_speed(my_task.Q, simple_pipe.diameter) * dt_ideal / dx;
-
-
-        if (t == 0) {
-            layer_t& prev = buffer->previous();
-            //prev.vars.print(t, output);
-            //layer_t& prev_nu = buffer_nu->previous();
-            //prev_nu.vars.print(t, output);
-        }
-
-        t += dt;
-
-        quickest_ultimate_fv_solver solver_rho(*advection_model, *buffer);
-        solver_rho.step(dt, rho_and_nu_in[0].back(), rho_and_nu_out[0].back());
-
-        //quickest_ultimate_fv_solver solver_nu(*advection_model, *buffer_nu);
-        //solver_nu.step(dt, rho_and_nu_in[1].back(), rho_and_nu_out[1].back());
-        layer_t& next = buffer->current();
-        my_task.rho_profile = next.vars.cell_double[0];
-
-
-        //my_task.nu_profile = prev_nu.vars.cell_double[0];
-
-
-        
-        //next.vars.print(t, output);
-        //layer_t& next_nu = buffer_nu->current();
-       // next_nu.vars.print(t, output);
-
-        buffer->advance(+1);
-            
-
-        
-
-        //все готово для следующего шага, интерполированная скорость есть
-    } while (t < T);
-    //output.flush();
-    //output.close();
-    ///////////////////////////////////////////////////////////////////////////////////
+    // Вектор для хранения профиля давления
+    
+    int points = pipe.profile.getPointCount();
+    vector<double> profile(points);
+    /// Модифицированный метод Эйлера для модели pipeModel,
+    /// расчет ведется справа-налево относительно сетки,
+    /// начальное условие Pout, 
+    /// результаты расчета запишутся в слой, на который указывает start_layer
+    solve_euler_corrector<1>(pipeModel, 1, Pin, &profile);
+    double pin_debug = profile[0];
+    double pout_debug = profile.back();
 }
