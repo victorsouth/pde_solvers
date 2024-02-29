@@ -313,12 +313,10 @@ protected:
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
         std::srand(std::time(nullptr));
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<double> dis(7.0, 10.0);
+
 
         Q_profile = vector<double>(pipe.profile.getPointCount(), 0.2);
-        for (size_t i = 1; i <= Q_profile.size()/2; i++)
+        for (size_t i = 0; i <= Q_profile.size()/2; i++)
         {
             Q_profile[i] = 0.2 - abs(0.2 * 0.001 * std::rand() / RAND_MAX);
         }
@@ -409,7 +407,6 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     // Создаем сущность нефти
     oil_parameters_t oil;
 
-    const double len = pipe.profile.getLength();
     //simple_pipe.diameter = 0.7;
     simple_pipe.diameter = 0.514; // тест трубы 700км
     const auto& x = advection_model->get_grid();
@@ -425,25 +422,168 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     // Задаем объемнй расход нефти, [м3/с]
     double Q = calc_flow(v,simple_pipe.diameter);
 
+    std::srand(std::time(nullptr));
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<double> dis(97.0, 107.0);
+
+    double rho_in = 860;
+    double rho_out = 870;
+    double T = 350000; // период моделирования
+
+    vector<double> time_row_for_rho;
+    for (double time = 0.0; time <= T; time += dis(gen))
+        time_row_for_rho.push_back(time);
+    vector<double> time_rho_in_row = vector<double>(time_row_for_rho.size(), rho);
+    for (size_t i = 0/*time_row_for_rho.size() / 2*/; i <= time_row_for_rho.size() - 1; i++)
+    {
+        time_rho_in_row[i] = rho_in;//rho - abs(rho * 0.001 * std::rand() / RAND_MAX);
+    }
+
+    vector<double> time_row_for_nu;
+    for (double time = 0.0; time <= T; time += dis(gen))
+        time_row_for_nu.push_back(time);
+    vector<double> time_nu_in_row = vector<double>(time_row_for_nu.size(), nu);
+    for (size_t i = 1; i <= time_row_for_nu.size() - 1; i++)
+    {
+        time_nu_in_row[i] = nu;//nu - abs(nu * 0.1 * std::rand() / RAND_MAX);
+    }
+
+    vector<double> time_rho_out_row = vector<double>(time_row_for_rho.size(), rho);
+    vector<double> time_nu_out_row = vector<double>(time_row_for_nu.size(), nu);
+
+    vector<double> time_row_for_p_in;
+    for (double time = 0.0; time <= T; time += dis(gen))
+        time_row_for_p_in.push_back(time);
+
+    vector<double> time_p_in_row = vector<double>(time_row_for_p_in.size(), p_0);
+    for (size_t i = 1; i <= time_row_for_p_in.size() - 1; i++)
+    {
+        time_p_in_row[i] = p_0;//p_0 - abs(p_0 * 2e-4 * std::rand() / RAND_MAX);
+    }
+
+    double dt_for_q = 0;
+    vector<double> time_row_for_Q;
+    for (size_t i = 0; i <= Q_profile.size() - 1; i++)
+    {
+        time_row_for_Q.push_back(dt_for_q);
+        dt_for_q += dis(gen);
+    }
+
+    double Q_max = *std::max_element(Q_profile.begin(), Q_profile.end());
+    double v_max = calc_speed(Q_max, simple_pipe.diameter);
+
+    double dt_ideal = abs(dx / v_max);
+    double Cr = v_max * dt_ideal / dx; // равен 1, взяли максимальную скорость
+
+    // Вектор для хранения профиля давления
     layer_t& prev = buffer->previous();
     prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), rho);
 
     layer_t& prev_nu = buffer_nu->previous();
     prev_nu.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), nu);
 
-    Pipe_model_for_PQ_t pipeModel(pipe, prev.vars.cell_double[0], prev_nu.vars.cell_double[0], Q);
-    // Задаем конечное давление
-    double Pin = 6e6;
+    vector<double> p_profile(pipe.profile.getPointCount());
 
-    // Вектор для хранения профиля давления
-    
-    int points = pipe.profile.getPointCount();
-    vector<double> profile(points);
-    /// Модифицированный метод Эйлера для модели pipeModel,
-    /// расчет ведется справа-налево относительно сетки,
-    /// начальное условие Pout, 
-    /// результаты расчета запишутся в слой, на который указывает start_layer
-    solve_euler_corrector<1>(pipeModel, 1, Pin, &profile);
-    double pin_debug = profile[0];
-    double pout_debug = profile.back();
+    vector<double> new_time_row, new_time_p_in_row, new_time_p_out_row, new_time_Q_row, initial_p_profile;
+    vector<double> diff_p_profile = vector<double>(my_pipe.n);
+    vector<vector<double>> rho_and_nu_in = vector<vector<double>>(2);
+    vector<vector<double>> rho_and_nu_out = vector<vector<double>>(2);
+
+    double t = 0; // текущее время
+    double dt = Cr * dt_ideal; // время в долях от Куранта
+
+
+    string path_for_quick = string("../research_out/QuickWithQSM/");
+
+    wstring p_profile_file = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\p_profile.csv";
+    wstring rho_profile_file = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\rho_profile.csv";
+    wstring nu_profile_file = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\nu_profile.csv";
+    wstring diff_p_profile_file = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\diff_p_profile.csv";
+
+    filesystem::create_directories(path_for_quick);
+
+    do {
+        new_time_row.push_back(t);
+        my_task.Q = linear_interpolator(time_row_for_Q, Q_profile, t);
+        new_time_Q_row.push_back(my_task.Q);
+        rho_and_nu_in[0].push_back(linear_interpolator(time_row_for_rho, time_rho_in_row, t));
+        rho_and_nu_in[1].push_back(linear_interpolator(time_row_for_nu, time_nu_in_row, t));
+
+        rho_and_nu_out[0].push_back(linear_interpolator(time_row_for_rho, time_rho_out_row, t));
+        rho_and_nu_out[1].push_back(linear_interpolator(time_row_for_nu, time_nu_out_row, t));
+
+        new_time_p_in_row.push_back(linear_interpolator(time_row_for_p_in, time_p_in_row, t));
+
+        Cr = calc_speed(my_task.Q, simple_pipe.diameter) * dt_ideal / dx;
+
+
+        if (t == 0) {
+            layer_t& prev = buffer->previous();
+            layer_t& prev_nu = buffer_nu->previous();
+        }
+
+        t += dt;
+
+        quickest_ultimate_fv_solver solver_rho(*advection_model, *buffer);
+        solver_rho.step(dt, rho_and_nu_in[0].back(), rho_and_nu_out[0].back());
+        layer_t& next = buffer->current();
+        my_task.rho_profile = next.vars.cell_double[0];
+
+        quickest_ultimate_fv_solver solver_nu(*advection_model, *buffer_nu);
+        solver_nu.step(dt, rho_and_nu_in[1].back(), rho_and_nu_out[1].back());
+        layer_t& next_nu = buffer_nu->current();
+        my_task.nu_profile = next_nu.vars.cell_double[0];
+
+        my_task.p_0 = new_time_p_in_row.back();
+
+        Pipe_model_for_PQ_t pipeModel(pipe, prev.vars.cell_double[0], prev_nu.vars.cell_double[0], Q);
+
+        solve_euler_corrector<1>(pipeModel, 1, p_0, &p_profile);
+
+        double pin_debug = p_profile[0];
+        double pout_debug = p_profile.back();
+
+        if (dt == 0)
+            initial_p_profile = p_profile;
+        new_time_p_out_row.push_back(p_profile.back());
+        std::transform(initial_p_profile.begin(), initial_p_profile.end(), p_profile.begin(), diff_p_profile.begin(),
+            [](double initial, double current) {return initial - current;  });
+        print_layers(dt, p_profile, p_profile_file);
+        print_layers(dt, my_task.rho_profile, rho_profile_file);
+        print_layers(dt, my_task.nu_profile, nu_profile_file);
+        print_layers(dt, diff_p_profile, diff_p_profile_file);
+
+        buffer->advance(+1);
+        buffer_nu->advance(+1);
+        t += dt;
+    } while (t < T - dt);
+    wstring filename_initial = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\initial_data.csv";
+    print_data_to_csv(
+        time_row_for_rho,
+        time_rho_in_row,
+        time_row_for_nu,
+        time_nu_in_row,
+        time_row_for_p_in,
+        time_p_in_row,
+        {},
+        {},
+        time_row_for_Q,
+        Q_profile,
+        filename_initial
+    );
+    wstring filename_final = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\final_data.csv";
+    print_data_to_csv(
+        new_time_row,
+        rho_and_nu_in[0],
+        new_time_row,
+        rho_and_nu_in[1],
+        new_time_row,
+        new_time_p_in_row,
+        new_time_row,
+        new_time_p_out_row,
+        new_time_row,
+        new_time_Q_row,
+        filename_final
+    );
 }
