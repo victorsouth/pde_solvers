@@ -278,7 +278,11 @@ void print_layers(const double dt,
     }
 }
 
-
+void clear_directory(const filesystem::path& dir_path) {
+    for (const auto& entry : filesystem::directory_iterator(dir_path)) {
+        filesystem::remove_all(entry.path());
+    }
+}
 
 
 /// @brief Тесты для солвера quickest_ultimate_fv_solver
@@ -296,6 +300,8 @@ protected:
     pipe_properties_t pipe;
     /// @brief Профиль расхода
     vector<double> Q_profile;
+    double T = 350000; // период моделирования
+    vector<double> time_row_for_Q;
     std::unique_ptr<PipeQAdvection> advection_model;
     std::unique_ptr<ring_buffer_t<layer_t>> buffer, buffer_nu;
 protected:
@@ -305,7 +311,7 @@ protected:
         // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
         simple_pipe_properties simple_pipe;
         //simple_pipe.length = 50e3;
-        simple_pipe.length = 700e3; // тест трубы 700км
+        simple_pipe.length = 200e3; // тест трубы 700км
         //simple_pipe.diameter = 0.7;
         simple_pipe.diameter = 0.514; // тест трубы 700км
         //simple_pipe.dx = 100;
@@ -313,15 +319,26 @@ protected:
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
         std::srand(std::time(nullptr));
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<double> dis(57.0, 67.0);
 
+        
+        double dt_for_q = 0;
+        
 
-        Q_profile = vector<double>(pipe.profile.getPointCount(), 0.2);
+        while (dt_for_q <= T)
+        {
+            time_row_for_Q.push_back(dt_for_q);
+            dt_for_q += dis(gen);
+        }
+        Q_profile = vector<double>(time_row_for_Q.size(), 0.2);
         for (size_t i = 0; i <= Q_profile.size()/2; i++)
         {
             Q_profile[i] = 0.2 - abs(0.2 * 0.001 * std::rand() / RAND_MAX);
         }
 
-        for (size_t i = Q_profile.size() / 2 + 1; i <= Q_profile.size() - 1; i++)
+        for (size_t i = 15; i <= Q_profile.size() - 1; i++)
         {
             Q_profile[i] = 0.1 - abs(0.1 * 0.001 * std::rand() / RAND_MAX);
         }
@@ -329,12 +346,6 @@ protected:
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q_profile);
         buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
         buffer_nu = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
-
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
-
-        layer_t& prev_nu = buffer_nu->previous();
-        prev_nu.vars.cell_double[0] = vector<double>(prev_nu.vars.cell_double[0].size(), 15e-6);
     }
 };
 
@@ -377,21 +388,24 @@ public:
     virtual right_party_type ode_right_party(
         size_t grid_index, const var_type& point_vector) const override
     {
-        double rho = rho_profile[grid_index];
-        double S_0 = pipe.wall.getArea();
-        double v = flow / (S_0);
-        double Re = v * pipe.wall.diameter / nu_profile[grid_index];
-        double lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
-        double tau_w = lambda / 8 * rho * v * abs(v);
-        /// Обработка индекса в случае расчетов на границах трубы
-        /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
-        grid_index = grid_index == 0 ? grid_index + 1 : grid_index;
-        grid_index = grid_index == pipe.profile.heights.size() - 1 ? grid_index - 1 : grid_index;
+        double rho, S_0, v, Re, lambda, tau_w, height_derivative;
+        if (grid_index < rho_profile.size())
+        {
+            rho = rho_profile[grid_index];
+            S_0 = pipe.wall.getArea();
+            v = flow / (S_0);
+            Re = v * pipe.wall.diameter / nu_profile[grid_index];
+            lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
+            tau_w = lambda / 8 * rho * v * abs(v);
+            /// Обработка индекса в случае расчетов на границах трубы
+            /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
+            grid_index = grid_index == 0 ? grid_index + 1 : grid_index;
+            grid_index = grid_index == pipe.profile.heights.size() - 1 ? grid_index - 1 : grid_index;
 
-        double height_derivative = (pipe.profile.heights[grid_index] - pipe.profile.heights[grid_index - 1]) /
-            (pipe.profile.coordinates[grid_index] - pipe.profile.coordinates[grid_index - 1]);
-
-        return { ((-4) / pipe.wall.diameter) * tau_w - rho * M_G * height_derivative };
+            height_derivative = (pipe.profile.heights[grid_index] - pipe.profile.heights[grid_index - 1]) /
+                (pipe.profile.coordinates[grid_index] - pipe.profile.coordinates[grid_index - 1]);
+            return { ((-4) / pipe.wall.diameter) * tau_w - rho * M_G * height_derivative };
+        }    
     }
 };
 
@@ -401,7 +415,9 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
     simple_pipe_properties simple_pipe;
     //simple_pipe.length = 50e3;
-    simple_pipe.length = 700e3; // тест трубы 700км
+    simple_pipe.length = 200e3; // тест трубы 700км
+    //simple_pipe.dx = 100;
+    simple_pipe.dx = 100; // тест трубы 700км
     // Создаем сущность трубы
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
     // Создаем сущность нефти
@@ -414,7 +430,7 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     double v = advection_model->getEquationsCoeffs(0, 0);
 
     double delta_d = 0.01, abs_roughness = 15e-6, z_0 = 50, z_L = 100,
-        rho = 850, nu = 15e-6, p_0 = 6e6, p_L = 0.0;
+        rho = 800, nu = 15e-6, p_0 = 6e6, p_L = 0.0;
     my_pipe_parameters my_pipe{ simple_pipe.length, simple_pipe.diameter, delta_d, abs_roughness, z_0, z_L, dx };
 
     my_task_parameters my_task{ my_pipe, rho, nu, p_0, p_L, {}, {}, {} };
@@ -425,11 +441,11 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     std::srand(std::time(nullptr));
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<double> dis(97.0, 107.0);
+    std::uniform_real_distribution<double> dis(57.0, 67.0);
 
-    double rho_in = 860;
+    double rho_in = 900;
     double rho_out = 870;
-    double T = 350000; // период моделирования
+
 
     vector<double> time_row_for_rho;
     for (double time = 0.0; time <= T; time += dis(gen))
@@ -462,13 +478,7 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
         time_p_in_row[i] = p_0;//p_0 - abs(p_0 * 2e-4 * std::rand() / RAND_MAX);
     }
 
-    double dt_for_q = 0;
-    vector<double> time_row_for_Q;
-    for (size_t i = 0; i <= Q_profile.size() - 1; i++)
-    {
-        time_row_for_Q.push_back(dt_for_q);
-        dt_for_q += dis(gen);
-    }
+
 
     double Q_max = *std::max_element(Q_profile.begin(), Q_profile.end());
     double v_max = calc_speed(Q_max, simple_pipe.diameter);
@@ -483,10 +493,10 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     layer_t& prev_nu = buffer_nu->previous();
     prev_nu.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), nu);
 
-    vector<double> p_profile(pipe.profile.getPointCount());
+    
 
     vector<double> new_time_row, new_time_p_in_row, new_time_p_out_row, new_time_Q_row, initial_p_profile;
-    vector<double> diff_p_profile = vector<double>(my_pipe.n);
+    vector<double> diff_p_profile = vector<double>(pipe.profile.getPointCount()-1);
     vector<vector<double>> rho_and_nu_in = vector<vector<double>>(2);
     vector<vector<double>> rho_and_nu_out = vector<vector<double>>(2);
 
@@ -495,15 +505,17 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 
 
     string path_for_quick = string("../research_out/QuickWithQSM/");
-
+    
     wstring p_profile_file = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\p_profile.csv";
     wstring rho_profile_file = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\rho_profile.csv";
     wstring nu_profile_file = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\nu_profile.csv";
     wstring diff_p_profile_file = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\diff_p_profile.csv";
 
     filesystem::create_directories(path_for_quick);
-
+    clear_directory(path_for_quick);
+    size_t debug_count = 0;
     do {
+        vector<double> p_profile(pipe.profile.getPointCount());
         new_time_row.push_back(t);
         my_task.Q = linear_interpolator(time_row_for_Q, Q_profile, t);
         new_time_Q_row.push_back(my_task.Q);
@@ -519,10 +531,27 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 
 
         if (t == 0) {
-            layer_t& prev = buffer->previous();
-            layer_t& prev_nu = buffer_nu->previous();
-        }
+            //layer_t& prev = buffer->previous();
+            //layer_t& prev_nu = buffer_nu->previous();
+            Pipe_model_for_PQ_t pipeModel(pipe, prev.vars.cell_double[0], prev_nu.vars.cell_double[0], Q);
 
+            solve_euler_corrector<1>(pipeModel, 1, p_0, &p_profile);
+
+            double pin_debug = p_profile[0];
+            p_profile.pop_back();
+            double pout_debug = p_profile.back();
+
+            
+            initial_p_profile = p_profile;
+            new_time_p_out_row.push_back(p_profile.back());
+            std::transform(initial_p_profile.begin(), initial_p_profile.end(), p_profile.begin(), diff_p_profile.begin(),
+                [](double initial, double current) {return initial - current;  });
+            print_layers(t, p_profile, p_profile_file);
+            print_layers(t, prev.vars.cell_double[0], rho_profile_file);
+            print_layers(t, prev_nu.vars.cell_double[0], nu_profile_file);
+            print_layers(t, diff_p_profile, diff_p_profile_file);
+            p_profile = vector<double>(pipe.profile.getPointCount());
+        }
         t += dt;
 
         quickest_ultimate_fv_solver solver_rho(*advection_model, *buffer);
@@ -535,28 +564,29 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
         layer_t& next_nu = buffer_nu->current();
         my_task.nu_profile = next_nu.vars.cell_double[0];
 
-        my_task.p_0 = new_time_p_in_row.back();
-
-        Pipe_model_for_PQ_t pipeModel(pipe, prev.vars.cell_double[0], prev_nu.vars.cell_double[0], Q);
+        Pipe_model_for_PQ_t pipeModel(pipe, next.vars.cell_double[0], next_nu.vars.cell_double[0], Q);
 
         solve_euler_corrector<1>(pipeModel, 1, p_0, &p_profile);
 
         double pin_debug = p_profile[0];
+        p_profile.pop_back();
         double pout_debug = p_profile.back();
 
-        if (dt == 0)
+        if (t == 0)
             initial_p_profile = p_profile;
         new_time_p_out_row.push_back(p_profile.back());
         std::transform(initial_p_profile.begin(), initial_p_profile.end(), p_profile.begin(), diff_p_profile.begin(),
             [](double initial, double current) {return initial - current;  });
-        print_layers(dt, p_profile, p_profile_file);
-        print_layers(dt, my_task.rho_profile, rho_profile_file);
-        print_layers(dt, my_task.nu_profile, nu_profile_file);
-        print_layers(dt, diff_p_profile, diff_p_profile_file);
+        print_layers(t, p_profile, p_profile_file);
+        print_layers(t, next.vars.cell_double[0], rho_profile_file);
+        print_layers(t, next_nu.vars.cell_double[0], nu_profile_file);
+        print_layers(t, diff_p_profile, diff_p_profile_file);
 
         buffer->advance(+1);
         buffer_nu->advance(+1);
-        t += dt;
+
+        //if (t > 123680)
+        //    ++debug_count;
     } while (t < T - dt);
     wstring filename_initial = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\initial_data.csv";
     print_data_to_csv(
