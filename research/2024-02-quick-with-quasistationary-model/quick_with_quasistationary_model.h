@@ -5,65 +5,31 @@
 const double g = 9.81, pi = M_PI;
 using namespace std;
 
-struct my_pipe_parameters
-{
-    /// @brief Длина трубы, (м)
-    double length = 80e3;
-    /// @brief  Внешний диаметр трубы, (м)
-    double external_diameter = 0.72;
-    /// @brief Толщина стенки трубы, (м)
-    double delta_d = 0.01;
-    /// @brief Абсолютная шероховатость, (м)
-    double abs_roughness = 15e-6;
-    /// @brief Внутренний диаметр трубы, (м)
-    double internal_diameter = external_diameter - 2 * delta_d;
-    /// @brief Шероховатость
-    double roughness = abs_roughness / internal_diameter;
-    /// @brief Начальная высотная отметка, (м)
-    double z_0 = 100;
-    /// @brief Конечная высотная отметка, (м)
-    double z_L = 50;
-    /// @brief Шаг сетки, (м)
-    double h = 1e3;
-    /// @brief Количество шагов
-    size_t n;
-    my_pipe_parameters(double length, double external_diameter, double delta_d, double abs_roughness, double z_0, double z_L, double h) :
-        length{ length }, external_diameter{ external_diameter }, delta_d{ delta_d }, abs_roughness{ abs_roughness }, z_0{ z_0 }, z_L{ z_L }, h{ h }
-    {
-        n = static_cast<int>(length / h + 0.5) + 1;
-    }
-};
+
 
 struct my_task_parameters
 {
-    my_pipe_parameters& pipe;
     /// @brief Плотность жидкости, (кг/м^3)
-    double rho = 870;
-    /// @brief Кинематическая вязкость, (м^2/с)
-    double nu = 15e-6;
+    double rho;
+    /// @brief Кинематическая вязкость, (сСТ)
+    double nu;
     /// @brief Давление в начале участка, (Па)
-    double p_0 = 5e6;
+    double p_0;
     /// @brief Давление в конце участка, (Па)
-    double p_L = 0.6e6;
+    double p_L;
     /// @brief Расход жидкости, (м^3/с)
-    double Q = 0.972;
-
-    vector<double> rho_profile = vector<double>(pipe.n, rho);
-    vector<double> nu_profile = vector<double>(pipe.n, nu);
-    my_task_parameters(my_pipe_parameters& pipe, double rho, double nu, double p_0, double p_L, double Q, vector<double> rho_profile, vector<double> nu_profile) :
-        pipe{ pipe }, rho{ rho }, nu{ nu }, p_0{ p_0 }, p_L{ p_L }, Q{ Q }, rho_profile{ rho_profile }, nu_profile{ nu_profile }
+    double Q;
+    /// @brief Профиль плотностей по всей трубе, (кг/м^3)
+    vector<double>& rho_profile;
+    /// @brief Профиль вязкостей по всей трубе, (сСТ)
+    vector<double>& nu_profile;
+    my_task_parameters(double rho, double nu, double p_0, double p_L, double Q, vector<double> rho_profile, vector<double> nu_profile) :
+        rho{ rho }, nu{ nu }, p_0{ p_0 }, p_L{ p_L }, Q{ Q }, rho_profile{ rho_profile }, nu_profile{ nu_profile }
     {
     }
 };
 
-struct print_data {
-    vector<double> time;           // время с
-    vector<double> density;        // вытесняющая плотность кг/м3
-    vector<double> viscosity;      // вытесняющая вязкость Ст
-    vector<double> inputPressure;  // давление на входе Па
-    vector<double> outputPressure; // давление на выходе Па
-    vector<double> flowRate;       // расход м3/с
-};
+
 
 /// @brief Функция расчета скорости из расхода
 /// @param Q Расход, (м^3/с)
@@ -84,105 +50,6 @@ double calc_flow(double speed, double internal_diameter)
     double flow = (pow(internal_diameter, 2) * pi * speed) / 4;
     return flow;
 }
-
-/// @brief Функция расчета числа Рейнольдса
-/// @param speed Скорость, (м/с)
-/// @param internal_diameter Внутренний диаметр, (м)
-/// @param nu Кинетическая вязкость, (м^2/с)
-/// @return Число Рейнольдса
-double calc_Re(double speed, double internal_diameter, double nu)
-{
-    double Re = (speed * internal_diameter) / nu;
-    return Re;
-}
-
-/// @brief Функция расчета касательного напряжения трения
-/// @param hydraulic_resistance гидравлическое сопротивление
-/// @param rho Плотность, (кг/см^2)
-/// @param speed Скорость, (м/с)
-/// @return касательное напряжение трения
-double calc_tau(double hydraulic_resistance, double rho, double speed)
-{
-    double tau = (hydraulic_resistance / 8) * rho * pow(speed, 2);
-    return tau;
-}
-
-/// @brief Класс, решающий задачи PQ, QP методом Эйлера
-class euler_solver
-{
-    const my_pipe_parameters& my_pipe;
-    const my_task_parameters& my_task;
-public:
-    euler_solver(const my_pipe_parameters& my_pipe, const my_task_parameters& my_task) :
-        my_pipe(my_pipe), my_task(my_task)
-    {
-    }
-    /// @brief Метод нахождения входного давления
-    /// @return Pвх
-    vector<double> euler_solver_PQ()
-    {
-        double delta_z = (my_pipe.z_L - my_pipe.z_0) / (my_pipe.n - 1);
-        double speed = calc_speed(my_task.Q, my_pipe.internal_diameter);
-        vector<double> p_profile = vector<double>(my_pipe.n);
-        p_profile[0] = my_task.p_0;
-        for (int i = 1; i < my_pipe.n - 1; i++)
-        {
-            double Re = calc_Re(speed, my_pipe.internal_diameter, my_task.nu_profile[i]);
-            double hydraulic_resistance = hydraulic_resistance_isaev(Re, my_pipe.roughness);
-            double tau = calc_tau(hydraulic_resistance, my_task.rho_profile[i], speed);
-            p_profile[i] = p_profile[i - 1] + my_pipe.h * ((-4 / my_pipe.internal_diameter) * tau - my_task.rho_profile[i] * g * (delta_z / my_pipe.h));
-
-        }
-        return p_profile;
-    }
-    /// @brief Метод нахождения выходного давления
-    /// @return Pвых
-    vector<double> euler_solver_QP()
-    {
-        double delta_z = (my_pipe.z_L - my_pipe.z_0) / (my_pipe.n - 1);
-        double speed = calc_speed(my_task.Q, my_pipe.internal_diameter);
-        vector<double> p_profile = vector<double>(my_pipe.n);
-        p_profile[my_pipe.n - 1] = my_task.p_L;
-        for (int i = my_pipe.n - 2; i >= 0; i--)
-        {
-            double Re = calc_Re(speed, my_pipe.internal_diameter, my_task.nu_profile[i]);
-            double hydraulic_resistance = hydraulic_resistance_isaev(Re, my_pipe.roughness);
-            double tau = calc_tau(hydraulic_resistance, my_task.rho_profile[i], speed);
-            p_profile[i] = p_profile[i + 1] - my_pipe.h * ((-4 / my_pipe.internal_diameter) * tau - my_task.rho_profile[i] * g * (delta_z / my_pipe.h));
-
-        }
-        return p_profile;
-    }
-};
-
-class newton_solver_PP_with_euler_with_MOC : public fixed_system_t<1>
-{
-    const my_pipe_parameters& pipe;
-    const my_task_parameters& task;
-    using fixed_system_t<1>::var_type;
-public:
-    newton_solver_PP_with_euler_with_MOC(const my_pipe_parameters& pipe, const my_task_parameters& task) :
-        pipe(pipe), task(task)
-    {
-    }
-    /// @brief Задание функции невязок
-    /// @param x Искомый расход
-    /// @return Функция невязок
-    var_type residuals(const var_type& x)
-    {
-        my_task_parameters temp_task = task; // Временная структура
-        temp_task.Q = x; // во временной структуре используем Q для нашего уравнения невязки, эта Q будет идти в солвер
-        euler_solver e_solver(pipe, temp_task); // Объявляем переменную класса солвера Эйлером
-
-        p_profile = e_solver.euler_solver_PQ(); // Считаем профиль давлений Эйлером
-        return (p_profile.back() - task.p_L);
-    }
-    vector<double> get_p_profile() const {
-        return p_profile;
-    }
-private:
-    vector<double> p_profile;
-};
 
 double linear_interpolator(vector<double> original_time, vector<double> original_value, double new_time_step)
 {
@@ -210,7 +77,7 @@ void print_data_to_csv(const vector<double>& time_rho,
     const vector<double>& p_out,
     const vector<double>& time_Q,
     const vector<double>& Q,
-    const wstring& filename)
+    const string& filename)
 {
 
     // Определяем максимальную длину вектора
@@ -247,26 +114,9 @@ void print_data_to_csv(const vector<double>& time_rho,
 
 void print_layers(const double dt,
     const vector<double>& layer,
-    const wstring& filename)
+    const string& filename)
 {
     ofstream  file(filename, ios::app);
-    if (dt == 0)
-    {
-        // Если файл существует, очищаем его содержимое
-        if (file.is_open()) {
-            file.close();
-            file.open(filename, ios::out | ios::trunc);
-        }
-        // Если файл не существует, создаем новый
-        else {
-            file.open(filename, ios::out);
-        }
-        // Файл существует, но file.is_open() возвращает False
-        if (!file.is_open()) {
-            file.clear();  // Очищаем флаг ошибки
-            file.open(filename, ios::out | ios::trunc);
-        }
-    }
     if (file.is_open()) {
         file << to_string(dt) << ";";
         for (int j = 0; j < layer.size(); j++)
@@ -300,7 +150,7 @@ protected:
     pipe_properties_t pipe;
     /// @brief Профиль расхода
     vector<double> Q_profile;
-    double T = 350000; // период моделирования
+    double T = 210000; // период моделирования
     vector<double> time_row_for_Q;
     std::unique_ptr<PipeQAdvection> advection_model;
     std::unique_ptr<ring_buffer_t<layer_t>> buffer, buffer_nu;
@@ -308,14 +158,12 @@ protected:
 
     /// @brief Подготовка к расчету для семейства тестов
     virtual void SetUp() override {
-        // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
+
         simple_pipe_properties simple_pipe;
-        //simple_pipe.length = 50e3;
         simple_pipe.length = 200e3; // тест трубы 700км
-        //simple_pipe.diameter = 0.7;
         simple_pipe.diameter = 0.514; // тест трубы 700км
-        //simple_pipe.dx = 100;
         simple_pipe.dx = 100; // тест трубы 700км
+
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
         std::srand(std::time(nullptr));
@@ -323,21 +171,17 @@ protected:
         std::mt19937 gen(rd());
         std::uniform_real_distribution<double> dis(57.0, 67.0);
 
-        
         double dt_for_q = 0;
-        
-
         while (dt_for_q <= T)
         {
             time_row_for_Q.push_back(dt_for_q);
             dt_for_q += dis(gen);
         }
         Q_profile = vector<double>(time_row_for_Q.size(), 0.2);
-        for (size_t i = 0; i <= Q_profile.size()/2; i++)
+        for (size_t i = 0; i <= Q_profile.size() / 2; i++)
         {
             Q_profile[i] = 0.2 - abs(0.2 * 0.001 * std::rand() / RAND_MAX);
         }
-
         for (size_t i = 15; i <= Q_profile.size() - 1; i++)
         {
             Q_profile[i] = 0.1 - abs(0.1 * 0.001 * std::rand() / RAND_MAX);
@@ -409,15 +253,48 @@ public:
     }
 };
 
+class newton_solver_PP_with_euler : public fixed_system_t<1>
+{
+    const my_task_parameters& task;
+    using fixed_system_t<1>::var_type;
+protected:
+    pipe_properties_t& pipe;
+    double Q_approx;
+public:
+    newton_solver_PP_with_euler(pipe_properties_t& pipe, const my_task_parameters& task, double Q_approx)
+        : pipe(pipe)
+        , task(task)
+        , Q_approx(Q_approx)
+    {
+
+    }
+    /// @brief Задание функции невязок
+    /// @param x Искомый расход
+    /// @return Функция невязок
+    var_type residuals(const var_type& x)
+    {
+        Q_approx = x; // во временной структуре используем Q для нашего уравнения невязки, эта Q будет идти в солвер
+        // Объявляем переменную класса солвера Эйлером
+        Pipe_model_for_PQ_t pipeModel(pipe, task.rho_profile, task.nu_profile, Q_approx);
+
+        solve_euler_corrector<1>(pipeModel, 1, task.p_0, &p_profile);
+        p_profile.pop_back();
+        return (p_profile.back() - task.p_L);
+    }
+    vector<double> get_p_profile() const {
+        return p_profile;
+    }
+private:
+    vector<double> p_profile;
+};
+
 /// @brief Пример вывода в файл через
 TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 {
-    // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
     simple_pipe_properties simple_pipe;
-    //simple_pipe.length = 50e3;
-    simple_pipe.length = 200e3; // тест трубы 700км
-    //simple_pipe.dx = 100;
-    simple_pipe.dx = 100; // тест трубы 700км
+    simple_pipe.length = 200e3;
+    simple_pipe.dx = 100;
+    
     // Создаем сущность трубы
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
     // Создаем сущность нефти
@@ -429,11 +306,7 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     double dx = x[1] - x[0];
     double v = advection_model->getEquationsCoeffs(0, 0);
 
-    double delta_d = 0.01, abs_roughness = 15e-6, z_0 = 50, z_L = 100,
-        rho = 800, nu = 15e-6, p_0 = 6e6, p_L = 0.0;
-    my_pipe_parameters my_pipe{ simple_pipe.length, simple_pipe.diameter, delta_d, abs_roughness, z_0, z_L, dx };
-
-    my_task_parameters my_task{ my_pipe, rho, nu, p_0, p_L, {}, {}, {} };
+    double rho = 800, nu = 15e-6, p_0 = 6e6;
 
     // Задаем объемнй расход нефти, [м3/с]
     double Q = calc_flow(v,simple_pipe.diameter);
@@ -446,12 +319,11 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     double rho_in = 900;
     double rho_out = 870;
 
-
     vector<double> time_row_for_rho;
     for (double time = 0.0; time <= T; time += dis(gen))
         time_row_for_rho.push_back(time);
     vector<double> time_rho_in_row = vector<double>(time_row_for_rho.size(), rho);
-    for (size_t i = 0/*time_row_for_rho.size() / 2*/; i <= time_row_for_rho.size() - 1; i++)
+    for (size_t i = 0; i <= time_row_for_rho.size() - 1; i++)
     {
         time_rho_in_row[i] = rho_in;//rho - abs(rho * 0.001 * std::rand() / RAND_MAX);
     }
@@ -478,13 +350,9 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
         time_p_in_row[i] = p_0;//p_0 - abs(p_0 * 2e-4 * std::rand() / RAND_MAX);
     }
 
+    double v_max = calc_speed(*std::max_element(Q_profile.begin(), Q_profile.end()), simple_pipe.diameter);
 
-
-    double Q_max = *std::max_element(Q_profile.begin(), Q_profile.end());
-    double v_max = calc_speed(Q_max, simple_pipe.diameter);
-
-    double dt_ideal = abs(dx / v_max);
-    double Cr = v_max * dt_ideal / dx; // равен 1, взяли максимальную скорость
+    double dt = abs(dx / v_max);// Cr равен 1, взяли максимальную скорость
 
     // Вектор для хранения профиля давления
     layer_t& prev = buffer->previous();
@@ -493,32 +361,27 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     layer_t& prev_nu = buffer_nu->previous();
     prev_nu.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), nu);
 
-    
-
-    vector<double> new_time_row, new_time_p_in_row, new_time_p_out_row, new_time_Q_row, initial_p_profile;
+    vector<double> new_time_row, new_time_p_in_row, new_time_p_out_row, new_time_Q_row, initial_p_profile, rho_profile, nu_profile;
     vector<double> diff_p_profile = vector<double>(pipe.profile.getPointCount()-1);
     vector<vector<double>> rho_and_nu_in = vector<vector<double>>(2);
     vector<vector<double>> rho_and_nu_out = vector<vector<double>>(2);
 
     double t = 0; // текущее время
-    double dt = Cr * dt_ideal; // время в долях от Куранта
 
 
     string path_for_quick = string("../research_out/QuickWithQSM/");
-    
-    wstring p_profile_file = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\p_profile.csv";
-    wstring rho_profile_file = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\rho_profile.csv";
-    wstring nu_profile_file = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\nu_profile.csv";
-    wstring diff_p_profile_file = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\diff_p_profile.csv";
+    string p_profile_file = string("../research_out/QuickWithQSM/p_profile.csv");
+    string rho_profile_file = string("../research_out/QuickWithQSM/rho_profile.csv");
+    string nu_profile_file = string("../research_out/QuickWithQSM/nu_profile.csv");
+    string diff_p_profile_file = string("../research_out/QuickWithQSM/diff_p_profile.csv");
 
     filesystem::create_directories(path_for_quick);
     clear_directory(path_for_quick);
-    size_t debug_count = 0;
     do {
         vector<double> p_profile(pipe.profile.getPointCount());
         new_time_row.push_back(t);
-        my_task.Q = linear_interpolator(time_row_for_Q, Q_profile, t);
-        new_time_Q_row.push_back(my_task.Q);
+        Q = linear_interpolator(time_row_for_Q, Q_profile, t);
+        new_time_Q_row.push_back(Q);
         rho_and_nu_in[0].push_back(linear_interpolator(time_row_for_rho, time_rho_in_row, t));
         rho_and_nu_in[1].push_back(linear_interpolator(time_row_for_nu, time_nu_in_row, t));
 
@@ -527,23 +390,17 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 
         new_time_p_in_row.push_back(linear_interpolator(time_row_for_p_in, time_p_in_row, t));
 
-        Cr = calc_speed(my_task.Q, simple_pipe.diameter) * dt_ideal / dx;
+        double Cr = calc_speed(Q, simple_pipe.diameter) * dt / dx;
 
 
         if (t == 0) {
-            //layer_t& prev = buffer->previous();
-            //layer_t& prev_nu = buffer_nu->previous();
             Pipe_model_for_PQ_t pipeModel(pipe, prev.vars.cell_double[0], prev_nu.vars.cell_double[0], Q);
 
             solve_euler_corrector<1>(pipeModel, 1, p_0, &p_profile);
 
-            double pin_debug = p_profile[0];
             p_profile.pop_back();
-            double pout_debug = p_profile.back();
-
             
             initial_p_profile = p_profile;
-            new_time_p_out_row.push_back(p_profile.back());
             std::transform(initial_p_profile.begin(), initial_p_profile.end(), p_profile.begin(), diff_p_profile.begin(),
                 [](double initial, double current) {return initial - current;  });
             print_layers(t, p_profile, p_profile_file);
@@ -557,23 +414,19 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
         quickest_ultimate_fv_solver solver_rho(*advection_model, *buffer);
         solver_rho.step(dt, rho_and_nu_in[0].back(), rho_and_nu_out[0].back());
         layer_t& next = buffer->current();
-        my_task.rho_profile = next.vars.cell_double[0];
+        rho_profile = next.vars.cell_double[0];
 
         quickest_ultimate_fv_solver solver_nu(*advection_model, *buffer_nu);
         solver_nu.step(dt, rho_and_nu_in[1].back(), rho_and_nu_out[1].back());
         layer_t& next_nu = buffer_nu->current();
-        my_task.nu_profile = next_nu.vars.cell_double[0];
+        nu_profile = next_nu.vars.cell_double[0];
 
         Pipe_model_for_PQ_t pipeModel(pipe, next.vars.cell_double[0], next_nu.vars.cell_double[0], Q);
 
         solve_euler_corrector<1>(pipeModel, 1, p_0, &p_profile);
 
-        double pin_debug = p_profile[0];
         p_profile.pop_back();
-        double pout_debug = p_profile.back();
 
-        if (t == 0)
-            initial_p_profile = p_profile;
         new_time_p_out_row.push_back(p_profile.back());
         std::transform(initial_p_profile.begin(), initial_p_profile.end(), p_profile.begin(), diff_p_profile.begin(),
             [](double initial, double current) {return initial - current;  });
@@ -584,11 +437,8 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 
         buffer->advance(+1);
         buffer_nu->advance(+1);
-
-        //if (t > 123680)
-        //    ++debug_count;
     } while (t < T - dt);
-    wstring filename_initial = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\initial_data.csv";
+    string filename_initial = string("../research_out/QuickWithQSM/initial_data.csv");
     print_data_to_csv(
         time_row_for_rho,
         time_rho_in_row,
@@ -602,7 +452,7 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
         Q_profile,
         filename_initial
     );
-    wstring filename_final = L"D:\\project\\pde_solvers\\research_out\\QuickWithQSM\\final_data.csv";
+    string filename_final = string("../research_out/QuickWithQSM/final_data.csv");
     print_data_to_csv(
         new_time_row,
         rho_and_nu_in[0],
