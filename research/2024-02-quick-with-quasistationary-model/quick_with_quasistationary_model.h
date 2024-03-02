@@ -194,7 +194,7 @@ protected:
     vector<double>& nu_profile;
     pipe_properties_t& pipe;
     double flow;
-
+    mutable size_t flag = 0;
 public:
     /// @brief Констуктор уравнения трубы
     /// @param pipe Ссылка на сущность трубы
@@ -222,17 +222,23 @@ public:
         size_t grid_index, const var_type& point_vector) const override
     {
         double rho, S_0, v, Re, lambda, tau_w, height_derivative;
+        
+        size_t reo_index;
+        if (flag % 2)
+            reo_index = grid_index - 1;
+        else
+            reo_index = grid_index;
+        flag++;
+        rho = rho_profile[reo_index];
+        S_0 = pipe.wall.getArea();
+        v = flow / (S_0);
+        Re = v * pipe.wall.diameter / nu_profile[reo_index];
+        lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
+        tau_w = lambda / 8 * rho * v * abs(v);
         /// Обработка индекса в случае расчетов на границах трубы
         /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
         grid_index = grid_index == 0 ? grid_index + 1 : grid_index;
         grid_index = grid_index == pipe.profile.heights.size() - 1 ? grid_index - 1 : grid_index;
-        rho = rho_profile[grid_index - 1];
-        S_0 = pipe.wall.getArea();
-        v = flow / (S_0);
-        Re = v * pipe.wall.diameter / nu_profile[grid_index - 1];
-        lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
-        tau_w = lambda / 8 * rho * v * abs(v);
-
 
         height_derivative = (pipe.profile.heights[grid_index] - pipe.profile.heights[grid_index - 1]) /
             (pipe.profile.coordinates[grid_index] - pipe.profile.coordinates[grid_index - 1]);
@@ -287,7 +293,7 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 
     // Задаем объемнй расход нефти, [м3/с]
     double Q = calc_flow(v,pipe.wall.diameter);
-    double T = 400000; // период моделирования
+    double T = 450000; // период моделирования
 
     std::srand(std::time(nullptr));
     std::random_device rd;
