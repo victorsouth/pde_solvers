@@ -150,8 +150,8 @@ protected:
     pipe_properties_t pipe;
     /// @brief Профиль расхода
     vector<double> Q_profile;
-    double T = 210000; // период моделирования
-    vector<double> time_row_for_Q;
+
+    
     std::unique_ptr<PipeQAdvection> advection_model;
     std::unique_ptr<ring_buffer_t<layer_t>> buffer, buffer_nu;
 protected:
@@ -162,8 +162,9 @@ protected:
         simple_pipe_properties simple_pipe;
         simple_pipe.length = 200e3; // тест трубы 700км
         simple_pipe.diameter = 0.514; // тест трубы 700км
+        //pipe.wall.diameter = 0.514;
         simple_pipe.dx = 100; // тест трубы 700км
-
+        
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
         std::srand(std::time(nullptr));
@@ -171,21 +172,9 @@ protected:
         std::mt19937 gen(rd());
         std::uniform_real_distribution<double> dis(57.0, 67.0);
 
-        double dt_for_q = 0;
-        while (dt_for_q <= T)
-        {
-            time_row_for_Q.push_back(dt_for_q);
-            dt_for_q += dis(gen);
-        }
-        Q_profile = vector<double>(time_row_for_Q.size(), 0.2);
-        for (size_t i = 0; i <= Q_profile.size() / 2; i++)
-        {
-            Q_profile[i] = 0.2 - abs(0.2 * 0.001 * std::rand() / RAND_MAX);
-        }
-        for (size_t i = 15; i <= Q_profile.size() - 1; i++)
-        {
-            Q_profile[i] = 0.1 - abs(0.1 * 0.001 * std::rand() / RAND_MAX);
-        }
+
+        Q_profile = vector<double>(pipe.profile.getPointCount(), 0.2);
+
 
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q_profile);
         buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
@@ -233,23 +222,21 @@ public:
         size_t grid_index, const var_type& point_vector) const override
     {
         double rho, S_0, v, Re, lambda, tau_w, height_derivative;
-        if (grid_index < rho_profile.size())
-        {
-            rho = rho_profile[grid_index];
-            S_0 = pipe.wall.getArea();
-            v = flow / (S_0);
-            Re = v * pipe.wall.diameter / nu_profile[grid_index];
-            lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
-            tau_w = lambda / 8 * rho * v * abs(v);
-            /// Обработка индекса в случае расчетов на границах трубы
-            /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
-            grid_index = grid_index == 0 ? grid_index + 1 : grid_index;
-            grid_index = grid_index == pipe.profile.heights.size() - 1 ? grid_index - 1 : grid_index;
+        /// Обработка индекса в случае расчетов на границах трубы
+        /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
+        grid_index = grid_index == 0 ? grid_index + 1 : grid_index;
+        grid_index = grid_index == pipe.profile.heights.size() - 1 ? grid_index - 1 : grid_index;
+        rho = rho_profile[grid_index - 1];
+        S_0 = pipe.wall.getArea();
+        v = flow / (S_0);
+        Re = v * pipe.wall.diameter / nu_profile[grid_index - 1];
+        lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
+        tau_w = lambda / 8 * rho * v * abs(v);
 
-            height_derivative = (pipe.profile.heights[grid_index] - pipe.profile.heights[grid_index - 1]) /
-                (pipe.profile.coordinates[grid_index] - pipe.profile.coordinates[grid_index - 1]);
-            return { ((-4) / pipe.wall.diameter) * tau_w - rho * M_G * height_derivative };
-        }    
+
+        height_derivative = (pipe.profile.heights[grid_index] - pipe.profile.heights[grid_index - 1]) /
+            (pipe.profile.coordinates[grid_index] - pipe.profile.coordinates[grid_index - 1]);
+        return { ((-4) / pipe.wall.diameter) * tau_w - rho * M_G * height_derivative };  
     }
 };
 
@@ -291,17 +278,7 @@ private:
 /// @brief Пример вывода в файл через
 TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 {
-    simple_pipe_properties simple_pipe;
-    simple_pipe.length = 200e3;
-    simple_pipe.dx = 100;
-    
-    // Создаем сущность трубы
-    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-    // Создаем сущность нефти
-    oil_parameters_t oil;
 
-    //simple_pipe.diameter = 0.7;
-    simple_pipe.diameter = 0.514; // тест трубы 700км
     const auto& x = advection_model->get_grid();
     double dx = x[1] - x[0];
     double v = advection_model->getEquationsCoeffs(0, 0);
@@ -309,7 +286,8 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     double rho = 800, nu = 15e-6, p_0 = 6e6;
 
     // Задаем объемнй расход нефти, [м3/с]
-    double Q = calc_flow(v,simple_pipe.diameter);
+    double Q = calc_flow(v,pipe.wall.diameter);
+    double T = 400000; // период моделирования
 
     std::srand(std::time(nullptr));
     std::random_device rd;
@@ -350,7 +328,22 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
         time_p_in_row[i] = p_0;//p_0 - abs(p_0 * 2e-4 * std::rand() / RAND_MAX);
     }
 
-    double v_max = calc_speed(*std::max_element(Q_profile.begin(), Q_profile.end()), simple_pipe.diameter);
+    vector<double> time_row_for_Q;
+    for (double time = 0.0; time <= T; time += dis(gen))
+        time_row_for_Q.push_back(time);
+
+    vector<double> time_Q_row = vector<double>(time_row_for_Q.size(), p_0);
+
+    for (size_t i = 0; i <= 14; i++)
+    {
+        time_Q_row[i] = 0.2 - abs(0.2 * 0.001 * std::rand() / RAND_MAX);
+    }
+    for (size_t i = 15; i <= time_Q_row.size() - 1; i++)
+    {
+        time_Q_row[i] = 0.1 - abs(0.1 * 0.001 * std::rand() / RAND_MAX);
+    }
+
+    double v_max = calc_speed(*std::max_element(time_Q_row.begin(), time_Q_row.end()), pipe.wall.diameter);
 
     double dt = abs(dx / v_max);// Cr равен 1, взяли максимальную скорость
 
@@ -362,7 +355,7 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     prev_nu.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), nu);
 
     vector<double> new_time_row, new_time_p_in_row, new_time_p_out_row, new_time_Q_row, initial_p_profile, rho_profile, nu_profile;
-    vector<double> diff_p_profile = vector<double>(pipe.profile.getPointCount()-1);
+    vector<double> diff_p_profile = vector<double>(pipe.profile.getPointCount(), 0);
     vector<vector<double>> rho_and_nu_in = vector<vector<double>>(2);
     vector<vector<double>> rho_and_nu_out = vector<vector<double>>(2);
 
@@ -380,7 +373,7 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     do {
         vector<double> p_profile(pipe.profile.getPointCount());
         new_time_row.push_back(t);
-        Q = linear_interpolator(time_row_for_Q, Q_profile, t);
+        Q = linear_interpolator(time_row_for_Q, time_Q_row, t);
         new_time_Q_row.push_back(Q);
         rho_and_nu_in[0].push_back(linear_interpolator(time_row_for_rho, time_rho_in_row, t));
         rho_and_nu_in[1].push_back(linear_interpolator(time_row_for_nu, time_nu_in_row, t));
@@ -390,26 +383,25 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 
         new_time_p_in_row.push_back(linear_interpolator(time_row_for_p_in, time_p_in_row, t));
 
-        double Cr = calc_speed(Q, simple_pipe.diameter) * dt / dx;
+        double Cr = calc_speed(Q, pipe.wall.diameter) * dt / dx;
 
 
         if (t == 0) {
             Pipe_model_for_PQ_t pipeModel(pipe, prev.vars.cell_double[0], prev_nu.vars.cell_double[0], Q);
 
             solve_euler_corrector<1>(pipeModel, 1, p_0, &p_profile);
-
-            p_profile.pop_back();
             
             initial_p_profile = p_profile;
-            std::transform(initial_p_profile.begin(), initial_p_profile.end(), p_profile.begin(), diff_p_profile.begin(),
-                [](double initial, double current) {return initial - current;  });
             print_layers(t, p_profile, p_profile_file);
             print_layers(t, prev.vars.cell_double[0], rho_profile_file);
             print_layers(t, prev_nu.vars.cell_double[0], nu_profile_file);
             print_layers(t, diff_p_profile, diff_p_profile_file);
+            new_time_p_out_row.push_back(p_profile.back());
             p_profile = vector<double>(pipe.profile.getPointCount());
         }
         t += dt;
+        Q_profile = vector<double>(time_row_for_Q.size(), new_time_Q_row.back());
+        advection_model = std::make_unique<PipeQAdvection>(pipe, Q_profile);
 
         quickest_ultimate_fv_solver solver_rho(*advection_model, *buffer);
         solver_rho.step(dt, rho_and_nu_in[0].back(), rho_and_nu_out[0].back());
@@ -421,18 +413,16 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
         layer_t& next_nu = buffer_nu->current();
         nu_profile = next_nu.vars.cell_double[0];
 
-        Pipe_model_for_PQ_t pipeModel(pipe, next.vars.cell_double[0], next_nu.vars.cell_double[0], Q);
+        Pipe_model_for_PQ_t pipeModel(pipe, rho_profile, nu_profile, Q);
 
-        solve_euler_corrector<1>(pipeModel, 1, p_0, &p_profile);
-
-        p_profile.pop_back();
+        solve_euler_corrector<1>(pipeModel, 1, new_time_p_in_row.back(), &p_profile);
 
         new_time_p_out_row.push_back(p_profile.back());
         std::transform(initial_p_profile.begin(), initial_p_profile.end(), p_profile.begin(), diff_p_profile.begin(),
             [](double initial, double current) {return initial - current;  });
         print_layers(t, p_profile, p_profile_file);
-        print_layers(t, next.vars.cell_double[0], rho_profile_file);
-        print_layers(t, next_nu.vars.cell_double[0], nu_profile_file);
+        print_layers(t, rho_profile, rho_profile_file);
+        print_layers(t, nu_profile, nu_profile_file);
         print_layers(t, diff_p_profile, diff_p_profile_file);
 
         buffer->advance(+1);
