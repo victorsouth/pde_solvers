@@ -42,6 +42,23 @@ struct PipeProfile {
     vector<double> heights;
     /// @brief Несущая способность, Па
     vector<double> capacity;
+
+
+    double get_height_derivative(ptrdiff_t index, int direction) const {
+        ptrdiff_t neighbour_index = index + direction;
+
+        if (neighbour_index < 0 || neighbour_index >= getPointCount())
+            throw std::runtime_error("Wrong neighbour profile index");
+
+        if (index < 0 || index >= getPointCount())
+            throw std::runtime_error("Wrong profile index");
+
+        double dx = coordinates[neighbour_index] - coordinates[index];
+        double dz = heights[neighbour_index] - heights[index];
+        return dz / dx;
+
+    }
+
     /// @brief Длина участка трубы, м
     double getLength() const
     {
