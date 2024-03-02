@@ -1,4 +1,4 @@
-#include <random>
+п»ї#include <random>
 #include <algorithm>
 
 
@@ -9,19 +9,19 @@ using namespace std;
 
 struct my_task_parameters
 {
-    /// @brief Плотность жидкости, (кг/м^3)
+    /// @brief РџР»РѕС‚РЅРѕСЃС‚СЊ Р¶РёРґРєРѕСЃС‚Рё, (РєРі/Рј^3)
     double rho;
-    /// @brief Кинематическая вязкость, (сСТ)
+    /// @brief РљРёРЅРµРјР°С‚РёС‡РµСЃРєР°СЏ РІСЏР·РєРѕСЃС‚СЊ, (СЃРЎРў)
     double nu;
-    /// @brief Давление в начале участка, (Па)
+    /// @brief Р”Р°РІР»РµРЅРёРµ РІ РЅР°С‡Р°Р»Рµ СѓС‡Р°СЃС‚РєР°, (РџР°)
     double p_0;
-    /// @brief Давление в конце участка, (Па)
+    /// @brief Р”Р°РІР»РµРЅРёРµ РІ РєРѕРЅС†Рµ СѓС‡Р°СЃС‚РєР°, (РџР°)
     double p_L;
-    /// @brief Расход жидкости, (м^3/с)
+    /// @brief Р Р°СЃС…РѕРґ Р¶РёРґРєРѕСЃС‚Рё, (Рј^3/СЃ)
     double Q;
-    /// @brief Профиль плотностей по всей трубе, (кг/м^3)
+    /// @brief РџСЂРѕС„РёР»СЊ РїР»РѕС‚РЅРѕСЃС‚РµР№ РїРѕ РІСЃРµР№ С‚СЂСѓР±Рµ, (РєРі/Рј^3)
     vector<double>& rho_profile;
-    /// @brief Профиль вязкостей по всей трубе, (сСТ)
+    /// @brief РџСЂРѕС„РёР»СЊ РІСЏР·РєРѕСЃС‚РµР№ РїРѕ РІСЃРµР№ С‚СЂСѓР±Рµ, (СЃРЎРў)
     vector<double>& nu_profile;
     my_task_parameters(double rho, double nu, double p_0, double p_L, double Q, vector<double> rho_profile, vector<double> nu_profile) :
         rho{ rho }, nu{ nu }, p_0{ p_0 }, p_L{ p_L }, Q{ Q }, rho_profile{ rho_profile }, nu_profile{ nu_profile }
@@ -31,20 +31,20 @@ struct my_task_parameters
 
 
 
-/// @brief Функция расчета скорости из расхода
-/// @param Q Расход, (м^3/с)
-/// @param internal_diameter Внутренний диаметр, (м)
-/// @return Скорость, (м/с)
+/// @brief Р¤СѓРЅРєС†РёСЏ СЂР°СЃС‡РµС‚Р° СЃРєРѕСЂРѕСЃС‚Рё РёР· СЂР°СЃС…РѕРґР°
+/// @param Q Р Р°СЃС…РѕРґ, (Рј^3/СЃ)
+/// @param internal_diameter Р’РЅСѓС‚СЂРµРЅРЅРёР№ РґРёР°РјРµС‚СЂ, (Рј)
+/// @return РЎРєРѕСЂРѕСЃС‚СЊ, (Рј/СЃ)
 double calc_speed(double Q, double internal_diameter)
 {
     double speed = (4 * Q) / (pow(internal_diameter, 2) * pi);
     return speed;
 }
 
-/// @brief Функция расчета расхода из скорости
-/// @param speed Скорость, (м/с)
-/// @param internal_diameter Внутренний диаметр, (м) 
-/// @return Расход, (м^3/с)
+/// @brief Р¤СѓРЅРєС†РёСЏ СЂР°СЃС‡РµС‚Р° СЂР°СЃС…РѕРґР° РёР· СЃРєРѕСЂРѕСЃС‚Рё
+/// @param speed РЎРєРѕСЂРѕСЃС‚СЊ, (Рј/СЃ)
+/// @param internal_diameter Р’РЅСѓС‚СЂРµРЅРЅРёР№ РґРёР°РјРµС‚СЂ, (Рј) 
+/// @return Р Р°СЃС…РѕРґ, (Рј^3/СЃ)
 double calc_flow(double speed, double internal_diameter)
 {
     double flow = (pow(internal_diameter, 2) * pi * speed) / 4;
@@ -80,21 +80,21 @@ void print_data_to_csv(const vector<double>& time_rho,
     const string& filename)
 {
 
-    // Определяем максимальную длину вектора
+    // РћРїСЂРµРґРµР»СЏРµРј РјР°РєСЃРёРјР°Р»СЊРЅСѓСЋ РґР»РёРЅСѓ РІРµРєС‚РѕСЂР°
     size_t maxLength = max({ time_rho.size(), rho_and_nu_in_0.size(), time_nu.size(), rho_and_nu_in_1.size(),
                                       time_p_in.size(), p_in.size(), time_p_out.size(), p_out.size(), Q.size(), time_Q.size() });
 
-    // Открываем файл для записи
+    // РћС‚РєСЂС‹РІР°РµРј С„Р°Р№Р» РґР»СЏ Р·Р°РїРёСЃРё
     ofstream file(filename);
 
-    // Проверяем, открыт ли файл успешно
+    // РџСЂРѕРІРµСЂСЏРµРј, РѕС‚РєСЂС‹С‚ Р»Рё С„Р°Р№Р» СѓСЃРїРµС€РЅРѕ
     if (file.is_open()) {
-        // Записываем заголовки столбцов
+        // Р—Р°РїРёСЃС‹РІР°РµРј Р·Р°РіРѕР»РѕРІРєРё СЃС‚РѕР»Р±С†РѕРІ
         file << "Time Density; Density; Time Viscosity; Viscosity; Time Pressure In; Pressure In; Time Pressure Out; Pressure Out; Time Flow Rate; Flow Rate\n";
 
-        // Записываем данные из векторов
+        // Р—Р°РїРёСЃС‹РІР°РµРј РґР°РЅРЅС‹Рµ РёР· РІРµРєС‚РѕСЂРѕРІ
         for (size_t i = 0; i < maxLength; ++i) {
-            // Если индекс находится в пределах длины вектора, записываем значение, иначе записываем пустую ячейку
+            // Р•СЃР»Рё РёРЅРґРµРєСЃ РЅР°С…РѕРґРёС‚СЃСЏ РІ РїСЂРµРґРµР»Р°С… РґР»РёРЅС‹ РІРµРєС‚РѕСЂР°, Р·Р°РїРёСЃС‹РІР°РµРј Р·РЅР°С‡РµРЅРёРµ, РёРЅР°С‡Рµ Р·Р°РїРёСЃС‹РІР°РµРј РїСѓСЃС‚СѓСЋ СЏС‡РµР№РєСѓ
             file << (i < time_rho.size() ? to_string(time_rho[i]) : "") << ";"
                 << (i < rho_and_nu_in_0.size() ? to_string(rho_and_nu_in_0[i]) : "") << ";"
                 << (i < time_nu.size() ? to_string(time_nu[i]) : "") << ";"
@@ -106,7 +106,7 @@ void print_data_to_csv(const vector<double>& time_rho,
                 << (i < time_Q.size() ? to_string(time_Q[i]) : "") << ";"
                 << (i < Q.size() ? to_string(Q[i]) : "") << "\n";
         }
-        // Закрываем файл
+        // Р—Р°РєСЂС‹РІР°РµРј С„Р°Р№Р»
         file.close();
     }
 }
@@ -135,34 +135,34 @@ void clear_directory(const filesystem::path& dir_path) {
 }
 
 
-/// @brief Тесты для солвера quickest_ultimate_fv_solver
-/// @brief Тесты для солвера quickest_ultimate_fv_solver
+/// @brief РўРµСЃС‚С‹ РґР»СЏ СЃРѕР»РІРµСЂР° quickest_ultimate_fv_solver
+/// @brief РўРµСЃС‚С‹ РґР»СЏ СЃРѕР»РІРµСЂР° quickest_ultimate_fv_solver
 class QuickWithQuasiStationaryModel : public ::testing::Test {
 protected:
-    // Профиль переменных
+    // РџСЂРѕС„РёР»СЊ РїРµСЂРµРјРµРЅРЅС‹С…
     typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
     typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
 
-    // Слой: переменных Vars + сколько угодно служебных Specific
+    // РЎР»РѕР№: РїРµСЂРµРјРµРЅРЅС‹С… Vars + СЃРєРѕР»СЊРєРѕ СѓРіРѕРґРЅРѕ СЃР»СѓР¶РµР±РЅС‹С… Specific
     typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
 protected:
-    /// @brief Параметры трубы
+    /// @brief РџР°СЂР°РјРµС‚СЂС‹ С‚СЂСѓР±С‹
     pipe_properties_t pipe;
-    /// @brief Профиль расхода
+    /// @brief РџСЂРѕС„РёР»СЊ СЂР°СЃС…РѕРґР°
     vector<double> Q_profile;
-    double T = 210000; // период моделирования
+    double T = 210000; // РїРµСЂРёРѕРґ РјРѕРґРµР»РёСЂРѕРІР°РЅРёСЏ
     vector<double> time_row_for_Q;
     std::unique_ptr<PipeQAdvection> advection_model;
     std::unique_ptr<ring_buffer_t<layer_t>> buffer, buffer_nu;
 protected:
 
-    /// @brief Подготовка к расчету для семейства тестов
+    /// @brief РџРѕРґРіРѕС‚РѕРІРєР° Рє СЂР°СЃС‡РµС‚Сѓ РґР»СЏ СЃРµРјРµР№СЃС‚РІР° С‚РµСЃС‚РѕРІ
     virtual void SetUp() override {
 
         simple_pipe_properties simple_pipe;
-        simple_pipe.length = 200e3; // тест трубы 700км
-        simple_pipe.diameter = 0.514; // тест трубы 700км
-        simple_pipe.dx = 100; // тест трубы 700км
+        simple_pipe.length = 200e3; // С‚РµСЃС‚ С‚СЂСѓР±С‹ 700РєРј
+        simple_pipe.diameter = 0.514; // С‚РµСЃС‚ С‚СЂСѓР±С‹ 700РєРј
+        simple_pipe.dx = 100; // С‚РµСЃС‚ С‚СЂСѓР±С‹ 700РєРј
 
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
@@ -193,7 +193,7 @@ protected:
     }
 };
 
-/// @brief Уравнение трубы для задачи PQ
+/// @brief РЈСЂР°РІРЅРµРЅРёРµ С‚СЂСѓР±С‹ РґР»СЏ Р·Р°РґР°С‡Рё PQ
 class Pipe_model_for_PQ_t : public ode_t<1>
 {
 public:
@@ -207,10 +207,10 @@ protected:
     double flow;
 
 public:
-    /// @brief Констуктор уравнения трубы
-    /// @param pipe Ссылка на сущность трубы
-    /// @param oil Ссылка на сущность нефти
-    /// @param flow Объемный расход
+    /// @brief РљРѕРЅСЃС‚СѓРєС‚РѕСЂ СѓСЂР°РІРЅРµРЅРёСЏ С‚СЂСѓР±С‹
+    /// @param pipe РЎСЃС‹Р»РєР° РЅР° СЃСѓС‰РЅРѕСЃС‚СЊ С‚СЂСѓР±С‹
+    /// @param oil РЎСЃС‹Р»РєР° РЅР° СЃСѓС‰РЅРѕСЃС‚СЊ РЅРµС„С‚Рё
+    /// @param flow РћР±СЉРµРјРЅС‹Р№ СЂР°СЃС…РѕРґ
     Pipe_model_for_PQ_t(pipe_properties_t& pipe, vector<double>& rho_profile, vector<double>& nu_profile, double flow)
         : pipe(pipe)
         , rho_profile(rho_profile)
@@ -220,15 +220,15 @@ public:
 
     }
 
-    /// @brief Возвращает известную уравнению сетку
+    /// @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ РёР·РІРµСЃС‚РЅСѓСЋ СѓСЂР°РІРЅРµРЅРёСЋ СЃРµС‚РєСѓ
     virtual const vector<double>& get_grid() const override {
         return pipe.profile.coordinates;
     }
 
-    /// @brief Возвращает значение правой части ДУ
-    /// @param grid_index Обсчитываемый индекс расчетной сетки
-    /// @param point_vector Начальные условия
-    /// @return Значение правой части ДУ в точке point_vector
+    /// @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ Р·РЅР°С‡РµРЅРёРµ РїСЂР°РІРѕР№ С‡Р°СЃС‚Рё Р”РЈ
+    /// @param grid_index РћР±СЃС‡РёС‚С‹РІР°РµРјС‹Р№ РёРЅРґРµРєСЃ СЂР°СЃС‡РµС‚РЅРѕР№ СЃРµС‚РєРё
+    /// @param point_vector РќР°С‡Р°Р»СЊРЅС‹Рµ СѓСЃР»РѕРІРёСЏ
+    /// @return Р—РЅР°С‡РµРЅРёРµ РїСЂР°РІРѕР№ С‡Р°СЃС‚Рё Р”РЈ РІ С‚РѕС‡РєРµ point_vector
     virtual right_party_type ode_right_party(
         size_t grid_index, const var_type& point_vector) const override
     {
@@ -241,8 +241,8 @@ public:
             Re = v * pipe.wall.diameter / nu_profile[grid_index];
             lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
             tau_w = lambda / 8 * rho * v * abs(v);
-            /// Обработка индекса в случае расчетов на границах трубы
-            /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
+            /// РћР±СЂР°Р±РѕС‚РєР° РёРЅРґРµРєСЃР° РІ СЃР»СѓС‡Р°Рµ СЂР°СЃС‡РµС‚РѕРІ РЅР° РіСЂР°РЅРёС†Р°С… С‚СЂСѓР±С‹
+            /// Р§С‚РѕР±С‹ РЅРµ РІС‹Р№С‚Рё Р·Р° РјР°СЃСЃРёРІ РІС‹СЃРѕС‚, Р±СѓРґРµРј СЃС‡РёС‚Р°С‚СЊ dz/dx РІ СЃРѕСЃРµРґРЅРµР№ С‚РѕС‡РєРµ
             grid_index = grid_index == 0 ? grid_index + 1 : grid_index;
             grid_index = grid_index == pipe.profile.heights.size() - 1 ? grid_index - 1 : grid_index;
 
@@ -268,13 +268,13 @@ public:
     {
 
     }
-    /// @brief Задание функции невязок
-    /// @param x Искомый расход
-    /// @return Функция невязок
+    /// @brief Р—Р°РґР°РЅРёРµ С„СѓРЅРєС†РёРё РЅРµРІСЏР·РѕРє
+    /// @param x РСЃРєРѕРјС‹Р№ СЂР°СЃС…РѕРґ
+    /// @return Р¤СѓРЅРєС†РёСЏ РЅРµРІСЏР·РѕРє
     var_type residuals(const var_type& x)
     {
-        Q_approx = x; // во временной структуре используем Q для нашего уравнения невязки, эта Q будет идти в солвер
-        // Объявляем переменную класса солвера Эйлером
+        Q_approx = x; // РІРѕ РІСЂРµРјРµРЅРЅРѕР№ СЃС‚СЂСѓРєС‚СѓСЂРµ РёСЃРїРѕР»СЊР·СѓРµРј Q РґР»СЏ РЅР°С€РµРіРѕ СѓСЂР°РІРЅРµРЅРёСЏ РЅРµРІСЏР·РєРё, СЌС‚Р° Q Р±СѓРґРµС‚ РёРґС‚Рё РІ СЃРѕР»РІРµСЂ
+        // РћР±СЉСЏРІР»СЏРµРј РїРµСЂРµРјРµРЅРЅСѓСЋ РєР»Р°СЃСЃР° СЃРѕР»РІРµСЂР° Р­Р№Р»РµСЂРѕРј
         Pipe_model_for_PQ_t pipeModel(pipe, task.rho_profile, task.nu_profile, Q_approx);
 
         solve_euler_corrector<1>(pipeModel, 1, task.p_0, &p_profile);
@@ -288,27 +288,27 @@ private:
     vector<double> p_profile;
 };
 
-/// @brief Пример вывода в файл через
+/// @brief РџСЂРёРјРµСЂ РІС‹РІРѕРґР° РІ С„Р°Р№Р» С‡РµСЂРµР·
 TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 {
     simple_pipe_properties simple_pipe;
     simple_pipe.length = 200e3;
     simple_pipe.dx = 100;
     
-    // Создаем сущность трубы
+    // РЎРѕР·РґР°РµРј СЃСѓС‰РЅРѕСЃС‚СЊ С‚СЂСѓР±С‹
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-    // Создаем сущность нефти
+    // РЎРѕР·РґР°РµРј СЃСѓС‰РЅРѕСЃС‚СЊ РЅРµС„С‚Рё
     oil_parameters_t oil;
 
     //simple_pipe.diameter = 0.7;
-    simple_pipe.diameter = 0.514; // тест трубы 700км
+    simple_pipe.diameter = 0.514; // С‚РµСЃС‚ С‚СЂСѓР±С‹ 700РєРј
     const auto& x = advection_model->get_grid();
     double dx = x[1] - x[0];
     double v = advection_model->getEquationsCoeffs(0, 0);
 
     double rho = 800, nu = 15e-6, p_0 = 6e6;
 
-    // Задаем объемнй расход нефти, [м3/с]
+    // Р—Р°РґР°РµРј РѕР±СЉРµРјРЅР№ СЂР°СЃС…РѕРґ РЅРµС„С‚Рё, [Рј3/СЃ]
     double Q = calc_flow(v,simple_pipe.diameter);
 
     std::srand(std::time(nullptr));
@@ -352,9 +352,9 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 
     double v_max = calc_speed(*std::max_element(Q_profile.begin(), Q_profile.end()), simple_pipe.diameter);
 
-    double dt = abs(dx / v_max);// Cr равен 1, взяли максимальную скорость
+    double dt = abs(dx / v_max);// Cr СЂР°РІРµРЅ 1, РІР·СЏР»Рё РјР°РєСЃРёРјР°Р»СЊРЅСѓСЋ СЃРєРѕСЂРѕСЃС‚СЊ
 
-    // Вектор для хранения профиля давления
+    // Р’РµРєС‚РѕСЂ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РїСЂРѕС„РёР»СЏ РґР°РІР»РµРЅРёСЏ
     layer_t& prev = buffer->previous();
     prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), rho);
 
@@ -366,7 +366,7 @@ TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
     vector<vector<double>> rho_and_nu_in = vector<vector<double>>(2);
     vector<vector<double>> rho_and_nu_out = vector<vector<double>>(2);
 
-    double t = 0; // текущее время
+    double t = 0; // С‚РµРєСѓС‰РµРµ РІСЂРµРјСЏ
 
 
     string path_for_quick = string("../research_out/QuickWithQSM/");
