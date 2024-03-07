@@ -105,13 +105,13 @@ TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection_Density_Viscosity)
     viscosity_initial = vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
 
     {
-        auto density_buffer_wrapped = buffer.get_custom_buffer(&density_viscosity_layer_for_quick::get_density_quick_wrapper);
-        auto& prev = density_buffer_wrapped.previous();
-        auto& next = density_buffer_wrapped.current();
+        auto density_buffer = buffer.get_custom_buffer(&density_viscosity_layer_for_quick::get_density_quick_wrapper);
+        auto& prev = density_buffer.previous();
+        auto& next = density_buffer.current();
 
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
-        //ring_buffer_t<layer_t> density_buffer_wrapped = buffer.get_custom_buffer(&density_viscosity_layer_for_quick<target_var_t, specific_data_t>::get_density_quick_wrapper);
-        quickest_ultimate_fv_solver solver(*advection_model, density_buffer_wrapped);
+ 
+        quickest_ultimate_fv_solver solver(*advection_model, density_buffer);
         double dt = abs(dx / v);
         double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
         double rho_out = 860; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
@@ -119,6 +119,24 @@ TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection_Density_Viscosity)
 
         auto& c_new = next.vars.cell_double[0];
     }
+
+    {
+        auto viscosity_buffer = buffer.get_custom_buffer(&density_viscosity_layer_for_quick::get_viscosity_quick_wrapper);
+        auto& prev = viscosity_buffer.previous();
+        auto& next = viscosity_buffer.current();
+        
+        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 1e-5);
+
+        quickest_ultimate_fv_solver solver(*advection_model, viscosity_buffer);
+        double dt = abs(dx / v);
+        double visc_in = 2e-5; // вязкость нефти, закачиваемой на входе трубы при положительном расходе
+        double visc_out = 0.5e-5;; // вязкость нефти, закачиваемой с выхода трубы при отрицательном расходе
+        solver.step(dt, visc_in, visc_out);
+
+        auto& c_new = next.vars.cell_double[0];
+    }
+    buffer.advance(+1);
+    auto& curr = buffer[0];
 }
 
 /// @brief Уравнение трубы для задачи PQ
