@@ -104,7 +104,7 @@ TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection_Density_Viscosity)
     auto& viscosity_initial = buffer[0].viscosity;
     rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
     viscosity_initial = vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
-
+    buffer.advance(+1);
     {
         auto density_wrapper = buffer.get_buffer_wrapper(
             &density_viscosity_cell_layer::get_density_quick_wrapper);
@@ -133,7 +133,7 @@ TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection_Density_Viscosity)
         auto& next = viscosity_wrapper.current();
         auto& c_new = next.vars;
     }
-    buffer.advance(+1);
+
     auto& curr = buffer[0];
 }
 
