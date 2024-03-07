@@ -433,12 +433,12 @@ struct quickest_ultimate_fv_wrapper {
     typedef typename quickest_ultimate_fv_solver_traits<Dimension>::var_layer_data var_layer_data;
     typedef typename quickest_ultimate_fv_solver_traits<Dimension>::specific_layer specific_layer;
 
-    var_layer_data vars;
-    specific_layer specific;
+    var_layer_data& vars;
+    specific_layer& specific;
 
     quickest_ultimate_fv_wrapper(
-        var_layer_data U,
-        specific_layer eigenval
+        var_layer_data& U,
+        specific_layer& eigenval
     )
         : vars(U)
         , specific(eigenval)
