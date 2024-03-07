@@ -424,6 +424,27 @@ public:
     }
 };
 
+template <size_t Dimension>
+struct quickest_ultimate_fv_wrapper;
+
+/// @brief Обертка над составным слоем
+template <size_t Dimension>
+struct quickest_ultimate_fv_wrapper {
+    typedef typename quickest_ultimate_fv_solver_traits<Dimension>::var_layer_data var_layer_data;
+    typedef typename quickest_ultimate_fv_solver_traits<Dimension>::specific_layer specific_layer;
+
+    var_layer_data vars;
+    specific_layer specific;
+
+    quickest_ultimate_fv_wrapper(
+        var_layer_data U,
+        specific_layer eigenval
+    )
+        : vars(U)
+        , specific(eigenval)
+    {}
+};
+
 /// @brief Солвер на основе QUICKEST-ULTIMATE, только для размерности 1!
 /// [Leonard 1991]
 class quickest_ultimate_fv_solver {
@@ -457,7 +478,21 @@ public:
         ring_buffer_t<composite_layer_t<var_layer_data, specific_layer>>& buffer)
         : quickest_ultimate_fv_solver(pde, buffer.previous(), buffer.current())
     {}
-
+    /// @brief Конструктор для буфера-обертки в котором простой слой:
+    /// когда в слое только один блок целевых переменных и один блок служебных данных
+    /// Из буфера берется current() и previous()
+    /// @param pde ДУЧП
+    /// @param buffer Буфер-обертка слоев
+    quickest_ultimate_fv_solver(pde_t<1>& pde,
+        ring_buffer_t<quickest_ultimate_fv_wrapper<1>>& buffer)
+        : pde(pde)
+        , grid(pde.get_grid())
+        , n(pde.get_grid().size())
+        , prev_vars(buffer.previous().vars)
+        , curr_vars(buffer.current().vars)
+        , prev_spec(buffer.previous().specific)
+        , curr_spec(buffer.previous().specific)
+    {}
     /// @brief Конструктор для простых слоев - 
     /// когда в слое только один блок целевых переменных и один блок служебных данных
     /// @param pde ДУЧП

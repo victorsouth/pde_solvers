@@ -186,29 +186,10 @@ TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection)
     solver.step(dt, rho_in, rho_out);
 
 
-    auto& c_new = next.vars.point_double[0];
+    auto& c_new = next.vars.cell_double[0];
 }
 
-template <size_t Dimension>
-struct quickest_ultimate_fv_wrapper;
 
-// Пример структуры quickest_ultimate_fv_wrapper для вашего случая
-template <size_t Dimension>
-struct quickest_ultimate_fv_wrapper {
-    typedef typename quickest_ultimate_fv_solver_traits<Dimension>::var_layer_data var_layer_data;
-    typedef typename quickest_ultimate_fv_solver_traits<Dimension>::specific_layer specific_layer;
-
-    var_layer_data vars;
-    specific_layer specific;
-
-    quickest_ultimate_fv_wrapper(
-        var_layer_data vars_,
-        specific_layer specific_
-    )
-        : vars(vars_),
-        specific(specific_)
-    {}
-};
 
 // Проблемно-ориентированный слой
 template<typename VarLayerType, typename SpecificLayerType>
@@ -217,10 +198,10 @@ struct density_viscosity_layer_for_quick {
     VarLayerType viscosity;
     SpecificLayerType specific;
 
-    density_viscosity_layer_for_quick(size_t point_count)
-        : density(point_count)
-        , viscosity(point_count)
-        , specific(point_count)
+    density_viscosity_layer_for_quick(size_t cell_count)
+        : density(cell_count)
+        , viscosity(cell_count)
+        , specific(cell_count)
     {
     }
 
@@ -243,27 +224,29 @@ TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection_Density_Viscosity)
     double dx = x[1] - x[0];
     double v = advection_model->getEquationsCoeffs(0, 0);
 
-    ring_buffer_t<layer_t> buffer(2, pipe.profile.getPointCount());
+    ring_buffer_t<density_viscosity_layer_for_quick<target_var_t, specific_data_t>> buffer(2, pipe.profile.getPointCount());
 
-    ring_buffer_t<density_viscosity_layer_for_quick<target_var_t, specific_data_t>> buffer_case(2, pipe.profile.getPointCount());
+    auto& prev_case = buffer.get_custom_buffer(&density_viscosity_layer_for_quick<target_var_t, specific_data_t>::get_density_quick_wrapper).previous();
 
-    layer_t& prev = buffer.previous();
-    layer_t& next = buffer.current();
-    auto& prev_case = buffer_case.get_custom_buffer(&density_viscosity_layer_for_quick<target_var_t, specific_data_t>::get_density_quick_wrapper).previous();
-
-    auto& rho_initial = buffer_case[0].density.cell_double[0];
-    auto& viscosity_initial = buffer_case[0].viscosity.cell_double[0];
+    auto& rho_initial = buffer[0].density.cell_double[0];
+    auto& viscosity_initial = buffer[0].viscosity.cell_double[0];
     rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
     viscosity_initial = vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
 
     {
-        auto density_buffer_wrapped = buffer_case.get_custom_buffer(&density_viscosity_layer_for_quick<target_var_t, specific_data_t>::get_density_quick_wrapper);
-        //ring_buffer_t<layer_t> density_buffer_wrapped = buffer_case.get_custom_buffer(&density_viscosity_layer_for_quick<target_var_t, specific_data_t>::get_density_quick_wrapper);
-        quickest_ultimate_fv_solver solver(*advection_model, prev, next);
+        auto density_buffer_wrapped = buffer.get_custom_buffer(&density_viscosity_layer_for_quick<target_var_t, specific_data_t>::get_density_quick_wrapper);
+        auto& prev = density_buffer_wrapped.previous();
+        auto& next = density_buffer_wrapped.current();
+
+        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
+        //ring_buffer_t<layer_t> density_buffer_wrapped = buffer.get_custom_buffer(&density_viscosity_layer_for_quick<target_var_t, specific_data_t>::get_density_quick_wrapper);
+        quickest_ultimate_fv_solver solver(*advection_model, density_buffer_wrapped);
         double dt = abs(dx / v);
         double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
         double rho_out = 860; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
         solver.step(dt, rho_in, rho_out);
+
+        auto& c_new = next.vars.cell_double[0];
     }
 }
 
