@@ -230,7 +230,7 @@ public:
         return time_step;
     }
     /// @brief Расчет смещения при неточном попадании линий характеристик между точками сетки
-    double characteristic_interpolation_offset(double dt, const double* lambda, const double* grid) const
+    static double characteristic_interpolation_offset(double dt, const double* lambda, const double* grid) 
     {
         //  linear interpolation
 
