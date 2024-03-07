@@ -1,9 +1,11 @@
 ﻿#include <random>
 #include <algorithm>
-
-
-
 using namespace std;
+
+// Определение алиасов типов
+using target_var_t = quickest_ultimate_fv_solver_traits<1>::var_layer_data;
+using specific_data_t = quickest_ultimate_fv_solver_traits<1>::specific_layer;
+using layer_t = composite_layer_t<target_var_t, specific_data_t>;
 
 struct my_task_parameters
 {
@@ -27,103 +29,7 @@ struct my_task_parameters
     }
 };
 
-using target_var_t = quickest_ultimate_fv_solver_traits<1>::var_layer_data;
-using specific_data_t = quickest_ultimate_fv_solver_traits<1>::specific_layer;
-using layer_t = composite_layer_t<target_var_t, specific_data_t>;
 
-template <size_t Dimension>
-struct quickest_ultimate_fv_wrapper;
-
-// Пример структуры quickest_ultimate_fv_wrapper для вашего случая
-template <size_t Dimension>
-struct quickest_ultimate_fv_wrapper {
-    typedef typename quickest_ultimate_fv_solver_traits<Dimension>::var_layer_data var_layer_data;
-    typedef typename quickest_ultimate_fv_solver_traits<Dimension>::specific_layer specific_layer;
-
-    var_layer_data vars;
-    specific_layer specific;
-
-    quickest_ultimate_fv_wrapper(
-        var_layer_data vars_,
-        specific_layer specific_
-    )
-        : vars(vars_),
-        specific(specific_)
-    {}
-};
-
-// Проблемно-ориентированный слой
-struct density_viscosity_layer_for_quick {
-    /// @brief Профиль плотности
-    target_var_t density;
-    /// @brief Профиль вязкости
-    target_var_t viscosity;
-
-    specific_data_t specific;
-
-    density_viscosity_layer_for_quick(size_t point_count)
-        : density(point_count)
-        , viscosity(point_count)
-        , specific(point_count)
-    {
-    }
-
-    // Обертка для плотности
-    static quickest_ultimate_fv_wrapper<1> get_density_quick_wrapper(density_viscosity_layer_for_quick& layer)
-    {
-        return quickest_ultimate_fv_wrapper<1>(layer.density, layer.specific);
-    }
-
-    static quickest_ultimate_fv_wrapper<1> get_viscosity_quick_wrapper(density_viscosity_layer_for_quick& layer)
-    {
-        return quickest_ultimate_fv_wrapper<1>(layer.viscosity, layer.specific);
-    }
-};
-
-TEST(Quickest_Ultimate_Solver, UseCase_Advection_Density_Viscosity)
-{
-    // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
-    simple_pipe_properties simple_pipe;
-    simple_pipe.length = 50e3;
-    simple_pipe.diameter = 0.7;
-    simple_pipe.dx = 1000;
-
-    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-
-    vector<double> Q_profile(pipe.profile.getPointCount(), 0.5); // задаем по трубе расход 0.5 м3/с
-    std::unique_ptr<PipeQAdvection> advection_model;
-    advection_model = std::make_unique<PipeQAdvection>(pipe, Q_profile);
-
-    const auto& x = advection_model->get_grid();
-    double dx = x[1] - x[0];
-    double v = advection_model->getEquationsCoeffs(0, 0);
-
-    std::unique_ptr<ring_buffer_t<density_viscosity_layer_for_quick>> buffer(
-        new ring_buffer_t<density_viscosity_layer_for_quick>(2, pipe.profile.getPointCount())
-    );
-
-    auto& rho_initial = (*buffer)[0].density.cell_double[0];
-    auto& viscosity_initial = (*buffer)[0].viscosity.cell_double[0];
-    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
-    viscosity_initial = vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
-
-    {
-        auto density_buffer_wrapped = buffer->get_custom_buffer(&density_viscosity_layer_for_quick::get_density_quick_wrapper);
-        std::unique_ptr<ring_buffer_t<layer_t>> density_buffer;
-        density_buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
-        layer_t& prev = density_buffer->previous();
-        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
-
-        quickest_ultimate_fv_solver solver(*advection_model, *density_buffer);
-        //quickest_ultimate_fv_solver solver_wrapped(*advection_model, density_buffer_wrapped);
-        double dt = abs(dx / v);
-        double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
-        double rho_out = 860; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
-        solver.step(dt, rho_in, rho_out);
-        layer_t& next = density_buffer->current();
-        auto& c_new = next.vars.cell_double[0];
-    }
-}
 
 /// @brief Функция расчета скорости из расхода
 /// @param Q Расход, (м^3/с)
@@ -244,11 +150,8 @@ protected:
     pipe_properties_t pipe;
     /// @brief Профиль расхода
     vector<double> Q_profile;
-
-    
     std::unique_ptr<PipeQAdvection> advection_model;
-    ring_buffer_t<density_viscosity_layer_for_quick> buffer;
-    
+    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
 protected:
 
     /// @brief Подготовка к расчету для семейства тестов
@@ -257,24 +160,112 @@ protected:
         simple_pipe_properties simple_pipe;
         simple_pipe.length = 200e3; // тест трубы 700км
         simple_pipe.diameter = 0.514; // тест трубы 700км
-        //pipe.wall.diameter = 0.514;
         simple_pipe.dx = 100; // тест трубы 700км
-        
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-
-        std::srand(std::time(nullptr));
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<double> dis(57.0, 67.0);
-
-
         Q_profile = vector<double>(pipe.profile.getPointCount(), 0.2);
-
-
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q_profile);
-        ring_buffer_t<density_viscosity_layer_for_quick> buffer(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
     }
 };
+
+TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection)
+{
+    const auto& x = advection_model->get_grid();
+    double dx = x[1] - x[0];
+    double v = advection_model->getEquationsCoeffs(0, 0);
+
+    layer_t& prev = buffer->previous();
+    layer_t& next = buffer->current();
+
+    prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
+    
+    quickest_ultimate_fv_solver solver(*advection_model, *buffer);
+    double dt = abs(dx / advection_model->getEquationsCoeffs(0, 0));
+    double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
+    double rho_out = 860; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
+    solver.step(dt, rho_in, rho_out);
+
+
+    auto& c_new = next.vars.point_double[0];
+}
+
+template <size_t Dimension>
+struct quickest_ultimate_fv_wrapper;
+
+// Пример структуры quickest_ultimate_fv_wrapper для вашего случая
+template <size_t Dimension>
+struct quickest_ultimate_fv_wrapper {
+    typedef typename quickest_ultimate_fv_solver_traits<Dimension>::var_layer_data var_layer_data;
+    typedef typename quickest_ultimate_fv_solver_traits<Dimension>::specific_layer specific_layer;
+
+    var_layer_data vars;
+    specific_layer specific;
+
+    quickest_ultimate_fv_wrapper(
+        var_layer_data vars_,
+        specific_layer specific_
+    )
+        : vars(vars_),
+        specific(specific_)
+    {}
+};
+
+// Проблемно-ориентированный слой
+template<typename VarLayerType, typename SpecificLayerType>
+struct density_viscosity_layer_for_quick {
+    VarLayerType density;
+    VarLayerType viscosity;
+    SpecificLayerType specific;
+
+    density_viscosity_layer_for_quick(size_t point_count)
+        : density(point_count)
+        , viscosity(point_count)
+        , specific(point_count)
+    {
+    }
+
+    // Обертка для плотности
+    static quickest_ultimate_fv_wrapper<1> get_density_quick_wrapper(density_viscosity_layer_for_quick& layer)
+    {
+        return quickest_ultimate_fv_wrapper<1>(layer.density, layer.specific);
+    }
+
+    static quickest_ultimate_fv_wrapper<1> get_viscosity_quick_wrapper(density_viscosity_layer_for_quick& layer)
+    {
+        return quickest_ultimate_fv_wrapper<1>(layer.viscosity, layer.specific);
+    }
+};
+
+
+TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection_Density_Viscosity)
+{
+    const auto& x = advection_model->get_grid();
+    double dx = x[1] - x[0];
+    double v = advection_model->getEquationsCoeffs(0, 0);
+
+    ring_buffer_t<layer_t> buffer(2, pipe.profile.getPointCount());
+
+    ring_buffer_t<density_viscosity_layer_for_quick<target_var_t, specific_data_t>> buffer_case(2, pipe.profile.getPointCount());
+
+    layer_t& prev = buffer.previous();
+    layer_t& next = buffer.current();
+    auto& prev_case = buffer_case.get_custom_buffer(&density_viscosity_layer_for_quick<target_var_t, specific_data_t>::get_density_quick_wrapper).previous();
+
+    auto& rho_initial = buffer_case[0].density.cell_double[0];
+    auto& viscosity_initial = buffer_case[0].viscosity.cell_double[0];
+    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
+    viscosity_initial = vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
+
+    {
+        auto density_buffer_wrapped = buffer_case.get_custom_buffer(&density_viscosity_layer_for_quick<target_var_t, specific_data_t>::get_density_quick_wrapper);
+        //ring_buffer_t<layer_t> density_buffer_wrapped = buffer_case.get_custom_buffer(&density_viscosity_layer_for_quick<target_var_t, specific_data_t>::get_density_quick_wrapper);
+        quickest_ultimate_fv_solver solver(*advection_model, prev, next);
+        double dt = abs(dx / v);
+        double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
+        double rho_out = 860; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
+        solver.step(dt, rho_in, rho_out);
+    }
+}
 
 /// @brief Уравнение трубы для задачи PQ
 class pipe_model_PQ_cell_parties_t : public ode_t<1>
@@ -376,8 +367,10 @@ private:
 };
 
 /// @brief Пример вывода в файл через
-/*TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
+TEST_F(QuickWithQuasiStationaryModel, TimeRowsTask)
 {
+    std::unique_ptr<ring_buffer_t<layer_t>> buffer_nu;
+    buffer_nu = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount()); 
 
     const auto& x = advection_model->get_grid();
     double dx = x[1] - x[0];
@@ -557,4 +550,4 @@ private:
         new_time_Q_row,
         filename_final
     );
-}*/
+}
