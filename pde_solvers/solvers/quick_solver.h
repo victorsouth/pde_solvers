@@ -428,20 +428,19 @@ template <size_t Dimension>
 struct quickest_ultimate_fv_wrapper;
 
 /// @brief Обертка над составным слоем
-template <size_t Dimension>
-struct quickest_ultimate_fv_wrapper {
-    typedef typename quickest_ultimate_fv_solver_traits<Dimension>::var_layer_data var_layer_data;
-    typedef typename quickest_ultimate_fv_solver_traits<Dimension>::specific_layer specific_layer;
+template <>
+struct quickest_ultimate_fv_wrapper<1> {
+    typedef typename quickest_ultimate_fv_solver_traits<1>::specific_layer specific_layer;
 
-    var_layer_data vars;
-    specific_layer specific;
+    std::vector<double>& vars;
+    specific_layer& specific;
 
     quickest_ultimate_fv_wrapper(
-        var_layer_data U,
-        specific_layer eigenval
+        vector<double>& U,
+        specific_layer& specific
     )
         : vars(U)
-        , specific(eigenval)
+        , specific(specific)
     {}
 };
 
@@ -461,9 +460,9 @@ protected:
     /// @brief Количество точек сетки
     const size_t n;
     /// @brief Предыдущий слой переменных
-    const var_layer_data& prev_vars;
+    const vector<double>& prev_vars;
     /// @brief Новый (рассчитываемый) слой переменных
-    var_layer_data& curr_vars;
+    vector<double>& curr_vars;
     /// @brief Предыдущий специфический слой (сейчас не нужен! нужен ли в будущем?)
     const specific_layer& prev_spec;
     /// @brief Текущий специфический слой
@@ -478,21 +477,7 @@ public:
         ring_buffer_t<composite_layer_t<var_layer_data, specific_layer>>& buffer)
         : quickest_ultimate_fv_solver(pde, buffer.previous(), buffer.current())
     {}
-    /// @brief Конструктор для буфера-обертки в котором простой слой:
-    /// когда в слое только один блок целевых переменных и один блок служебных данных
-    /// Из буфера берется current() и previous()
-    /// @param pde ДУЧП
-    /// @param buffer Буфер-обертка слоев
-    quickest_ultimate_fv_solver(pde_t<1>& pde,
-        ring_buffer_t<quickest_ultimate_fv_wrapper<1>>& buffer)
-        : pde(pde)
-        , grid(pde.get_grid())
-        , n(pde.get_grid().size())
-        , prev_vars(buffer.previous().vars)
-        , curr_vars(buffer.current().vars)
-        , prev_spec(buffer.previous().specific)
-        , curr_spec(buffer.previous().specific)
-    {}
+
     /// @brief Конструктор для простых слоев - 
     /// когда в слое только один блок целевых переменных и один блок служебных данных
     /// @param pde ДУЧП
@@ -504,21 +489,47 @@ public:
         : pde(pde)
         , grid(pde.get_grid())
         , n(pde.get_grid().size())
-        , prev_vars(prev.vars)
-        , curr_vars(curr.vars)
+        , prev_vars(prev.vars.cell_double[0])
+        , curr_vars(curr.vars.cell_double[0])
         , prev_spec(std::get<0>(prev.specific))
         , curr_spec(std::get<0>(curr.specific))
     {
 
     }
+
+    quickest_ultimate_fv_solver(pde_t<1>& pde,
+        ring_buffer_t<quickest_ultimate_fv_wrapper<1>>& wrapper)
+        : pde(pde)
+        , grid(pde.get_grid())
+        , n(pde.get_grid().size())
+        , prev_vars(wrapper.previous().vars)
+        , curr_vars(wrapper.current().vars)
+        , prev_spec(wrapper.previous().specific)
+        , curr_spec(wrapper.current().specific)
+    {}
+
+    quickest_ultimate_fv_solver(pde_t<1>& pde,
+        const vector<double>& prev_vars, vector<double>& curr_vars,
+        const specific_layer& prev_spec, specific_layer& curr_spec)
+        : pde(pde)
+        , grid(pde.get_grid())
+        , n(pde.get_grid().size())
+        , prev_vars(prev_vars)
+        , curr_vars(curr_vars)
+        , prev_spec(prev_spec)
+        , curr_spec(curr_spec)
+    {
+
+    }
+
     /// @brief Расчет шага
     /// @param dt Заданный период времени
     /// @param u_in Левое граничное условие
     /// @param u_out Правое граничное условие
     void step(double dt, double u_in, double u_out) {
         auto& F = curr_spec.point_double[0]; // потоки на границах ячеек
-        const auto& U = prev_vars.cell_double[0];
-        auto& U_new = curr_vars.cell_double[0];
+        const auto& U = prev_vars;
+        auto& U_new = curr_vars;
 
         // Расчет потоков на границе на основе граничных условий
         double v_in = pde.getEquationsCoeffs(0, U[0]);

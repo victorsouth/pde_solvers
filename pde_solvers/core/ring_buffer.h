@@ -77,8 +77,15 @@ public:
     /// @brief Константная ссылка на предыдущий слой 
     const LayerType& previous() const { return layers[previous_layer_index()]; }
 
+    /// @brief Создает обертку над буфером на основе заданного подмножества профилей для одного слоя
+    /// Сценарий использования: 
+    /// 1. От каждого слоя селектор выбирает нужное подмножество профилей, формируется обертка слоя
+    /// 2. Селекторы вызываются для каждого слоя, выбирают
+    /// @tparam Selector Тип селектора
+    /// @param selector Экземпляр селектора, который из профилей в LayerType формирует обертку слоя
+    /// @return Буфер оберток для каждого слоя. Можно это называть оберткой над исходным буфером
     template <typename Selector>
-    auto get_custom_buffer(Selector selector)
+    auto get_buffer_wrapper(Selector selector)
     {
         auto& buffer = *this;
 

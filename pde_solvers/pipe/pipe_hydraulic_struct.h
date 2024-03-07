@@ -47,10 +47,10 @@ struct PipeProfile {
     double get_height_derivative(ptrdiff_t index, int direction) const {
         ptrdiff_t neighbour_index = index + direction;
 
-        if (neighbour_index < 0 || neighbour_index >= getPointCount())
+        if (neighbour_index < 0 || neighbour_index >= static_cast<ptrdiff_t>(getPointCount()))
             throw std::runtime_error("Wrong neighbour profile index");
 
-        if (index < 0 || index >= getPointCount())
+        if (index < 0 || index >= static_cast<ptrdiff_t>(getPointCount()))
             throw std::runtime_error("Wrong profile index");
 
         double dx = coordinates[neighbour_index] - coordinates[index];
