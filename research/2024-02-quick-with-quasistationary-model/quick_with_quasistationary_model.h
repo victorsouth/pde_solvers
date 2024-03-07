@@ -7,132 +7,6 @@ using target_var_t = quickest_ultimate_fv_solver_traits<1>::var_layer_data;
 using specific_data_t = quickest_ultimate_fv_solver_traits<1>::specific_layer;
 using layer_t = composite_layer_t<target_var_t, specific_data_t>;
 
-struct my_task_parameters
-{
-    /// @brief Плотность жидкости, (кг/м^3)
-    double rho;
-    /// @brief Кинематическая вязкость, (сСТ)
-    double nu;
-    /// @brief Давление в начале участка, (Па)
-    double p_0;
-    /// @brief Давление в конце участка, (Па)
-    double p_L;
-    /// @brief Расход жидкости, (м^3/с)
-    double Q;
-    /// @brief Профиль плотностей по всей трубе, (кг/м^3)
-    vector<double> rho_profile;
-    /// @brief Профиль вязкостей по всей трубе, (сСТ)
-    vector<double> nu_profile;
-    my_task_parameters(double rho, double nu, double p_0, double p_L, double Q, const vector<double> rho_profile, const vector<double> nu_profile) :
-        rho{ rho }, nu{ nu }, p_0{ p_0 }, p_L{ p_L }, Q{ Q }, rho_profile{ rho_profile }, nu_profile{ nu_profile }
-    {
-    }
-};
-
-
-
-/// @brief Функция расчета скорости из расхода
-/// @param Q Расход, (м^3/с)
-/// @param internal_diameter Внутренний диаметр, (м)
-/// @return Скорость, (м/с)
-double calc_speed(double Q, double internal_diameter)
-{
-    double speed = (4 * Q) / (pow(internal_diameter, 2) * M_PI);
-    return speed;
-}
-
-/// @brief Функция расчета расхода из скорости
-/// @param speed Скорость, (м/с)
-/// @param internal_diameter Внутренний диаметр, (м) 
-/// @return Расход, (м^3/с)
-double calc_flow(double speed, double internal_diameter)
-{
-    double flow = (pow(internal_diameter, 2) * M_PI * speed) / 4;
-    return flow;
-}
-
-double linear_interpolator(vector<double> original_time, vector<double> original_value, double new_time_step)
-{
-    size_t index1 = 0;
-    size_t index2 = 1;
-    while (original_time[index2] < new_time_step)
-    {
-        ++index1;
-        ++index2;
-    }
-    double t1 = original_time[index1];
-    double t2 = original_time[index2];
-    double value1 = original_value[index1];
-    double value2 = original_value[index2];
-    return value1 + (value2 - value1) * (new_time_step - t1) / (t2 - t1);
-}
-
-void print_data_to_csv(const vector<double>& time_rho,
-    const vector<double>& rho_and_nu_in_0,
-    const vector<double>& time_nu,
-    const vector<double>& rho_and_nu_in_1,
-    const vector<double>& time_p_in,
-    const vector<double>& p_in,
-    const vector<double>& time_p_out,
-    const vector<double>& p_out,
-    const vector<double>& time_Q,
-    const vector<double>& Q,
-    const string& filename)
-{
-
-    // Определяем максимальную длину вектора
-    size_t maxLength = max({ time_rho.size(), rho_and_nu_in_0.size(), time_nu.size(), rho_and_nu_in_1.size(),
-                                      time_p_in.size(), p_in.size(), time_p_out.size(), p_out.size(), Q.size(), time_Q.size() });
-
-    // Открываем файл для записи
-    ofstream file(filename);
-
-    // Проверяем, открыт ли файл успешно
-    if (file.is_open()) {
-        // Записываем заголовки столбцов
-        file << "Time Density; Density; Time Viscosity; Viscosity; Time Pressure In; Pressure In; Time Pressure Out; Pressure Out; Time Flow Rate; Flow Rate\n";
-
-        // Записываем данные из векторов
-        for (size_t i = 0; i < maxLength; ++i) {
-            // Если индекс находится в пределах длины вектора, записываем значение, иначе записываем пустую ячейку
-            file << (i < time_rho.size() ? to_string(time_rho[i]) : "") << ";"
-                << (i < rho_and_nu_in_0.size() ? to_string(rho_and_nu_in_0[i]) : "") << ";"
-                << (i < time_nu.size() ? to_string(time_nu[i]) : "") << ";"
-                << (i < rho_and_nu_in_1.size() ? to_string(rho_and_nu_in_1[i]) : "") << ";"
-                << (i < time_p_in.size() ? to_string(time_p_in[i]) : "") << ";"
-                << (i < p_in.size() ? to_string(p_in[i]) : "") << ";"
-                << (i < time_p_out.size() ? to_string(time_p_out[i]) : "") << ";"
-                << (i < p_out.size() ? to_string(p_out[i]) : "") << ";"
-                << (i < time_Q.size() ? to_string(time_Q[i]) : "") << ";"
-                << (i < Q.size() ? to_string(Q[i]) : "") << "\n";
-        }
-        // Закрываем файл
-        file.close();
-    }
-}
-
-
-void print_layers(const double dt,
-    const vector<double>& layer,
-    const string& filename)
-{
-    ofstream  file(filename, ios::app);
-    if (file.is_open()) {
-        file << to_string(dt) << ";";
-        for (int j = 0; j < layer.size(); j++)
-        {
-            file << to_string(layer[j]) << ";";
-        }
-        file << "\n";
-        file.close();
-    }
-}
-
-void clear_directory(const filesystem::path& dir_path) {
-    for (const auto& entry : filesystem::directory_iterator(dir_path)) {
-        filesystem::remove_all(entry.path());
-    }
-}
 
 
 /// @brief Тесты для солвера quickest_ultimate_fv_solver
@@ -192,11 +66,10 @@ TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection)
 
 
 // Проблемно-ориентированный слой
-template<typename VarLayerType, typename SpecificLayerType>
 struct density_viscosity_layer_for_quick {
-    VarLayerType density;
-    VarLayerType viscosity;
-    SpecificLayerType specific;
+    quickest_ultimate_fv_solver_traits<1>::var_layer_data density;
+    quickest_ultimate_fv_solver_traits<1>::var_layer_data viscosity;
+    quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
 
     density_viscosity_layer_for_quick(size_t cell_count)
         : density(cell_count)
@@ -224,9 +97,7 @@ TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection_Density_Viscosity)
     double dx = x[1] - x[0];
     double v = advection_model->getEquationsCoeffs(0, 0);
 
-    ring_buffer_t<density_viscosity_layer_for_quick<target_var_t, specific_data_t>> buffer(2, pipe.profile.getPointCount());
-
-    auto& prev_case = buffer.get_custom_buffer(&density_viscosity_layer_for_quick<target_var_t, specific_data_t>::get_density_quick_wrapper).previous();
+    ring_buffer_t<density_viscosity_layer_for_quick> buffer(2, pipe.profile.getPointCount());
 
     auto& rho_initial = buffer[0].density.cell_double[0];
     auto& viscosity_initial = buffer[0].viscosity.cell_double[0];
@@ -234,7 +105,7 @@ TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection_Density_Viscosity)
     viscosity_initial = vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
 
     {
-        auto density_buffer_wrapped = buffer.get_custom_buffer(&density_viscosity_layer_for_quick<target_var_t, specific_data_t>::get_density_quick_wrapper);
+        auto density_buffer_wrapped = buffer.get_custom_buffer(&density_viscosity_layer_for_quick::get_density_quick_wrapper);
         auto& prev = density_buffer_wrapped.previous();
         auto& next = density_buffer_wrapped.current();
 
@@ -315,36 +186,3 @@ public:
     }
 };
 
-class newton_solver_PP_with_euler : public fixed_system_t<1>
-{
-    using fixed_system_t<1>::var_type;
-protected:
-    pipe_properties_t& pipe;
-    my_task_parameters& task;
-    double Q_approx;
-    const int solver_direction;
-public:
-    newton_solver_PP_with_euler(pipe_properties_t& pipe, my_task_parameters& task, double Q_approx, const int solver_direction)
-        : pipe(pipe)
-        , task(task)
-        , Q_approx(Q_approx)
-        , solver_direction(solver_direction)
-    {
-
-    }
-    /// @brief Задание функции невязок
-    /// @param x Искомый расход
-    /// @return Функция невязок
-    var_type residuals(const var_type& x)
-    {
-        Q_approx = x; // во временной структуре используем Q для нашего уравнения невязки, эта Q будет идти в солвер
-        // Объявляем переменную класса солвера Эйлером
-        pipe_model_PQ_cell_parties_t pipeModel(pipe, task.rho_profile, task.nu_profile, Q_approx, solver_direction);
-
-        solve_euler_corrector<1>(pipeModel, solver_direction, task.p_0, &p_profile);
-        p_profile.pop_back();
-        return (p_profile.back() - task.p_L);
-    }
-private:
-    vector<double> p_profile;
-};
