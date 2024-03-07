@@ -431,8 +431,10 @@ struct quickest_ultimate_fv_wrapper;
 template <>
 struct quickest_ultimate_fv_wrapper<1> {
     typedef typename quickest_ultimate_fv_solver_traits<1>::specific_layer specific_layer;
-
+    
+    /// @brief Значения рассчитываемых параметров
     std::vector<double>& vars;
+    /// @brief Специфический слой
     specific_layer& specific;
 
     quickest_ultimate_fv_wrapper(
@@ -496,7 +498,10 @@ public:
     {
 
     }
-
+    /// @brief Конструктор на основе буфера оберток
+    /// (созданного с помощью ring_buffer_t::get_custom_buffer)
+    /// @param pde ДУЧП
+    /// @param wrapper Буфер оберток
     quickest_ultimate_fv_solver(pde_t<1>& pde,
         ring_buffer_t<quickest_ultimate_fv_wrapper<1>>& wrapper)
         : pde(pde)
@@ -507,7 +512,8 @@ public:
         , prev_spec(wrapper.previous().specific)
         , curr_spec(wrapper.current().specific)
     {}
-
+    /// @brief Конструктор, заточенный для удобства выдергивания специфического слоя, если он один в буфере
+    /// Очень специфический
     quickest_ultimate_fv_solver(pde_t<1>& pde,
         const vector<double>& prev_vars, vector<double>& curr_vars,
         const specific_layer& prev_spec, specific_layer& curr_spec)
