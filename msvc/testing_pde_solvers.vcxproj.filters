@@ -38,5 +38,8 @@
     <ClInclude Include="..\research\2023-12-diffusion-of-advection\diffusion_of_advection.h">
       <Filter>Header Files\DiffusionOfAdvection</Filter>
     </ClInclude>
+    <ClInclude Include="..\testing\test_timeseries.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
