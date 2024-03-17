@@ -14,14 +14,17 @@ private:
     mutable vector<size_t> left_bound;
 
 public:
-
+    /// @brief Получение количества значений определённого параметра
+    /// @param numb Номер параметра 
     size_t get_elements_count(size_t numb) const
     {
         return data[numb].first.size();
     }
     /// @brief Конструктор
-    /// @param data Временные ряды
-    vector_timeseries_t(const vector<pair<vector<time_t>, vector<double>>> data)
+    /// @param data Вектор временных рядов, каждый элемент которого
+    /// представляет собой пару, в которой первый элемент это временная сетка,
+    /// а второй - вектор значений параметров в соответствующие моменты времени
+    vector_timeseries_t(const vector<pair<vector<time_t>, vector<double>>>& data)
         : data(data)
     {
         if (data.empty())

@@ -110,7 +110,7 @@ public:
 
 private:
     /// @brief Название тега и инструкция перевода единиц измерения
-    const pair<string, string>& tagname_dim;
+    const pair<string, string> tagname_dim;
 };
 
 /// @brief Чтение параметров из исторических данных для нескольких тегов
