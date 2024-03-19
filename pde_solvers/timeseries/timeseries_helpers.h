@@ -83,7 +83,7 @@ inline vector<std::string> split_str(std::string& str_to_split, char delimeter)
 }
 
 /// @brief Перевод единиц измерения
-class converter_dimension
+class dimension_converter
 {
 public:
     /// @brief Пересчёт единиц измерений

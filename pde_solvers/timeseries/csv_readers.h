@@ -18,7 +18,7 @@ public:
     /// @param dimension Инструкция для перевода единиц измерения
     /// @param time_begin Начало периода
     /// @param time_end Конец периода
-    /// @return Временной ряд
+    /// @return Временной ряд в формате пары векторов: [Метки времени; Значения параметра]
     static pair<vector<time_t>, vector<double>> read_from_stream(std::istream& input_stream, const string& dimension, time_t time_begin = std::numeric_limits<time_t>::min(),
         time_t time_end = std::numeric_limits<time_t>::max())
     {
@@ -42,7 +42,7 @@ public:
 
             double value = str2double(split_line_to_file[1], ',');
 
-            converter_dimension converter;
+            dimension_converter converter;
             value = converter.convert(value, dimension);
 
             t.emplace_back(std::move(ut));
@@ -58,7 +58,7 @@ private:
     /// единиц измерения
     /// @param time_begin Начало периода
     /// @param time_end Конец периода
-    /// @return Временной ряд
+    /// @return Временной ряд в формате пары векторов: [Метки времени; Значения параметра]
     static pair<vector<time_t>, vector<double>> read_from_file(const string& filename, const string& dimension, time_t time_begin = std::numeric_limits<time_t>::min(),
         time_t time_end = std::numeric_limits<time_t>::max())
     {
@@ -72,10 +72,19 @@ public:
     /// @brief Конструктор
     /// @param data Название тега и инструкция перевода единиц измерения
     csv_tag_reader(const pair<string, string>& data)
-        :tagname_dim{ data }
+        :csv_tag_reader(data.first, data.second)
     {
 
     };
+
+    /// @brief Конструтор
+    /// @param tag Имя тега
+    /// @param dimension Инструкция для перевода единиц измерения
+    csv_tag_reader(const string& tag, const string& dimension)
+        :tagname{ tag }, dim{ dimension }
+    {
+
+    }
 
     /// @brief Чтение параметра для заданного периода
     /// @param unixtime_from Начало периода задаётся строкой формата dd:mm:yyyy HH:MM:SS
@@ -103,14 +112,15 @@ public:
 
         string extension = ".csv";
 
-        data = read_from_file(tagname_dim.first + extension, tagname_dim.second + extension, start_period, end_period);
+        data = read_from_file(tagname + extension, dim, start_period, end_period);
 
         return data;
     };
 
 private:
     /// @brief Название тега и инструкция перевода единиц измерения
-    const pair<string, string> tagname_dim;
+    const string tagname;
+    const string dim;
 };
 
 /// @brief Чтение параметров из исторических данных для нескольких тегов
