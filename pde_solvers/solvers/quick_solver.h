@@ -424,6 +424,28 @@ public:
     }
 };
 
+template <size_t Dimension>
+struct quickest_ultimate_fv_wrapper;
+
+/// @brief Обертка над составным слоем
+template <>
+struct quickest_ultimate_fv_wrapper<1> {
+    typedef typename quickest_ultimate_fv_solver_traits<1>::specific_layer specific_layer;
+    
+    /// @brief Значения рассчитываемых параметров
+    std::vector<double>& vars;
+    /// @brief Специфический слой
+    specific_layer& specific;
+
+    quickest_ultimate_fv_wrapper(
+        vector<double>& U,
+        specific_layer& specific
+    )
+        : vars(U)
+        , specific(specific)
+    {}
+};
+
 /// @brief Солвер на основе QUICKEST-ULTIMATE, только для размерности 1!
 /// [Leonard 1991]
 class quickest_ultimate_fv_solver {
@@ -440,9 +462,9 @@ protected:
     /// @brief Количество точек сетки
     const size_t n;
     /// @brief Предыдущий слой переменных
-    const var_layer_data& prev_vars;
+    const vector<double>& prev_vars;
     /// @brief Новый (рассчитываемый) слой переменных
-    var_layer_data& curr_vars;
+    vector<double>& curr_vars;
     /// @brief Предыдущий специфический слой (сейчас не нужен! нужен ли в будущем?)
     const specific_layer& prev_spec;
     /// @brief Текущий специфический слой
@@ -469,21 +491,51 @@ public:
         : pde(pde)
         , grid(pde.get_grid())
         , n(pde.get_grid().size())
-        , prev_vars(prev.vars)
-        , curr_vars(curr.vars)
+        , prev_vars(prev.vars.cell_double[0])
+        , curr_vars(curr.vars.cell_double[0])
         , prev_spec(std::get<0>(prev.specific))
         , curr_spec(std::get<0>(curr.specific))
     {
 
     }
+    /// @brief Конструктор на основе буфера оберток
+    /// (созданного с помощью ring_buffer_t::get_custom_buffer)
+    /// @param pde ДУЧП
+    /// @param wrapper Буфер оберток
+    quickest_ultimate_fv_solver(pde_t<1>& pde,
+        ring_buffer_t<quickest_ultimate_fv_wrapper<1>>& wrapper)
+        : pde(pde)
+        , grid(pde.get_grid())
+        , n(pde.get_grid().size())
+        , prev_vars(wrapper.previous().vars)
+        , curr_vars(wrapper.current().vars)
+        , prev_spec(wrapper.previous().specific)
+        , curr_spec(wrapper.current().specific)
+    {}
+    /// @brief Конструктор, заточенный для удобства выдергивания специфического слоя, если он один в буфере
+    /// Очень специфический
+    quickest_ultimate_fv_solver(pde_t<1>& pde,
+        const vector<double>& prev_vars, vector<double>& curr_vars,
+        const specific_layer& prev_spec, specific_layer& curr_spec)
+        : pde(pde)
+        , grid(pde.get_grid())
+        , n(pde.get_grid().size())
+        , prev_vars(prev_vars)
+        , curr_vars(curr_vars)
+        , prev_spec(prev_spec)
+        , curr_spec(curr_spec)
+    {
+
+    }
+
     /// @brief Расчет шага
     /// @param dt Заданный период времени
     /// @param u_in Левое граничное условие
     /// @param u_out Правое граничное условие
     void step(double dt, double u_in, double u_out) {
         auto& F = curr_spec.point_double[0]; // потоки на границах ячеек
-        const auto& U = prev_vars.cell_double[0];
-        auto& U_new = curr_vars.cell_double[0];
+        const auto& U = prev_vars;
+        auto& U_new = curr_vars;
 
         // Расчет потоков на границе на основе граничных условий
         double v_in = pde.getEquationsCoeffs(0, U[0]);
@@ -535,6 +587,10 @@ public:
 
         for (size_t cell = 0; cell < U.size(); ++cell) {
             double dx = grid[cell + 1] - grid[cell]; // ячейки обычно одинаковой длины, но мало ли..
+            double Cr = v_in * dt / dx;
+            if (Cr > 1) {
+                throw std::runtime_error("Quickest-ultimate is called with Cr > 1");
+            }
             U_new[cell] = U[cell] + dt / dx * ((F[cell] - F[cell + 1]));
         }
 

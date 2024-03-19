@@ -16,6 +16,9 @@
     <Filter Include="Header Files\DiffusionOfAdvection">
       <UniqueIdentifier>{696b10b9-e02f-48c9-9fe2-4ff58dae5ee8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\QuickWithQuasiStationaryModel">
+      <UniqueIdentifier>{91c7f9f9-cd52-4516-9dd1-7ca0f6eb03aa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\testing\test_main.cpp">
@@ -40,6 +43,9 @@
     </ClInclude>
     <ClInclude Include="..\testing\test_timeseries.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\research\2024-02-quick-with-quasistationary-model\quick_with_quasistationary_model.h">
+      <Filter>Header Files\QuickWithQuasiStationaryModel</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

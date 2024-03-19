@@ -23,6 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\research\2023-12-diffusion-of-advection\diffusion_of_advection.h" />
+    <ClInclude Include="..\research\2024-02-quick-with-quasistationary-model\quick_with_quasistationary_model.h" />
     <ClInclude Include="..\testing\test_diffusion.h" />
     <ClInclude Include="..\testing\test_moc.h" />
     <ClInclude Include="..\testing\test_quick.h" />

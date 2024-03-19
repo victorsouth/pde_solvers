@@ -145,7 +145,7 @@ TEST(MOC_Solver, UseCase_Advection_Density_Viscosity)
     buffer.advance(+1);
 
     {
-        auto density_buffer = buffer.get_custom_buffer(&density_viscosity_layer::get_density_moc_wrapper);
+        auto density_buffer = buffer.get_buffer_wrapper(&density_viscosity_layer::get_density_moc_wrapper);
         moc_solver<1> solver(advection_model, density_buffer);
 
         double dt = solver.prepare_step();
@@ -155,7 +155,7 @@ TEST(MOC_Solver, UseCase_Advection_Density_Viscosity)
     }
 
     {
-        auto viscosity_buffer = buffer.get_custom_buffer(&density_viscosity_layer::get_viscosity_moc_wrapper);
+        auto viscosity_buffer = buffer.get_buffer_wrapper(&density_viscosity_layer::get_viscosity_moc_wrapper);
         moc_solver<1> solver(advection_model, viscosity_buffer);
 
         double dt = solver.prepare_step();
