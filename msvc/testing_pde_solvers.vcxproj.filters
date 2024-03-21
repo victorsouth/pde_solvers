@@ -41,6 +41,9 @@
     <ClInclude Include="..\research\2023-12-diffusion-of-advection\diffusion_of_advection.h">
       <Filter>Header Files\DiffusionOfAdvection</Filter>
     </ClInclude>
+    <ClInclude Include="..\testing\test_timeseries.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\research\2024-02-quick-with-quasistationary-model\quick_with_quasistationary_model.h">
       <Filter>Header Files\QuickWithQuasiStationaryModel</Filter>
     </ClInclude>
