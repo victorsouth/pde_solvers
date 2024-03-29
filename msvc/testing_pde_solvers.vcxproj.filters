@@ -47,7 +47,7 @@
     <ClInclude Include="..\research\2024-02-quick-with-quasistationary-model\quick_with_quasistationary_model.h">
       <Filter>Header Files\QuickWithQuasiStationaryModel</Filter>
     </ClInclude>
-    <ClInclude Include="..\testing\test_transport_moc_solver.h">
+    <ClInclude Include="..\testing\test_advection_moc_solver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

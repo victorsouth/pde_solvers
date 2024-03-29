@@ -50,7 +50,7 @@ inline std::string prepare_research_folder()
 #include "test_quick.h"
 #include "test_static_pipe_solver.h"
 #include "test_timeseries.h"
-#include "test_transport_moc_solver.h"
+#include "test_advection_moc_solver.h"
 
 #include "../research/2023-12-diffusion-of-advection/diffusion_of_advection.h"
 #include "../research/2024-02-quick-with-quasistationary-model/quick_with_quasistationary_model.h"

@@ -5,7 +5,7 @@ namespace pde_solvers {
 /// @brief Решатель транспортного уравнения методом характеристик, 
 /// при этом считается, что скорость по длине трубопровода постоянна,
 /// а число Куранта всегда равно единице
-class transport_moc_solver
+class advection_moc_solver
 {
 public:
     /// @brief Конструктор транспортного солвера
@@ -13,7 +13,7 @@ public:
     /// @param vol_flow Объёмный расход
     /// @param prev Предыдущий слой
     /// @param next Новый слой
-    transport_moc_solver(const pipe_properties_t& pipe, double vol_flow,
+    advection_moc_solver(const pipe_properties_t& pipe, double vol_flow,
         vector<double>& prev, vector<double>& next)
         : pipe{ pipe }
         , volumetric_flow{ vol_flow }
@@ -28,7 +28,7 @@ public:
     {
         int direction = get_eigen_value() > 0 ? 1 : -1;
         size_t start_index = direction > 0 ? 1 : (next.size()) - 2;
-        size_t end_index = direction < 0 ? 0 : next.size();
+        size_t end_index = direction < 0 ? -1 : next.size();
         next[start_index - direction] = direction > 0 ? par_in : par_out;
         for (size_t index = start_index; index != end_index; index += direction)
         {
