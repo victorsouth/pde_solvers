@@ -25,5 +25,6 @@
 #include "pipe/pipe_hydraulic_struct.h"
 #include "pipe/pipe_hydraulic_pde.h"
 #include "pipe/pipe_advection_pde.h"
+#include "pipe/pipe_advection_solver.h"
 
 #include "solvers/diffusion_solver.h" // нужно инклудить после объявления трубы и проч.

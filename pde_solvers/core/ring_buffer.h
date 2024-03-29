@@ -38,12 +38,13 @@ public:
     {
     }
     /// @brief Конструктор с инициализацией буфера по размерности каждого слоя
-    /// @param layer_count Количество
+    /// @param layer_count Количество слоев
     /// @param profile_length Передается в конструктор LayerType 
-    /// TODO: уточнить, перепроверить
     ring_buffer_t(size_t layer_count, size_t profile_length)
-        : layers(layer_count, profile_length)
     {
+        for (size_t index = 0; index < layer_count; ++index) {
+            layers.emplace_back(profile_length);
+        }
     }
     /// @brief Возвращает внутренний буфер слоев 
     const vector<LayerType>& get_layers() const {
