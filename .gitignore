@@ -335,3 +335,6 @@ __pycache__/
 *.csv
 *.png
 /research_out/DiffusionOfAdvection/CompareUpstreamDiffAndMOC
+
+build*/
+BUILD*/

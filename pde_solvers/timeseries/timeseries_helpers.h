@@ -1,14 +1,22 @@
 ﻿#pragma once
 
 #include <chrono>
-
+#include <string>
+#include <sstream>
+#include <vector>
+#include <map>
 /// @brief Перевод UNIX времени в строку формата dd:mm:yyyy HH:MM:SS
 /// @param t время UNIX
 /// @return строку формата dd:mm:yyyy HH:MM:SS
 inline std::string UnixToString(time_t t) {
 
     struct tm tm;
+#ifdef _MSC_VER
     gmtime_s(&tm, &t);
+#else
+    // учёт часового пояса gmtime_r сдвигает
+    localtime_r(&t,&tm);
+#endif
     char buffer[200];
     strftime(buffer, sizeof(buffer), "%d.%m.%Y %H:%M:%S", &tm);
     return std::string(buffer);
@@ -20,14 +28,20 @@ inline std::string UnixToString(time_t t) {
 inline std::time_t StringToUnix(const std::string& source)
 {
 
+#if __cplusplus > 201703
     using namespace std::chrono;
     using namespace std::literals::string_literals;
     auto in = std::istringstream(source);
-    auto tp = sys_seconds{};
+    auto tp = std::chrono::time_point<std::chrono::system_clock>{};
     in >> parse("%d.%m.%Y %H:%M:%S"s, tp);
     time_t result = system_clock::to_time_t(tp);
     //string s = UnixToString(result); // для проверки
     return result;
+#else
+    struct tm tm;
+    strptime(source.c_str(), "%d.%m.%Y %H:%M:%S", &tm);
+    return mktime(&tm);
+#endif
 }
 
 /// @brief Перевод из строкого типа в тип double
@@ -69,7 +83,7 @@ inline double str2double(const std::string& str, char delim = '.')
 /// @param str_to_split Изначальная строка
 /// @param delimeter Делитель
 /// @return Вектор подстрок
-inline vector<std::string> split_str(std::string& str_to_split, char delimeter)
+inline std::vector<std::string> split_str(std::string& str_to_split, char delimeter)
 {
     std::stringstream str_stream(str_to_split);
     std::vector<std::string> split_output;
@@ -111,7 +125,7 @@ public:
 
 private:
     /// @brief Коэффициенты для перевода единиц
-    const map<std::string, std::pair<double, double>> units{
+    const std::map<std::string, std::pair<double, double>> units{
         {"m3/s", {1.0, 0}},
         {"m3/h-m3/s", {3600, 0.0}},
         {"m3/h", {1 / 3600, 0.0}},
