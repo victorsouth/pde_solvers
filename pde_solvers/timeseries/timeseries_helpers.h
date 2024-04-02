@@ -1,17 +1,24 @@
 ﻿#pragma once
 
 #include <chrono>
-
+#include <ctime>
+#include <iomanip>
+#include <string>
+#include <sstream>
+#include <vector>
+#include <map>
 /// @brief Перевод UNIX времени в строку формата dd:mm:yyyy HH:MM:SS
 /// @param t время UNIX
 /// @return строку формата dd:mm:yyyy HH:MM:SS
 inline std::string UnixToString(time_t t) {
-
-    struct tm tm;
-    gmtime_s(&tm, &t);
-    char buffer[200];
-    strftime(buffer, sizeof(buffer), "%d.%m.%Y %H:%M:%S", &tm);
-    return std::string(buffer);
+#ifdef _MSC_VER 
+    struct tm tm; localtime_s(&tm, &t);
+#else
+    struct tm tm = *std::localtime(&t);
+#endif // _MSC_VER 
+    std::stringstream buff;
+    buff<<std::put_time(&tm,"%d.%m.%Y %H:%M:%S");
+    return buff.str();
 }
 
 /// @brief Перевод строки формата dd:mm:yyyy HH:MM:SS в переменную UNIX времени
@@ -19,15 +26,11 @@ inline std::string UnixToString(time_t t) {
 /// @return время UNIX
 inline std::time_t StringToUnix(const std::string& source)
 {
-
-    using namespace std::chrono;
-    using namespace std::literals::string_literals;
+    struct tm tm;
     auto in = std::istringstream(source);
-    auto tp = sys_seconds{};
-    in >> parse("%d.%m.%Y %H:%M:%S"s, tp);
-    time_t result = system_clock::to_time_t(tp);
-    //string s = UnixToString(result); // для проверки
-    return result;
+    in >> std::get_time(&tm,"%d.%m.%Y %H:%M:%S");
+    tm.tm_isdst=0;
+    return mktime(&tm);
 }
 
 /// @brief Перевод из строкого типа в тип double
@@ -69,7 +72,7 @@ inline double str2double(const std::string& str, char delim = '.')
 /// @param str_to_split Изначальная строка
 /// @param delimeter Делитель
 /// @return Вектор подстрок
-inline vector<std::string> split_str(std::string& str_to_split, char delimeter)
+inline std::vector<std::string> split_str(std::string& str_to_split, char delimeter)
 {
     std::stringstream str_stream(str_to_split);
     std::vector<std::string> split_output;
@@ -111,7 +114,7 @@ public:
 
 private:
     /// @brief Коэффициенты для перевода единиц
-    const map<std::string, std::pair<double, double>> units{
+    const std::map<std::string, std::pair<double, double>> units{
         {"m3/s", {1.0, 0}},
         {"m3/h-m3/s", {3600, 0.0}},
         {"m3/h", {1 / 3600, 0.0}},

@@ -1,7 +1,7 @@
+cmake_minimum_required(VERSION 3.10)
 # header only library
 # for install, dependencies and correct include path
 project(pde_solvers)
-cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_CXX_STANDARD 17)#23?
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -11,24 +11,29 @@ find_package(fixed_solvers)
 endif()
 
 set(HEADERS
-    pde_solvers/pde_solvers.h  pde_solvers/pipe.h
+    pde_solvers/pde_solvers.h  pde_solvers/pipe.h pde_solvers/timeseries.h
     )
 set(HEADERS_CORE
-    pde_solvers/core/ring_buffer.h  pde_solvers/core/differential_equation.h  pde_solvers/core/profile_structures.h
+    pde_solvers/core/differential_equation.h  pde_solvers/core/profile_structures.h  pde_solvers/core/ring_buffer.h
     )
 set(HEADERS_PIPE
-    pde_solvers/pipe/oil.h  pde_solvers/pipe/pipe_advection_pde.h  pde_solvers/pipe/pipe_hydraulic_computations.h  pde_solvers/pipe/pipe_hydraulic_pde.h  pde_solvers/pipe/pipe_hydraulic_struct.h
-    )
+    pde_solvers/pipe/oil.h                 pde_solvers/pipe/pipe_advection_solver.h        pde_solvers/pipe/pipe_hydraulic_pde.h
+    pde_solvers/pipe/pipe_advection_pde.h  pde_solvers/pipe/pipe_hydraulic_computations.h  pde_solvers/pipe/pipe_hydraulic_struct.h
+)
 set(HEADERS_SOLVERS
-     pde_solvers/solvers/diffusion_solver.h 
-     pde_solvers/solvers/godunov_solver.h  
-     pde_solvers/solvers/moc_solver.h  
-     pde_solvers/solvers/ode_solver.h  
-     pde_solvers/solvers/quick_solver.h
+    pde_solvers/solvers/diffusion_solver.h
+    pde_solvers/solvers/godunov_solver.h
+    pde_solvers/solvers/moc_solver.h
+    pde_solvers/solvers/ode_solver.h
+    pde_solvers/solvers/quick_solver.h
+)
+set(HEADERS_TIME
+pde_solvers/timeseries/csv_readers.h  pde_solvers/timeseries/timeseries_helpers.h  pde_solvers/timeseries/vector_timeseries.h
 )
 
+
 if("3.19.0" VERSION_LESS ${CMAKE_VERSION})
-    add_library(${PROJECT_NAME} INTERFACE ${HEADERS} ${HEADERS_LS})
+    add_library(${PROJECT_NAME} INTERFACE ${HEADERS} ${HEADERS_CORE} ${HEADERS_PIPE} ${HEADERS_SOLVERS} ${HEADERS_TIME})
 else()
     add_library(${PROJECT_NAME} INTERFACE)
 endif()
@@ -69,6 +74,7 @@ install(FILES ${HEADERS} DESTINATION include/pde_solvers/)
 install(FILES ${HEADERS_CORE} DESTINATION include/pde_solvers/core)
 install(FILES ${HEADERS_PIPE} DESTINATION include/pde_solvers/pipe)
 install(FILES ${HEADERS_SOLVERS} DESTINATION include/pde_solvers/solvers)
+install(FILES ${HEADERS_TIME} DESTINATION include/pde_solvers/timeseries)
 endif()
 
 option(PDE_SOLVERS_BUILD_TESTS "" OF)
@@ -77,8 +83,10 @@ if(PDE_SOLVERS_BUILD_TESTS)
 
 find_package(Threads)
 find_package(GTest REQUIRED)
-
-add_executable(pde_tests testing/test_main.cpp)
+set(TESTS_HEADERS
+    testing/test_advection_moc_solver.h  testing/test_diffusion.h  testing/test_moc.h  testing/test_quick.h  testing/test_static_pipe_solver.h  testing/test_timeseries.h
+)
+add_executable(pde_tests testing/test_main.cpp ${TESTS_HEADERS})
 target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
 
 endif()

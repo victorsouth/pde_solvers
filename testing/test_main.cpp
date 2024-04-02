@@ -58,7 +58,7 @@ inline std::string prepare_research_folder()
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
     std::wcout.imbue(std::locale("rus_rus.866"));
 #endif
 int res= RUN_ALL_TESTS();

@@ -1,5 +1,5 @@
 ﻿#pragma once
-
+#include <pde_solvers/timeseries.h>
 /// @brief  Проверяет способность чтения данных из потока
 TEST(CsvRead, ReadStream)
 {
