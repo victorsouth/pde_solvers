@@ -11,26 +11,14 @@
 /// @param t время UNIX
 /// @return строку формата dd:mm:yyyy HH:MM:SS
 inline std::string UnixToString(time_t t) {
-
-    struct tm tm;
-#if 0
-#ifndef __unix__
-    gmtime_s(&tm, &t);
+#ifdef _MSC_VER 
+    struct tm tm; localtime_s(&tm, &t);
 #else
-    // учёт часового пояса gmtime_r сдвигает
-    localtime_r(&t,&tm);
-#endif
-    char buffer[200];
-    strftime(buffer, sizeof(buffer), "%d.%m.%Y %H:%M:%S", &tm);
-    return std::string(buffer);
-#else
-    {
-        std::stringstream buff;
-        tm=*std::localtime(&t);
-        buff<<std::put_time(&tm,"%d.%m.%Y %H:%M:%S");
-        return buff.str();
-    }
-#endif
+    struct tm tm = *std::localtime(&t);
+#endif // _MSC_VER 
+    std::stringstream buff;
+    buff<<std::put_time(&tm,"%d.%m.%Y %H:%M:%S");
+    return buff.str();
 }
 
 /// @brief Перевод строки формата dd:mm:yyyy HH:MM:SS в переменную UNIX времени
@@ -38,29 +26,11 @@ inline std::string UnixToString(time_t t) {
 /// @return время UNIX
 inline std::time_t StringToUnix(const std::string& source)
 {
-
-#if __cplusplus > 201703
-    using namespace std::chrono;
-    using namespace std::literals::string_literals;
-    auto in = std::istringstream(source);
-    auto tp = std::chrono::time_point<std::chrono::system_clock>{};
-    in >> parse("%d.%m.%Y %H:%M:%S"s, tp);
-    time_t result = system_clock::to_time_t(tp);
-    //string s = UnixToString(result); // для проверки
-    return result;
-#else
-#if 0 //def __unix__
-    struct tm tm;
-    strptime(source.c_str(), "%d.%m.%Y %H:%M:%S", &tm);
-    return mktime(&tm);
-#else
     struct tm tm;
     auto in = std::istringstream(source);
     in >> std::get_time(&tm,"%d.%m.%Y %H:%M:%S");
     tm.tm_isdst=0;
     return mktime(&tm);
-#endif
-#endif
 }
 
 /// @brief Перевод из строкого типа в тип double
