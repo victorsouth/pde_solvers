@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include <chrono>
+#include <ctime>
+#include <iomanip>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -11,7 +13,8 @@
 inline std::string UnixToString(time_t t) {
 
     struct tm tm;
-#ifdef _MSC_VER
+#if 0
+#ifndef __unix__
     gmtime_s(&tm, &t);
 #else
     // учёт часового пояса gmtime_r сдвигает
@@ -20,6 +23,14 @@ inline std::string UnixToString(time_t t) {
     char buffer[200];
     strftime(buffer, sizeof(buffer), "%d.%m.%Y %H:%M:%S", &tm);
     return std::string(buffer);
+#else
+    {
+        std::stringstream buff;
+        tm=*std::localtime(&t);
+        buff<<std::put_time(&tm,"%d.%m.%Y %H:%M:%S");
+        return buff.str();
+    }
+#endif
 }
 
 /// @brief Перевод строки формата dd:mm:yyyy HH:MM:SS в переменную UNIX времени
@@ -38,9 +49,17 @@ inline std::time_t StringToUnix(const std::string& source)
     //string s = UnixToString(result); // для проверки
     return result;
 #else
+#if 0 //def __unix__
     struct tm tm;
     strptime(source.c_str(), "%d.%m.%Y %H:%M:%S", &tm);
     return mktime(&tm);
+#else
+    struct tm tm;
+    auto in = std::istringstream(source);
+    in >> std::get_time(&tm,"%d.%m.%Y %H:%M:%S");
+    tm.tm_isdst=0;
+    return mktime(&tm);
+#endif
 #endif
 }
 
