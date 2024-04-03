@@ -124,7 +124,7 @@ private:
         {"kgf/cm2(e)", {1 / TECHNICAL_ATMOSPHERE, -ATMOSPHERIC_PRESSURE / TECHNICAL_ATMOSPHERE}},
         {"kgf/cm2", {1 / TECHNICAL_ATMOSPHERE, -ATMOSPHERIC_PRESSURE / TECHNICAL_ATMOSPHERE}},
         {"kgf/cm2(a)", {1 / TECHNICAL_ATMOSPHERE, 0.0}},
-        {"MPa-Pa", {1e-6, 0.0}},
+        {"MPa", {1e-6, 0.0}},
         {"Pa", {1.0, 0.0}},
         {"mm^2/s-m^2/s", {1e+6, 0.0}},
     };

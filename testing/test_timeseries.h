@@ -99,9 +99,9 @@ TEST(Timeseries, UseCase)
     {
         { folder + "rho_in", "kg/m3"s },
         { folder + "visc_in", "mm^2/s-m^2/s"s },
-        { folder + "p_in", "MPa-Pa"s },
+        { folder + "p_in", "MPa"s },
         { folder + "Q_in", "m3/h-m3/s"s },
-        { folder + "p_out", "MPa-Pa"s },
+        { folder + "p_out", "MPa"s },
         { folder + "Q_out", "m3/h-m3/s"s }
     };
 
