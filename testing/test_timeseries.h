@@ -97,11 +97,11 @@ TEST(Timeseries, UseCase)
     string folder = "data/";
     vector<pair<string, string>>parameters =
     {
-        { folder + "rho_in", "kg/m3" },
+        { folder + "rho_in", "kg/m3"s },
         { folder + "visc_in", "mm^2/s-m^2/s"s },
-        { folder + "p_in", "MPa-kPa"s },
+        { folder + "p_in", "MPa"s },
         { folder + "Q_in", "m3/h-m3/s"s },
-        { folder + "p_out", "MPa-kPa"s },
+        { folder + "p_out", "MPa"s },
         { folder + "Q_out", "m3/h-m3/s"s }
     };
 

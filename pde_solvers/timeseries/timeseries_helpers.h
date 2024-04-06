@@ -118,13 +118,14 @@ private:
         {"m3/s", {1.0, 0}},
         {"m3/h-m3/s", {3600, 0.0}},
         {"m3/h", {1 / 3600, 0.0}},
+        {"kg/m3", {1.0, 0.0}},
         {"K-C", {1.0, -KELVIN_OFFSET}},
         {"K", {1.0, 0.0}},
         {"kgf/cm2(e)", {1 / TECHNICAL_ATMOSPHERE, -ATMOSPHERIC_PRESSURE / TECHNICAL_ATMOSPHERE}},
         {"kgf/cm2", {1 / TECHNICAL_ATMOSPHERE, -ATMOSPHERIC_PRESSURE / TECHNICAL_ATMOSPHERE}},
         {"kgf/cm2(a)", {1 / TECHNICAL_ATMOSPHERE, 0.0}},
-        {"MPa-Pa", {1e-6, 0.0}},
-        {"MPa-kPa", {1e-3, 0.0}},
+        {"MPa", {1e-6, 0.0}},
+        {"Pa", {1.0, 0.0}},
         {"mm^2/s-m^2/s", {1e+6, 0.0}},
     };
 };
