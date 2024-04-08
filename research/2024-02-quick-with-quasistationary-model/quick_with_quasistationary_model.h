@@ -6,6 +6,7 @@
 #include <random>
 #include <ctime>
 #include <algorithm>
+#include <iomanip>
 
 using std::vector;
 using std::pair;
@@ -316,15 +317,15 @@ public:
 /// @param Cr Число куранта
 /// @return Путь к файлу в заивисимости от указанного класса солвера
 template <typename Solver>
-static std::string get_courant_research_filename(const string& path)
+static std::string get_courant_research_filename_for_qsm(const string& path, const string& layer_name)
 {
     std::stringstream filename;
     if constexpr (std::is_same<Solver, quickest_ultimate_fv_solver>::value) {
-        filename << path << "output ultimate"<< ".csv";
+        filename << path << "output ultimate " << layer_name << ".csv";
     }
     else if constexpr (std::is_same<Solver, moc_solver<1>>::value)
     {
-        filename << path << "output MOC"<< ".csv";
+        filename << path << "output MOC " << layer_name << ".csv";
     }
     else {
         throw std::runtime_error("Please specify filename for solver type");
@@ -470,7 +471,30 @@ public:
     {
         return buffer.buffer;
     }
-
+    template <typename Solver>
+    void print(const vector<double>& layer, const time_t& dt, const string& path, const string& layer_name)
+    {
+        string filename = get_courant_research_filename_for_qsm<Solver>(path, layer_name);
+        
+        ofstream  file(filename, ios::app);
+        if (file.is_open()) {
+            file << std::put_time(std::localtime(&dt), "%c") << ";";
+            for (int j = 0; j < layer.size(); j++)
+            {
+                file << to_string(layer[j]) << ";";
+            }
+            file << "\n";
+            file.close();
+        } 
+    }
+    template <typename Solver>
+    void print_all(const double& dt, const string& path) {
+        auto& current = buffer.buffer.current();
+        print<Solver>(current.density, dt, path, "density");
+        print<Solver>(current.viscosity, dt, path, "viscosity");
+        print<Solver>(current.pressure, dt, path, "pressure");
+        print<Solver>(current.pressure_delta, dt, path, "pressure_delta");
+    }
 };
 
 inline std::string prepare_research_folder_for_qsm_model()
@@ -482,6 +506,9 @@ inline std::string prepare_research_folder_for_qsm_model()
     std::string path = std::string("../research_out/QSM_models/") +
         research_name + "/" + case_name + "/";
     std::filesystem::create_directories(path);
+    for (const auto& entry : filesystem::directory_iterator(path)) {
+        filesystem::remove_all(entry.path());
+    }
     return path;
 }
 
@@ -565,6 +592,8 @@ TEST(Random, PrepareTimeSeries)
 /// @brief Пример испольования метода Quickest Ultimate с гидравлическим расчетом  
 TEST_F(QuickWithQuasiStationaryModel, WorkingWithTimeSeries)
 {
+    // Создаём папку с результатами и получаем путь к ней
+    string path = prepare_research_folder_for_qsm_model();
     // Объявляем структуру с исходными данными и настроечными параметрами
     timeseries_generator_settings settings = timeseries_generator_settings::default_values();
     // Генерируем данные
@@ -604,13 +633,14 @@ TEST_F(QuickWithQuasiStationaryModel, WorkingWithTimeSeries)
 
         task.step(dt, boundaries);
         task.advance();
-        auto& rho_profile_1 = task.get_buffer().current().density;
-        auto& rho_profile_2 = task.get_buffer().previous().density;
+        task.print_all<quickest_ultimate_fv_solver>(t - dt, path);
     } while (t < std::time(nullptr) + settings.duration - dt);
 }
 /// @brief Пример испольования метода характеристик с гидравлическим расчетом  
 TEST_F(MocWithQuasiStationaryModel, WorkingWithTimeSeries)
 {
+    // Создаём папку с результатами и получаем путь к ней
+    string path = prepare_research_folder_for_qsm_model();
     // Объявляем структуру с исходными данными и настроечными параметрами
     timeseries_generator_settings settings = timeseries_generator_settings::default_values();
     // Генерируем данные
@@ -650,7 +680,6 @@ TEST_F(MocWithQuasiStationaryModel, WorkingWithTimeSeries)
 
         task.step(dt, boundaries);
         task.advance();
-        auto& rho_profile_1 = task.get_buffer().current().density;
-        auto& rho_profile_2 = task.get_buffer().previous().density;
+        task.print_all<moc_solver<1>>(t - dt, path);
     } while (t < std::time(nullptr) + settings.duration - dt);
 }
