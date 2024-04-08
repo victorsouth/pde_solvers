@@ -30,6 +30,8 @@ using ParamPair = pair<TimeVector, ParamVector>;
 
 /// @brief Исходны данные и настроечные параметры
 struct timeseries_generator_settings {
+    /// @brief Время начала моделирования, с
+    std::time_t start_time;
     /// @brief Время моделирования, с
     std::time_t duration;
     /// @brief Минимальное значение размаха шага, с
@@ -55,7 +57,8 @@ struct timeseries_generator_settings {
     /// @brief Настроечные параметры по умолчанию 
     static timeseries_generator_settings default_values() {
         timeseries_generator_settings result;
-        result.duration = 300000;
+        result.start_time = std::time(nullptr);
+        result.duration = 350000;
         result.sample_time_min = 200;
         result.sample_time_max = 400;
         result.value_relative_decrement = 0.0002;
@@ -82,7 +85,7 @@ public:
             std::uniform_real_distribution<double> normalDis(param.second * (1 - settings_.value_relative_increment), param.second * (1 + settings_.value_relative_decrement));
 
             time_t timeStep = timeDis(gen);
-            for (time_t time = std::time(nullptr); time <= std::time(nullptr) + settings_.duration; time += timeStep) {
+            for (time_t time = settings_.start_time; time <= settings_.start_time + settings_.duration; time += timeStep) {
                 timeValues.push_back(time);
                 timeStep = timeDis(gen);
             }
@@ -100,7 +103,7 @@ public:
     void apply_jump(time_t jump_time, double jump_value, const string& paramName) {
         for (size_t i = 0; i < settings_.timeseries_initial_values.size(); ++i) {
             if (settings_.timeseries_initial_values[i].first == paramName) {
-                auto it = std::lower_bound(data[i].first.begin(), data[i].first.end(), time(nullptr) + jump_time);
+                auto it = std::lower_bound(data[i].first.begin(), data[i].first.end(), settings_.start_time + jump_time);
                 size_t position = std::distance(data[i].first.begin(), it);
                 std::uniform_real_distribution<double> normalDis(jump_value * (1 - settings_.value_relative_increment), jump_value * (1 + settings_.value_relative_increment));
                 for (size_t j = position; j < data[i].first.size(); ++j) {
@@ -556,7 +559,8 @@ TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection_Density_Viscosity)
 TEST(Random, PrepareTimeSeries)
 {
     timeseries_generator_settings settings;
-    settings.duration = 350000; // Задаю время моделирования (опционально, по умолчанию 300000)
+    settings.start_time = 1712583773; // Задаю время 04.08.2024  16:42:53
+    settings.duration = 150000; // Задаю время моделирования (опционально, по умолчанию 300000)
     settings.sample_time_min = 300; // Задаю минимальное значение размаха шага (опционально, по умолчанию 200)
     settings.sample_time_max = 450; // Задаю максимальное значение размаха шага (опционально, по умолчанию 400)
     settings.value_relative_decrement = 0.005; // Задаю относительное минимальное отклонение значения параметров (опционально, по умолчанию 0.0002)
@@ -596,6 +600,8 @@ TEST_F(QuickWithQuasiStationaryModel, WorkingWithTimeSeries)
     string path = prepare_research_folder_for_qsm_model();
     // Объявляем структуру с исходными данными и настроечными параметрами
     timeseries_generator_settings settings = timeseries_generator_settings::default_values();
+    // Задаем время 04.08.2024  16:42:53
+    settings.start_time = 1712583773;
     // Генерируем данные
     synthetic_time_series_generator data_time_series(settings);
 
@@ -617,8 +623,7 @@ TEST_F(QuickWithQuasiStationaryModel, WorkingWithTimeSeries)
 
     double v_max = 1; // Предполагаем скорость для Куранта = 1, скорость, больше чем во временных рядах и в профиле
     time_t dt = task.get_time_step_assuming_max_speed(v_max);
-    time_t t = std::time(nullptr); // Момент времени начала моделирования
-
+    time_t t = settings.start_time; // Момент времени начала моделирования
     do
     {
         t += dt;
@@ -634,7 +639,7 @@ TEST_F(QuickWithQuasiStationaryModel, WorkingWithTimeSeries)
         task.step(dt, boundaries);
         task.advance();
         task.print_all<quickest_ultimate_fv_solver>(t - dt, path);
-    } while (t < std::time(nullptr) + settings.duration - dt);
+    } while (t < settings.start_time + settings.duration - dt);
 }
 /// @brief Пример испольования метода характеристик с гидравлическим расчетом  
 TEST_F(MocWithQuasiStationaryModel, WorkingWithTimeSeries)
@@ -643,6 +648,8 @@ TEST_F(MocWithQuasiStationaryModel, WorkingWithTimeSeries)
     string path = prepare_research_folder_for_qsm_model();
     // Объявляем структуру с исходными данными и настроечными параметрами
     timeseries_generator_settings settings = timeseries_generator_settings::default_values();
+    // Задаем время 04.08.2024  16:42:53
+    settings.start_time = 1712583773;
     // Генерируем данные
     synthetic_time_series_generator data_time_series(settings);
 
@@ -664,7 +671,7 @@ TEST_F(MocWithQuasiStationaryModel, WorkingWithTimeSeries)
 
     double v_max = 1; // Предполагаем скорость для Куранта = 1, скорость, больше чем во временных рядах и в профиле
     time_t dt = task.get_time_step_assuming_max_speed(v_max);
-    time_t t = std::time(nullptr); // Момент времени начала моделирования
+    time_t t = settings.start_time; // Момент времени начала моделирования
 
     do
     {
@@ -681,5 +688,5 @@ TEST_F(MocWithQuasiStationaryModel, WorkingWithTimeSeries)
         task.step(dt, boundaries);
         task.advance();
         task.print_all<moc_solver<1>>(t - dt, path);
-    } while (t < std::time(nullptr) + settings.duration - dt);
+    } while (t < settings.start_time + settings.duration - dt);
 }
