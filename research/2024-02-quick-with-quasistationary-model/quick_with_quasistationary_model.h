@@ -317,22 +317,11 @@ public:
 /// @brief Формирует имя файл для результатов исследования разных численных метов
 /// @tparam Solver Класс солвера
 /// @param path Путь, в котором формируется файл
-/// @param Cr Число куранта
 /// @return Путь к файлу в заивисимости от указанного класса солвера
-template <typename Solver>
 static std::string get_courant_research_filename_for_qsm(const string& path, const string& layer_name)
 {
     std::stringstream filename;
-    if constexpr (std::is_same<Solver, quickest_ultimate_fv_solver>::value) {
-        filename << path << "output ultimate " << layer_name << ".csv";
-    }
-    else if constexpr (std::is_same<Solver, moc_solver<1>>::value)
-    {
-        filename << path << "output MOC " << layer_name << ".csv";
-    }
-    else {
-        throw std::runtime_error("Please specify filename for solver type");
-    }
+    filename << path << "output " << layer_name << ".csv";
     return filename.str();
 }
 
@@ -474,10 +463,9 @@ public:
     {
         return buffer.buffer;
     }
-    template <typename Solver>
     void print(const vector<double>& layer, const time_t& dt, const string& path, const string& layer_name)
     {
-        string filename = get_courant_research_filename_for_qsm<Solver>(path, layer_name);
+        string filename = get_courant_research_filename_for_qsm(path, layer_name);
         
         ofstream  file(filename, ios::app);
         if (file.is_open()) {
@@ -490,13 +478,12 @@ public:
             file.close();
         } 
     }
-    template <typename Solver>
     void print_all(const double& dt, const string& path) {
         auto& current = buffer.buffer.current();
-        print<Solver>(current.density, dt, path, "density");
-        print<Solver>(current.viscosity, dt, path, "viscosity");
-        print<Solver>(current.pressure, dt, path, "pressure");
-        print<Solver>(current.pressure_delta, dt, path, "pressure_delta");
+        print(current.density, dt, path, "density");
+        print(current.viscosity, dt, path, "viscosity");
+        print(current.pressure, dt, path, "pressure");
+        print(current.pressure_delta, dt, path, "pressure_delta");
     }
 };
 
@@ -638,7 +625,7 @@ TEST_F(QuickWithQuasiStationaryModel, WorkingWithTimeSeries)
 
         task.step(dt, boundaries);
         task.advance();
-        task.print_all<quickest_ultimate_fv_solver>(t - dt, path);
+        task.print_all(t - dt, path);
     } while (t < settings.start_time + settings.duration - dt);
 }
 /// @brief Пример испольования метода характеристик с гидравлическим расчетом  
@@ -687,6 +674,6 @@ TEST_F(MocWithQuasiStationaryModel, WorkingWithTimeSeries)
 
         task.step(dt, boundaries);
         task.advance();
-        task.print_all<moc_solver<1>>(t - dt, path);
+        task.print_all(t - dt, path);
     } while (t < settings.start_time + settings.duration - dt);
 }
