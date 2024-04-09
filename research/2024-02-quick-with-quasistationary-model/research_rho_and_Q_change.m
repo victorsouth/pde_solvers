@@ -8,15 +8,15 @@ function main()
     relativePath_1 = fullfile('research_out', 'QSM_models', 'MocWithQuasiStationaryModel', 'WorkingWithTimeSeries');
     
     % Загрузка и обработка данных из первой папки
-    processDirectoryData(upperPath, relativePath_1);
+    processDirectoryData(upperPath, relativePath_1, 'QuickWithQuasiStationaryModel');
 
-    %relativePath_2 = fullfile('research_out', 'QSM_models', 'QuickWithQuasiStationaryModel', 'WorkingWithTimeSeries');
+    relativePath_2 = fullfile('research_out', 'QSM_models', 'QuickWithQuasiStationaryModel', 'WorkingWithTimeSeries');
 
     % Загрузка и обработка данных из второй папки
-    %processDirectoryData(upperPath, relativePath_2);
+    processDirectoryData(upperPath, relativePath_2, 'MocWithQuasiStationaryModel');
 end
 
-function processDirectoryData(upperPath, relativePath)
+function processDirectoryData(upperPath, relativePath, name)
     % Загрузка данных из файлов CSV
     [data, data2, data3] = loadDataFromFiles(upperPath, relativePath);
     % Длина трубы от 0 до 200 км
@@ -29,7 +29,7 @@ function processDirectoryData(upperPath, relativePath)
 
     % Отображение данных перед началом цикла и получение гифки
     plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4);
-    createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4);
+    createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name);
 end
 
 function [data, data2, data3] = loadDataFromFiles(upperPath, relativePath)
@@ -49,7 +49,7 @@ function [minValue, maxValue] = calculateMinMax(data)
     % Нахождение минимального и максимального значения для data
     numericData = data{:, 2:end-1}; % Извлечение числовых данных из таблицы
     minValue = min(numericData, [], 'all') - max(numericData, [], 'all') * 0.1;
-    maxValue = max(numericData, [], 'all') + max(numericData, [], 'all') * 2;
+    maxValue = max(numericData, [], 'all') + max(numericData, [], 'all') * 0.1;
 end
 
 function [minValue2, maxValue2] = calculateMinMax2(data)
@@ -67,10 +67,12 @@ function [minValue3, maxValue3] = calculateMinMax3(data)
 end
 
 function [minValue4, maxValue4] = calculateMinMax4(data)
-    % Нахождение минимального и максимального значения для data3
-    numericData = data{:, 2:end-1}; % Извлечение числовых данных из таблицы
-    minValue4 = min(numericData, [], 'all') - max(numericData, [], 'all')*0.1;
-    maxValue4 = max(numericData, [], 'all') + max(numericData, [], 'all')*0.1;
+    % Извлечение последнего столбца числовых данных из таблицы
+    numericData = data{:, end}; 
+    
+    % Нахождение минимального и максимального значения только в последнем столбце
+    minValue4 = min(numericData)-max(numericData)*0.01;
+    maxValue4 = max(numericData)+max(numericData)*0.01;
 end
 
 function plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4)
@@ -126,14 +128,14 @@ function plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValu
     set(gcf, 'Position', figure_size);
 end
 
-function createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4)
+function createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name)
     % Получение кадра для первого кадра
     frame = getframe(gcf);
     [im, map] = rgb2ind(frame.cdata, 256, 'nodither');
     im(1, 1, 1, size(data, 1)) = 0;
 
     % Анимация
-    for i = 2:size(data(:,1))
+    for i = 2:(size(data(:,1))-2)
         % Отображение данных
         subplot(4, 1, 2);
         plot(km, table2array(data(i, 2:end)), 'Color', 'r', LineWidth=2);
@@ -192,7 +194,7 @@ function createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxVal
     end
 
     % Сохранение гифки в файл
-    filename = 'меняем плотность и расход_3.gif';
-    imwrite(im, map, filename, 'DelayTime', 0.02, 'LoopCount', inf);
+    filename = strcat(name, '.gif');
+    imwrite(im, map, filename, 'DelayTime', 0.1, 'LoopCount', inf);
     disp(['Гифка сохранена в файл: ' filename]);
 end

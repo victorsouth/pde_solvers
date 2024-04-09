@@ -13,15 +13,6 @@ using std::pair;
 using std::string;
 using std::time_t;
 
-/// @brief Функция расчета скорости из расхода
-/// @param Q Расход, (м^3/с)
-/// @param internal_diameter Внутренний диаметр, (м)
-/// @return Скорость, (м/с)
-double calc_speed(double Q, double internal_diameter)
-{
-    double speed = (4 * Q) / (pow(internal_diameter, 2) * M_PI);
-    return speed;
-}
 
 // Типы синонимов для улучшения читаемости кода
 using TimeVector = vector<time_t>;
@@ -58,7 +49,7 @@ struct timeseries_generator_settings {
     static timeseries_generator_settings default_values() {
         timeseries_generator_settings result;
         result.start_time = std::time(nullptr);
-        result.duration = 350000;
+        result.duration = 250000;
         result.sample_time_min = 200;
         result.sample_time_max = 400;
         result.value_relative_decrement = 0.0002;
@@ -592,10 +583,6 @@ TEST_F(QuickWithQuasiStationaryModel, WorkingWithTimeSeries)
     // Генерируем данные
     synthetic_time_series_generator data_time_series(settings);
 
-    const time_t jump_time_Q = 100000;
-    const double jump_value_Q = 0.1;
-    data_time_series.apply_jump(jump_time_Q, jump_value_Q, "Q");
-
     // Получаем данные
     const auto& data = data_time_series.get_data();
     // Помещаем временные ряды в вектор
@@ -639,10 +626,6 @@ TEST_F(MocWithQuasiStationaryModel, WorkingWithTimeSeries)
     settings.start_time = 1712583773;
     // Генерируем данные
     synthetic_time_series_generator data_time_series(settings);
-
-    const time_t jump_time_Q = 100000;
-    const double jump_value_Q = 0.1;
-    data_time_series.apply_jump(jump_time_Q, jump_value_Q, "Q");
 
     // Получаем данные
     const auto& data = data_time_series.get_data();
