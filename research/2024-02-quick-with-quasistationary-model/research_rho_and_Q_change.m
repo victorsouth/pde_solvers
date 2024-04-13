@@ -8,12 +8,12 @@ function main()
     relativePath_1 = fullfile('research_out', 'QSM_models', 'MocWithQuasiStationaryModel', 'WorkingWithTimeSeries');
     
     % Загрузка и обработка данных из первой папки
-    processDirectoryData(upperPath, relativePath_1, 'QuickWithQuasiStationaryModel');
+    processDirectoryData(upperPath, relativePath_1, 'MocWithQuasiStationaryModel');
 
     relativePath_2 = fullfile('research_out', 'QSM_models', 'QuickWithQuasiStationaryModel', 'WorkingWithTimeSeries');
 
     % Загрузка и обработка данных из второй папки
-    processDirectoryData(upperPath, relativePath_2, 'MocWithQuasiStationaryModel');
+    processDirectoryData(upperPath, relativePath_2, 'QuickWithQuasiStationaryModel');
 end
 
 function processDirectoryData(upperPath, relativePath, name)
@@ -28,7 +28,7 @@ function processDirectoryData(upperPath, relativePath, name)
     [minValue4, maxValue4] = calculateMinMax4(data2);
 
     % Отображение данных перед началом цикла и получение гифки
-    plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4);
+    plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name);
     createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name);
 end
 
@@ -75,7 +75,7 @@ function [minValue4, maxValue4] = calculateMinMax4(data)
     maxValue4 = max(numericData)+max(numericData)*0.01;
 end
 
-function plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4)
+function plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name)
     figure;
     % Первый подграфик
     subplot(4, 1, 2);
@@ -99,7 +99,13 @@ function plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValu
 
     % Третий подграфик
     subplot(4, 1, 3);
-    plot(km, table2array(data3(1, 2:end)), 'Color', 'b', LineWidth=2);
+    if strcmp(name, 'MocWithQuasiStationaryModel')
+        plot(km, table2array(data3(1, 2:end)), 'Color', 'b', LineWidth=2);
+    else
+        % Создание нового массива km_interp с размером 2000
+        km_interp = conv(km, [0.5, 0.5], 'valid');
+        stairs(km_interp, table2array(data3(1, 2:end)), 'b', 'LineWidth', 2);
+    end
     xlabel('Труба, км');
     ylabel('Плотность, кг/м3');
     title('Профиль плотности');
@@ -124,7 +130,7 @@ function plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValu
     title('Временной ряд давления на выходе');
     %xticks(0:12:84);  % устанавливаем метки с интервалом в 12 часов
     ylim([minValue4, maxValue4]);
-    figure_size = [0, 0, 1920, 1080];
+    figure_size = [960, 540, 960, 540];
     set(gcf, 'Position', figure_size);
 end
 
@@ -160,7 +166,13 @@ function createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxVal
         hold off;
 
         subplot(4, 1, 3);
-        plot(km, table2array(data3(i, 2:end)), 'Color', 'b', LineWidth=2);
+        if strcmp(name, 'MocWithQuasiStationaryModel')            
+            plot(km, table2array(data3(i, 2:end)), 'Color', 'b', LineWidth=2);
+        else
+            % Создание нового массива km_interp с размером 2000
+            km_interp = conv(km, [0.5, 0.5], 'valid');
+            stairs(km_interp, table2array(data3(i, 2:end)), 'b', 'LineWidth', 2);
+        end
         xlabel('Труба, км');
         ylabel('Плотность, кг/м3');
         title('Профиль плотности');
@@ -185,7 +197,7 @@ function createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxVal
         ylabel('Давление, Па');
         title('Временной ряд давления на выходе');
         ylim([minValue4, maxValue4]);
-        figure_size = [0, 0, 1920, 1080];
+        figure_size = [960, 540, 960, 540];
         set(gcf, 'Position', figure_size);
         % Получение кадра
         frame = getframe(gcf);
@@ -195,6 +207,6 @@ function createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxVal
 
     % Сохранение гифки в файл
     filename = strcat(name, '.gif');
-    imwrite(im, map, filename, 'DelayTime', 0.1, 'LoopCount', inf);
+    imwrite(im, map, filename, 'DelayTime', 0.02, 'LoopCount', inf);
     disp(['Гифка сохранена в файл: ' filename]);
 end
