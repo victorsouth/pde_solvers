@@ -571,6 +571,48 @@ TEST(Random, PrepareTimeSeries)
     // Интерополируем значения параметров в заданный момент времени
     vector<double> values_in_test_time = params(test_time);
 }
+
+/// @brief Базовый пример использования метода Quickest Ultimate для уравнения адвекции
+TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection_Density_Viscosity)
+{
+    const auto& x = advection_model->get_grid();
+    double dx = x[1] - x[0];
+    double v = advection_model->getEquationsCoeffs(0, 0);
+
+    ring_buffer_t<density_viscosity_cell_layer> buffer(2, pipe.profile.getPointCount());
+
+    auto& rho_initial = buffer[0].density;
+    auto& viscosity_initial = buffer[0].viscosity;
+    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
+    viscosity_initial = vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
+
+    buffer.advance(+1);
+
+    {
+        auto density_wrapper = buffer.get_buffer_wrapper(
+            &density_viscosity_cell_layer::get_density_wrapper);
+        quickest_ultimate_fv_solver solver(*advection_model, density_wrapper);
+
+        double dt = abs(dx / v);
+        double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
+        double rho_out = 860; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
+        solver.step(dt, rho_in, rho_out);
+    }
+
+    {
+        auto viscosity_wrapper = buffer.get_buffer_wrapper(
+            &density_viscosity_cell_layer::get_viscosity_wrapper);
+        quickest_ultimate_fv_solver solver(*advection_model, viscosity_wrapper);
+
+        double dt = abs(dx / v);
+        double visc_in = 2e-5; // вязкость нефти, закачиваемой на входе трубы при положительном расходе
+        double visc_out = 0.5e-5;; // вязкость нефти, закачиваемой с выхода трубы при отрицательном расходе
+        solver.step(dt, visc_in, visc_out);
+    }
+
+    auto& curr = buffer[0];
+}
+
 /// @brief Пример испольования метода Quickest Ultimate с гидравлическим расчетом  
 TEST_F(QuickWithQuasiStationaryModel, WorkingWithTimeSeries)
 {
