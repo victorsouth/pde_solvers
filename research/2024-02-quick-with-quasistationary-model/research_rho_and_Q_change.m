@@ -28,8 +28,9 @@ function processDirectoryData(upperPath, relativePath, name)
     [minValue4, maxValue4] = calculateMinMax4(data2);
 
     % Отображение данных перед началом цикла и получение гифки
-    plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name);
-    createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name);
+    %plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name);
+    %createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name);
+    plotScaledData(data, data3, km, minValue3, maxValue3, name);
 end
 
 function [data, data2, data3] = loadDataFromFiles(upperPath, relativePath)
@@ -209,4 +210,37 @@ function createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxVal
     filename = strcat(name, '.gif');
     imwrite(im, map, filename, 'DelayTime', 0.02, 'LoopCount', inf);
     disp(['Гифка сохранена в файл: ' filename]);
+end
+
+function plotScaledData(data, data3, km, minValue3, maxValue3, name)
+figure;     
+i = 2021;
+        % Отображение данных
+        subplot(2, 1, 1);
+        plot(km, table2array(data(i, 2:end)), 'Color', 'r', LineWidth=2);
+        hold on;
+        plot(km, table2array(data(1, 2:end)), 'Color', 'b', LineWidth=2);
+        xlim([192, 198]);
+        ylim([3.9*10000, 4.15*10000]);
+        xlabel('Труба, км');
+        ylabel('Разница давлений, Па');
+        title('Профиль разницы давлений');
+        grid on;
+        hold off;
+
+
+        subplot(2, 1, 2);
+        if strcmp(name, 'MocWithQuasiStationaryModel')            
+            plot(km, table2array(data3(i, 2:end)), 'Color', 'b', LineWidth=2);
+        else
+            % Создание нового массива km_interp с размером 2000
+            km_interp = conv(km, [0.5, 0.5], 'valid');
+            stairs(km_interp, table2array(data3(i, 2:end)), 'b', 'LineWidth', 2);
+        end
+        xlabel('Труба, км');
+        ylabel('Плотность, кг/м3');
+        title('Профиль плотности');
+        xlim([192, 198]);
+        ylim([minValue3, maxValue3]);
+        grid on;
 end
