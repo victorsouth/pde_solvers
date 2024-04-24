@@ -33,18 +33,6 @@ struct timeseries_generator_settings {
     double value_relative_decrement;
     /// @brief Относительное максимальное отклонение значения параметров, доли
     double value_relative_increment;
-    /// @brief Исходные данные, обязательно должны присутствовать два опциональных параметра
-    /// @brief "rho_in" Плотность жидкости, (кг/м3)
-    /// @brief "visc_in" Кинематическая вязкость, (м2/с)
-    /// @brief "p_in" Давление на входе (опционально), (Па)
-    /// @brief "p_out" Давление на выходе (опционально), (Па)
-    /// @brief "Q" Расход по всей трубе (опционально), (м^3/с)
-    vector<pair<string, double>> timeseries_initial_values = {
-        { "Q", 0.2 },
-        { "p_in", 6e6},
-        { "rho_in", 860 },
-        { "visc_in", 15e-6},
-    };
     /// @brief Настроечные параметры по умолчанию 
     static timeseries_generator_settings default_values() {
         timeseries_generator_settings result;
@@ -64,12 +52,13 @@ class synthetic_time_series_generator {
 public:
     /// @brief Конструктор класса
     /// @param settings Настройки генератора временных рядов
-    synthetic_time_series_generator(const timeseries_generator_settings& settings)
-        : settings_(settings),
+    synthetic_time_series_generator(const vector<pair<string, double>> initial_values,const timeseries_generator_settings& settings)
+        : initial_values_(initial_values),
+        settings_(settings),
         gen(rd()) {
         std::uniform_real_distribution<double> timeDis(settings_.sample_time_min, settings_.sample_time_max);
 
-        for (const auto& param : settings_.timeseries_initial_values) {
+        for (const auto& param : initial_values_) {
             TimeVector timeValues;
             ParamVector paramValues;
 
@@ -92,8 +81,8 @@ public:
     /// @param jump_value Значение скачка
     /// @param paramName Имя параметра, к которому применяется скачок
     void apply_jump(time_t jump_time, double jump_value, const string& paramName) {
-        for (size_t i = 0; i < settings_.timeseries_initial_values.size(); ++i) {
-            if (settings_.timeseries_initial_values[i].first == paramName) {
+        for (size_t i = 0; i < initial_values_.size(); ++i) {
+            if (initial_values_[i].first == paramName) {
                 auto it = std::lower_bound(data[i].first.begin(), data[i].first.end(), settings_.start_time + jump_time);
                 size_t position = std::distance(data[i].first.begin(), it);
                 std::uniform_real_distribution<double> normalDis(jump_value * (1 - settings_.value_relative_increment), jump_value * (1 + settings_.value_relative_increment));
@@ -111,6 +100,8 @@ public:
     }
 
 private:
+    /// @brief Исходные данные, обязательно должны присутствовать два опциональных параметра
+    const vector<pair<string, double>> initial_values_;
     /// @brief Настройки генератора
     timeseries_generator_settings settings_;
     /// @brief Данные временных рядов
@@ -119,56 +110,6 @@ private:
     std::random_device rd;
     /// @brief Генератор псевдослучайных чисел
     std::mt19937 gen;
-};
-
-/// @brief Тесты для солвера quickest_ultimate_fv_solver
-class QuickWithQuasiStationaryModel : public ::testing::Test {
-protected:
-    /// @brief Параметры трубы
-    pipe_properties_t pipe;
-    /// @brief Профиль расхода
-    vector<double> Q_profile;
-    /// @brief Модель адвекции
-    std::unique_ptr<PipeQAdvection> advection_model;
-protected:
-
-    /// @brief Подготовка к расчету для семейства тестов
-    virtual void SetUp() override {
-        // Упрощенное задание трубы - 200км, с шагом разбиения для расчтной сетки 100 м, диаметром 514мм
-        simple_pipe_properties simple_pipe;
-        simple_pipe.length = 200e3;
-        simple_pipe.diameter = 0.514;
-        simple_pipe.dx = 100;
-
-        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-        Q_profile = vector<double>(pipe.profile.getPointCount(), 0.2); // задаем по трубе расход 0.2 м3/с
-        advection_model = std::make_unique<PipeQAdvection>(pipe, Q_profile);
-    }
-};
-
-/// @brief Тесты для солвера moc_solver
-class MocWithQuasiStationaryModel : public ::testing::Test {
-protected:
-    /// @brief Параметры трубы
-    pipe_properties_t pipe;
-    /// @brief Профиль расхода
-    vector<double> Q_profile;
-    /// @brief Модель адвекции
-    std::unique_ptr<PipeQAdvection> advection_model;
-protected:
-
-    /// @brief Подготовка к расчету для семейства тестов
-    virtual void SetUp() override {
-        // Упрощенное задание трубы - 200км, с шагом разбиения для расчтной сетки 100 м, диаметром 514мм
-        simple_pipe_properties simple_pipe;
-        simple_pipe.length = 200e3;
-        simple_pipe.diameter = 0.514;
-        simple_pipe.dx = 100;
-
-        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-        Q_profile = vector<double>(pipe.profile.getPointCount(), 0.2); // задаем по трубе расход 0.2 м3/с
-        advection_model = std::make_unique<PipeQAdvection>(pipe, Q_profile);
-    }
 };
 
 /// @brief Слой для расчета плотности, вязкости методом конечных объемов 
@@ -493,46 +434,6 @@ inline std::string prepare_research_folder_for_qsm_model()
     return path;
 }
 
-/// @brief Базовый пример использования метода Quickest Ultimate для уравнения адвекции
-TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection_Density_Viscosity)
-{
-    const auto& x = advection_model->get_grid();
-    double dx = x[1] - x[0];
-    double v = advection_model->getEquationsCoeffs(0, 0);
-
-    ring_buffer_t<density_viscosity_cell_layer> buffer(2, pipe.profile.getPointCount());
-
-    auto& rho_initial = buffer[0].density;
-    auto& viscosity_initial = buffer[0].viscosity;
-    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
-    viscosity_initial = vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
-
-    buffer.advance(+1);
-
-    {
-        auto density_wrapper = buffer.get_buffer_wrapper(
-            &density_viscosity_cell_layer::get_density_wrapper);
-        quickest_ultimate_fv_solver solver(*advection_model, density_wrapper);
-
-        double dt = abs(dx / v);
-        double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
-        double rho_out = 860; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
-        solver.step(dt, rho_in, rho_out);
-    }
-
-    {
-        auto viscosity_wrapper = buffer.get_buffer_wrapper(
-            &density_viscosity_cell_layer::get_viscosity_wrapper);
-        quickest_ultimate_fv_solver solver(*advection_model, viscosity_wrapper);
-
-        double dt = abs(dx / v);
-        double visc_in = 2e-5; // вязкость нефти, закачиваемой на входе трубы при положительном расходе
-        double visc_out = 0.5e-5;; // вязкость нефти, закачиваемой с выхода трубы при отрицательном расходе
-        solver.step(dt, visc_in, visc_out);
-    }
-
-    auto& curr = buffer[0];
-}
 /// @brief Базовый пример генерации синтетических временных рядов
 TEST(Random, PrepareTimeSeries)
 {
@@ -543,15 +444,19 @@ TEST(Random, PrepareTimeSeries)
     settings.sample_time_max = 450; // Задаю максимальное значение размаха шага (опционально, по умолчанию 400)
     settings.value_relative_decrement = 0.005; // Задаю относительное минимальное отклонение значения параметров (опционально, по умолчанию 0.0002)
     settings.value_relative_increment = 0.005; // Задаю относительное максимальное отклонение значения параметров (опционально, по умолчанию 0.0002)
-    settings.timeseries_initial_values = {
+    //settings.timeseries_initial_values = {
+    //    { "Q", 0.3 },
+    //    { "p_in", 5e6},
+    //    { "rho_in", 850 },
+    //    { "visc_in", 17e-6},
+    //};
+    vector<pair<string, double>> timeseries_initial_values = {
         { "Q", 0.3 },
         { "p_in", 5e6},
         { "rho_in", 850 },
         { "visc_in", 17e-6},
-
-
     };
-    synthetic_time_series_generator data_generator(settings);
+    synthetic_time_series_generator data_generator(timeseries_initial_values, settings);
 
     const time_t jump_time_rho = 100000;
     const double jump_value_rho = 870;
@@ -572,133 +477,108 @@ TEST(Random, PrepareTimeSeries)
     vector<double> values_in_test_time = params(test_time);
 }
 
-/// @brief Базовый пример использования метода Quickest Ultimate для уравнения адвекции
-TEST_F(QuickWithQuasiStationaryModel, UseCase_Advection_Density_Viscosity)
-{
-    const auto& x = advection_model->get_grid();
-    double dx = x[1] - x[0];
-    double v = advection_model->getEquationsCoeffs(0, 0);
+/// @brief Тесты для солвера
+class QuasiStationaryModel : public ::testing::Test {
+protected:
+    /// @brief Параметры трубы
+    pipe_properties_t pipe;
+    /// @brief Профиль расхода
+    vector<double> Q_profile;
+    /// @brief Модель адвекции
+    std::unique_ptr<PipeQAdvection> advection_model;
+protected:
 
-    ring_buffer_t<density_viscosity_cell_layer> buffer(2, pipe.profile.getPointCount());
+    /// @brief Подготовка к расчету для семейства тестов
+    virtual void SetUp() override {
+        // Упрощенное задание трубы - 200км, с шагом разбиения для расчтной сетки 100 м, диаметром 514мм
+        simple_pipe_properties simple_pipe;
+        simple_pipe.length = 200e3;
+        simple_pipe.diameter = 0.514;
+        simple_pipe.dx = 100;
 
-    auto& rho_initial = buffer[0].density;
-    auto& viscosity_initial = buffer[0].viscosity;
-    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
-    viscosity_initial = vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
-
-    buffer.advance(+1);
-
-    {
-        auto density_wrapper = buffer.get_buffer_wrapper(
-            &density_viscosity_cell_layer::get_density_wrapper);
-        quickest_ultimate_fv_solver solver(*advection_model, density_wrapper);
-
-        double dt = abs(dx / v);
-        double rho_in = 840; // плотность нефти, закачиваемой на входе трубы при положительном расходе
-        double rho_out = 860; // плотность нефти, закачиваемой с выхода трубы при отрицательном расходе
-        solver.step(dt, rho_in, rho_out);
+        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
+        Q_profile = vector<double>(pipe.profile.getPointCount(), 0.2); // задаем по трубе расход 0.2 м3/с
+        advection_model = std::make_unique<PipeQAdvection>(pipe, Q_profile);
     }
 
+public:
+    /// @brief Считаем квазистационарную модель
+    /// @tparam Layer Слой для расчета плотности, вязкости для численного метода 
+    /// @tparam Solver Численный метод расчета движения партий
+    /// @param path Путь с результатом
+    /// @param timeseries_initial_values Исходные условия для генерации временных рядов
+    template <typename Layer, typename Solver>
+    void calc_quasistationary_model(string path, vector<pair<string, double>> timeseries_initial_values)
     {
-        auto viscosity_wrapper = buffer.get_buffer_wrapper(
-            &density_viscosity_cell_layer::get_viscosity_wrapper);
-        quickest_ultimate_fv_solver solver(*advection_model, viscosity_wrapper);
+        // Объявляем структуру с исходными данными и настроечными параметрами
+        timeseries_generator_settings settings = timeseries_generator_settings::default_values();
+        // Задаем время 04.08.2024  16:42:53
+        settings.start_time = 1712583773;
+        // Генерируем данные
+        synthetic_time_series_generator data_time_series(timeseries_initial_values, settings);
 
-        double dt = abs(dx / v);
-        double visc_in = 2e-5; // вязкость нефти, закачиваемой на входе трубы при положительном расходе
-        double visc_out = 0.5e-5;; // вязкость нефти, закачиваемой с выхода трубы при отрицательном расходе
-        solver.step(dt, visc_in, visc_out);
+        // Получаем данные
+        const auto& data = data_time_series.get_data();
+        // Помещаем временные ряды в вектор
+        vector_timeseries_t params(data);
+
+        task_buffer_t<Layer> buffer(pipe.profile.getPointCount());
+
+        quasistatic_task_boundaries_t initial_boundaries = { 0.2, 6e6, 850, 15e-6 };
+        quasistatic_task_t<Layer, Solver> task(pipe, initial_boundaries);
+
+        task.advance();
+
+        double v_max = 1; // Предполагаем скорость для Куранта = 1, скорость, больше чем во временных рядах и в профиле
+        time_t dt = task.get_time_step_assuming_max_speed(v_max);
+        time_t t = settings.start_time; // Момент времени начала моделирования
+        do
+        {
+            t += dt;
+            // Интерополируем значения параметров в заданный момент времени
+            vector<double> values_in_time_model = params(t);
+
+            quasistatic_task_boundaries_t boundaries;
+            boundaries.volumetric_flow = values_in_time_model[0];
+            boundaries.pressure_in = values_in_time_model[1];
+            boundaries.density = values_in_time_model[2];
+            boundaries.viscosity = values_in_time_model[3];
+
+            task.step(dt, boundaries);
+            task.advance();
+            task.print_all(t - dt, path);
+        } while (t < settings.start_time + settings.duration - dt);
     }
-
-    auto& curr = buffer[0];
-}
+};
 
 /// @brief Пример испольования метода Quickest Ultimate с гидравлическим расчетом  
-TEST_F(QuickWithQuasiStationaryModel, WorkingWithTimeSeries)
+TEST_F(QuasiStationaryModel, QuickWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
     string path = prepare_research_folder_for_qsm_model();
-    // Объявляем структуру с исходными данными и настроечными параметрами
-    timeseries_generator_settings settings = timeseries_generator_settings::default_values();
-    // Задаем время 04.08.2024  16:42:53
-    settings.start_time = 1712583773;
-    // Генерируем данные
-    synthetic_time_series_generator data_time_series(settings);
-
-    // Получаем данные
-    const auto& data = data_time_series.get_data();
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t params(data);
-
-    task_buffer_t<density_viscosity_cell_layer> buffer(pipe.profile.getPointCount());
-
-    quasistatic_task_boundaries_t initial_boundaries = { 0.2, 6e6, 850, 15e-6 };
-    quasistatic_task_t<density_viscosity_cell_layer, quickest_ultimate_fv_solver> task(pipe, initial_boundaries);
-
-    task.advance();
-
-    double v_max = 1; // Предполагаем скорость для Куранта = 1, скорость, больше чем во временных рядах и в профиле
-    time_t dt = task.get_time_step_assuming_max_speed(v_max);
-    time_t t = settings.start_time; // Момент времени начала моделирования
-    do
-    {
-        t += dt;
-        // Интерополируем значения параметров в заданный момент времени
-        vector<double> values_in_time_model = params(t);
-
-        quasistatic_task_boundaries_t boundaries;
-        boundaries.volumetric_flow = values_in_time_model[0];
-        boundaries.pressure_in = values_in_time_model[1];
-        boundaries.density = values_in_time_model[2];
-        boundaries.viscosity = values_in_time_model[3];
-
-        task.step(dt, boundaries);
-        task.advance();
-        task.print_all(t - dt, path);
-    } while (t < settings.start_time + settings.duration - dt);
+    // Создаём исходные данные
+    vector<pair<string, double>> timeseries_initial_values = {
+        { "Q", 0.2 }, // "Q" Расход по всей трубе (опционально), (м^3/с)
+        { "p_in", 6e6}, // "p_in" Давление на входе (опционально), (Па)
+        { "rho_in", 860 }, // "rho_in" Плотность жидкости, (кг/м3)
+        { "visc_in", 15e-6},
+    };
+    // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
+    calc_quasistationary_model<density_viscosity_cell_layer, quickest_ultimate_fv_solver>(path, timeseries_initial_values);
 }
 /// @brief Пример испольования метода характеристик с гидравлическим расчетом  
-TEST_F(MocWithQuasiStationaryModel, WorkingWithTimeSeries)
+TEST_F(QuasiStationaryModel, MocWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
     string path = prepare_research_folder_for_qsm_model();
-    // Объявляем структуру с исходными данными и настроечными параметрами
-    timeseries_generator_settings settings = timeseries_generator_settings::default_values();
-    // Задаем время 04.08.2024  16:42:53
-    settings.start_time = 1712583773;
-    // Генерируем данные
-    synthetic_time_series_generator data_time_series(settings);
-
-    // Получаем данные
-    const auto& data = data_time_series.get_data();
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t params(data);
-
-    task_buffer_t<density_viscosity_layer_moc> buffer(pipe.profile.getPointCount());
-
-    quasistatic_task_boundaries_t initial_boundaries = { 0.2, 6e6, 850, 15e-6 };
-    quasistatic_task_t<density_viscosity_layer_moc, moc_solver<1>> task(pipe, initial_boundaries);
-
-    task.advance();
-
-    double v_max = 1; // Предполагаем скорость для Куранта = 1, скорость, больше чем во временных рядах и в профиле
-    time_t dt = task.get_time_step_assuming_max_speed(v_max);
-    time_t t = settings.start_time; // Момент времени начала моделирования
-
-    do
-    {
-        t += dt;
-        // Интерополируем значения параметров в заданный момент времени
-        vector<double> values_in_time_model = params(t);
-
-        quasistatic_task_boundaries_t boundaries;
-        boundaries.volumetric_flow = values_in_time_model[0];
-        boundaries.pressure_in = values_in_time_model[1];
-        boundaries.density = values_in_time_model[2];
-        boundaries.viscosity = values_in_time_model[3];
-
-        task.step(dt, boundaries);
-        task.advance();
-        task.print_all(t - dt, path);
-    } while (t < settings.start_time + settings.duration - dt);
+    // Создаём исходные данные
+    vector<pair<string, double>> timeseries_initial_values = {
+        { "Q", 0.2 }, // "Q" Расход по всей трубе (опционально), (м^3/с)
+        { "p_in", 6e6}, // "p_in" Давление на входе (опционально), (Па)
+        { "rho_in", 860 }, // "rho_in" Плотность жидкости, (кг/м3)
+        { "visc_in", 15e-6},
+    };
+    // Вызываем метод расчета квазистационарной модели с помощью МХ
+    calc_quasistationary_model<density_viscosity_layer_moc, moc_solver<1>>(path, timeseries_initial_values);
 }
+

@@ -5,15 +5,13 @@ function main()
     currentDirectory = pwd;
     [upperPath, ~, ~] = fileparts(currentDirectory);
     [upperPath, ~, ~] = fileparts(upperPath);   
-    relativePath_1 = fullfile('research_out', 'QSM_models', 'MocWithQuasiStationaryModel', 'WorkingWithTimeSeries');
+    relativePath = fullfile('research_out', 'QSM_models', 'QuasiStationaryModel');
     
     % Загрузка и обработка данных из первой папки
-    processDirectoryData(upperPath, relativePath_1, 'MocWithQuasiStationaryModel');
-
-    relativePath_2 = fullfile('research_out', 'QSM_models', 'QuickWithQuasiStationaryModel', 'WorkingWithTimeSeries');
+    processDirectoryData(upperPath, relativePath, 'MocWithQuasiStationaryModel');
 
     % Загрузка и обработка данных из второй папки
-    processDirectoryData(upperPath, relativePath_2, 'QuickWithQuasiStationaryModel');
+    processDirectoryData(upperPath, relativePath, 'QuickWithQuasiStationaryModel');
 end
 
 function processDirectoryData(upperPath, relativePath, name)
