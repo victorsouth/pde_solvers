@@ -1,14 +1,6 @@
 ﻿#pragma once
 
 #include <pde_solvers/timeseries.h>
-#include <iostream>
-#include <vector>
-#include <string>
-
-using std::vector;
-using std::pair;
-using std::string;
-using std::time_t;
 
 /// @brief Слой для расчета плотности, вязкости методом конечных объемов 
 struct density_viscosity_cell_layer {
