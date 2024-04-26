@@ -352,7 +352,7 @@ public:
     void calc_quasistationary_model(string path, vector<pair<string, double>> timeseries_initial_values)
     {
         // Объявляем структуру с исходными данными и настроечными параметрами
-        timeseries_generator_settings settings = timeseries_generator_settings::default_values();
+        timeseries_generator_settings settings = timeseries_generator_settings::default_settings();
         // Задаем время 04.08.2024  16:42:53
         settings.start_time = 1712583773;
         // Генерируем данные
