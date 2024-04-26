@@ -51,10 +51,10 @@ inline std::string prepare_research_folder()
 #include "test_static_pipe_solver.h"
 #include "test_timeseries.h"
 #include "test_advection_moc_solver.h"
+#include "test_synthetic_timeseries.h"
 
 #include "../research/2023-12-diffusion-of-advection/diffusion_of_advection.h"
 #include "../research/2024-02-quick-with-quasistationary-model/quick_with_quasistationary_model.h"
-
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
