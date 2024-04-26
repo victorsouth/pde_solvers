@@ -397,7 +397,7 @@ TEST_F(QuasiStationaryModel, QuickWithQuasiStationaryModel)
         { "Q", 0.2 }, // "Q" Расход по всей трубе (опционально), (м^3/с)
         { "p_in", 6e6}, // "p_in" Давление на входе (опционально), (Па)
         { "rho_in", 860 }, // "rho_in" Плотность жидкости, (кг/м3)
-        { "visc_in", 15e-6},
+        { "visc_in", 15e-6}, // "visc_in" Вязкость жидкости, (м2/сек)
     };
     // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
     calc_quasistationary_model<density_viscosity_cell_layer, quickest_ultimate_fv_solver>(path, timeseries_initial_values);
@@ -412,7 +412,7 @@ TEST_F(QuasiStationaryModel, MocWithQuasiStationaryModel)
         { "Q", 0.2 }, // "Q" Расход по всей трубе (опционально), (м^3/с)
         { "p_in", 6e6}, // "p_in" Давление на входе (опционально), (Па)
         { "rho_in", 860 }, // "rho_in" Плотность жидкости, (кг/м3)
-        { "visc_in", 15e-6},
+        { "visc_in", 15e-6}, // "visc_in" Вязкость жидкости, (м2/сек)
     };
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     calc_quasistationary_model<density_viscosity_layer_moc, moc_solver<1>>(path, timeseries_initial_values);
