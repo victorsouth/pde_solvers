@@ -29,6 +29,7 @@
     <ClInclude Include="..\testing\test_moc.h" />
     <ClInclude Include="..\testing\test_quick.h" />
     <ClInclude Include="..\testing\test_static_pipe_solver.h" />
+    <ClInclude Include="..\testing\test_synthetic_timeseries.h" />
     <ClInclude Include="..\testing\test_timeseries.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

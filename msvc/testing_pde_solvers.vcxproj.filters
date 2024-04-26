@@ -50,5 +50,8 @@
     <ClInclude Include="..\testing\test_advection_moc_solver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\testing\test_synthetic_timeseries.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
