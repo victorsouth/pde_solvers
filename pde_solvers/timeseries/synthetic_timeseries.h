@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <iostream>
 #include <random>
@@ -12,26 +12,26 @@ using std::string;
 using std::time_t;
 
 
-// Типы синонимов для улучшения читаемости кода
+// РўРёРїС‹ СЃРёРЅРѕРЅРёРјРѕРІ РґР»СЏ СѓР»СѓС‡С€РµРЅРёСЏ С‡РёС‚Р°РµРјРѕСЃС‚Рё РєРѕРґР°
 using TimeVector = vector<time_t>;
 using ParamVector = vector<double>;
 using ParamPair = pair<TimeVector, ParamVector>;
 
-/// @brief Исходны данные и настроечные параметры
+/// @brief РСЃС…РѕРґРЅС‹ РґР°РЅРЅС‹Рµ Рё РЅР°СЃС‚СЂРѕРµС‡РЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹
 struct timeseries_generator_settings {
-    /// @brief Время начала моделирования, с
+    /// @brief Р’СЂРµРјСЏ РЅР°С‡Р°Р»Р° РјРѕРґРµР»РёСЂРѕРІР°РЅРёСЏ, СЃ
     std::time_t start_time;
-    /// @brief Время моделирования, с
+    /// @brief Р’СЂРµРјСЏ РјРѕРґРµР»РёСЂРѕРІР°РЅРёСЏ, СЃ
     std::time_t duration;
-    /// @brief Минимальное значение размаха шага, с
+    /// @brief РњРёРЅРёРјР°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ СЂР°Р·РјР°С…Р° С€Р°РіР°, СЃ
     std::time_t sample_time_min;
-    /// @brief Максимальное значение размаха шага, с
+    /// @brief РњР°РєСЃРёРјР°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ СЂР°Р·РјР°С…Р° С€Р°РіР°, СЃ
     std::time_t sample_time_max;
-    /// @brief Относительное минимальное отклонение значения параметров, доли
+    /// @brief РћС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕРµ РјРёРЅРёРјР°Р»СЊРЅРѕРµ РѕС‚РєР»РѕРЅРµРЅРёРµ Р·РЅР°С‡РµРЅРёСЏ РїР°СЂР°РјРµС‚СЂРѕРІ, РґРѕР»Рё
     double value_relative_decrement;
-    /// @brief Относительное максимальное отклонение значения параметров, доли
+    /// @brief РћС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕРµ РјР°РєСЃРёРјР°Р»СЊРЅРѕРµ РѕС‚РєР»РѕРЅРµРЅРёРµ Р·РЅР°С‡РµРЅРёСЏ РїР°СЂР°РјРµС‚СЂРѕРІ, РґРѕР»Рё
     double value_relative_increment;
-    /// @brief Настроечные параметры по умолчанию 
+    /// @brief РќР°СЃС‚СЂРѕРµС‡РЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ 
     static timeseries_generator_settings default_settings() {
         timeseries_generator_settings result;
         result.start_time = std::time(nullptr);
@@ -44,11 +44,11 @@ struct timeseries_generator_settings {
     }
 
 };
-/// @brief Класс для генерации синтетических временных рядов
+/// @brief РљР»Р°СЃСЃ РґР»СЏ РіРµРЅРµСЂР°С†РёРё СЃРёРЅС‚РµС‚РёС‡РµСЃРєРёС… РІСЂРµРјРµРЅРЅС‹С… СЂСЏРґРѕРІ
 class synthetic_time_series_generator {
 public:
-    /// @brief Конструктор класса
-    /// @param settings Настройки генератора временных рядов
+    /// @brief РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РєР»Р°СЃСЃР°
+    /// @param settings РќР°СЃС‚СЂРѕР№РєРё РіРµРЅРµСЂР°С‚РѕСЂР° РІСЂРµРјРµРЅРЅС‹С… СЂСЏРґРѕРІ
     synthetic_time_series_generator(const vector<pair<string, double>> initial_values, const timeseries_generator_settings& settings)
         : initial_values_(initial_values),
         settings_(settings),
@@ -73,10 +73,10 @@ public:
             data.push_back({ timeValues, paramValues });
         }
     }
-    /// @brief Применение скачка к временному ряду
-    /// @param jump_time Время, когда происходит скачок
-    /// @param jump_value Значение скачка
-    /// @param paramName Имя параметра, к которому применяется скачок
+    /// @brief РџСЂРёРјРµРЅРµРЅРёРµ СЃРєР°С‡РєР° Рє РІСЂРµРјРµРЅРЅРѕРјСѓ СЂСЏРґСѓ
+    /// @param jump_time Р’СЂРµРјСЏ, РєРѕРіРґР° РїСЂРѕРёСЃС…РѕРґРёС‚ СЃРєР°С‡РѕРє
+    /// @param jump_value Р—РЅР°С‡РµРЅРёРµ СЃРєР°С‡РєР°
+    /// @param paramName РРјСЏ РїР°СЂР°РјРµС‚СЂР°, Рє РєРѕС‚РѕСЂРѕРјСѓ РїСЂРёРјРµРЅСЏРµС‚СЃСЏ СЃРєР°С‡РѕРє
     void apply_jump(time_t jump_time, double jump_value, const string& paramName) {
         for (size_t i = 0; i < initial_values_.size(); ++i) {
             if (initial_values_[i].first == paramName) {
@@ -90,21 +90,21 @@ public:
             }
         }
     }
-    /// @brief Получение сгенерированных данных
-    /// @return Вектор временных рядов
+    /// @brief РџРѕР»СѓС‡РµРЅРёРµ СЃРіРµРЅРµСЂРёСЂРѕРІР°РЅРЅС‹С… РґР°РЅРЅС‹С…
+    /// @return Р’РµРєС‚РѕСЂ РІСЂРµРјРµРЅРЅС‹С… СЂСЏРґРѕРІ
     const vector<ParamPair>& get_data() const {
         return data;
     }
 
 private:
-    /// @brief Исходные данные, обязательно должны присутствовать два опциональных параметра
+    /// @brief РСЃС…РѕРґРЅС‹Рµ РґР°РЅРЅС‹Рµ, РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РґРѕР»Р¶РЅС‹ РїСЂРёСЃСѓС‚СЃС‚РІРѕРІР°С‚СЊ РґРІР° РѕРїС†РёРѕРЅР°Р»СЊРЅС‹С… РїР°СЂР°РјРµС‚СЂР°
     const vector<pair<string, double>> initial_values_;
-    /// @brief Настройки генератора
+    /// @brief РќР°СЃС‚СЂРѕР№РєРё РіРµРЅРµСЂР°С‚РѕСЂР°
     timeseries_generator_settings settings_;
-    /// @brief Данные временных рядов
+    /// @brief Р”Р°РЅРЅС‹Рµ РІСЂРµРјРµРЅРЅС‹С… СЂСЏРґРѕРІ
     vector<ParamPair> data;
-    /// @brief Генератор случайных чисел
+    /// @brief Р“РµРЅРµСЂР°С‚РѕСЂ СЃР»СѓС‡Р°Р№РЅС‹С… С‡РёСЃРµР»
     std::random_device rd;
-    /// @brief Генератор псевдослучайных чисел
+    /// @brief Р“РµРЅРµСЂР°С‚РѕСЂ РїСЃРµРІРґРѕСЃР»СѓС‡Р°Р№РЅС‹С… С‡РёСЃРµР»
     std::mt19937 gen;
 };
