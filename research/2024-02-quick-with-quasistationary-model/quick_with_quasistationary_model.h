@@ -2,7 +2,7 @@
 
 #include <pde_solvers/timeseries.h>
 
-/// @brief Слой для расчета плотности, вязкости методом конечных объемов 
+/// @brief Проблемно-ориентированный слой для расчета методом конечных объемов 
 struct density_viscosity_cell_layer {
     /// @brief Профиль плотности
     std::vector<double> density;
@@ -35,11 +35,8 @@ struct density_viscosity_cell_layer {
         return quickest_ultimate_fv_wrapper<1>(layer.viscosity, layer.specific);
     }
 };
-
-/// @brief Проблемно-ориентированный слой
-/// Задача про плотность и вязкость
-struct density_viscosity_layer_moc
-{
+/// @brief Проблемно-ориентированный слой для расчета методом характеристик
+struct density_viscosity_layer_moc{
     /// @brief Профиль плотности
     std::vector<double> density;
     /// @brief Профиль вязкости
@@ -60,13 +57,13 @@ struct density_viscosity_layer_moc
     {
 
     }
-    /// @brief Подготовка плотности для расчета по методу характеристик
+    /// @brief Подготовка плотности для расчета методом характеристик
     /// Оборачивает профиль плотности и вспомогательный расчет МХ в обертку для МХ
     static moc_layer_wrapper<1> get_density_wrapper(density_viscosity_layer_moc& layer)
     {
         return moc_layer_wrapper<1>(layer.density, layer.specific);
     }
-    /// @brief Подготовка вязкости для расчета методом характеристик moc_solver
+    /// @brief Подготовка вязкости для расчета методом характеристик
     static moc_layer_wrapper<1> get_viscosity_wrapper(density_viscosity_layer_moc& layer)
     {
         return moc_layer_wrapper<1>(layer.viscosity, layer.specific);
@@ -99,9 +96,7 @@ public:
         , nu_profile(nu_profile)
         , flow(flow)
         , solver_direction(solver_direction)
-    {
-
-    }
+    {}
 
     /// @brief Возвращает известную уравнению сетку
     virtual const vector<double>& get_grid() const override {
