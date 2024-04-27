@@ -16,6 +16,7 @@ end
 
 function processDirectoryData(upperPath, relativePath, name)
     % Загрузка данных из файлов CSV
+    relativePath = fullfile(relativePath,name);
     [data, data2, data3] = loadDataFromFiles(upperPath, relativePath);
     % Длина трубы от 0 до 200 км
     km = linspace(0, 200, size(data, 2) - 1); 
