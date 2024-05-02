@@ -10,3 +10,5 @@
 #include <pipe/pipe_hydraulic_computations.h>
 #include <pipe/pipe_hydraulic_struct.h>
 #include <pipe/pipe_hydraulic_pde.h>
+#include <pipe/pipe_profile_uniform.h>
+
