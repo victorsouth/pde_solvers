@@ -83,11 +83,8 @@ public:
             if (initial_values[i].first == paramName) {
                 auto it = std::lower_bound(data[i].first.begin(), data[i].first.end(), settings.start_time + jump_time);
                 size_t position = std::distance(data[i].first.begin(), it);
-                // Также используется normalDis для имитации показаний датчиков
-                std::uniform_real_distribution<double> normalDis(jump_value * (1 - settings.value_relative_increment), jump_value * (1 + settings.value_relative_increment));
                 for (size_t j = position; j < data[i].first.size(); ++j) {
-                    double value = normalDis(gen);
-                    data[i].second[j] = value;
+                    data[i].second[j] += jump_value;
                 }
             }
         }
