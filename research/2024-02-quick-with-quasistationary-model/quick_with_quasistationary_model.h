@@ -410,9 +410,9 @@ public:
             }
             t += time_step;
 
-            task.step(dt, boundaries);
+            task.step(time_step, boundaries);
             task.advance();
-            task.print_all(t - dt, path);
+            task.print_all(t - time_step, path);
         } while (t < params.get_end_date());
     }
 };
@@ -444,15 +444,22 @@ TEST_F(QuasiStationaryModel, QuickWithQuasiStationaryModel)
 /// @brief Пример испольования метода характеристик с гидравлическим расчетом  
 TEST_F(QuasiStationaryModel, MocWithQuasiStationaryModel)
 {
-    //// Создаём папку с результатами и получаем путь к ней
-    //string path = prepare_research_folder_for_qsm_model();
-    //// Создаём исходные данные
-    //vector<pair<string, double>> timeseries_initial_values = {
-    //    { "Q", 0.2 }, // "Q" Расход по всей трубе (опционально), (м^3/с)
-    //    { "p_in", 6e6}, // "p_in" Давление на входе (опционально), (Па)
-    //    { "rho_in", 860 }, // "rho_in" Плотность жидкости, (кг/м3)
-    //    { "visc_in", 15e-6}, // "visc_in" Вязкость жидкости, (м2/сек)
-    //};
-    //// Вызываем метод расчета квазистационарной модели с помощью МХ
-    //calc_quasistationary_model<density_viscosity_layer_moc, moc_solver<1>>(path, timeseries_initial_values);
+    // Создаём папку с результатами и получаем путь к ней
+    string path = prepare_research_folder_for_qsm_model();
+    // Исходные данные для начального стационарного расчета
+    constexpr double density_initial = 850;
+    isothermal_quasistatic_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
+
+    // Временные ряды краевых условий для квазистационарного расчета
+    // Даем скачок по плотности на +10 кг/м^3
+    vector<pair<string, double>> timeseries_initial_values = {
+        { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
+        { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
+        { "rho_in", 10 + density_initial }, // "rho_in" Плотность жидкости, (кг/м3)
+        { "visc_in", initial_boundaries.viscosity }, // "visc_in" Вязкость жидкости, (м2/сек)
+    };
+    // Вызываем метод расчета квазистационарной модели с помощью МХ
+    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
+    calc_quasistationary_model<density_viscosity_layer_moc, moc_solver<1>>(
+        path, initial_boundaries, time_series);
 }

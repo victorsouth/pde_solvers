@@ -75,7 +75,7 @@ public:
             if (it != times.end()) {
                 size_t k = it - times.begin();
                 // запоминаем левую границу я
-                left_bound[i] = k - 1;
+                left_bound[i] = k == 0 ? 0 : k - 1;
                 if (times[k] == t) {
                     // точное число есть в данных
                     result[i] = values[k];
