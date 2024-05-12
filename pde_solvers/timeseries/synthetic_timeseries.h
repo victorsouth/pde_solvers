@@ -16,11 +16,11 @@ struct timeseries_generator_settings {
     /// @brief Время начала моделирования, с
     std::time_t start_time;
     /// @brief Время моделирования, с
-    std::time_t duration;
+    double duration;
     /// @brief Минимальное значение размаха шага, с
-    std::time_t sample_time_min;
+    double sample_time_min;
     /// @brief Максимальное значение размаха шага, с
-    std::time_t sample_time_max;
+    double sample_time_max;
     /// @brief Относительное минимальное отклонение значения параметров, доли
     double value_relative_decrement;
     /// @brief Относительное максимальное отклонение значения параметров, доли

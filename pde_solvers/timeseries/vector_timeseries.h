@@ -47,6 +47,10 @@ public:
     time_t get_astronomic_time(double model_time) const {
         return static_cast<time_t>(model_time + start_date + 0.5);
     };
+    /// @brief Возвращает последнее время временных рядов
+    time_t get_end_date() const {
+        return end_date;
+    }
 
     /// @brief Возвращает интерполированные значения 
     /// временных рядов в момент времени t
