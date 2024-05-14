@@ -83,6 +83,7 @@ protected:
     const pipe_properties_t& pipe;
     const double flow;
     const int solver_direction;
+    size_t flag_for_points;
 public:
     /// @brief Констуктор уравнения трубы
     /// @param pipe Ссылка на сущность трубы
@@ -90,12 +91,13 @@ public:
     /// @param flow Объемный расход
     /// @param solver_direction Направление расчета по Эйлеру, должно обязательно совпадать с параметром солвера Эйлера
     pipe_model_PQ_cell_parties_t(const pipe_properties_t& pipe, const vector<double>& rho_profile, const vector<double>& nu_profile, double flow,
-        int solver_direction)
+        int solver_direction, size_t flag_for_points = 0)
         : pipe(pipe)
         , rho_profile(rho_profile)
         , nu_profile(nu_profile)
         , flow(flow)
         , solver_direction(solver_direction)
+        , flag_for_points(flag_for_points)
     {}
 
     /// @brief Возвращает известную уравнению сетку
@@ -113,18 +115,28 @@ public:
 
         /// Обработка индекса в случае расчетов на границах трубы
         /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
-
-        size_t reo_index = solver_direction == +1
+        size_t reo_index = grid_index;
+        if (pipe.profile.getPointCount() == rho_profile.size())
+        { 
+            if (solver_direction == +1)
+                reo_index += 1;
+            else
+                reo_index -= 1;
+        }
+        else
+        { 
+            reo_index = solver_direction == +1
             ? grid_index
             : grid_index - 1;
-
+        }
         double rho = rho_profile[reo_index];
         double S_0 = pipe.wall.getArea();
         double v = flow / (S_0);
         double Re = v * pipe.wall.diameter / nu_profile[reo_index];
         double lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
         double tau_w = lambda / 8 * rho * v * abs(v);
-
+        if (reo_index == 1999)
+            double stop = 0;
         double height_derivative = pipe.profile.get_height_derivative(grid_index, solver_direction);
         double result = -4 * tau_w / pipe.wall.diameter - rho * M_G * height_derivative;
         return result;

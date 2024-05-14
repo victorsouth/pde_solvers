@@ -11,9 +11,9 @@ function main()
     %processDirectoryData(upperPath, relativePath, 'MocWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'ChangeFlowMocWithQuasiStationaryModel');
     % Загрузка и обработка данных из второй папки
-    processDirectoryData(upperPath, relativePath, 'QuickWithQuasiStationaryModel');
+    %processDirectoryData(upperPath, relativePath, 'QuickWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'IdealQuickWithQuasiStationaryModel');
-    %processDirectoryData(upperPath, relativePath, 'OptionalStepMocWithQuasiStationaryModel');
+    processDirectoryData(upperPath, relativePath, 'OptionalStepMocWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'IdealMocWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'ChangeFlowQuickWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'ChangeFlowOptionalStepMocWithQuasiStationaryModel');
@@ -223,9 +223,9 @@ function plotScaledData(data, data3, km, minValue3, maxValue3, name)
 figure;     
 %i = 2423;
 %i = 1694;
-%i = 1962;
+i = 1962;
 %i = 2021;
-i = 2694;
+%i = 2694;
         % Отображение данных
         subplot(2, 1, 1);
         plot(km, table2array(data(i, 2:end)), 'Color', 'r', LineWidth=2);
