@@ -8,10 +8,15 @@ function main()
     relativePath = fullfile('research_out', 'QSM_models', 'QuasiStationaryModel');
     
     % Загрузка и обработка данных из первой папки
-    processDirectoryData(upperPath, relativePath, 'MocWithQuasiStationaryModel');
-
+    %processDirectoryData(upperPath, relativePath, 'MocWithQuasiStationaryModel');
+    %processDirectoryData(upperPath, relativePath, 'ChangeFlowMocWithQuasiStationaryModel');
     % Загрузка и обработка данных из второй папки
     processDirectoryData(upperPath, relativePath, 'QuickWithQuasiStationaryModel');
+    %processDirectoryData(upperPath, relativePath, 'IdealQuickWithQuasiStationaryModel');
+    %processDirectoryData(upperPath, relativePath, 'OptionalStepMocWithQuasiStationaryModel');
+    %processDirectoryData(upperPath, relativePath, 'IdealMocWithQuasiStationaryModel');
+    %processDirectoryData(upperPath, relativePath, 'ChangeFlowQuickWithQuasiStationaryModel');
+    %processDirectoryData(upperPath, relativePath, 'ChangeFlowOptionalStepMocWithQuasiStationaryModel');
 end
 
 function processDirectoryData(upperPath, relativePath, name)
@@ -25,7 +30,8 @@ function processDirectoryData(upperPath, relativePath, name)
     [minValue2, maxValue2] = calculateMinMax2(data2);
     [minValue3, maxValue3] = calculateMinMax3(data3);
     [minValue4, maxValue4] = calculateMinMax4(data2);
-
+    %minValue4 = 2.43e+06;
+    %maxValue4 = 2.44e+06;
     % Отображение данных перед началом цикла и получение гифки
     %plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name);
     %createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name);
@@ -99,12 +105,13 @@ function plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValu
 
     % Третий подграфик
     subplot(4, 1, 3);
-    if strcmp(name, 'MocWithQuasiStationaryModel')
-        plot(km, table2array(data3(1, 2:end)), 'Color', 'b', LineWidth=2);
-    else
-        % Создание нового массива km_interp с размером 2000
+    if strcmp(name, 'QuickWithQuasiStationaryModel') || strcmp(name, 'IdealQuickWithQuasiStationaryModel')|| strcmp(name, 'ChangeFlowQuickWithQuasiStationaryModel')
+         % Создание нового массива km_interp с размером 2000
         km_interp = conv(km, [0.5, 0.5], 'valid');
         stairs(km_interp, table2array(data3(1, 2:end)), 'b', 'LineWidth', 2);
+        
+    else
+        plot(km, table2array(data3(1, 2:end)), 'Color', 'b', LineWidth=2);
     end
     xlabel('Труба, км');
     ylabel('Плотность, кг/м3');
@@ -166,12 +173,13 @@ function createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxVal
         hold off;
 
         subplot(4, 1, 3);
-        if strcmp(name, 'MocWithQuasiStationaryModel')            
-            plot(km, table2array(data3(i, 2:end)), 'Color', 'b', LineWidth=2);
-        else
+        if strcmp(name, 'QuickWithQuasiStationaryModel') || strcmp(name, 'IdealQuickWithQuasiStationaryModel')|| strcmp(name, 'ChangeFlowQuickWithQuasiStationaryModel')   
             % Создание нового массива km_interp с размером 2000
             km_interp = conv(km, [0.5, 0.5], 'valid');
             stairs(km_interp, table2array(data3(i, 2:end)), 'b', 'LineWidth', 2);
+            
+        else
+            plot(km, table2array(data3(i, 2:end)), 'Color', 'b', LineWidth=2);
         end
         xlabel('Труба, км');
         ylabel('Плотность, кг/м3');
@@ -213,14 +221,19 @@ end
 
 function plotScaledData(data, data3, km, minValue3, maxValue3, name)
 figure;     
-i = 2021;
+%i = 2423;
+%i = 1694;
+%i = 1962;
+%i = 2021;
+i = 2694;
         % Отображение данных
         subplot(2, 1, 1);
         plot(km, table2array(data(i, 2:end)), 'Color', 'r', LineWidth=2);
         hold on;
         plot(km, table2array(data(1, 2:end)), 'Color', 'b', LineWidth=2);
         xlim([192, 198]);
-        ylim([3.9*10000, 4.15*10000]);
+        %xlim([165, 175]);
+        ylim([4*10000, 4.11*10000]);
         xlabel('Труба, км');
         ylabel('Разница давлений, Па');
         title('Профиль разницы давлений');
@@ -229,17 +242,18 @@ i = 2021;
 
 
         subplot(2, 1, 2);
-        if strcmp(name, 'MocWithQuasiStationaryModel')            
-            plot(km, table2array(data3(i, 2:end)), 'Color', 'b', LineWidth=2);
-        else
+        if strcmp(name, 'QuickWithQuasiStationaryModel') || strcmp(name, 'IdealQuickWithQuasiStationaryModel')|| strcmp(name, 'ChangeFlowQuickWithQuasiStationaryModel')     
             % Создание нового массива km_interp с размером 2000
             km_interp = conv(km, [0.5, 0.5], 'valid');
             stairs(km_interp, table2array(data3(i, 2:end)), 'b', 'LineWidth', 2);
+        else
+            plot(km, table2array(data3(i, 2:end)), 'Color', 'b', LineWidth=2);
         end
         xlabel('Труба, км');
         ylabel('Плотность, кг/м3');
         title('Профиль плотности');
         xlim([192, 198]);
+        %xlim([165, 175]);
         ylim([minValue3, maxValue3]);
         grid on;
 end

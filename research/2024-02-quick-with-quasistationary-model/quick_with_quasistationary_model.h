@@ -266,10 +266,10 @@ private:
         }
         else {
             // Шаг по плотности
-            Solver solver_rho(advection_model, density_wrapper);
+            quickest_ultimate_fv_solver solver_rho(advection_model, density_wrapper);
             solver_rho.step(dt, boundaries.density, boundaries.density);
             // Шаг по вязкости
-            Solver solver_nu(advection_model, viscosity_wrapper);
+            quickest_ultimate_fv_solver solver_nu(advection_model, viscosity_wrapper);
             solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
 
         }
@@ -362,15 +362,18 @@ protected:
     }
 
 public:
-    vector_timeseries_t generate_timeseries(const vector<pair<string, double>>& timeseries_initial_values) 
+    vector_timeseries_t generate_timeseries(const vector<pair<string, double>>& timeseries_initial_values, 
+        timeseries_generator_settings settings = timeseries_generator_settings::default_settings(), 
+        double jump_time = 0, double jump_value = 0, string name_parameter = "")
     {
-        // Объявляем структуру с исходными данными и настроечными параметрами
-        timeseries_generator_settings settings = timeseries_generator_settings::default_settings();
         // Задаем время 04.08.2024  16:42:53
         settings.start_time = 1712583773;
         // Генерируем данные
         synthetic_time_series_generator data_time_series(timeseries_initial_values, settings);
-
+        if (jump_time != 0 && name_parameter != "")
+        {
+            data_time_series.apply_jump(jump_time, jump_value, name_parameter);
+        }
         // Получаем данные
         const auto& data = data_time_series.get_data();
         // Помещаем временные ряды в вектор
@@ -389,8 +392,6 @@ public:
         const isothermal_quasistatic_task_boundaries_t& initial_boundaries,
         const vector_timeseries_t& params, double dt = std::numeric_limits<double>::quiet_NaN())
     {
-        //isothermal_quasistatic_task_buffer_t<Layer> buffer(pipe.profile.getPointCount());
-
         isothermal_quasistatic_task_t<Layer, Solver> task(pipe);
         task.solve(initial_boundaries);
 
@@ -437,7 +438,37 @@ TEST_F(QuasiStationaryModel, QuickWithQuasiStationaryModel)
     };
     // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
+    double dt = 75;
+    calc_quasistationary_model<density_viscosity_cell_layer, quickest_ultimate_fv_solver>(
+        path, initial_boundaries, time_series, dt);
+}
+/// @brief Пример испольования метода Quickest Ultimate с гидравлическим расчетом  
+TEST_F(QuasiStationaryModel, IdealQuickWithQuasiStationaryModel)
+{
+    // Создаём папку с результатами и получаем путь к ней
+    string path = prepare_research_folder_for_qsm_model();
 
+    // Исходные данные для начального стационарного расчета
+    constexpr double density_initial = 850;
+    isothermal_quasistatic_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
+
+    // Временные ряды краевых условий для квазистационарного расчета
+    // Даем скачок по плотности на +10 кг/м^3
+    vector<pair<string, double>> timeseries_initial_values = {
+        { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
+        { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
+        { "rho_in", 10 + density_initial }, // "rho_in" Плотность жидкости, (кг/м3)
+        { "visc_in", initial_boundaries.viscosity }, // "visc_in" Вязкость жидкости, (м2/сек)
+    };
+
+        // Объявляем структуру с исходными данными и настроечными параметрами
+    timeseries_generator_settings settings = timeseries_generator_settings::default_settings();
+    settings.value_relative_decrement = 0;
+    settings.value_relative_increment = 0;
+    settings.sample_time_max = 200;
+    settings.sample_time_min = 200;
+    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
+    // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
     calc_quasistationary_model<density_viscosity_cell_layer, quickest_ultimate_fv_solver>(
         path, initial_boundaries, time_series);
 }
@@ -460,6 +491,89 @@ TEST_F(QuasiStationaryModel, MocWithQuasiStationaryModel)
     };
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
+    double dt = 75;
+    calc_quasistationary_model<density_viscosity_layer_moc, moc_solver<1>>(
+        path, initial_boundaries, time_series, dt);
+}
+/// @brief Пример испольования метода характеристик с гидравлическим расчетом  
+TEST_F(QuasiStationaryModel, OptionalStepMocWithQuasiStationaryModel)
+{
+    // Создаём папку с результатами и получаем путь к ней
+    string path = prepare_research_folder_for_qsm_model();
+    // Исходные данные для начального стационарного расчета
+    constexpr double density_initial = 850;
+    isothermal_quasistatic_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
+
+    // Временные ряды краевых условий для квазистационарного расчета
+    // Даем скачок по плотности на +10 кг/м^3
+    vector<pair<string, double>> timeseries_initial_values = {
+        { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
+        { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
+        { "rho_in", 10 + density_initial }, // "rho_in" Плотность жидкости, (кг/м3)
+        { "visc_in", initial_boundaries.viscosity }, // "visc_in" Вязкость жидкости, (м2/сек)
+    };
+    // Вызываем метод расчета квазистационарной модели с помощью МХ
+    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
+    calc_quasistationary_model<density_viscosity_layer_moc, moc_solver<1>>(
+        path, initial_boundaries, time_series);
+}
+
+/// @brief Пример испольования метода характеристик с гидравлическим расчетом  
+TEST_F(QuasiStationaryModel, IdealMocWithQuasiStationaryModel)
+{
+    // Создаём папку с результатами и получаем путь к ней
+    string path = prepare_research_folder_for_qsm_model();
+    // Исходные данные для начального стационарного расчета
+    constexpr double density_initial = 850;
+    isothermal_quasistatic_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
+
+    // Временные ряды краевых условий для квазистационарного расчета
+    // Даем скачок по плотности на +10 кг/м^3
+    vector<pair<string, double>> timeseries_initial_values = {
+        { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
+        { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
+        { "rho_in", 10 + density_initial }, // "rho_in" Плотность жидкости, (кг/м3)
+        { "visc_in", initial_boundaries.viscosity }, // "visc_in" Вязкость жидкости, (м2/сек)
+    };
+    // Объявляем структуру с исходными данными и настроечными параметрами
+    timeseries_generator_settings settings = timeseries_generator_settings::default_settings();
+    settings.value_relative_decrement = 0;
+    settings.value_relative_increment = 0;
+    settings.sample_time_max = 200;
+    settings.sample_time_min = 200;
+    // Вызываем метод расчета квазистационарной модели с помощью МХ
+    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
+    calc_quasistationary_model<density_viscosity_layer_moc, moc_solver<1>>(
+        path, initial_boundaries, time_series);
+}
+
+/// @brief Пример испольования метода характеристик с гидравлическим расчетом  
+TEST_F(QuasiStationaryModel, IdealImpulsMocWithQuasiStationaryModel)
+{
+    // Создаём папку с результатами и получаем путь к ней
+    string path = prepare_research_folder_for_qsm_model();
+    // Исходные данные для начального стационарного расчета
+    constexpr double density_initial = 850;
+    isothermal_quasistatic_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
+
+    // Временные ряды краевых условий для квазистационарного расчета
+    // Даем скачок по плотности на +10 кг/м^3
+    vector<pair<string, double>> timeseries_initial_values = {
+        { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
+        { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
+        { "rho_in", 10 + density_initial }, // "rho_in" Плотность жидкости, (кг/м3)
+        { "visc_in", initial_boundaries.viscosity }, // "visc_in" Вязкость жидкости, (м2/сек)
+    };
+    // Объявляем структуру с исходными данными и настроечными параметрами
+    timeseries_generator_settings settings = timeseries_generator_settings::default_settings();
+    settings.value_relative_decrement = 0;
+    settings.value_relative_increment = 0;
+    settings.sample_time_max = 200;
+    settings.sample_time_min = 200;
+    double jump_time = 5000;
+    double jump_value = -10;
+    // Вызываем метод расчета квазистационарной модели с помощью МХ
+    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings, jump_time, jump_value, "rho_in");
     calc_quasistationary_model<density_viscosity_layer_moc, moc_solver<1>>(
         path, initial_boundaries, time_series);
 }
