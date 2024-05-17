@@ -16,11 +16,11 @@ struct timeseries_generator_settings {
     /// @brief Время начала моделирования, с
     std::time_t start_time;
     /// @brief Время моделирования, с
-    std::time_t duration;
+    double duration;
     /// @brief Минимальное значение размаха шага, с
-    std::time_t sample_time_min;
+    double sample_time_min;
     /// @brief Максимальное значение размаха шага, с
-    std::time_t sample_time_max;
+    double sample_time_max;
     /// @brief Относительное минимальное отклонение значения параметров, доли
     double value_relative_decrement;
     /// @brief Относительное максимальное отклонение значения параметров, доли
@@ -83,11 +83,8 @@ public:
             if (initial_values[i].first == paramName) {
                 auto it = std::lower_bound(data[i].first.begin(), data[i].first.end(), settings.start_time + jump_time);
                 size_t position = std::distance(data[i].first.begin(), it);
-                // Также используется normalDis для имитации показаний датчиков
-                std::uniform_real_distribution<double> normalDis(jump_value * (1 - settings.value_relative_increment), jump_value * (1 + settings.value_relative_increment));
                 for (size_t j = position; j < data[i].first.size(); ++j) {
-                    double value = normalDis(gen);
-                    data[i].second[j] = value;
+                    data[i].second[j] += jump_value;
                 }
             }
         }
