@@ -116,8 +116,10 @@ public:
         /// Обработка индекса в случае расчетов на границах трубы
         /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
         size_t reo_index = grid_index;
+        
         if (pipe.profile.getPointCount() == rho_profile.size())
         { 
+            // Случай расчета партий в точках (например для метода характеристик)
             if (solver_direction == +1)
                 reo_index += 1;
             else
@@ -125,6 +127,7 @@ public:
         }
         else
         { 
+            // Случай расчета партий в ячейках (например для quickest ultimate) 
             reo_index = solver_direction == +1
             ? grid_index
             : grid_index - 1;
@@ -135,8 +138,6 @@ public:
         double Re = v * pipe.wall.diameter / nu_profile[reo_index];
         double lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
         double tau_w = lambda / 8 * rho * v * abs(v);
-        if (reo_index == 1999)
-            double stop = 0;
         double height_derivative = pipe.profile.get_height_derivative(grid_index, solver_direction);
         double result = -4 * tau_w / pipe.wall.diameter - rho * M_G * height_derivative;
         return result;
