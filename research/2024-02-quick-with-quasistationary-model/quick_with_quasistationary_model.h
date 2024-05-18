@@ -186,12 +186,6 @@ struct isothermal_quasistatic_task_boundaries_t {
         pressure_in = values[1];
         density = values[2];
         viscosity = values[3];
-
-        //boundaries.volumetric_flow = values_in_time_model[0];
-        //boundaries.pressure_in = values_in_time_model[1];
-        //boundaries.density = values_in_time_model[2];
-        //boundaries.viscosity = values_in_time_model[3];
-
     }
 
     static isothermal_quasistatic_task_boundaries_t default_values() {
@@ -203,9 +197,6 @@ struct isothermal_quasistatic_task_boundaries_t {
         return result;
     }
 };
-/// @brief Проблемно-ориентированный класс для задачи PQ
-
-
 /// @brief Расчетная задача (task) для гидравлического изотермического 
 /// квазистационарного расчета в условиях движения партий с разной плотностью и вязкостью
 /// Расчет партий делается методом характеристик или Quickest-Ultimate
@@ -377,7 +368,7 @@ protected:
 public:
     vector_timeseries_t generate_timeseries(const vector<pair<string, double>>& timeseries_initial_values, 
         timeseries_generator_settings settings = timeseries_generator_settings::default_settings(), 
-        double jump_time = 0, double jump_value = 0, string name_parameter = "")
+        time_t jump_time = 0, double jump_value = 0, string name_parameter = "")
     {
         // Задаем время 04.08.2024  16:42:53
         settings.start_time = 1712583773;
@@ -395,26 +386,27 @@ public:
     }
 
 
-    /// @brief Считаем квазистационарную модель
+    /// @brief Делаю стационарный расчет (с помощью initial boundaries),
+    /// а затем квазистационарный расчет по краевым условиям (boundary_timeseries)
     /// @tparam Layer Слой для расчета плотности, вязкости для численного метода 
     /// @tparam Solver Численный метод расчета движения партий
     /// @param path Путь с результатом
     /// @param timeseries_initial_values Исходные условия для генерации временных рядов
     template <typename Layer, typename Solver>
-    void calc_quasistationary_model(const string& path, 
+    void perform_quasistatic_simulation(const string& path, 
         const isothermal_quasistatic_task_boundaries_t& initial_boundaries,
-        const vector_timeseries_t& params, double dt = std::numeric_limits<double>::quiet_NaN())
+        const vector_timeseries_t& boundary_timeseries, double dt = std::numeric_limits<double>::quiet_NaN())
     {
         isothermal_quasistatic_task_t<Layer, Solver> task(pipe);
         task.solve(initial_boundaries);
 
         task.advance();
 
-        time_t t = params.get_start_date(); // Момент времени начала моделирования
+        time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
         do
         {
             // Интерополируем значения параметров в заданный момент времени
-            vector<double> values_in_time_model = params(t);
+            vector<double> values_in_time_model = boundary_timeseries(t);
             isothermal_quasistatic_task_boundaries_t boundaries(values_in_time_model);
 
             double time_step = dt;
@@ -427,7 +419,7 @@ public:
             task.step(time_step, boundaries);
             task.advance();
             task.print_all(t - time_step, path);
-        } while (t < params.get_end_date());
+        } while (t < boundary_timeseries.get_end_date());
     }
 };
 
@@ -452,7 +444,7 @@ TEST_F(QuasiStationaryModel, QuickWithQuasiStationaryModel)
     // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
     double dt = 75;
-    calc_quasistationary_model<density_viscosity_cell_layer, quickest_ultimate_fv_solver>(
+    perform_quasistatic_simulation<density_viscosity_cell_layer, quickest_ultimate_fv_solver>(
         path, initial_boundaries, time_series, dt);
 }
 /// @brief Пример испольования метода Quickest Ultimate с гидравлическим расчетом  
@@ -482,7 +474,7 @@ TEST_F(QuasiStationaryModel, IdealQuickWithQuasiStationaryModel)
     settings.sample_time_min = 200;
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
     // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
-    calc_quasistationary_model<density_viscosity_cell_layer, quickest_ultimate_fv_solver>(
+    perform_quasistatic_simulation<density_viscosity_cell_layer, quickest_ultimate_fv_solver>(
         path, initial_boundaries, time_series);
 }
 /// @brief Пример испольования метода характеристик с гидравлическим расчетом  
@@ -505,7 +497,7 @@ TEST_F(QuasiStationaryModel, MocWithQuasiStationaryModel)
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
     double dt = 75;
-    calc_quasistationary_model<density_viscosity_layer_moc, moc_solver<1>>(
+    perform_quasistatic_simulation<density_viscosity_layer_moc, moc_solver<1>>(
         path, initial_boundaries, time_series, dt);
 }
 /// @brief Пример испольования метода характеристик с гидравлическим расчетом  
@@ -527,7 +519,7 @@ TEST_F(QuasiStationaryModel, OptionalStepMocWithQuasiStationaryModel)
     };
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
-    calc_quasistationary_model<density_viscosity_layer_moc, moc_solver<1>>(
+    perform_quasistatic_simulation<density_viscosity_layer_moc, moc_solver<1>>(
         path, initial_boundaries, time_series);
 }
 
@@ -556,7 +548,7 @@ TEST_F(QuasiStationaryModel, IdealMocWithQuasiStationaryModel)
     settings.sample_time_min = 200;
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
-    calc_quasistationary_model<density_viscosity_layer_moc, moc_solver<1>>(
+    perform_quasistatic_simulation<density_viscosity_layer_moc, moc_solver<1>>(
         path, initial_boundaries, time_series);
 }
 
@@ -587,6 +579,6 @@ TEST_F(QuasiStationaryModel, IdealImpulsMocWithQuasiStationaryModel)
     double jump_value = -10;
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings, jump_time, jump_value, "rho_in");
-    calc_quasistationary_model<density_viscosity_layer_moc, moc_solver<1>>(
+    perform_quasistatic_simulation<density_viscosity_layer_moc, moc_solver<1>>(
         path, initial_boundaries, time_series);
 }
