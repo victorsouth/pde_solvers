@@ -72,7 +72,7 @@ protected: // обработка координаток
         return generate_uniform_grid(desired_uniform_segment, segment_count + 1, initial_coordinate);
     }
 
-protected: // обработка высоток и несущей
+protected:  // обработка коротких труб
 	/// @brief Обработка случая короткой трубы исходного профиля по отношению к желаемому шагу по координате
 	/// @param new_coordinates Координатная сетка нового профиля
 	/// @param exact_coordinates Координатная сетка исходного профиля
@@ -117,7 +117,7 @@ protected: // обработка высоток и несущей
 			exact_coordinates.push_back(new_coordinates.back());
 		}
 	}
-
+private: // обработка высоток и несущей
 	/// @brief Увеличение количества точек в случае разреженного исходного профиля
 	/// @param source_prof Исходный профиль
 	/// @param max_segment Длина желаемого сегмента
