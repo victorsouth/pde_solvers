@@ -1,6 +1,9 @@
 ﻿
 #include <fstream>
-using namespace pde_solvers;
+
+namespace pde_solvers {
+;
+
 using std::max;
 using std::string;
 
@@ -9,7 +12,7 @@ using std::string;
 /// первая строка с названием колонок, следующие строки в формате km;m
 /// @param filename Путь к файлу
 /// @return Вектор векторов - координаты и высотки
-inline vector<vector<double>> pars_coord_heights(const std::string filename)
+inline vector<vector<double>> read_coordinates_and_heights_file(const std::string filename)
 {
 	std::ifstream file(filename);
 	std::string line;
@@ -40,7 +43,7 @@ inline vector<vector<double>> pars_coord_heights(const std::string filename)
 /// из исходного профиля, который в общем случае имеет непостоянный шаг сетки
 class pipe_profile_uniform
 {
-public:
+protected: // обработка координаток
 	/// @brief Создание сетки нового профиля с заданным шагом по координате
 	/// @param segment_len Длина шага по координате
 	/// @param point_cnt Количество точек профиля - на 1 больше чем количество сегментов
@@ -57,11 +60,24 @@ public:
 		return grid;
 	}
 
+    static vector<double> generate_uniform_grid(double initial_coordinate,
+        double pipe_length, double desired_uniform_segment)
+    {
+        // В большинстве случаев длина сегмента естественным образом вырастет по отношению к желаемому
+        // В случае короткой трубы, меньшей desired_uniform_segment, обеспечивается как минимум один 
+        // сегмент длиной desired_uniform_segment
+        size_t segment_count = max<size_t>(1, static_cast<size_t>(pipe_length / desired_uniform_segment));
+        desired_uniform_segment = max<double>(desired_uniform_segment, pipe_length / segment_count);
+
+        return generate_uniform_grid(desired_uniform_segment, segment_count + 1, initial_coordinate);
+    }
+
+protected: // обработка высоток и несущей
 	/// @brief Обработка случая короткой трубы исходного профиля по отношению к желаемому шагу по координате
 	/// @param new_coordinates Координатная сетка нового профиля
 	/// @param exact_coordinates Координатная сетка исходного профиля
 	/// @param _exact_parameters Профиль из исходных данных
-	static void extrapolate_values(const vector<double>& new_coordinates,
+	static void extend_values(const vector<double>& new_coordinates,
 		const vector<double>& exact_coordinates, vector<double>* _exact_parameters)
 	{
 		vector<double>& exact_parameters = *_exact_parameters;
@@ -84,7 +100,7 @@ public:
 	/// @brief Обработка случая короткой трубы исходного профиля по отношению к желаемому шагу по координате
 	/// @param new_coordinates Координатная сетка нового профиля
 	/// @param exact_coordinates Координатная сетка исходного профиля
-	static void extrapolate_arguments(const vector<double>& new_coordinates,
+	static void extend_arguments(const vector<double>& new_coordinates,
 		vector<double>* _exact_coordinates)
 	{
 		vector<double>& exact_coordinates = *_exact_coordinates;
@@ -95,7 +111,7 @@ public:
 			exact_coordinates.insert(exact_coordinates.begin(), new_coordinates.front());
 		}
 
-		// если КОНЕЧНАЯ точка new_coordinates меньше КОНЕЧНОЙ точки exact_coordinates, 
+		// если КОНЕЧНАЯ точка new_coordinates больше КОНЕЧНОЙ точки exact_coordinates, 
 		// экстраполировать exact_coordinates ВПРАВО
 		if (new_coordinates.back() - exact_coordinates.back() > 1e-8) {
 			exact_coordinates.push_back(new_coordinates.back());
@@ -226,77 +242,107 @@ public:
 
 		return result;
 	}
+    
+    /// @brief Формирует профили высоток и несущей для заднного равномерного профиля координат
+    /// Подразумевает, что труба source_profile не короче трубы uniform_coordinates
+    /// @return пара ["равномерные" высотки; "равномерная" несущая]
+    static pair<vector<double>, vector<double>> create_uniform_height_and_capacity(PipeProfile source_profile, 
+        const vector<double>& uniform_coordinates) 
+    {
+        // Увеличение плотности в случае разреженного профиля
+        double segment_length = uniform_coordinates[1] - uniform_coordinates[0];
+        source_profile = subdivide_irregular_profile(source_profile, segment_length / 2);
+
+        // Определение границ областей притяжения точек нового профиля
+        vector<double> influence_segments = generate_influence_segments(uniform_coordinates);
+
+        // получения индексов начада областей притяжения на исходном профиле
+        vector<size_t> influence_segment_indices =
+            get_decimated_coordinates(source_profile.coordinates, influence_segments);
+
+        // Определение высотных отметок на новом профиле по максимальному значению в соответствующей области притяжения
+        vector<double> uniform_heights = execute_function_on_profile_segment(influence_segment_indices,
+            source_profile.heights, std::max_element<vector<double>::const_iterator>);
+
+        vector<double> uniform_capacity = execute_function_on_profile_segment(influence_segment_indices,
+            source_profile.capacity, std::min_element<vector<double>::const_iterator>);
+
+        // Проверка на соответствие количества точек координат количеству высотных отметок
+        if (uniform_coordinates.size() != uniform_heights.size()) {
+            throw std::logic_error("pipeline_profile_t::create_uniform_profile(): coordinates.size() != heights.size()");
+        }
+
+        return std::make_pair(std::move(uniform_heights), std::move(uniform_capacity));
+    }
+
+public:
 
 	/// @brief Создание профиля с постоянным шагом по координате
 	/// @param source_profile Исходный профиль с непостоянным 
 	/// в общем случае шагом по координате
 	/// @param desired_uniform_segment Желаемый шаг по координате для новой сетки
 	/// @return Профиль с постоянным близким к желаемому шагом по координате
-	static PipeProfile create_uniform_profile(PipeProfile source_profile, double desired_uniform_segment)
+	static PipeProfile create_uniform_profile(const PipeProfile& source_profile, double desired_uniform_segment)
 	{
-		// В большинстве случаев длина сегмента естественным образом вырастет по отношению к желаемому
-		// В случае короткой трубы, меньшей desired_uniform_segment, обеспечивается как минимум один 
-		// сегмент длиной desired_uniform_segment
-		size_t segment_count = max<size_t>(1, static_cast<size_t>(source_profile.getLength() / desired_uniform_segment));
-		desired_uniform_segment = max<double>(desired_uniform_segment, source_profile.getLength() / segment_count);
-
 		// Создание итогого профиля
 		PipeProfile uniform_profile;
 		// Создание сетки с постоянным шагом по координате
-		uniform_profile.coordinates = generate_uniform_grid(desired_uniform_segment, segment_count + 1, source_profile.coordinates.front());
-		uniform_profile.capacity = source_profile.capacity;
+        uniform_profile.coordinates = generate_uniform_grid(source_profile.coordinates.front(),
+            source_profile.getLength(), desired_uniform_segment);
 
-		// Обработка случаев короткой трубы
-		extrapolate_values(uniform_profile.coordinates, source_profile.coordinates, &source_profile.heights);
-		extrapolate_arguments(uniform_profile.coordinates, &source_profile.coordinates);
+        // Обработка случая короткой трубы. 
+        // Может получиться, если source_profile короче, чем desired_uniform_segment
+        // В этом случае удлиняем исходную трубу
+        PipeProfile extended_source_profile = source_profile;
+        extend_values(uniform_profile.coordinates, extended_source_profile.coordinates, 
+            &extended_source_profile.heights); 
+        extend_values(uniform_profile.coordinates, extended_source_profile.coordinates,
+            &extended_source_profile.capacity);
+        extend_arguments(uniform_profile.coordinates,
+            &extended_source_profile.coordinates);
 
-		// Увеличение плотности в случае разреженного профиля
-		source_profile = subdivide_irregular_profile(source_profile, desired_uniform_segment / 2);
-
-		// Определение границ областей притяжения точек нового профиля
-		vector<double> influence_segments = generate_influence_segments(uniform_profile.coordinates);
-
-		// получения индексов начада областей притяжения на исходном профиле
-		vector<size_t> influence_segment_indices =
-			get_decimated_coordinates(source_profile.coordinates, influence_segments);
-
-		// Определение высотных отметок на новом профиле по максимальному значению в соответствующей области притяжения
-		uniform_profile.heights = execute_function_on_profile_segment(influence_segment_indices,
-			source_profile.heights, std::max_element<vector<double>::const_iterator>);
-
-		// Проверка на соответствие количества точек координат количеству высотных отметок
-		if (uniform_profile.coordinates.size() != uniform_profile.heights.size()) {
-			throw std::logic_error("pipeline_profile_t::create_uniform_profile(): coordinates.size() != heights.size()");
-		}
+        // Подготовка профиля трассы и несущей способности 
+        // на основе (возможно удлиненной) исходной трубы и подготовленного равномерного профиля
+        std::tie(uniform_profile.heights, uniform_profile.capacity) =
+            create_uniform_height_and_capacity(extended_source_profile, uniform_profile.coordinates);
 
 		return uniform_profile;
 
 	}
 
-	/// @brief Создание профиля с постоянным шагом по данным профиля из файла csv
+    /// @brief Создание профиля с постоянным шагом
+    /// @param coord_heights Вектор двух векторов - координат и соответствующих им высоток
+    /// @param desired_segment Желаемый постоянный шаг по координате новой сетки профиля 
+    /// @return Профиль с постоянным шагом по координате
+    static PipeProfile get_uniform_profile(const vector<vector<double>>& coord_heights,
+        double desired_segment, double capacity_value = 10e6)
+    {
+        PipeProfile source_prof;
+        source_prof.coordinates = coord_heights[0];
+        source_prof.heights = coord_heights[1];
+
+        // Заглушка для несущей
+        source_prof.capacity = vector<double>(source_prof.getPointCount(), capacity_value);
+
+        return create_uniform_profile(source_prof, desired_segment);
+    }
+
+    /// @brief Создание профиля с постоянным шагом по данным профиля из файла csv
 	/// @param desired_segment Желаемый постоянный шаг новой сетки профиля
 	/// @param filename Название файла с координатами и соответствующими высотками
 	/// @return Профиль с постоянным шагом по координате
-	static PipeProfile get_uniform_profile_from_file(const double desired_segment, const string filename)
+	static PipeProfile get_uniform_profile_from_csv(const double desired_segment, const string& filename)
 	{
-		vector<vector<double>> km_heights = pars_coord_heights(filename);
+		vector<vector<double>> km_heights = read_coordinates_and_heights_file(filename);
 		return get_uniform_profile(km_heights, desired_segment);
 	}
-
-	/// @brief Создание профиля с постоянным шагом
-	/// @param coord_heights Вектор двух векторов - координат и соответствующих им высоток
-	/// @param desired_segment Желаемый постоянный шаг по координате новой сетки профиля 
-	/// @return Профиль с постоянным шагом по координате
-	static PipeProfile get_uniform_profile(const vector<vector<double>> coord_heights, const double desired_segment)
-	{
-		PipeProfile source_prof;
-		source_prof.coordinates = coord_heights[0];
-		source_prof.heights = coord_heights[1];
-
-		// Заглушка для несущей
-		source_prof.capacity = vector<double>(source_prof.getPointCount(), 10e6);
-
-		return create_uniform_profile(source_prof, desired_segment);
-	}
-
 };
+
+/// @brief Создание профиля с заданным постоянным шагом по координате на основе любого исходного профиля
+inline PipeProfile create_uniform_profile(const PipeProfile& source_profile, double desired_uniform_segment)
+{
+    return pipe_profile_uniform::create_uniform_profile(source_profile, desired_uniform_segment);
+}
+
+
+}

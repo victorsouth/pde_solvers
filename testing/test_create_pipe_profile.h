@@ -1,10 +1,10 @@
 ﻿#pragma once
-#include <cmath>
+//#include <cmath>
 #include <pde_solvers/pde_solvers.h>
 
 /// @brief Генерация значейний высотных отметок профиля
 /// @param coords Сетка координат генерируемого профиля
-inline vector<double> build_heights(const const vector<double>& coords)
+inline vector<double> build_heights(const vector<double>& coords)
 {
 	size_t point_cnt = coords.size();
 	vector<double> res;
@@ -158,6 +158,6 @@ TEST(CreatingProfile, UseCaseFromFile)
 	double desired_dx = 100;
 
 	// Создаём новый профиль с постоянным шагом
-	PipeProfile new_prof = pipe_profile_uniform::get_uniform_profile_from_file(desired_dx, file_name);
+	PipeProfile new_prof = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, file_name);
 }
 
