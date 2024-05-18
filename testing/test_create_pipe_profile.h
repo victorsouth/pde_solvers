@@ -1,6 +1,4 @@
 ﻿#pragma once
-//#include <cmath>
-#include <pde_solvers/pde_solvers.h>
 
 /// @brief Генерация значейний высотных отметок профиля
 /// @param coords Сетка координат генерируемого профиля
