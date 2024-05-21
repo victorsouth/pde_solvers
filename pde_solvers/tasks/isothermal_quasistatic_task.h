@@ -244,7 +244,9 @@ protected:
 
         std::ofstream  file(filename, std::ios::app);
         if (file.is_open()) {
-            file << std::put_time(std::localtime(&dt), "%c") << ";";
+            std::tm tm_buf;
+            localtime_s(&tm_buf, &dt);
+            file << std::put_time(&tm_buf, "%c") << ";";
             for (int j = 0; j < layer.size(); j++)
             {
                 file << std::to_string(layer[j]) << ";";
@@ -254,7 +256,7 @@ protected:
         }
     }
 public:
-    void print_all(const double& dt, const string& path) {
+    void print_all(const time_t& dt, const string& path) {
         auto& current = buffer.buffer.current();
         print(current.density, dt, path, "density");
         print(current.viscosity, dt, path, "viscosity");

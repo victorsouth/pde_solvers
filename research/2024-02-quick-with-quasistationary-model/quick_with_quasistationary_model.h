@@ -87,11 +87,11 @@ public:
                 double v = boundaries.volumetric_flow / pipe.wall.getArea(); 
                 time_step = task.get_time_step_assuming_max_speed(v);
             }
-            t += time_step;
+            t += static_cast<time_t>(time_step);
 
             task.step(time_step, boundaries);
             task.advance();
-            task.print_all(t - time_step, path);
+            task.print_all(t - static_cast<time_t>(time_step), path);
         } while (t < boundary_timeseries.get_end_date());
     }
 };
@@ -248,7 +248,7 @@ TEST_F(QuasiStationaryModel, IdealImpulsMocWithQuasiStationaryModel)
     settings.value_relative_increment = 0;
     settings.sample_time_max = 200;
     settings.sample_time_min = 200;
-    double jump_time = 5000;
+    time_t jump_time = 5000;
     double jump_value = -10;
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings, jump_time, jump_value, "rho_in");
