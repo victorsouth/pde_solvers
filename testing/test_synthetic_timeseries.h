@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <pde_solvers/timeseries.h>
 
-/// @brief Проверка 
+/// @brief Проверка создания синтетического временного ряда
 TEST(SyntheticTimeSeries, CheckGeneration)
 {
     // Задаем исходное значение расхода
@@ -22,7 +22,7 @@ TEST(SyntheticTimeSeries, CheckGeneration)
     }
 }
 
-/// @brief Проверка 
+/// @brief Проверка применения скачка для созданного синтетического временного ряда
 TEST(SyntheticTimeSeries, CheckJump)
 {
     // Задаем исходное значение расхода

@@ -78,7 +78,7 @@ public:
         time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
         do
         {
-            // Интерополируем значения параметров в заданный момент времени
+            // Интерполируем значения параметров в заданный момент времени
             vector<double> values_in_time_model = boundary_timeseries(t);
             isothermal_quasistatic_task_boundaries_t boundaries(values_in_time_model);
 
@@ -96,7 +96,7 @@ public:
     }
 };
 
-/// @brief Пример испольования метода Quickest Ultimate с гидравлическим расчетом  
+/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
 TEST_F(QuasiStationaryModel, QuickWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
@@ -120,7 +120,7 @@ TEST_F(QuasiStationaryModel, QuickWithQuasiStationaryModel)
     perform_quasistatic_simulation<density_viscosity_cell_layer, quickest_ultimate_fv_solver>(
         path, initial_boundaries, time_series, dt);
 }
-/// @brief Пример испольования метода Quickest Ultimate с гидравлическим расчетом  
+/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом (идеальные настройки)
 TEST_F(QuasiStationaryModel, IdealQuickWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
@@ -150,7 +150,7 @@ TEST_F(QuasiStationaryModel, IdealQuickWithQuasiStationaryModel)
     perform_quasistatic_simulation<density_viscosity_cell_layer, quickest_ultimate_fv_solver>(
         path, initial_boundaries, time_series);
 }
-/// @brief Пример испольования метода характеристик с гидравлическим расчетом  
+/// @brief Пример использования метода характеристик с гидравлическим расчетом  
 TEST_F(QuasiStationaryModel, MocWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
@@ -173,7 +173,7 @@ TEST_F(QuasiStationaryModel, MocWithQuasiStationaryModel)
     perform_quasistatic_simulation<density_viscosity_layer_moc, moc_solver<1>>(
         path, initial_boundaries, time_series, dt);
 }
-/// @brief Пример испольования метода характеристик с гидравлическим расчетом  
+/// @brief Пример использования метода характеристик (переменный шаг) с гидравлическим расчетом  
 TEST_F(QuasiStationaryModel, OptionalStepMocWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
@@ -196,7 +196,7 @@ TEST_F(QuasiStationaryModel, OptionalStepMocWithQuasiStationaryModel)
         path, initial_boundaries, time_series);
 }
 
-/// @brief Пример испольования метода характеристик с гидравлическим расчетом  
+/// @brief Пример использования метода характеристик с гидравлическим расчетом (идеальные настройки)  
 TEST_F(QuasiStationaryModel, IdealMocWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
@@ -225,7 +225,8 @@ TEST_F(QuasiStationaryModel, IdealMocWithQuasiStationaryModel)
         path, initial_boundaries, time_series);
 }
 
-/// @brief Пример испольования метода характеристик с гидравлическим расчетом  
+/// @brief Пример использования метода характеристик с гидравлическим расчетом (идеальные настройки)
+/// Рассматривается пример с импульсной партией нефти
 TEST_F(QuasiStationaryModel, IdealImpulsMocWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
