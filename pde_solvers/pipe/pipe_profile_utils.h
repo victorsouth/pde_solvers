@@ -133,6 +133,7 @@ private: // обработка высоток и несущей
 		{
 			double dl = source_prof.coordinates[segment + 1] - source_prof.coordinates[segment];
 			double dh = source_prof.heights[segment + 1] - source_prof.heights[segment];
+			double dcapacity = source_prof.capacity[segment + 1] - source_prof.capacity[segment];
 
 			size_t divide_cnt = static_cast<size_t>(ceil(dl / max_segment) + 1e-8);
 
@@ -141,11 +142,13 @@ private: // обработка высоток и несущей
 			{
 				new_prof.coordinates.push_back(source_prof.coordinates[segment] + dl * offset / divide_cnt);
 				new_prof.heights.push_back(source_prof.heights[segment] + dh * offset / divide_cnt);
+				new_prof.capacity.push_back(source_prof.capacity[segment] + dcapacity * offset / divide_cnt);
 			}
 		}
 
 		new_prof.coordinates.push_back(source_prof.coordinates.back());
 		new_prof.heights.push_back(source_prof.heights.back());
+		new_prof.capacity.push_back(source_prof.capacity.back());
 
 		return new_prof;
 	}
