@@ -79,12 +79,12 @@ inline std::pair<PipeProfile, PipeProfile> create_uniform_prof_from_generated_pr
 }
 
 /// @brief Проверка случая, когда шаг итогового профиля совпадает с желаемым
-TEST(UniformProfile, CheckResStepEqualDesStep)
+TEST(UniformProfile, HandlesEqualStepProfile)
 {
 	// Длина исходного профиля
 	double L = 1000;
 	// Шаг исходного профиля
-	double dx = 50;
+	double dx = 200;
 
 	// Шаг итогового профиля совпадает с желаемым, если длина трубы делится на желаемый шаг нацело
 	double desired_dx = 200;
@@ -92,11 +92,12 @@ TEST(UniformProfile, CheckResStepEqualDesStep)
 	auto [source_prof, new_prof] = create_uniform_prof_from_generated_prof(L, dx, desired_dx);
 
 	// Проверка на равенство желаемого шага и реального в новом профиле
-	ASSERT_NEAR(desired_dx, new_prof.coordinates[1] - new_prof.coordinates[0], 1e-8);
+    double uniform_step = new_prof.coordinates[1] - new_prof.coordinates[0];
+	ASSERT_NEAR(desired_dx, uniform_step, 1e-8);
 }
 
 /// @brief Проверка случая, когда шаг итогового профиля больше желаемого
-TEST(UniformProfile, CheckResStepGreaterDesStep)
+TEST(UniformProfile, HandlesDenseProfile)
 {
 	// Длина исходного профиля
 	double L = 1000;
@@ -109,11 +110,12 @@ TEST(UniformProfile, CheckResStepGreaterDesStep)
 	auto [source_prof, new_prof] = create_uniform_prof_from_generated_prof(L, dx, desired_dx);
 
 	// Проверка на неравенство желаемого шага и реального в новом профиле
-	ASSERT_LT(0, new_prof.coordinates[1] - new_prof.coordinates[0] - desired_dx);
+    double uniform_dx = new_prof.coordinates[1] - new_prof.coordinates[0];
+	ASSERT_GT(uniform_dx,  desired_dx);
 }
 
 /// @brief Создание профиля, когда желаемый шаг больше длины исходного профиля
-TEST(UniformProfile, HandlesShortSourceProf)
+TEST(UniformProfile, HandlesShortProfile)
 {
 	// Длина исходного профиля
 	double L = 200;
@@ -128,11 +130,11 @@ TEST(UniformProfile, HandlesShortSourceProf)
 	ASSERT_NEAR(desired_dx, new_prof.getLength(), 1e-8);
 }
 
-/// @brief Сравнение итоговых профилей при различных видах исходного профиля
+/// @brief Строит графики сравнения итоговых профилей при различных видах исходного профиля
 /// Плотный профиль - профиль, шаг сетки которого меньше желаемого профиля
 /// Разреженный профиль - профиль, шаг сетки которого больше желаемого профиля
 /// Третий случай - когда шаг исходного профиля и желаемый шаг совпадают
-TEST(UniformProfile, CompareResProfFromDiffSourceProf)
+TEST(UniformProfile, PlotProfilesFromDifferentSourceProfiles)
 {
 	string path = prepare_test_folder();
 
