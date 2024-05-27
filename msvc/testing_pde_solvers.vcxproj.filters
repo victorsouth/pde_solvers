@@ -53,5 +53,8 @@
     <ClInclude Include="..\testing\test_synthetic_timeseries.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\testing\test_create_pipe_profile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
