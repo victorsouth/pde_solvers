@@ -22,17 +22,20 @@ public:
     {}
 
     /// @brief Расчёт нового слоя
+    /// @param dt Шаг моделирования
     /// @param par_in Значение параметра среды, втекающей в начало трубопровода
-    /// @param par_out Значение параметра среды, втекающей в конец трубопровода при обратном течении 
-    void step(double par_in, double par_out)
+    /// @param par_out Значение параметра среды, втекающей в конец трубопровода при обратном течении
+    void step(const double dt,const double par_in, const double par_out)
     {
+        double p = interpolation_offset(dt);
+
         int direction = get_eigen_value() > 0 ? 1 : -1;
         size_t start_index = direction > 0 ? 1 : (next.size()) - 2;
         size_t end_index = direction < 0 ? -1 : next.size();
         next[start_index - direction] = direction > 0 ? par_in : par_out;
         for (size_t index = start_index; index != end_index; index += direction)
         {
-            next[index] = prev[index - direction];
+            next[index] = prev[index - direction] * p + prev[index] * (1 - p);
         }
     }
 
@@ -45,7 +48,7 @@ public:
         double dx = grid[1] - grid[0];
         double courant_step = dx / max_eigen;
 
-        return courant_step;
+        return abs(courant_step);
     }
 
 protected:
@@ -65,6 +68,13 @@ protected:
     {
         double S = pipe.wall.getArea();
         return volumetric_flow / S;
+    }
+
+    /// @brief Расчёт смещения в случае Cr < 1
+    /// @param dt Шаг моделирования
+    double interpolation_offset(const double dt) const
+    {
+        return dt / prepare_step();
     }
 };
 
