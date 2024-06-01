@@ -29,3 +29,5 @@
 #include "pipe/pipe_advection_solver.h"
 
 #include "solvers/diffusion_solver.h" // нужно инклудить после объявления трубы и проч.
+
+#include "tasks/isothermal_quasistatic_task.h"

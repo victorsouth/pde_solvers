@@ -62,10 +62,10 @@ public:
 
             std::uniform_real_distribution<double> normalDis(param.second * (1 - settings.value_relative_increment), param.second * (1 + settings.value_relative_decrement));
 
-            time_t timeStep = timeDis(gen);
+            time_t timeStep = (time_t)timeDis(gen);
             for (time_t time = settings.start_time; time <= settings.start_time + settings.duration; time += timeStep) {
                 timeValues.push_back(time); // Создается ряд времени для определенного параметра
-                timeStep = timeDis(gen);
+                timeStep = (time_t)timeDis(gen);
             }
 
             std::transform(timeValues.begin(), timeValues.end(), std::back_inserter(paramValues),

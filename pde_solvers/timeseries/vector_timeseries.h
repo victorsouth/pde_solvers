@@ -8,9 +8,13 @@ using std::pair;
 /// @brief Векторный верменной ряд
 class vector_timeseries_t {
 private:
+    /// @brief Исходные временные ряды
     vector<pair<vector<time_t>, vector<double>>> data;
-    time_t start_date;
-    time_t end_date;
+    /// @brief Самое позднее начальное время среди временных рядов
+    time_t start_date{ std::numeric_limits<time_t>::min() };
+    /// @brief Самое ранее конечное время среди временных рядов
+    time_t end_date{ std::numeric_limits<time_t>::max() };
+    /// @brief Начальные точки индексов временных рядов, создающие левую границу при поиске во времени
     mutable vector<size_t> left_bound;
 
 public:
@@ -29,7 +33,7 @@ public:
     {
         if (data.empty())
             return;
-
+            
         std::tie(start_date, end_date) = get_timeseries_period(data);
 
         left_bound = vector<size_t>(data.size(), 0);
