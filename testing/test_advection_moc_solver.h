@@ -40,9 +40,11 @@ TEST_F(AdvectionMocSolver, UseCaseDensity)
     // Зададимся расходом внутри трубопровода
     double volumetric_flow = 0.5;
 
+    size_t point_count = pipe.profile.getPointCount();
+
     // Буфер для хранения слоёв
-    ring_buffer_t<vector<double>> buffer(2, pipe.profile.getPointCount());
-    buffer.previous() = vector<double>(pipe.profile.getPointCount(), rho_init);
+    ring_buffer_t<vector<double>> buffer(2, point_count);
+    buffer.previous() = vector<double>(point_count, rho_init);
 
     double modeling_time = 0;
 
@@ -51,9 +53,10 @@ TEST_F(AdvectionMocSolver, UseCaseDensity)
         // Расход в трубопроводе может меняться во времени
         advection_moc_solver solver(pipe, volumetric_flow, buffer.previous(), buffer.current());
         // При изменение расхода меняется шаг по времени, так как Курант всегда должен равняться единице
-        modeling_time += solver.prepare_step();
+        double time_step = solver.prepare_step();
+        modeling_time += time_step;
 
-        solver.step(rho_left, rho_right);
+        solver.step(time_step, rho_left, rho_right);
 
         buffer.advance(+1);
     }
@@ -66,15 +69,76 @@ TEST_F(AdvectionMocSolver, ConsiderFlowSwap)
     // Зададимся расходом внутри трубопровода для инверсии потока
     double volumetric_flow = -0.5;
 
+    size_t point_count = pipe.profile.getPointCount();
+
     // Буфер для хранения слоёв
-    ring_buffer_t<vector<double>> buffer(2, pipe.profile.getPointCount());
-    buffer.previous() = vector<double>(pipe.profile.getPointCount(), rho_init);
+    ring_buffer_t<vector<double>> buffer(2, point_count);
+    buffer.previous() = vector<double>(point_count, rho_init);
     
     advection_moc_solver solver(pipe, volumetric_flow, buffer.previous(), buffer.current());
+    double time_step = solver.prepare_step();
 
-    solver.step(rho_left, rho_right);
+    solver.step(time_step, rho_left, rho_right);
 
     // Проверим, что давление изменилось в конце трубопровода, но не изменилось в начале
     ASSERT_NEAR(buffer.current().back(), rho_right, 0.05);
     ASSERT_NEAR(buffer.current().front(), rho_init, 0.05);
+}
+
+/// @brief Проверка случая, когда скорость потока в ходе моделирования меняется и Курант становится меньше единицы
+TEST_F(AdvectionMocSolver, ConsiderCrLessOne)
+{
+    // Зададимся максимальным расходом
+    double volumetric_flow = 0.5;
+    // Посчитаем шаг по времени, при котором Курант равен единице
+    double time_step = (pipe.profile.coordinates[1] - pipe.profile.coordinates[0]) / (volumetric_flow / pipe.wall.getArea());
+
+    size_t point_count = pipe.profile.getPointCount();
+
+    // Буфер для хранения слоёв
+    ring_buffer_t<vector<double>> buffer(2, point_count);
+    buffer.current() = vector<double>(point_count, rho_init);
+
+    // Проведём моделирование, в котором на первой итерации расход будет равен начальному
+    // а на второй - расход станет вдвое меньше
+    // Шаг по времени при этом остаётся таким же, поэтому Курант станет равен 0.5
+    for (int i = 1; i <= 2; i++)
+    {
+        buffer.advance(+1);
+        advection_moc_solver solver(pipe, volumetric_flow / i, buffer.previous(), buffer.current());
+        solver.step(time_step, rho_left, rho_right);
+    }
+
+    // В такой ситуации после второй итерации значение плотности во второй точке текущего профиля
+    // станет равна значению из середины первой и второй точки предыдущего профиля
+    ASSERT_NEAR(buffer.current()[1], (buffer.previous()[0] + buffer.previous()[1]) / 2, 0.05);
+}
+
+/// @brief Проверка случая, когда скорость потока в ходе моделирования меняется и Курант становится меньше единицы при инверсном потоке
+TEST_F(AdvectionMocSolver, ConsiderCrLessOneInverseFlow)
+{
+    // Зададимся максимальным расходом в инверсном направлении
+    double volumetric_flow = -0.5;
+    // Посчитаем шаг по времени, при котором Курант равен единице
+    double time_step = (pipe.profile.coordinates[1] - pipe.profile.coordinates[0]) / (-volumetric_flow / pipe.wall.getArea());
+
+    size_t point_count = pipe.profile.getPointCount();
+
+    // Буфер для хранения слоёв
+    ring_buffer_t<vector<double>> buffer(2, point_count);
+    buffer.current() = vector<double>(point_count, rho_init);
+
+    // Проведём моделирование, в котором на первой итерации расход будет равен начальному
+    // а на второй - расход станет вдвое меньше
+    // Шаг по времени и по координате при этом остаётся таким же, поэтому Курант станет равен 0.5
+    for (int i = 1; i <= 2; i++)
+    {
+        buffer.advance(+1);
+        advection_moc_solver solver(pipe, volumetric_flow / i, buffer.previous(), buffer.current());
+        solver.step(time_step, rho_left, rho_right);
+    }
+
+    // В такой ситуации после второй итерации значение плотности в предпоследней точке текущего профиля
+    // станет равна значению из середины последней и предпоследней точки предыдущего профиля
+    ASSERT_NEAR(buffer.current()[point_count - 2], (buffer.previous()[point_count - 1] + buffer.previous()[point_count - 2]) / 2, 0.05);
 }
