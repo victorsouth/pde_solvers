@@ -144,7 +144,7 @@ struct density_viscosity_layer
 {
     vector<double> density;
     vector<double> viscosity;
-}
+};
 ```
 
 Чтобы завести буфер таких слоев, используем шаблонный параметр в `ring_buffer_t`
