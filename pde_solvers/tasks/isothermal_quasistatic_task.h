@@ -1,5 +1,7 @@
 ﻿#pragma once
-
+#include <string>
+#include <vector>
+#include "timeseries/timeseries_helpers.h"
 namespace pde_solvers {
 ;
 
@@ -244,9 +246,10 @@ protected:
 
         std::ofstream  file(filename, std::ios::app);
         if (file.is_open()) {
-            std::tm tm_buf;
-            localtime_s(&tm_buf, &dt);
-            file << std::put_time(&tm_buf, "%c") << ";";
+            //std::tm tm_buf;
+            //localtime_s(&tm_buf, &dt);
+            //file << std::put_time(&tm_buf, "%c") << ";";
+            file << UnixToString(dt, "%c") << ";";
             for (int j = 0; j < layer.size(); j++)
             {
                 file << std::to_string(layer[j]) << ";";

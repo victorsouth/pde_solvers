@@ -32,13 +32,15 @@ set(HEADERS_SOLVERS
     pde_solvers/solvers/ode_solver.h
     pde_solvers/solvers/quick_solver.h
 )
+file(GLOB HEADERS_TASKS pde_solvers/tasks/* )
+
 set(HEADERS_TIME
 pde_solvers/timeseries/csv_readers.h  pde_solvers/timeseries/timeseries_helpers.h  pde_solvers/timeseries/vector_timeseries.h
 )
 
 
 if("3.19.0" VERSION_LESS ${CMAKE_VERSION})
-    add_library(${PROJECT_NAME} INTERFACE ${HEADERS} ${HEADERS_CORE} ${HEADERS_PIPE} ${HEADERS_SOLVERS} ${HEADERS_TIME})
+    add_library(${PROJECT_NAME} INTERFACE ${HEADERS} ${HEADERS_CORE} ${HEADERS_PIPE} ${HEADERS_SOLVERS} ${HEADERS_TIME} ${HEADERS_TASKS})
 else()
     add_library(${PROJECT_NAME} INTERFACE)
 endif()
@@ -46,7 +48,9 @@ target_link_libraries(${PROJECT_NAME} INTERFACE fixed_solvers::fixed_solvers)
 target_include_directories(${PROJECT_NAME}
     INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/pde_solvers>
     $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:include/pde_solvers>
 )
 add_library(pde_solvers::pde_solvers ALIAS pde_solvers)
 
@@ -80,9 +84,10 @@ install(FILES ${HEADERS_CORE} DESTINATION include/pde_solvers/core)
 install(FILES ${HEADERS_PIPE} DESTINATION include/pde_solvers/pipe)
 install(FILES ${HEADERS_SOLVERS} DESTINATION include/pde_solvers/solvers)
 install(FILES ${HEADERS_TIME} DESTINATION include/pde_solvers/timeseries)
+install(FILES ${HEADERS_TASKS} DESTINATION include/pde_solvers/tasks)
 endif()
 
-option(PDE_SOLVERS_BUILD_TESTS "" OF)
+option(PDE_SOLVERS_BUILD_TESTS "" OFF)
 
 if(PDE_SOLVERS_BUILD_TESTS)
 

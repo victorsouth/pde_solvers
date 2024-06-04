@@ -10,14 +10,14 @@
 /// @brief Перевод UNIX времени в строку формата dd:mm:yyyy HH:MM:SS
 /// @param t время UNIX
 /// @return строку формата dd:mm:yyyy HH:MM:SS
-inline std::string UnixToString(time_t t) {
+inline std::string UnixToString(time_t t,const char* fmt="%d.%m.%Y %H:%M:%S") {
 #ifdef _MSC_VER 
     struct tm tm; localtime_s(&tm, &t);
 #else
     struct tm tm = *std::localtime(&t);
 #endif // _MSC_VER 
     std::stringstream buff;
-    buff<<std::put_time(&tm,"%d.%m.%Y %H:%M:%S");
+    buff<<std::put_time(&tm,fmt);
     return buff.str();
 }
 
