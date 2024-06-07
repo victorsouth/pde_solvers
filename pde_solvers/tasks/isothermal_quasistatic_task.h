@@ -179,13 +179,14 @@ private:
         auto viscosity_wrapper = buffer.buffer.get_buffer_wrapper(
             &Layer::get_viscosity_wrapper);
 
-        if constexpr (std::is_same<Solver, moc_solver<1>>::value) {
+        if constexpr (std::is_same<Solver, advection_moc_solver>::value) {
+
             // Шаг по плотности
-            moc_solver<1> solver_rho(advection_model, density_wrapper);
-            solver_rho.step_optional_boundaries(dt, boundaries.density, boundaries.density);
+            advection_moc_solver solver_rho(pipe, Q_profile[0], buffer.bufer.previous().density, buffer.current().density);
+            solver_rho.step(dt, boundaries.density, boundaries.density);
             // Шаг по вязкости
-            moc_solver<1> solver_nu(advection_model, viscosity_wrapper);
-            solver_nu.step_optional_boundaries(dt, boundaries.viscosity, boundaries.viscosity);
+            advection_moc_solver solver_nu(pipe, Q_profile[0], buffer.bufer.previous().viscosity, buffer.current().viscosity);
+            solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
 
         }
         else {

@@ -2,9 +2,6 @@
 
 #include <pde_solvers/timeseries.h>
 
-
-
-
 inline std::string prepare_research_folder_for_qsm_model()
 {
     auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
@@ -256,3 +253,33 @@ TEST_F(QuasiStationaryModel, IdealImpulsMocWithQuasiStationaryModel)
     perform_quasistatic_simulation<density_viscosity_layer_moc, moc_solver<1>>(
         path, initial_boundaries, time_series);
 }
+
+// Проверка влияния профиля на гидравлический расчёт квазистационарной модели
+TEST_F(QuasiStationaryModel, IdealImpulsMocWithQuasiStationaryModel)
+{
+    vector<double> coord = { 0, 200, 400, 600 };
+    vector<double> heights = {140, 180, 120, 160};
+    // Зададимся исходными данными
+    pipe_properties_t pipe_with_line_profile;
+    double d = 1;
+    size_t n = 4;
+
+    pipe.profile = PipeProfile::create(n, coord.front(), coord.back(), heights.front(), heights.back(), 10e6);
+    pipe.wall.diameter = d;
+
+    pipe_properties_t pipe_with_full_profile = pipe_with_line_profile;
+    pipe_with_full_profile.profile.coordinates = coord;
+    pipe_with_full_profile.profile.heights = heights;
+
+    isothermal_quasistatic_task_boundaries_t initial_boundaries = isothermal_quasistatic_task_boundaries_t::default_values();
+
+    vector<pair<string, double>> timeseries_initial_values = {
+        { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
+        { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
+        { "rho_in", 10 + initial_boundaries.density }, // "rho_in" Плотность жидкости, (кг/м3)
+        { "visc_in", initial_boundaries.viscosity }, // "visc_in" Вязкость жидкости, (м2/сек)
+    };
+
+
+}
+
