@@ -458,5 +458,5 @@ $$\Delta x_{промеж} =  \frac{\Delta x_{исх.трубы}} {n_{проме�
 Эксперименты проводятся на изотермической модели – изменения вязкости нефти в трубопроводе, вызванные изменением температуры, не учитываются.
 
 
-![quick_with_quasistationary_model.h](https://github.com/victorsouth/pde_solvers/research/2024-02-quick-with-quasistationary-model/quick_with_quasistationary_model.h)
+![quick_with_quasistationary_model.h](research/2024-02-quick-with-quasistationary-model/quick_with_quasistationary_model.h)
 
