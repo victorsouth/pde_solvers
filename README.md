@@ -532,8 +532,11 @@ void perform_quasistatic_simulation(
 )
 ```
 `const string& path` - путь к файлу
+
 `const isothermal_quasistatic_task_boundaries_t& initial_boundaries` - [структура](#isothermal_quasistatic_task_boundaries_t), хранящая в себе все начальные условия
+
 `const vector_timeseries_t& boundary_timeseries` - временные ряды краевых условий
+
 `double dt` - временной шаг моделирования
 
 ### isothermal_quasistatic_task_t
