@@ -513,11 +513,11 @@ $$\Delta x_{промеж} =  \frac{\Delta x_{исх.трубы}} {n_{проме�
 ```C++
 template <typename Layer, typename Solver>
 ```
-`Layer` – тип слоя, содержащего профили плотности, вязкости, давления
+`Layer` – тип слоя, содержащего профили плотности, вязкости, давления:
 - Для партий методом характеристик – [density_viscosity_layer_moc](#density_viscosity_layer_moc)
 - Для партий методом Quickest-Ultimate – [density_viscosity_cell_layer](#density_viscosity_cell_layer)
 
-`Solver` – тип солвера партий 
+`Solver` – тип солвера партий :
 - `advection_moc_solver` – солвер **Метода характеристик**
 - `quickest_ultimate_fv_solver` – солвер метода **Quickest-Ultimate**
 ### perform_quasistatic_simulation
@@ -531,13 +531,10 @@ void perform_quasistatic_simulation(
     double dt = std::numeric_limits<double>::quiet_NaN
 )
 ```
-`const string& path` - путь к файлу
-
-`const isothermal_quasistatic_task_boundaries_t& initial_boundaries` - [структура](#isothermal_quasistatic_task_boundaries_t), хранящая в себе все начальные условия
-
-`const vector_timeseries_t& boundary_timeseries` - временные ряды краевых условий
-
-`double dt` - временной шаг моделирования
+- `const string& path` - путь к файлу
+- `const isothermal_quasistatic_task_boundaries_t& initial_boundaries` - [структура](#isothermal_quasistatic_task_boundaries_t), хранящая в себе все начальные условия
+- `const vector_timeseries_t& boundary_timeseries` - временные ряды краевых условий
+- `double dt` - временной шаг моделирования
 
 ### isothermal_quasistatic_task_t
 Расчетная задача (**task**) для гидравлического изотермического квазистационарного расчета в условиях движения партий с разной плотностью и вязкостью. Расчет партий делается **Методом характеристик** или **Quickest-Ultimate**
