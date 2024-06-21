@@ -544,14 +544,14 @@ class isothermal_quasistatic_task_t
 ```
 
 #### Поля класса `isothermal_quasistatic_task_t`:
-`pipe_properties_t pipe` - модель трубопровода
-`isothermal_quasistatic_task_buffer_t<Layer> buffer` - [буфер](#isothermal_quasistatic_task_buffer_t) для хранения рассчётных параметров и профилей
+- `pipe_properties_t pipe` - модель трубопровода
+- `isothermal_quasistatic_task_buffer_t<Layer> buffer` - [буфер](#isothermal_quasistatic_task_buffer_t) для хранения рассчётных параметров и профилей
 
 #### Конструктор класса `isothermal_quasistatic_task_t`:
 ```C++
 isothermal_quasistatic_task_t(const pipe_properties_t& pipe)
 ```
-`const pipe_properties_t& pipe` - модель трубопровода
+- `const pipe_properties_t& pipe` - модель трубопровода
 
 #### Методы класса `isothermal_quasistatic_task_t`:
 ##### solve
@@ -559,7 +559,7 @@ isothermal_quasistatic_task_t(const pipe_properties_t& pipe)
 ```C++
 void solve(const isothermal_quasistatic_task_boundaries_t& initial_conditions)
 ```
-`const isothermal_quasistatic_task_boundaries_t& initial_conditions` - [структура](#isothermal_quasistatic_task_boundaries_t), хранящая в себе все начальные условия
+- `const isothermal_quasistatic_task_boundaries_t& initial_conditions` - [структура](#isothermal_quasistatic_task_boundaries_t), хранящая в себе все начальные условия
 
 ---
 ##### get_time_step_assuming_max_speed
@@ -567,7 +567,7 @@ void solve(const isothermal_quasistatic_task_boundaries_t& initial_conditions)
 ```C++
 double get_time_step_assuming_max_speed(double v_max)
 ```
-`double v_max` - максимальная скорость течение потока в трубопроводе
+- `double v_max` - максимальная скорость течение потока в трубопроводе
 
 ---
 
@@ -576,8 +576,8 @@ double get_time_step_assuming_max_speed(double v_max)
 ```C++
 void make_rheology_step(double dt, const isothermal_quasistatic_task_boundaries_t& boundaries)
 ```
-`double dt` - временной шаг моделирования
-`const isothermal_quasistatic_task_boundaries_t& boundaries` - [структура](#isothermal_quasistatic_task_boundaries_t), хранящая в себе все начальные условия
+- `double dt` - временной шаг моделирования
+- `const isothermal_quasistatic_task_boundaries_t& boundaries` - [структура](#isothermal_quasistatic_task_boundaries_t), хранящая в себе все начальные условия
 
 ---
 
@@ -586,7 +586,7 @@ void make_rheology_step(double dt, const isothermal_quasistatic_task_boundaries_
 ```C++
 void calc_pressure_layer(const isothermal_quasistatic_task_boundaries_t& boundaries)
 ```
-`const isothermal_quasistatic_task_boundaries_t& boundaries` - [структура](#isothermal_quasistatic_task_boundaries_t), хранящая в себе все начальные условия
+- `const isothermal_quasistatic_task_boundaries_t& boundaries` - [структура](#isothermal_quasistatic_task_boundaries_t), хранящая в себе все начальные условия
 
 ---
 
@@ -595,8 +595,8 @@ void calc_pressure_layer(const isothermal_quasistatic_task_boundaries_t& boundar
 ```C++
 void step(double dt, const isothermal_quasistatic_task_boundaries_t& boundaries)
 ```
-`double dt` - временной шаг моделирования
-`const isothermal_quasistatic_task_boundaries_t& boundaries` - [структура](#isothermal_quasistatic_task_boundaries_t), хранящая в себе все начальные условия
+- `double dt` - временной шаг моделирования
+- `const isothermal_quasistatic_task_boundaries_t& boundaries` - [структура](#isothermal_quasistatic_task_boundaries_t), хранящая в себе все начальные условия
 
 ---
 
@@ -621,8 +621,8 @@ auto& get_buffer()
 ```C++
 static string get_courant_research_filename_for_qsm(const string& path, const string& layer_name)
 ```
-`const string& path` - путь, в котором формируется файл
-`const string& layer_name` - тип профиля
+- `const string& path` - путь, в котором формируется файл
+- `const string& layer_name` - тип профиля
 
 ---
 
@@ -631,10 +631,10 @@ static string get_courant_research_filename_for_qsm(const string& path, const st
 ```C++
 void print(const vector<double>& layer, const time_t& dt, const string& path, const string& layer_name)
 ```
-`const vector<double>& layer` - профиль
-`const time_t& dt` - временной шаг моделирования
-`const string& path` - путь к файлу
-`const string& layer_name` - тип профиля
+- `const vector<double>& layer` - профиль
+- `const time_t& dt` - временной шаг моделирования
+- `const string& path` - путь к файлу
+- `const string& layer_name` - тип профиля
 
 ---
 
@@ -643,8 +643,8 @@ void print(const vector<double>& layer, const time_t& dt, const string& path, co
 ```C++
 void print_all(const time_t& dt, const string& path)
 ```
-`const time_t& dt` - временной шаг моделирования
-`const string& path` - путь к файлу
+- `const time_t& dt` - временной шаг моделирования
+- `const string& path` - путь к файлу
 
 ### density_viscosity_cell_layer
 Проблемно-ориентированный слой для расчета методом **Quickest-Ultimate**
@@ -652,18 +652,18 @@ void print_all(const time_t& dt, const string& path)
 struct density_viscosity_cell_layer
 ```
 #### Поля структуры `density_viscosity_cell_layer`:
-`vector<double> density` - профиль плотности
-`vector<double> viscosity` - профиль вязкости
-`vector<double> pressure` - профиль давления
-`vector<double> pressure_delta` - дифференциальный профиль давления
-`quickest_ultimate_fv_solver_traits<1>::specific_layer specific` - профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
+- `vector<double> density` - профиль плотности
+- `vector<double> viscosity` - профиль вязкости
+- `vector<double> pressure` - профиль давления
+- `vector<double> pressure_delta` - дифференциальный профиль давления
+- `quickest_ultimate_fv_solver_traits<1>::specific_layer specific` - профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
 
 #### Конструктор структуры `density_viscosity_cell_layer`:
 Инициализация профилей
 ```C++
 density_viscosity_cell_layer(size_t point_count)
 ```
-`size_t point_count` - количество точек
+- `size_t point_count` - количество точек
 
 #### Методы структуры `density_viscosity_cell_layer`:
 ##### get_density_wrapper & get_viscosity_wrapper
@@ -672,7 +672,7 @@ density_viscosity_cell_layer(size_t point_count)
 static quickest_ultimate_fv_wrapper<1> get_density_wrapper(density_viscosity_cell_layer& layer)
 static quickest_ultimate_fv_wrapper<1> get_viscosity_wrapper(density_viscosity_cell_layer& layer)
 ```
-`density_viscosity_cell_layer& layer` - проблемно-ориентированный слой для расчета методом **Quickest-Ultimate**
+- `density_viscosity_cell_layer& layer` - проблемно-ориентированный слой для расчета методом **Quickest-Ultimate**
 
 ### density_viscosity_layer_moc
 Проблемно-ориентированный слой для расчета **Методом характеристик**
@@ -680,18 +680,18 @@ static quickest_ultimate_fv_wrapper<1> get_viscosity_wrapper(density_viscosity_c
 struct density_viscosity_layer_moc
 ```
 #### Поля структуры `density_viscosity_layer_moc`:
-`vector<double> density` - профиль плотности
-`vector<double> viscosity` - профиль вязкости
-`vector<double> pressure` - профиль давления
-`vector<double> pressure_delta` - дифференциальный профиль давления
-`moc_solver<1>::specific_layer specific` - профиль вспомогательных расчетов для МХ (и для вязкости, и для плотности)
+- `vector<double> density` - профиль плотности
+- `vector<double> viscosity` - профиль вязкости
+- `vector<double> pressure` - профиль давления
+- `vector<double> pressure_delta` - дифференциальный профиль давления
+- `moc_solver<1>::specific_layer specific` - профиль вспомогательных расчетов для МХ (и для вязкости, и для плотности)
 
 #### Конструктор структуры `density_viscosity_layer_moc`:
 Инициализация профилей
 ```C++
 density_viscosity_layer_moc(size_t point_count)
 ```
-`size_t point_count` - количество точек
+- `size_t point_count` - количество точек
 
 #### Методы структуры `density_viscosity_layer_moc`:
 ##### get_density_wrapper & get_viscosity_wrapper
@@ -700,7 +700,7 @@ density_viscosity_layer_moc(size_t point_count)
 static quickest_ultimate_fv_wrapper<1> get_density_wrapper(density_viscosity_layer_moc& layer)
 static quickest_ultimate_fv_wrapper<1> get_viscosity_wrapper(density_viscosity_layer_moc& layer)
 ```
-`density_viscosity_layer_moc& layer` - проблемно-ориентированный слой для расчета **Методом характеристик**
+- `density_viscosity_layer_moc& layer` - проблемно-ориентированный слой для расчета **Методом характеристик**
 
 ### isothermal_quasistatic_task_buffer_t
 Структура, созданная для хранения в себе начального профиля давлений и буфера с расчетными данными
@@ -710,14 +710,14 @@ struct isothermal_quasistatic_task_buffer_t
 ```
 
 #### Поля структуры `isothermal_quasistatic_task_buffer_t`:
-`vector<double> pressure_initial` - изначальный профиль давления
-`ring_buffer_t<Layer> buffer` - буфер профилей давления, плотности, вязкости
+- `vector<double> pressure_initial` - изначальный профиль давления
+- `ring_buffer_t<Layer> buffer` - буфер профилей давления, плотности, вязкости
 
 #### Конструктор структуры `isothermal_quasistatic_task_buffer_t`:
 ```C++
 isothermal_quasistatic_task_buffer_t(size_t point_count)
 ```
-`size_t point_count` - количество точек
+- `size_t point_count` - количество точек
 
 ### isothermal_quasistatic_task_boundaries_t
 Структура, содержащая в себе начальные условия задачи PQ
@@ -726,16 +726,16 @@ struct isothermal_quasistatic_task_boundaries_t
 ```
 
 #### Поля структуры `isothermal_quasistatic_task_boundaries_t`:
-`double volumetric_flow` - изначальный объемный расход
-`double pressure_in` - изначальное давление на входе
-`double density` - изначальная плотность на входе
-`double viscosity` - изначальная вязкость на входе
+- `double volumetric_flow` - изначальный объемный расход
+- `double pressure_in` - изначальное давление на входе
+- `double density` - изначальная плотность на входе
+- `double viscosity` - изначальная вязкость на входе
 
 #### Конструктор структуры `isothermal_quasistatic_task_boundaries_t`:
 ```C++
 isothermal_quasistatic_task_boundaries_t(const vector<double>& values)
 ```
-`const vector<double>& values` - начальные условия задачи PQ (вектор из 4 элементов)
+- `const vector<double>& values` - начальные условия задачи PQ (вектор из 4 элементов)
 #### Методы структуры `isothermal_quasistatic_task_boundaries_t`:
 ##### default_values
 Создание структуры со значениями по умолчанию
