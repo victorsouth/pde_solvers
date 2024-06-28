@@ -167,7 +167,7 @@ TEST_F(QuasiStationaryModel, MocWithQuasiStationaryModel)
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
     double dt = 75;
-    perform_quasistatic_simulation<density_viscosity_layer_moc, moc_solver<1>>(
+    perform_quasistatic_simulation<density_viscosity_layer_moc, advection_moc_solver>(
         path, initial_boundaries, time_series, dt);
 }
 /// @brief Пример использования метода характеристик (переменный шаг) с гидравлическим расчетом  
@@ -189,7 +189,7 @@ TEST_F(QuasiStationaryModel, OptionalStepMocWithQuasiStationaryModel)
     };
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
-    perform_quasistatic_simulation<density_viscosity_layer_moc, moc_solver<1>>(
+    perform_quasistatic_simulation<density_viscosity_layer_moc, advection_moc_solver>(
         path, initial_boundaries, time_series);
 }
 
@@ -218,7 +218,7 @@ TEST_F(QuasiStationaryModel, IdealMocWithQuasiStationaryModel)
     settings.sample_time_min = 200;
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
-    perform_quasistatic_simulation<density_viscosity_layer_moc, moc_solver<1>>(
+    perform_quasistatic_simulation<density_viscosity_layer_moc, advection_moc_solver>(
         path, initial_boundaries, time_series);
 }
 
@@ -250,36 +250,9 @@ TEST_F(QuasiStationaryModel, IdealImpulsMocWithQuasiStationaryModel)
     double jump_value = -10;
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings, jump_time, jump_value, "rho_in");
-    perform_quasistatic_simulation<density_viscosity_layer_moc, moc_solver<1>>(
+    perform_quasistatic_simulation<density_viscosity_layer_moc, advection_moc_solver>(
         path, initial_boundaries, time_series);
 }
 
-// Проверка влияния профиля на гидравлический расчёт квазистационарной модели
-TEST_F(QuasiStationaryModel, IdealImpulsMocWithQuasiStationaryModel)
-{
-    vector<double> coord = { 0, 200, 400, 600 };
-    vector<double> heights = {140, 180, 120, 160};
-    // Зададимся исходными данными
-    pipe_properties_t pipe_with_line_profile;
-    double d = 1;
-    size_t n = 4;
 
-    pipe.profile = PipeProfile::create(n, coord.front(), coord.back(), heights.front(), heights.back(), 10e6);
-    pipe.wall.diameter = d;
-
-    pipe_properties_t pipe_with_full_profile = pipe_with_line_profile;
-    pipe_with_full_profile.profile.coordinates = coord;
-    pipe_with_full_profile.profile.heights = heights;
-
-    isothermal_quasistatic_task_boundaries_t initial_boundaries = isothermal_quasistatic_task_boundaries_t::default_values();
-
-    vector<pair<string, double>> timeseries_initial_values = {
-        { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
-        { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
-        { "rho_in", 10 + initial_boundaries.density }, // "rho_in" Плотность жидкости, (кг/м3)
-        { "visc_in", initial_boundaries.viscosity }, // "visc_in" Вязкость жидкости, (м2/сек)
-    };
-
-
-}
 

@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <string>
 #include <vector>
-#include "timeseries/timeseries_helpers.h"
+#include "../timeseries/timeseries_helpers.h"
 namespace pde_solvers {
 ;
 
@@ -182,10 +182,10 @@ private:
         if constexpr (std::is_same<Solver, advection_moc_solver>::value) {
 
             // Шаг по плотности
-            advection_moc_solver solver_rho(pipe, Q_profile[0], buffer.bufer.previous().density, buffer.current().density);
+            advection_moc_solver solver_rho(pipe, Q_profile[0], buffer.buffer.previous().density, buffer.buffer.current().density);
             solver_rho.step(dt, boundaries.density, boundaries.density);
             // Шаг по вязкости
-            advection_moc_solver solver_nu(pipe, Q_profile[0], buffer.bufer.previous().viscosity, buffer.current().viscosity);
+            advection_moc_solver solver_nu(pipe, Q_profile[0], buffer.buffer.previous().viscosity, buffer.buffer.current().viscosity);
             solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
 
         }
