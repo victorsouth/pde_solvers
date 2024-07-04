@@ -21,7 +21,7 @@ struct density_viscosity_cell_layer {
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
     /// @brief Инициализация профилей
     /// @param point_count Количество точек
-    density_viscosity_cell_layer(size_t point_count)
+    density_viscosity_cell_layer(size_t point_count) 
         : density(point_count - 1)
         , viscosity(point_count - 1)
         , specific(point_count)
@@ -62,17 +62,6 @@ struct density_viscosity_layer_moc {
     {
 
     }
-    /// @brief Подготовка плотности для расчета методом характеристик
-    /// Оборачивает профиль плотности и вспомогательный расчет МХ в обертку для МХ
-    static moc_layer_wrapper<1> get_density_wrapper(density_viscosity_layer_moc& layer)
-    {
-        return moc_layer_wrapper<1>(layer.density, layer.specific);
-    }
-    /// @brief Подготовка вязкости для расчета методом характеристик
-    static moc_layer_wrapper<1> get_viscosity_wrapper(density_viscosity_layer_moc& layer)
-    {
-        return moc_layer_wrapper<1>(layer.viscosity, layer.specific);
-    }
 };
 
 /// @brief Структура, созданная для хранения в себе начального профиля давлений и буфера с расчетными данными
@@ -88,7 +77,7 @@ struct isothermal_quasistatic_task_buffer_t {
     {}
 };
 
-/// @brief Структура, содержащая в себе начальные условия задачи PQ
+/// @brief Структура, содержащая в себе краевые условия задачи PQ
 struct isothermal_quasistatic_task_boundaries_t {
     /// @brief Изначальный объемный расход
     double volumetric_flow;
@@ -108,6 +97,7 @@ struct isothermal_quasistatic_task_boundaries_t {
         viscosity = values[3];
     }
 
+    /// @brief Создание структуры со значениями по умолчанию
     static isothermal_quasistatic_task_boundaries_t default_values() {
         isothermal_quasistatic_task_boundaries_t result;
         result.volumetric_flow = 0.2;
@@ -121,14 +111,17 @@ struct isothermal_quasistatic_task_boundaries_t {
 /// квазистационарного расчета в условиях движения партий с разной плотностью и вязкостью
 /// Расчет партий делается методом характеристик или Quickest-Ultimate
 /// @tparam Layer Тип слоя, содержащего профили плотности, вязкости, давления
-/// Для партий методом характеристик = density_viscosity_layer_moc, для партий методом Quickest-Ultimate =density_viscosity_cell_layer
-/// @tparam Solver Тип солвера партий (moc_solver или quickest_ultimate_fv_solver)
+/// Для партий методом характеристик - density_viscosity_layer_moc
+/// Для партий методом Quickest-Ultimate - density_viscosity_cell_layer
+/// @tparam Solver Тип солвера партий (advection_moc_solver или quickest_ultimate_fv_solver)
 template <typename Layer, typename Solver>
 class isothermal_quasistatic_task_t {
     pipe_properties_t pipe;
     isothermal_quasistatic_task_buffer_t<Layer> buffer;
 
 public:
+    /// @brief Конструктор
+    /// @param pipe Модель трубопровода
     isothermal_quasistatic_task_t(const pipe_properties_t& pipe)
         : pipe(pipe)
         , buffer(pipe.profile.getPointCount())
@@ -136,8 +129,11 @@ public:
 
     }
 
+    /// @brief Начальный стационарный расчёт
+    /// @param initial_conditions Начальные условия
     void solve(const isothermal_quasistatic_task_boundaries_t& initial_conditions)
     {
+        // Количество точек
         size_t n = pipe.profile.getPointCount();
 
         // Инициализация реологии
@@ -160,6 +156,8 @@ public:
         buffer.pressure_initial = current.pressure; // Получаем изначальный профиль давлений
     }
 public:
+    /// @brief Рассчёт шага по времени для Cr = 1
+    /// @param v_max Максимальная скорость течение потока в трубопроводе
     double get_time_step_assuming_max_speed(double v_max) const {
         const auto& x = pipe.profile.coordinates;
         double dx = x[1] - x[0]; // Шаг сетки
@@ -167,17 +165,12 @@ public:
         return dt;
     }
 private:
+    /// @brief Проводится рассчёт шага движения партии
+    /// @param dt Временной шаг моделирования
+    /// @param boundaries Краевые условия
     void make_rheology_step(double dt, const isothermal_quasistatic_task_boundaries_t& boundaries) {
         size_t n = pipe.profile.getPointCount();
         vector<double>Q_profile(n, boundaries.volumetric_flow); // задаем по трубе новый расход из временного ряда
-
-        PipeQAdvection advection_model(pipe, Q_profile);
-
-        auto density_wrapper = buffer.buffer.get_buffer_wrapper(
-            &Layer::get_density_wrapper);
-
-        auto viscosity_wrapper = buffer.buffer.get_buffer_wrapper(
-            &Layer::get_viscosity_wrapper);
 
         if constexpr (std::is_same<Solver, advection_moc_solver>::value) {
 
@@ -190,17 +183,26 @@ private:
 
         }
         else {
+            PipeQAdvection advection_model(pipe, Q_profile);
+
+            auto density_wrapper = buffer.buffer.get_buffer_wrapper(
+                &Layer::get_density_wrapper);
+
+            auto viscosity_wrapper = buffer.buffer.get_buffer_wrapper(
+                &Layer::get_viscosity_wrapper);
+
             // Шаг по плотности
             quickest_ultimate_fv_solver solver_rho(advection_model, density_wrapper);
             solver_rho.step(dt, boundaries.density, boundaries.density);
             // Шаг по вязкости
             quickest_ultimate_fv_solver solver_nu(advection_model, viscosity_wrapper);
             solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
-
         }
     }
+
+    /// @brief Рассчёт профиля давления методом Эйлера (задача PQ)
+    /// @param boundaries Краевые условия
     void calc_pressure_layer(const isothermal_quasistatic_task_boundaries_t& boundaries) {
-        // Получаем новый профиль давлений
 
         auto& current = buffer.buffer.current();
 
@@ -216,19 +218,26 @@ private:
 
     }
 public:
+    /// @brief Рассчёт шага моделирования, включающий в себя рассчёт шага движения партии и гидравлический рассчёт
+    /// @param dt временной шаг моделирования
+    /// @param boundaries Краевые условие
     void step(double dt, const isothermal_quasistatic_task_boundaries_t& boundaries) {
         make_rheology_step(dt, boundaries);
         calc_pressure_layer(boundaries);
     }
+
+    /// @brief Сдвиг текущего слоя в буфере
     void advance()
     {
         buffer.buffer.advance(+1);
     }
 
+    /// @brief Возвращает ссылку на буфер
     auto& get_buffer()
     {
         return buffer.buffer;
     }
+
 protected:
     /// @brief Формирует имя файл для результатов исследования разных численных метов
     /// @tparam Solver Класс солвера
@@ -241,6 +250,11 @@ protected:
         return filename.str();
     }
 
+    /// @brief Запись в файл 
+    /// @param layer Слой
+    /// @param dt Временной шаг моделирования
+    /// @param path Путь к файлу
+    /// @param layer_name Тип профиля
     void print(const std::vector<double>& layer, const std::time_t& dt, const std::string& path, const std::string& layer_name)
     {
         std::string filename = get_courant_research_filename_for_qsm(path, layer_name);
@@ -260,6 +274,9 @@ protected:
         }
     }
 public:
+    /// @brief Запись промежуточных результатов в файл
+    /// @param dt временной шаг моделирования
+    /// @param path Путь к файлу
     void print_all(const time_t& dt, const string& path) {
         auto& current = buffer.buffer.current();
         print(current.density, dt, path, "density");

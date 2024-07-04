@@ -4,16 +4,16 @@ function main()
     import matlab.io.*;
     currentDirectory = pwd;
     [upperPath, ~, ~] = fileparts(currentDirectory);
-    [upperPath, ~, ~] = fileparts(upperPath);   
+    [upperPath, ~, ~] = fileparts(upperPath);
     relativePath = fullfile('research_out', 'QSM_models', 'QuasiStationaryModel');
-    
+
     % Загрузка и обработка данных из первой папки
-    %processDirectoryData(upperPath, relativePath, 'MocWithQuasiStationaryModel');
+    processDirectoryData(upperPath, relativePath, 'MocWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'ChangeFlowMocWithQuasiStationaryModel');
     % Загрузка и обработка данных из второй папки
     %processDirectoryData(upperPath, relativePath, 'QuickWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'IdealQuickWithQuasiStationaryModel');
-    processDirectoryData(upperPath, relativePath, 'OptionalStepMocWithQuasiStationaryModel');
+    %processDirectoryData(upperPath, relativePath, 'OptionalStepMocWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'IdealMocWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'ChangeFlowQuickWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'ChangeFlowOptionalStepMocWithQuasiStationaryModel');
@@ -24,7 +24,7 @@ function processDirectoryData(upperPath, relativePath, name)
     relativePath = fullfile(relativePath,name);
     [data, data2, data3] = loadDataFromFiles(upperPath, relativePath);
     % Длина трубы от 0 до 200 км
-    km = linspace(0, 200, size(data, 2) - 1); 
+    km = linspace(0, 200, size(data, 2) - 1);
     % Нахождение минимальных и максимальных значений
     [minValue, maxValue] = calculateMinMax(data);
     [minValue2, maxValue2] = calculateMinMax2(data2);
@@ -43,8 +43,8 @@ function [data, data2, data3] = loadDataFromFiles(upperPath, relativePath)
     filePath1 = fullfile(upperPath, relativePath, 'output pressure_delta.csv');
     filePath2 = fullfile(upperPath, relativePath, 'output pressure.csv');
     filePath3 = fullfile(upperPath, relativePath, 'output density.csv');
-    
-    
+
+
     % Загрузка данных из файлов CSV
     data = readtable(filePath1);
     data2 = readtable(filePath2);
@@ -74,8 +74,8 @@ end
 
 function [minValue4, maxValue4] = calculateMinMax4(data)
     % Извлечение последнего столбца числовых данных из таблицы
-    numericData = data{:, end}; 
-    
+    numericData = data{:, end};
+
     % Нахождение минимального и максимального значения только в последнем столбце
     minValue4 = min(numericData)-max(numericData)*0.01;
     maxValue4 = max(numericData)+max(numericData)*0.01;
@@ -109,7 +109,7 @@ function plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValu
          % Создание нового массива km_interp с размером 2000
         km_interp = conv(km, [0.5, 0.5], 'valid');
         stairs(km_interp, table2array(data3(1, 2:end)), 'b', 'LineWidth', 2);
-        
+
     else
         plot(km, table2array(data3(1, 2:end)), 'Color', 'b', LineWidth=2);
     end
@@ -173,11 +173,11 @@ function createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxVal
         hold off;
 
         subplot(4, 1, 3);
-        if strcmp(name, 'QuickWithQuasiStationaryModel') || strcmp(name, 'IdealQuickWithQuasiStationaryModel')|| strcmp(name, 'ChangeFlowQuickWithQuasiStationaryModel')   
+        if strcmp(name, 'QuickWithQuasiStationaryModel') || strcmp(name, 'IdealQuickWithQuasiStationaryModel')|| strcmp(name, 'ChangeFlowQuickWithQuasiStationaryModel')
             % Создание нового массива km_interp с размером 2000
             km_interp = conv(km, [0.5, 0.5], 'valid');
             stairs(km_interp, table2array(data3(i, 2:end)), 'b', 'LineWidth', 2);
-            
+
         else
             plot(km, table2array(data3(i, 2:end)), 'Color', 'b', LineWidth=2);
         end
@@ -186,7 +186,7 @@ function createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxVal
         title('Профиль плотности');
         xlim([0, 200]);
         ylim([minValue3, maxValue3]);
-        
+
         subplot(4, 1, 4);
         % Подготовка данных
         % Четвертый подграфик
@@ -220,10 +220,10 @@ function createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxVal
 end
 
 function plotScaledData(data, data3, km, minValue3, maxValue3, name)
-figure;     
+figure;
 %i = 2423;
-%i = 1694;
-i = 1962;
+i = 1694;
+%i = 1962;
 %i = 2021;
 %i = 2694;
         % Отображение данных
@@ -242,7 +242,7 @@ i = 1962;
 
 
         subplot(2, 1, 2);
-        if strcmp(name, 'QuickWithQuasiStationaryModel') || strcmp(name, 'IdealQuickWithQuasiStationaryModel')|| strcmp(name, 'ChangeFlowQuickWithQuasiStationaryModel')     
+        if strcmp(name, 'QuickWithQuasiStationaryModel') || strcmp(name, 'IdealQuickWithQuasiStationaryModel')|| strcmp(name, 'ChangeFlowQuickWithQuasiStationaryModel')
             % Создание нового массива km_interp с размером 2000
             km_interp = conv(km, [0.5, 0.5], 'valid');
             stairs(km_interp, table2array(data3(i, 2:end)), 'b', 'LineWidth', 2);
@@ -257,3 +257,4 @@ i = 1962;
         ylim([minValue3, maxValue3]);
         grid on;
 end
+

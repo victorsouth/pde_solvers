@@ -54,14 +54,16 @@ public:
         vector_timeseries_t params(data);
         return params;
     }
-
-
-    /// @brief Делаю стационарный расчет (с помощью initial boundaries),
+     
+    /// @brief Стационарный расчет (с помощью initial boundaries),
     /// а затем квазистационарный расчет по краевым условиям (boundary_timeseries)
-    /// @tparam Layer Слой для расчета плотности, вязкости для численного метода 
+    /// @tparam Layer Слой для расчета плотности, вязкости и давления для численного метода
     /// @tparam Solver Численный метод расчета движения партий
-    /// @param path Путь с результатом
-    /// @param timeseries_initial_values Исходные условия для генерации временных рядов
+    /// @param path Путь к файлу с результатом
+    /// @param initial_boundaries Начальные условия
+    /// @param boundary_timeseries Краевые условия
+    /// @param dt Шаг по времени либо задаётся постоянным, 
+    /// либо рассчитывается на каждом шаге моделирования для Cr = 1
     template <typename Layer, typename Solver>
     void perform_quasistatic_simulation(const string& path, 
         const isothermal_quasistatic_task_boundaries_t& initial_boundaries,
