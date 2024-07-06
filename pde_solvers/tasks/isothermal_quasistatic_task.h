@@ -8,7 +8,8 @@ namespace pde_solvers {
 using std::string;
 
 /// @brief Проблемно-ориентированный слой для расчета методом конечных объемов 
-struct density_viscosity_cell_layer {
+template <size_t CellFlag>
+struct density_viscosity_quasi_layer {
     /// @brief Профиль плотности
     std::vector<double> density;
     /// @brief Профиль вязкости
@@ -21,21 +22,21 @@ struct density_viscosity_cell_layer {
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
     /// @brief Инициализация профилей
     /// @param point_count Количество точек
-    density_viscosity_cell_layer(size_t point_count) 
-        : density(point_count - 1)
-        , viscosity(point_count - 1)
+    density_viscosity_quasi_layer(size_t point_count)
+        : density(point_count - cell_flg)
+        , viscosity(point_count - cell_flg)
         , specific(point_count)
         , pressure(point_count)
         , pressure_delta(point_count)
     {}
 
     // @brief Подготовка плотности для расчета методом конечных объемов 
-    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(density_viscosity_cell_layer& layer)
+    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(density_viscosity_quasi_layer& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.density, layer.specific);
     }
     /// @brief Подготовка вязкости для расчета методом конечных объемов 
-    static quickest_ultimate_fv_wrapper<1> get_viscosity_wrapper(density_viscosity_cell_layer& layer)
+    static quickest_ultimate_fv_wrapper<1> get_viscosity_wrapper(density_viscosity_quasi_layer& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.viscosity, layer.specific);
     }
@@ -114,19 +115,18 @@ struct isothermal_quasistatic_task_boundaries_t {
 /// Для партий методом характеристик - density_viscosity_layer_moc
 /// Для партий методом Quickest-Ultimate - density_viscosity_cell_layer
 /// @tparam Solver Тип солвера партий (advection_moc_solver или quickest_ultimate_fv_solver)
-template <typename Layer, typename Solver>
+template <typename Solver>
 class isothermal_quasistatic_task_t {
     pipe_properties_t pipe;
-    isothermal_quasistatic_task_buffer_t<Layer> buffer;
+    isothermal_quasistatic_task_buffer_t<density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? 0 : 1>> buffer;
 
 public:
     /// @brief Конструктор
     /// @param pipe Модель трубопровода
-    isothermal_quasistatic_task_t(const pipe_properties_t& pipe)
+    isothermal_quasistatic_task_t(const pipe_properties_t& pipe, const isothermal_quasistatic_task_boundaries_t& initial_conditions)
         : pipe(pipe)
         , buffer(pipe.profile.getPointCount())
     {
-
     }
 
     /// @brief Начальный стационарный расчёт
@@ -148,11 +148,8 @@ public:
             viscosity = initial_conditions.viscosity;
         }
 
-        // Начальный гидравлический расчет
-        int euler_direction = +1;
-        isothermal_pipe_PQ_parties_t pipeModel(pipe, current.density, current.viscosity, initial_conditions.volumetric_flow, euler_direction);
-        solve_euler<1>(pipeModel, euler_direction, initial_conditions.pressure_in, &current.pressure);
-
+        //// Начальный гидравлический расчет
+        calc_pressure_layer(initial_conditions);
         buffer.pressure_initial = current.pressure; // Получаем изначальный профиль давлений
     }
 public:
@@ -172,6 +169,8 @@ private:
         size_t n = pipe.profile.getPointCount();
         vector<double>Q_profile(n, boundaries.volumetric_flow); // задаем по трубе новый расход из временного ряда
 
+        advance();
+
         if constexpr (std::is_same<Solver, advection_moc_solver>::value) {
 
             // Шаг по плотности
@@ -186,10 +185,10 @@ private:
             PipeQAdvection advection_model(pipe, Q_profile);
 
             auto density_wrapper = buffer.buffer.get_buffer_wrapper(
-                &Layer::get_density_wrapper);
+                &density_viscosity_quasi_layer<1>::get_density_wrapper);
 
             auto viscosity_wrapper = buffer.buffer.get_buffer_wrapper(
-                &Layer::get_viscosity_wrapper);
+                &density_viscosity_quasi_layer<1>::get_viscosity_wrapper);
 
             // Шаг по плотности
             quickest_ultimate_fv_solver solver_rho(advection_model, density_wrapper);

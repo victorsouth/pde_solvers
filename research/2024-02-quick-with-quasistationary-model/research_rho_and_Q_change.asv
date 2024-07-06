@@ -8,22 +8,20 @@ function main()
     relativePath = fullfile('research_out', 'QSM_models', 'QuasiStationaryModel');
     
     % Для построения графиков необходимо:
-    % 1. на строках с 22 по 30 закоментить всё кроме интересующего
+    % 1. на строках с .. по .. закоментить всё кроме интересующего
     %    расчёта
     % 2. Есть два вида графиков:
-    %   - сравнение графика плотности и вязкости: для этого на строках с 47
-    %   по 49 должна быть раскомменчена функция plotScaledData, чтобы
-    %   получить картинку на определённом шаге моделирования необходимо 
-    %   указать его на строке 237 
-    %   - также есть возможность построить гифку: для этого на строках с 47
-    %   по 49 надо оставить раскомменченными функции plotData и createGif
+    %   - сравнение графика плотности и вязкости: для этого на строках с ..
+    %   по .. должна быть раскоменчена функция plotScaledData, чтобы
+    %   получить картинку на определённом шаге моделирования необходимо на
+    %   строке .. 
 
     % Загрузка и обработка данных из первой папки
     %processDirectoryData(upperPath, relativePath, 'MocWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'ChangeFlowMocWithQuasiStationaryModel');
     % Загрузка и обработка данных из второй папки
     %processDirectoryData(upperPath, relativePath, 'QuickWithQuasiStationaryModel');
-    processDirectoryData(upperPath, relativePath, 'IdealQuickWithQuasiStationaryModel');
+    %processDirectoryData(upperPath, relativePath, 'IdealQuickWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'OptionalStepMocWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'IdealMocWithQuasiStationaryModel');
     %processDirectoryData(upperPath, relativePath, 'ChangeFlowQuickWithQuasiStationaryModel');
@@ -234,7 +232,7 @@ function plotScaledData(data, data3, km, minValue3, maxValue3, name)
 figure;
 %i = 2423;
 %i = 1694;
-i = 1200;
+i = 1200
 %i = 1962;
 %i = 2021;
 %i = 2694;
