@@ -42,7 +42,7 @@ public:
         double z_min = 140;
         double z_max = 180;
         double z_start = (z_max + z_min) / 2;
-        double dz = (z_max - z_min) / pipe.profile.getPointCount();
+        double dz = (z_max - z_start) / pipe.profile.getPointCount();
 
         vector<double> heights(pipe.profile.getPointCount(), z_start);
 
@@ -102,7 +102,7 @@ public:
         const vector_timeseries_t& boundary_timeseries, 
         double dt = std::numeric_limits<double>::quiet_NaN())
     {
-        isothermal_quasistatic_task_t<Solver> task(pipe, initial_boundaries);
+        isothermal_quasistatic_task_t<Solver> task(pipe);
         task.solve(initial_boundaries);
 
         //task.advance();

@@ -7,8 +7,12 @@ namespace pde_solvers {
 
 using std::string;
 
-/// @brief Проблемно-ориентированный слой для расчета методом конечных объемов 
-template <size_t CellFlag>
+
+/// @brief Проблемно-ориентированный слой для гидравлического квазистационарного расчета
+/// @tparam CellFlag Флаг расчёта реологии 
+/// true - в ячейках для метода конечных объёмов (Quickest-Ultimate)
+/// false - в точках для метода характеристик (advection_moc_solver)
+template <bool CellFlag>
 struct density_viscosity_quasi_layer {
     /// @brief Профиль плотности
     std::vector<double> density;
@@ -18,13 +22,15 @@ struct density_viscosity_quasi_layer {
     std::vector<double> pressure;
     /// @brief Дифференциальный профиль давления
     std::vector<double> pressure_delta;
+    /// @brief Изначальный профиль давления
+    std::vector<double> pressure_initial;
     /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
     /// @brief Инициализация профилей
     /// @param point_count Количество точек
     density_viscosity_quasi_layer(size_t point_count)
-        : density(point_count - cell_flg)
-        , viscosity(point_count - cell_flg)
+        : density(point_count - static_cast<int>(CellFlag))
+        , viscosity(point_count - static_cast<int>(CellFlag))
         , specific(point_count)
         , pressure(point_count)
         , pressure_delta(point_count)
@@ -40,42 +46,6 @@ struct density_viscosity_quasi_layer {
     {
         return quickest_ultimate_fv_wrapper<1>(layer.viscosity, layer.specific);
     }
-};
-/// @brief Проблемно-ориентированный слой для расчета методом характеристик
-struct density_viscosity_layer_moc {
-    /// @brief Профиль плотности
-    std::vector<double> density;
-    /// @brief Профиль вязкости
-    std::vector<double> viscosity;
-    /// @brief Профиль давления
-    std::vector<double> pressure;
-    /// @brief Дифференциальный профиль давления
-    std::vector<double> pressure_delta;
-    /// @brief Профиль вспомогательных расчетов для МХ (и для вязкости, и для плотности)
-    moc_solver<1>::specific_layer specific;
-    /// @brief Конструктор на заданное количество точек
-    density_viscosity_layer_moc(size_t point_count)
-        : density(point_count)
-        , viscosity(point_count)
-        , specific(point_count)
-        , pressure(point_count)
-        , pressure_delta(point_count)
-    {
-
-    }
-};
-
-/// @brief Структура, созданная для хранения в себе начального профиля давлений и буфера с расчетными данными
-template <typename Layer>
-struct isothermal_quasistatic_task_buffer_t {
-    /// @brief Изначальный профиль давления
-    vector<double> pressure_initial;
-    /// @brief Буфер профилей давления, плотности, вязкости
-    ring_buffer_t<Layer> buffer;
-    isothermal_quasistatic_task_buffer_t(size_t point_count)
-        : pressure_initial(point_count)
-        , buffer(2, point_count)
-    {}
 };
 
 /// @brief Структура, содержащая в себе краевые условия задачи PQ
@@ -108,24 +78,22 @@ struct isothermal_quasistatic_task_boundaries_t {
         return result;
     }
 };
+
 /// @brief Расчетная задача (task) для гидравлического изотермического 
 /// квазистационарного расчета в условиях движения партий с разной плотностью и вязкостью
 /// Расчет партий делается методом характеристик или Quickest-Ultimate
-/// @tparam Layer Тип слоя, содержащего профили плотности, вязкости, давления
-/// Для партий методом характеристик - density_viscosity_layer_moc
-/// Для партий методом Quickest-Ultimate - density_viscosity_cell_layer
 /// @tparam Solver Тип солвера партий (advection_moc_solver или quickest_ultimate_fv_solver)
 template <typename Solver>
 class isothermal_quasistatic_task_t {
     pipe_properties_t pipe;
-    isothermal_quasistatic_task_buffer_t<density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? 0 : 1>> buffer;
+    ring_buffer_t<density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true>> buffer;
 
 public:
     /// @brief Конструктор
     /// @param pipe Модель трубопровода
-    isothermal_quasistatic_task_t(const pipe_properties_t& pipe, const isothermal_quasistatic_task_boundaries_t& initial_conditions)
+    isothermal_quasistatic_task_t(const pipe_properties_t& pipe)
         : pipe(pipe)
-        , buffer(pipe.profile.getPointCount())
+        , buffer(2, pipe.profile.getPointCount())
     {
     }
 
@@ -137,7 +105,7 @@ public:
         size_t n = pipe.profile.getPointCount();
 
         // Инициализация реологии
-        auto& current = buffer.buffer.current();
+        auto& current = buffer.current();
 
         // Инициализация начального профиля плотности (не важно, ячейки или точки)
         for (double& density : current.density) {
@@ -150,7 +118,7 @@ public:
 
         //// Начальный гидравлический расчет
         calc_pressure_layer(initial_conditions);
-        buffer.pressure_initial = current.pressure; // Получаем изначальный профиль давлений
+        buffer.previous().pressure_initial = current.pressure_initial = current.pressure; // Получаем изначальный профиль давлений
     }
 public:
     /// @brief Рассчёт шага по времени для Cr = 1
@@ -174,20 +142,20 @@ private:
         if constexpr (std::is_same<Solver, advection_moc_solver>::value) {
 
             // Шаг по плотности
-            advection_moc_solver solver_rho(pipe, Q_profile[0], buffer.buffer.previous().density, buffer.buffer.current().density);
+            advection_moc_solver solver_rho(pipe, Q_profile[0], buffer.previous().density, buffer.current().density);
             solver_rho.step(dt, boundaries.density, boundaries.density);
             // Шаг по вязкости
-            advection_moc_solver solver_nu(pipe, Q_profile[0], buffer.buffer.previous().viscosity, buffer.buffer.current().viscosity);
+            advection_moc_solver solver_nu(pipe, Q_profile[0], buffer.previous().viscosity, buffer.current().viscosity);
             solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
 
         }
         else {
             PipeQAdvection advection_model(pipe, Q_profile);
 
-            auto density_wrapper = buffer.buffer.get_buffer_wrapper(
+            auto density_wrapper = buffer.get_buffer_wrapper(
                 &density_viscosity_quasi_layer<1>::get_density_wrapper);
 
-            auto viscosity_wrapper = buffer.buffer.get_buffer_wrapper(
+            auto viscosity_wrapper = buffer.get_buffer_wrapper(
                 &density_viscosity_quasi_layer<1>::get_viscosity_wrapper);
 
             // Шаг по плотности
@@ -203,7 +171,7 @@ private:
     /// @param boundaries Краевые условия
     void calc_pressure_layer(const isothermal_quasistatic_task_boundaries_t& boundaries) {
 
-        auto& current = buffer.buffer.current();
+        auto& current = buffer.current();
 
         vector<double>& p_profile = current.pressure;
         int euler_direction = +1; // Задаем направление для Эйлера
@@ -211,7 +179,7 @@ private:
         isothermal_pipe_PQ_parties_t pipeModel(pipe, current.density, current.viscosity, boundaries.volumetric_flow, euler_direction);
         solve_euler<1>(pipeModel, euler_direction, boundaries.pressure_in, &p_profile);
         // Получаем дифференциальный профиль давлений
-        std::transform(buffer.pressure_initial.begin(), buffer.pressure_initial.end(), p_profile.begin(),
+        std::transform(current.pressure_initial.begin(), current.pressure_initial.end(), p_profile.begin(),
             current.pressure_delta.begin(),
             [](double initial, double current) {return initial - current;  });
 
@@ -228,7 +196,7 @@ public:
     /// @brief Сдвиг текущего слоя в буфере
     void advance()
     {
-        buffer.buffer.advance(+1);
+        buffer.advance(+1);
     }
 
     /// @brief Возвращает ссылку на буфер
@@ -277,7 +245,7 @@ public:
     /// @param dt временной шаг моделирования
     /// @param path Путь к файлу
     void print_all(const time_t& dt, const string& path) {
-        auto& current = buffer.buffer.current();
+        auto& current = buffer.current();
         print(current.density, dt, path, "density");
         print(current.viscosity, dt, path, "viscosity");
         print(current.pressure, dt, path, "pressure");
