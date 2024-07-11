@@ -109,7 +109,7 @@ public:
         time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
 
         // Печатаем профиль
-        task.print_profile();
+        task.print_profile(path);
 
         do
         {

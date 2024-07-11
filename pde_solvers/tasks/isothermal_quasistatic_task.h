@@ -222,7 +222,7 @@ public:
     /// @param dt Временной шаг моделирования
     /// @param path Путь к файлу
     /// @param layer_name Тип профиля
-    void print(const std::vector<double>& layer, const std::time_t& dt, const std::string& path, const std::string& layer_name)
+    void print(const std::vector<double>& layer, const std::time_t dt, const std::string& path, const std::string& layer_name)
     {
         std::string filename = get_courant_research_filename_for_qsm(path, layer_name);
 
@@ -244,7 +244,7 @@ public:
     /// @brief Запись промежуточных результатов в файл
     /// @param dt временной шаг моделирования
     /// @param path Путь к файлу
-    void print_all(const time_t& dt, const string& path) const {
+    void print_all(const time_t& dt, const string& path) {
         auto& current = buffer.current();
         print(current.density, dt, path, "density");
         print(current.viscosity, dt, path, "viscosity");
@@ -253,7 +253,7 @@ public:
     }
 
     /// @brief Запись профиля в файл
-    void print_profile() const {
+    void print_profile(const string& path) {
         print(pipe.profile.coordinates, 0, path, "profile");
         print(pipe.profile.heights, 0, path, "profile");
     }
