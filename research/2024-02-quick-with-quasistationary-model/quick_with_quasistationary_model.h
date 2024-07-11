@@ -2,14 +2,14 @@
 
 #include <pde_solvers/timeseries.h>
 
-inline std::string prepare_research_folder_for_qsm_model()
+inline std::string prepare_research_folder_for_qsm_model(std::string dop_path = "")
 {
     auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
     std::string research_name = std::string(test_info->test_case_name());
     std::string case_name = std::string(test_info->name());
 
     std::string path = std::string("../research_out/QSM_models/") +
-        research_name + "/" + case_name + "/";
+        research_name + "/" + case_name + "/" + dop_path + "/";
     std::filesystem::create_directories(path);
     for (const auto& entry : filesystem::directory_iterator(path)) {
         filesystem::remove_all(entry.path());
@@ -37,6 +37,7 @@ protected:
 
 public:
     /// @brief Создание профиля отличающегося от прямой линии
+    /// Возрастает в первойи четвёртой четвертях, убывает во второй и в третьей
     vector<double> create_honest_profile() const
     {
         double z_min = 140;
@@ -60,7 +61,7 @@ public:
             }
             else
             {
-                heights[index] = heights[index - 1] + 1.4 * dz;
+                heights[index] = heights[index - 1] + 1.8 * dz;
             }
         }
         
@@ -105,9 +106,11 @@ public:
         isothermal_quasistatic_task_t<Solver> task(pipe);
         task.solve(initial_boundaries);
 
-        //task.advance();
-
         time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
+
+        // Печатаем профиль
+        task.print_profile();
+
         do
         {
             // Интерполируем значения параметров в заданный момент времени
@@ -122,7 +125,6 @@ public:
             t += static_cast<time_t>(time_step);
 
             task.step(time_step, boundaries);
-            //task.advance();
             task.print_all(t - static_cast<time_t>(time_step), path);
         } while (t < boundary_timeseries.get_end_date());
     }
@@ -293,8 +295,10 @@ TEST_F(QuasiStationaryModel, IdealImpulsMocWithQuasiStationaryModel)
 /// @brief Наглядное влияние выбора профиля на квазистационарный гидравлический расчёт  
 TEST_F(QuasiStationaryModel, ShowProfileImpactInQuasiStationaryModel)
 {
-    // Создаём папку с результатами и получаем путь к ней
-    string path = prepare_research_folder_for_qsm_model();
+    // Создаём папку с результатами для расчёта c профилем по первой и последней точкам трубопровода
+    string path_start_end_profile = prepare_research_folder_for_qsm_model("start_end_profile");
+    // Создаём папку с результатами для расчёта c полным профилем
+    string path_full_profile = prepare_research_folder_for_qsm_model("path_full_profile");
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
     isothermal_quasistatic_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
@@ -316,6 +320,13 @@ TEST_F(QuasiStationaryModel, ShowProfileImpactInQuasiStationaryModel)
 
     vector<double> profile = create_honest_profile();
 
+    pipe.profile.heights = profile;
+
+    // Вызываем метод расчета квазистационарной модели с помощью МХ для полного профиля 
+    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
+    perform_quasistatic_simulation<advection_moc_solver>(
+        path_full_profile, initial_boundaries, time_series);
+
     pipe.profile = PipeProfile::create(
         pipe.profile.getPointCount(), 
         pipe.profile.coordinates.front(),
@@ -324,17 +335,14 @@ TEST_F(QuasiStationaryModel, ShowProfileImpactInQuasiStationaryModel)
         profile.back(),
         10e6
     );
-    // Вызываем метод расчета квазистационарной модели с помощью МХ
-    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
+    // Вызываем метод расчета квазистационарной модели с помощью МХ для профиля по первой и последней точкам
+    vector_timeseries_t time_series_2 = generate_timeseries(timeseries_initial_values, settings);
     perform_quasistatic_simulation<advection_moc_solver>(
-        path + "_profile_start_end", initial_boundaries, time_series);
+        path_start_end_profile, initial_boundaries, time_series_2);
 
-    pipe.profile.heights = profile;
+    
 
-    // Вызываем метод расчета квазистационарной модели с помощью МХ
-    time_series = generate_timeseries(timeseries_initial_values, settings);
-    perform_quasistatic_simulation<advection_moc_solver>(
-        path + "_profile_honest", initial_boundaries, time_series);
+
 
 }
 

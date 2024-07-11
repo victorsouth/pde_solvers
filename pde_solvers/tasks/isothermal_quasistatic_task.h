@@ -216,7 +216,7 @@ protected:
         filename << path << "output " << layer_name << ".csv";
         return filename.str();
     }
-
+public:
     /// @brief Запись в файл 
     /// @param layer Слой
     /// @param dt Временной шаг моделирования
@@ -244,13 +244,20 @@ public:
     /// @brief Запись промежуточных результатов в файл
     /// @param dt временной шаг моделирования
     /// @param path Путь к файлу
-    void print_all(const time_t& dt, const string& path) {
+    void print_all(const time_t& dt, const string& path) const {
         auto& current = buffer.current();
         print(current.density, dt, path, "density");
         print(current.viscosity, dt, path, "viscosity");
         print(current.pressure, dt, path, "pressure");
         print(current.pressure_delta, dt, path, "pressure_delta");
     }
+
+    /// @brief Запись профиля в файл
+    void print_profile() const {
+        print(pipe.profile.coordinates, 0, path, "profile");
+        print(pipe.profile.heights, 0, path, "profile");
+    }
+
 };
 
 
