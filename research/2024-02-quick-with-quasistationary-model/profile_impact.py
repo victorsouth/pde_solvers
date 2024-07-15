@@ -48,7 +48,7 @@ def plot_diff_press_at_the_end(ax):
     ax.plot(df[df.columns[0]], res)
     ax.set_xlabel('Время')
     ax.set_ylabel('Разница давления в конце трубопровода')    
-    ax.grid() 
+    ax.grid()   
     
 if __name__ == '__main__':
     axes = [plt.subplot(plotsCount, 1, _ + 1) for _ in range(plotsCount)]

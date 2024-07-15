@@ -339,11 +339,6 @@ TEST_F(QuasiStationaryModel, ShowProfileImpactInQuasiStationaryModel)
     vector_timeseries_t time_series_2 = generate_timeseries(timeseries_initial_values, settings);
     perform_quasistatic_simulation<advection_moc_solver>(
         path_start_end_profile, initial_boundaries, time_series_2);
-
-    
-
-
-
 }
 
 
