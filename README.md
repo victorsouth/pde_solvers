@@ -581,12 +581,12 @@ $$\Delta x_{промеж} =  \frac{\Delta x_{исх.трубы}} {n_{проме�
 ### Результаты эксперимента
 
 Код эксперимента находится в тесте `QuasiStationaryModel.ShowProfileImpactInQuasiStationaryModel` в файле [quick_with_quasistationary_model.h](research/2024-02-quick-with-quasistationary-model/quick_with_quasistationary_model.h)
-
+<div align = "center">
 ![Результат эксперимента по влиянию профиля][res_exp]
 
 [res_exp]: images/prof_impact_result.png "Результат эксперимента по влиянию профиля"  
 
-<div align = "center">
+
 </center><b>Результат эксперимента по влиянию профиля</b></center>
 </div>
 <br>
