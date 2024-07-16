@@ -54,4 +54,6 @@ if __name__ == '__main__':
     axes = [plt.subplot(plotsCount, 1, _ + 1) for _ in range(plotsCount)]
     plot_coordinates_heights(axes[0])   
     plot_diff_press_at_the_end(axes[1])
+    axes[0].set_title('Профили трубопровода')
+    axes[1].set_title('Результат эксперимента')
     plt.show()    
