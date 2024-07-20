@@ -18,7 +18,7 @@ inline std::string prepare_research_folder_for_qsm_model(std::string dop_path = 
 }
 
 /// @brief Тесты для солвера
-class QuasiStationaryModel : public ::testing::Test {
+class IsothermalQuasistaticModel : public ::testing::Test {
 protected:
     /// @brief Параметры трубы
     pipe_properties_t pipe;
@@ -108,8 +108,9 @@ public:
 
         time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
 
-        // Печатаем профиль
+        // Печатаем профиль трубы и первый слой к нему
         task.print_profile(path);
+        task.print_all(t, path);
 
         do
         {
@@ -125,13 +126,13 @@ public:
             t += static_cast<time_t>(time_step);
 
             task.step(time_step, boundaries);
-            task.print_all(t - static_cast<time_t>(time_step), path);
+            task.print_all(t, path);
         } while (t < boundary_timeseries.get_end_date());
     }
 };
 
 /// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
-TEST_F(QuasiStationaryModel, QuickWithQuasiStationaryModel)
+TEST_F(IsothermalQuasistaticModel, QuickWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
     string path = prepare_research_folder_for_qsm_model();
@@ -155,7 +156,7 @@ TEST_F(QuasiStationaryModel, QuickWithQuasiStationaryModel)
         path, initial_boundaries, time_series, dt);
 }
 /// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом (идеальные настройки)
-TEST_F(QuasiStationaryModel, IdealQuickWithQuasiStationaryModel)
+TEST_F(IsothermalQuasistaticModel, IdealQuickWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
     string path = prepare_research_folder_for_qsm_model();
@@ -185,7 +186,7 @@ TEST_F(QuasiStationaryModel, IdealQuickWithQuasiStationaryModel)
         path, initial_boundaries, time_series);
 }
 /// @brief Пример использования метода характеристик с гидравлическим расчетом  
-TEST_F(QuasiStationaryModel, MocWithQuasiStationaryModel)
+TEST_F(IsothermalQuasistaticModel, MocWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
     string path = prepare_research_folder_for_qsm_model();
@@ -208,7 +209,7 @@ TEST_F(QuasiStationaryModel, MocWithQuasiStationaryModel)
         path, initial_boundaries, time_series, dt);
 }
 /// @brief Пример использования метода характеристик (переменный шаг) с гидравлическим расчетом  
-TEST_F(QuasiStationaryModel, OptionalStepMocWithQuasiStationaryModel)
+TEST_F(IsothermalQuasistaticModel, OptionalStepMocWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
     string path = prepare_research_folder_for_qsm_model();
@@ -231,7 +232,7 @@ TEST_F(QuasiStationaryModel, OptionalStepMocWithQuasiStationaryModel)
 }
 
 /// @brief Пример использования метода характеристик с гидравлическим расчетом (идеальные настройки)  
-TEST_F(QuasiStationaryModel, IdealMocWithQuasiStationaryModel)
+TEST_F(IsothermalQuasistaticModel, IdealMocWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
     string path = prepare_research_folder_for_qsm_model();
@@ -261,7 +262,7 @@ TEST_F(QuasiStationaryModel, IdealMocWithQuasiStationaryModel)
 
 /// @brief Пример использования метода характеристик с гидравлическим расчетом (идеальные настройки)
 /// Рассматривается пример с импульсной партией нефти
-TEST_F(QuasiStationaryModel, IdealImpulsMocWithQuasiStationaryModel)
+TEST_F(IsothermalQuasistaticModel, IdealImpulsMocWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
     string path = prepare_research_folder_for_qsm_model();
@@ -293,7 +294,7 @@ TEST_F(QuasiStationaryModel, IdealImpulsMocWithQuasiStationaryModel)
 
 
 /// @brief Наглядное влияние выбора профиля на квазистационарный гидравлический расчёт  
-TEST_F(QuasiStationaryModel, ShowProfileImpactInQuasiStationaryModel)
+TEST_F(IsothermalQuasistaticModel, ShowProfileImpactInQuasiStationaryModel)
 {
     // Создаём папку с результатами для расчёта c профилем по первой и последней точкам трубопровода
     string path_start_end_profile = prepare_research_folder_for_qsm_model("start_end_profile");
