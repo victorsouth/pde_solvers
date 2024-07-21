@@ -5,7 +5,7 @@ function main()
     currentDirectory = pwd;
     [upperPath, ~, ~] = fileparts(currentDirectory);
     [upperPath, ~, ~] = fileparts(upperPath);
-    relativePath = fullfile('research_out', 'QSM_models', 'QuasiStationaryModel');
+    relativePath = fullfile('research_out', 'QSM_models', 'IsothermalQuasistaticModel');
     
     % Для построения графиков необходимо:
     % 1. на строках с 22 по 30 закоментить всё кроме интересующего

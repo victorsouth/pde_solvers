@@ -7,7 +7,7 @@ current_dir = os.path.abspath(os.getcwd())
 main_path = os.path.dirname(os.path.dirname(current_dir))
 
 #research_path = '..\\..\\research_out\\research_out\\QuasiStationaryModel\\ShowProfileImpactInQuasiStationaryModel\\'
-folders = os.path.join('research_out', 'QSM_models', 'QuasiStationaryModel', 'ShowProfileImpactInQuasiStationaryModel')
+folders = os.path.join('research_out', 'QSM_models', 'IsothermalQuasistaticModel', 'ShowProfileImpactInQuasiStationaryModel')
 case_paths = ['path_full_profile', 'start_end_profile']
 file_name = 'output pressure.csv'
 coordinates = 'output coordinates.csv'
