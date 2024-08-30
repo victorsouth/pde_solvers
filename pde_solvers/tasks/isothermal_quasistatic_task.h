@@ -85,6 +85,7 @@ struct isothermal_quasistatic_task_boundaries_t {
 /// @tparam Solver Тип солвера партий (advection_moc_solver или quickest_ultimate_fv_solver)
 template <typename Solver>
 class isothermal_quasistatic_task_t {
+public:
     pipe_properties_t pipe;
     ring_buffer_t<density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true>> buffer;
 

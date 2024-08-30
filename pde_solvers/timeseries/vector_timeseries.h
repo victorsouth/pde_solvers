@@ -8,8 +8,6 @@ using std::pair;
 /// @brief Векторный верменной ряд
 class vector_timeseries_t {
 private:
-    /// @brief Исходные временные ряды
-    vector<pair<vector<time_t>, vector<double>>> data;
     /// @brief Самое позднее начальное время среди временных рядов
     time_t start_date{ std::numeric_limits<time_t>::min() };
     /// @brief Самое ранее конечное время среди временных рядов
@@ -18,6 +16,8 @@ private:
     mutable vector<size_t> left_bound;
 
 public:
+    /// @brief Исходные временные ряды
+    vector<pair<vector<time_t>, vector<double>>> data;
     /// @brief Получение количества значений определённого параметра
     /// @param numb Номер параметра 
     size_t get_elements_count(size_t numb) const
