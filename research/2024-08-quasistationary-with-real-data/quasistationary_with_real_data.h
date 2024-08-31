@@ -120,17 +120,18 @@ protected:
             t += static_cast<time_t>(time_step);
 
             task.step(time_step, boundaries);
-            print_all(t, pipe, task.buffer.current(), path);
+            //print_all(t, pipe, task.buffer.current(), path);
 
             if (!etalon_timeseries.data.empty())
-                Printer::print_profiles<std::string>(
-                    static_cast<time_t>(0),
-                    { UnixToString(t)},
-                    { { etalon_timeseries(t)[0] - task.buffer.current().pressure.back()}},
-                    "time,time,deff_press",
-                    path + "diff_press.csv");
+            {
+                //Printer::print_profiles<std::string>(
+                //    static_cast<time_t>(0),
+                //    { UnixToString(t)},
+                //    { { etalon_timeseries(t)[0] - task.buffer.current().pressure.back()}},
+                //    "time,time,deff_press",
+                //    path + "diff_press.csv");
 
-
+            }
         } while (t <= boundary_timeseries.get_end_date());
     }
 };
