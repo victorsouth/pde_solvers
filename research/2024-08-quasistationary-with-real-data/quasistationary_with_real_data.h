@@ -120,17 +120,16 @@ protected:
             t += static_cast<time_t>(time_step);
 
             task.step(time_step, boundaries);
-            //print_all(t, pipe, task.buffer.current(), path);
+            Printer::print_all(t, pipe, task.buffer.current(), path);
 
             if (!etalon_timeseries.data.empty())
             {
-                //Printer::print_profiles<std::string>(
-                //    static_cast<time_t>(0),
-                //    { UnixToString(t)},
-                //    { { etalon_timeseries(t)[0] - task.buffer.current().pressure.back()}},
-                //    "time,time,deff_press",
-                //    path + "diff_press.csv");
-
+                double pressure_delta = etalon_timeseries(t)[0] - task.buffer.current().pressure.back();
+                Printer::print_profiles<std::string>(static_cast<time_t>(0),
+                    vector<string>{ UnixToString(t) },
+                    vector<vector<double>>{ { pressure_delta  } },
+                    "time,time,diff_press",
+                    path + "diff_press.csv");
             }
         } while (t <= boundary_timeseries.get_end_date());
     }
