@@ -104,7 +104,7 @@ protected:
         // task.print_profile(path);
         write_profile(pipe.profile, path + "pipe_coord_heights");
         //task.print_all(t, path);
-        Printer::print_all(t, pipe, task.buffer.current(), path);
+        Printer::print_all(t, pipe, task.get_current_layer(), path);
 
         do
         {
@@ -120,11 +120,11 @@ protected:
             t += static_cast<time_t>(time_step);
 
             task.step(time_step, boundaries);
-            Printer::print_all(t, pipe, task.buffer.current(), path);
+            Printer::print_all(t, pipe, task.get_current_layer(), path);
 
             if (!etalon_timeseries.data.empty())
             {
-                double pressure_delta = etalon_timeseries(t)[0] - task.buffer.current().pressure.back();
+                double pressure_delta = etalon_timeseries(t)[0] - task.get_current_layer().pressure.back();
                 Printer::print_profiles<std::string>(static_cast<time_t>(0),
                     vector<string>{ UnixToString(t) },
                     vector<vector<double>>{ { pressure_delta  } },

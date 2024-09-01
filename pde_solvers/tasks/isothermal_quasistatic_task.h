@@ -7,6 +7,10 @@ namespace pde_solvers {
 
 using std::string;
 
+enum class QuasiType { 
+    DensityQuasi, ViscosityQuasi, FullQuasi
+};
+
 
 /// @brief Проблемно-ориентированный слой для гидравлического квазистационарного расчета
 /// @tparam CellFlag Флаг расчёта реологии 
@@ -85,17 +89,23 @@ struct isothermal_quasistatic_task_boundaries_t {
 /// @tparam Solver Тип солвера партий (advection_moc_solver или quickest_ultimate_fv_solver)
 template <typename Solver>
 class isothermal_quasistatic_task_t {
-public:
+private:
     pipe_properties_t pipe;
     ring_buffer_t<density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true>> buffer;
+    QuasiType quasi_type;
 
 public:
     /// @brief Конструктор
     /// @param pipe Модель трубопровода
-    isothermal_quasistatic_task_t(const pipe_properties_t& pipe)
+    isothermal_quasistatic_task_t(const pipe_properties_t& pipe, const QuasiType& quasi_type = QuasiType::FullQuasi)
         : pipe(pipe)
         , buffer(2, pipe.profile.getPointCount())
+        , quasi_type( quasi_type ) 
     {
+    }
+
+    density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true> get_current_layer() {
+        return buffer.current()
     }
 
     /// @brief Начальный стационарный расчёт
@@ -142,29 +152,45 @@ private:
 
         if constexpr (std::is_same<Solver, advection_moc_solver>::value) {
 
-            // Шаг по плотности
-            advection_moc_solver solver_rho(pipe, Q_profile[0], buffer.previous().density, buffer.current().density);
-            solver_rho.step(dt, boundaries.density, boundaries.density);
-            // Шаг по вязкости
-            advection_moc_solver solver_nu(pipe, Q_profile[0], buffer.previous().viscosity, buffer.current().viscosity);
-            solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
+            if (quasi_type == QuasiType::FullQuasi || quasi_type == QuasiType::DensityQuasi) {
+                // Шаг по плотности
+                advection_moc_solver solver_rho(pipe, Q_profile[0], buffer.previous().density, buffer.current().density);
+                solver_rho.step(dt, boundaries.density, boundaries.density);
+            }
 
+            if (quasi_type == QuasiType::FullQuasi || quasi_type == QuasiType::ViscosityQuasi) {
+                // Шаг по вязкости
+                advection_moc_solver solver_nu(pipe, Q_profile[0], buffer.previous().viscosity, buffer.current().viscosity);
+                solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
+            }
         }
         else {
             PipeQAdvection advection_model(pipe, Q_profile);
 
-            auto density_wrapper = buffer.get_buffer_wrapper(
-                &density_viscosity_quasi_layer<1>::get_density_wrapper);
+            if (quasi_type == QuasiType::FullQuasi || quasi_type == QuasiType::DensityQuasi) {
+                auto density_wrapper = buffer.get_buffer_wrapper(
+                    &density_viscosity_quasi_layer<1>::get_density_wrapper);
 
-            auto viscosity_wrapper = buffer.get_buffer_wrapper(
-                &density_viscosity_quasi_layer<1>::get_viscosity_wrapper);
+                // Шаг по плотности
+                quickest_ultimate_fv_solver solver_rho(advection_model, density_wrapper);
+                solver_rho.step(dt, boundaries.density, boundaries.density);
+            }
 
-            // Шаг по плотности
-            quickest_ultimate_fv_solver solver_rho(advection_model, density_wrapper);
-            solver_rho.step(dt, boundaries.density, boundaries.density);
-            // Шаг по вязкости
-            quickest_ultimate_fv_solver solver_nu(advection_model, viscosity_wrapper);
-            solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
+            if (quasi_type == QuasiType::FullQuasi || quasi_type == QuasiType::ViscosityQuasi) {
+                auto viscosity_wrapper = buffer.get_buffer_wrapper(
+                    &density_viscosity_quasi_layer<1>::get_viscosity_wrapper);
+                
+                // Шаг по вязкости
+                quickest_ultimate_fv_solver solver_nu(advection_model, viscosity_wrapper);
+                solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
+            }
+
+            
+
+            
+
+            
+            
         }
     }
 
