@@ -1,0 +1,68 @@
+stages:
+  - Static_test
+  - Build
+
+#Проверка кодировки файлов с расширением .m .cpp .h на соответствие UTF-8
+Unicode_Check:
+  stage: Static_test
+  tags:
+    - docker
+  image: hub.ktk.gubkin.ru/proxy/gcc
+  script:
+    - mkdir -p pipeline/pipeline_result
+    - touch encoding_error_list.txt pipeline/pipeline_result
+    - bash pipeline/pipeline_scripts/unicode_check.sh
+  allow_failure: true
+  artifacts:
+    expire_in: 48 hour
+    when: on_failure
+    paths:
+      - pipeline/pipeline_result
+
+Clang_test:
+  stage: Static_test
+  tags:
+    - docker
+  image: xianpengshen/clang-tools:18
+  script:
+    - mkdir -p pipeline/pipeline_result
+    - bash ./pipeline/pipeline_scripts/Clang_test.sh
+  allow_failure: true
+  artifacts:
+    expire_in: 48 hour
+    when: always
+    paths:
+      - pipeline/pipeline_result
+
+#Сборка проекта GCC
+GCC_build:
+  stage: Build
+  tags:
+    - docker
+  image: hub.ktk.gubkin.ru/library/gcc_cmake_boost_eigen_gtest:latest
+  script:
+    - bash pipeline/pipeline_scripts/gccbuild.sh
+  allow_failure: false
+  artifacts:
+    expire_in: 24 hour
+    when: always
+    paths:
+      - pipeline/pipeline_result/build_gcc_result
+      - Libs/GCC
+
+#Сборка проекта MinGW
+MinGW_build:
+  stage: Build
+  tags:
+    - windows
+  script:
+    - cd pipeline/pipeline_scripts/
+    - .\mingwbuild.ps1
+  resource_group: dev-build
+  allow_failure: false
+  artifacts:
+    expire_in: 24 hour
+    when: always
+    paths:
+      - pipeline/pipeline_result/build_mingw_result
+      - Libs/MinGW
