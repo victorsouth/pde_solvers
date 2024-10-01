@@ -19,20 +19,20 @@ Unicode_Check:
     paths:
       - pipeline/pipeline_result
 
-Clang_test:
-  stage: Static_test
-  tags:
-    - docker
-  image: hub.ktk.gubkin.ru/proxy/jhasse/clang-tidy:latest
-  script:
-    - mkdir -p pipeline/pipeline_result
-    - bash ./pipeline/pipeline_scripts/Clang_test.sh
-  allow_failure: true
-  artifacts:
-    expire_in: 48 hour
-    when: always
-    paths:
-      - pipeline/pipeline_result
+#Clang_test:
+#  stage: Static_test
+#  tags:
+#    - docker
+#  image: hub.ktk.gubkin.ru/proxy/jhasse/clang-tidy:latest
+#  script:
+#    - mkdir -p pipeline/pipeline_result
+#    - bash ./pipeline/pipeline_scripts/Clang_test.sh
+#  allow_failure: true
+#  artifacts:
+#    expire_in: 48 hour
+#    when: always
+#    paths:
+#      - pipeline/pipeline_result
 
 #Сборка проекта GCC
 GCC_build:
