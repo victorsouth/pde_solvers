@@ -159,14 +159,15 @@ public:
         time_t start_period = std::numeric_limits<time_t>::min(),
         time_t end_period = std::numeric_limits<time_t>::max()) const
     {
-        vector<pair<vector<time_t>, vector<double>>> data;
+        vector<pair<vector<time_t>, vector<double>>> data(filename_dim.size());
 
-        for (size_t i = 0; i < filename_dim.size(); i++)
+#pragma omp parallel for schedule(dynamic)
+        for (int i = 0; i < static_cast<int>(filename_dim.size()); i++)
         {
             csv_tag_reader tag_reader(filename_dim[i]);
             pair<vector<time_t>, vector<double>> data_from_single_csv =
                 tag_reader.read_csv(start_period, end_period);
-            data.emplace_back(std::move(data_from_single_csv));
+            data[i] = std::move(data_from_single_csv);
         }
 
         return data;

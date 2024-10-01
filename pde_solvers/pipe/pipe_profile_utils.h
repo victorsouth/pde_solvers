@@ -348,4 +348,21 @@ inline PipeProfile create_uniform_profile(const PipeProfile& source_profile, dou
 }
 
 
+/// @brief Вывод профиля в файл
+/// @param coord_heights вектор, первый элемент которого сетка координат, а второй - соответствующие высотные отметки
+/// @param filename путь и имя файла
+inline void write_profile(const PipeProfile& profile, const string filename)
+{
+	std::ofstream output_file;
+	size_t profCount = profile.getPointCount();
+	output_file.open(filename + ".csv");
+	output_file << "plug,km,height" << std::endl;
+	for (size_t i = 0; i < profCount; i++)
+	{
+		output_file << "0," << profile.coordinates[i] << ',' << profile.heights[i] << std::endl;
+	}
+}
+
+
+
 }
