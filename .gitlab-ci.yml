@@ -23,7 +23,7 @@ Clang_test:
   stage: Static_test
   tags:
     - docker
-  image: xianpengshen/clang-tools:18
+  image: hub.ktk.gubkin.ru/proxy/jhasse/clang-tidy:latest
   script:
     - mkdir -p pipeline/pipeline_result
     - bash ./pipeline/pipeline_scripts/Clang_test.sh
