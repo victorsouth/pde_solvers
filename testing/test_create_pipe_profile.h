@@ -37,20 +37,6 @@ inline PipeProfile build_profile_with_diff_step(const double length, const doubl
 	return source_prof;
 }
 
-/// @brief Вывод профиля в файл
-/// @param coord_heights вектор, первый элемент которого сетка координат, а второй - соответствующие высотные отметки
-/// @param filename путь и имя файла
-inline void write_profile(const PipeProfile& profile,const string filename)
-{
-	std::ofstream output_file;
-	size_t profCount = profile.getPointCount();
-	output_file.open(filename + ".csv");
-	output_file << "plug,km,height" << std::endl;
-	for (size_t i = 0; i < profCount; i++)
-	{
-		output_file << "0," << profile.coordinates[i] << ',' << profile.heights[i] << endl;
-	}
-}
 
 /// @brief Генерация профиля с переменным шагом по координате и примнение его 
 /// в качестве исходного профиля для создания профиля с постоянным шагом

@@ -17,6 +17,66 @@ inline std::string prepare_research_folder_for_qsm_model(std::string dop_path = 
     return path;
 }
 
+
+template <typename Solver = advection_moc_solver>
+struct matlab_printer {
+    /// @brief Формирует имя файл для результатов исследования разных численных метов
+    /// @tparam Solver Класс солвера
+    /// @param path Путь, в котором формируется файл
+    /// @return Путь к файлу в заивисимости от указанного класса солвера
+    static std::string get_courant_research_filename_for_qsm(const string& path, const string& layer_name)
+    {
+        std::stringstream filename;
+        filename << path << "output " << layer_name << ".csv";
+        return filename.str();
+    }
+
+    /// @brief Запись в файл 
+    /// @param layer Слой
+    /// @param dt Временной шаг моделирования
+    /// @param path Путь к файлу
+    /// @param layer_name Тип профиля
+    void print(const std::vector<double>& layer, const std::time_t dt, const std::string& path, const std::string& layer_name)
+    {
+        std::string filename = get_courant_research_filename_for_qsm(path, layer_name);
+
+        std::ofstream  file(filename, std::ios::app);
+        if (file.is_open()) {
+            //std::tm tm_buf;
+            //localtime_s(&tm_buf, &dt);
+            //file << std::put_time(&tm_buf, "%c") << ";";
+            file << UnixToString(dt, "%c") << ";";
+            for (int j = 0; j < layer.size(); j++)
+            {
+                file << std::to_string(layer[j]) << ";";
+            }
+            file << "\n";
+            file.close();
+        }
+    }
+
+    /// @brief Вывод профилей плотности, вязкости, давления и отклонения давления от начального 
+    /// @param path Путь к файлам с профилями
+    /// @param t Момент моделирвоания
+    /// @param pipe МОдель трубы
+    /// @param layer Проблемно-ориентированный слой
+    /// @param etalon_values Эталонные значения
+    void print_all(
+        std::string path,
+        const time_t& t,
+        const pipe_properties_t& pipe,
+        const density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true >& layer,
+        const vector<double>& etalon_values = {}
+    ) {
+        print(layer.density, t, path, "density");
+        print(layer.viscosity, t, path, "viscosity");
+        print(layer.pressure, t, path, "pressure");
+        print(layer.pressure_delta, t, path, "pressure_delta");
+
+    }
+
+};
+
 /// @brief Тесты для солвера
 class IsothermalQuasistaticModel : public ::testing::Test {
 protected:
@@ -86,49 +146,6 @@ public:
         vector_timeseries_t params(data);
         return params;
     }
-
-    /// @brief Стационарный расчет (с помощью initial boundaries),
-    /// а затем квазистационарный расчет по краевым условиям (boundary_timeseries)
-    /// @tparam Layer Слой для расчета плотности, вязкости и давления для численного метода
-    /// @tparam Solver Численный метод расчета движения партий
-    /// @param path Путь к файлу с результатом
-    /// @param initial_boundaries Начальные условия
-    /// @param boundary_timeseries Краевые условия
-    /// @param dt Шаг по времени либо задаётся постоянным, 
-    /// либо рассчитывается на каждом шаге моделирования для Cr = 1
-    template <typename Solver>
-    void perform_quasistatic_simulation(
-        const string& path, 
-        const isothermal_quasistatic_task_boundaries_t& initial_boundaries,
-        const vector_timeseries_t& boundary_timeseries, 
-        double dt = std::numeric_limits<double>::quiet_NaN())
-    {
-        isothermal_quasistatic_task_t<Solver> task(pipe);
-        task.solve(initial_boundaries);
-
-        time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
-
-        // Печатаем профиль трубы и первый слой к нему
-        task.print_profile(path);
-        task.print_all(t, path);
-
-        do
-        {
-            // Интерполируем значения параметров в заданный момент времени
-            vector<double> values_in_time_model = boundary_timeseries(t);
-            isothermal_quasistatic_task_boundaries_t boundaries(values_in_time_model);
-
-            double time_step = dt;
-            if (std::isnan(time_step)) {
-                double v = boundaries.volumetric_flow / pipe.wall.getArea(); 
-                time_step = task.get_time_step_assuming_max_speed(v);
-            }
-            t += static_cast<time_t>(time_step);
-
-            task.step(time_step, boundaries);
-            task.print_all(t, path);
-        } while (t < boundary_timeseries.get_end_date());
-    }
 };
 
 /// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
@@ -152,8 +169,8 @@ TEST_F(IsothermalQuasistaticModel, QuickWithQuasiStationaryModel)
     // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
     double dt = 75;
-    perform_quasistatic_simulation<quickest_ultimate_fv_solver>(
-        path, initial_boundaries, time_series, dt);
+    perform_quasistatic_simulation<quickest_ultimate_fv_solver, matlab_printer<quickest_ultimate_fv_solver>>(
+        path, pipe, initial_boundaries, time_series, ModelType::FullQuasi, dt);
 }
 /// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом (идеальные настройки)
 TEST_F(IsothermalQuasistaticModel, IdealQuickWithQuasiStationaryModel)
@@ -182,8 +199,8 @@ TEST_F(IsothermalQuasistaticModel, IdealQuickWithQuasiStationaryModel)
     settings.sample_time_min = 200;
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
     // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
-    perform_quasistatic_simulation<quickest_ultimate_fv_solver>(
-        path, initial_boundaries, time_series);
+    perform_quasistatic_simulation<quickest_ultimate_fv_solver, matlab_printer<quickest_ultimate_fv_solver>>(
+        path, pipe, initial_boundaries, time_series, ModelType::FullQuasi);
 }
 /// @brief Пример использования метода характеристик с гидравлическим расчетом  
 TEST_F(IsothermalQuasistaticModel, MocWithQuasiStationaryModel)
@@ -205,8 +222,8 @@ TEST_F(IsothermalQuasistaticModel, MocWithQuasiStationaryModel)
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
     double dt = 75;
-    perform_quasistatic_simulation<advection_moc_solver>(
-        path, initial_boundaries, time_series, dt);
+    perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
+        path, pipe, initial_boundaries, time_series, ModelType::FullQuasi, dt);
 }
 /// @brief Пример использования метода характеристик (переменный шаг) с гидравлическим расчетом  
 TEST_F(IsothermalQuasistaticModel, OptionalStepMocWithQuasiStationaryModel)
@@ -227,8 +244,8 @@ TEST_F(IsothermalQuasistaticModel, OptionalStepMocWithQuasiStationaryModel)
     };
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
-    perform_quasistatic_simulation<advection_moc_solver>(
-        path, initial_boundaries, time_series);
+    perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
+        path, pipe, initial_boundaries, time_series, ModelType::FullQuasi);
 }
 
 /// @brief Пример использования метода характеристик с гидравлическим расчетом (идеальные настройки)  
@@ -256,8 +273,8 @@ TEST_F(IsothermalQuasistaticModel, IdealMocWithQuasiStationaryModel)
     settings.sample_time_min = 200;
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
-    perform_quasistatic_simulation<advection_moc_solver>(
-        path, initial_boundaries, time_series);
+    perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
+        path, pipe, initial_boundaries, time_series, ModelType::FullQuasi);
 }
 
 /// @brief Пример использования метода характеристик с гидравлическим расчетом (идеальные настройки)
@@ -288,8 +305,8 @@ TEST_F(IsothermalQuasistaticModel, IdealImpulsMocWithQuasiStationaryModel)
     double jump_value = -10;
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings, jump_time, jump_value, "rho_in");
-    perform_quasistatic_simulation<advection_moc_solver>(
-        path, initial_boundaries, time_series);
+    perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
+        path, pipe, initial_boundaries, time_series, ModelType::FullQuasi);
 }
 
 
@@ -325,8 +342,8 @@ TEST_F(IsothermalQuasistaticModel, ShowProfileImpactInQuasiStationaryModel)
 
     // Вызываем метод расчета квазистационарной модели с помощью МХ для полного профиля 
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
-    perform_quasistatic_simulation<advection_moc_solver>(
-        path_full_profile, initial_boundaries, time_series);
+    perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
+        path_full_profile, pipe, initial_boundaries, time_series, ModelType::FullQuasi);
 
     pipe.profile = PipeProfile::create(
         pipe.profile.getPointCount(), 
@@ -338,8 +355,8 @@ TEST_F(IsothermalQuasistaticModel, ShowProfileImpactInQuasiStationaryModel)
     );
     // Вызываем метод расчета квазистационарной модели с помощью МХ для профиля по первой и последней точкам
     vector_timeseries_t time_series_2 = generate_timeseries(timeseries_initial_values, settings);
-    perform_quasistatic_simulation<advection_moc_solver>(
-        path_start_end_profile, initial_boundaries, time_series_2);
+    perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
+        path_start_end_profile, pipe, initial_boundaries, time_series_2, ModelType::FullQuasi);
 }
 
 
