@@ -1,9 +1,18 @@
 ﻿#pragma once
 
-class quasistatic_printer {
-public:
+/// @brief Класс, содержащий функции для вывода
+/// профилей в файл в формате для плоттеров на Python
+template <typename Solver = advection_moc_solver>
+struct python_printer {
+    /// @brief Вывод профилей в файл
+    /// @tparam OX Тип данных по оси ОX
+    /// @param time_moment Время моделирования
+    /// @param x Ось ОХ
+    /// @param params Вектор параметров для вывода
+    /// @param params_name Названия параметров для вывода
+    /// @param filename Название файла
     template <typename OX>
-    static void print_profiles(time_t time_moment, vector<OX> x, vector<vector<double>> params, std::string params_name, std::string filename) {
+    static void print_profiles(const time_t& time_moment, const vector<OX>& x, const vector<vector<double>>& params, const std::string& params_name, const std::string& filename) {
         std::ofstream output_file;
         size_t profCount = params.size();
         std::string time_str = UnixToString(time_moment);
@@ -28,7 +37,19 @@ public:
         output_file.close();
     };
 
-    static void print_all(time_t t, pipe_properties_t pipe, const density_viscosity_quasi_layer<false>& layer, std::string folder) {
+    /// @brief Вывод профилей плотности, вязкости и давления
+    /// @param t Время моделирования
+    /// @param pipe Модель трубы
+    /// @param layer Слой, хранящий информацию о 
+    /// профилях плотности, вязкости и давления
+    /// @param folder Название папки с результатом
+    static void print_all(
+        std::string folder,
+        const time_t& t,
+        const pipe_properties_t& pipe,
+        const density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true >& layer,
+        const vector<double>& etalon_values = {}
+    ) {
         print_profiles<double>(
             t,
             pipe.profile.coordinates,
@@ -36,15 +57,32 @@ public:
             "time,coordinates,density,viscosity,pressure",
             folder + "results.csv"
         );
+
+        // Вывод временного ряда отклонения расчётного давления от фактического
+        if (!etalon_values.empty())
+        {
+            double pressure_delta = etalon_values[0] - layer.pressure.back();
+            print_profiles<std::string>(static_cast<time_t>(0),
+                vector<string>{ UnixToString(t) },
+                vector<vector<double>>{ { pressure_delta  } },
+                "time,time,diff_press",
+                folder + "diff_press.csv");
+        }
     }
 };
 
-/// @brief Тесты для солвера
-class RealPipeline : public ::testing::Test {
+/// @brief Тесты для расчёта на реальных данных
+class IsothermalQuasistaticModelWithRealData : public ::testing::Test {
 protected:
-    /// @brief Параметры трубы
+    // Параметры трубы
     pipe_properties_t pipe;
-
+    // Путь к результатам ресёрча
+    string path;
+    // Временные ряды краевых условий
+    vector<pair<vector<time_t>, vector<double>>> tag_data;
+    // Временные ряды эталонных данных
+    vector<pair<vector<time_t>, vector<double>>> etalon_tag_data;
+    // Путь к реальным данным с трубопровода
     std::string folder = "../research/2024-08-quasistationary-with-real-data/data/";
 
     /// @brief Подготовка к расчету для семейства тестов
@@ -57,135 +95,158 @@ protected:
         // Создаём новый профиль с постоянным шагом
         pipe.profile = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, file_name);
         pipe.wall.diameter = 1;
-    }
 
-    /// @brief Перегрузка функции для возможности задания постоянного
-    /// шага по времени без эталонных данных
-    template <typename Solver, typename Printer>
-    void perform_quasistatic_simulation(
-        const string& path,
-        const pipe_properties_t& pipe,
-        const vector_timeseries_t& boundary_timeseries,
-        double dt = std::numeric_limits<double>::quiet_NaN())
-    {
-        perform_quasistatic_simulation<Solver>(path, pipe, boundary_timeseries, vector_timeseries_t(), dt);
-    }
+        // Создаём папку с результатами и получаем путь к ней
+        path = prepare_research_folder_for_qsm_model();
 
-    
-     /// @brief Стационарный расчет (с помощью initial boundaries),
-    /// а затем квазистационарный расчет по краевым условиям (boundary_timeseries)
-    /// @tparam Solver Численный метод расчета движения партий
-    /// @tparam Printer Класс для вывода результатов в файл
-    /// @param path Путь к файлу с результатом
-    /// @param pipe Модель трубы
-    /// @param boundary_timeseries Краевые условия
-    /// !!! Важно, чтобы вектор на заданный момент времени был совместим по порядку параметров с isothermal_quasistatic_task_boundaries_t !!!
-    /// @param etalon_timeseries Эталонные данные давления в конце трубопровода 
-    /// @param dt Шаг по времени либо задаётся постоянным, 
-    /// либо рассчитывается на каждом шаге моделирования для Cr = 1
-    template <typename Solver, typename Printer>
-    void perform_quasistatic_simulation(
-        const string& path, 
-        const pipe_properties_t& pipe,
-        const vector_timeseries_t& boundary_timeseries, 
-        //const vector<pair<vector<time_t>, vector<double>>>& params_data,
-        const vector_timeseries_t& etalon_timeseries = vector_timeseries_t(),
-        double dt = std::numeric_limits<double>::quiet_NaN())
-    {
-
-        time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
-        isothermal_quasistatic_task_boundaries_t initial_boundaries(boundary_timeseries(t));
-
-        isothermal_quasistatic_task_t<Solver> task(pipe);
-        task.solve(initial_boundaries);
-
-
-        // Печатаем профиль трубы и первый слой к нему
-        // task.print_profile(path);
-        write_profile(pipe.profile, path + "pipe_coord_heights");
-        //task.print_all(t, path);
-        Printer::print_all(t, pipe, task.buffer.current(), path);
-
-        do
+        vector<pair<string, string>>parameters =
         {
-            // Интерполируем значения параметров в заданный момент времени
-            vector<double> values_in_time_model = boundary_timeseries(t);
-            isothermal_quasistatic_task_boundaries_t boundaries(values_in_time_model);
+            { folder + "Q_in", "m3/h-m3/s"s },
+            { folder + "p_in", "MPa"s },
+            { folder + "rho_in", "kg/m3"s },
+            { folder + "visc_in", "mm^2/s-m^2/s"s },
+            { folder + "p_out", "MPa"s}
 
-            double time_step = dt;
-            if (std::isnan(time_step)) {
-                double v = boundaries.volumetric_flow / pipe.wall.getArea(); 
-                time_step = task.get_time_step_assuming_max_speed(v);
-            }
-            t += static_cast<time_t>(time_step);
+        };
 
-            task.step(time_step, boundaries);
-            //print_all(t, pipe, task.buffer.current(), path);
+        // Задаём период
+        string start_period = "01.08.2021 00:00:00";
+        string end_period = "01.09.2021 00:00:00";
 
-            if (!etalon_timeseries.data.empty())
-            {
-                //Printer::print_profiles<std::string>(
-                //    static_cast<time_t>(0),
-                //    { UnixToString(t)},
-                //    { { etalon_timeseries(t)[0] - task.buffer.current().pressure.back()}},
-                //    "time,time,deff_press",
-                //    path + "diff_press.csv");
+        // Считываем временные ряды параметров
+        csv_multiple_tag_reader tags(parameters);
+        tag_data = tags.read_csvs(start_period, end_period);
+        etalon_tag_data = { tag_data.back() };
+        tag_data.pop_back();
 
-            }
-        } while (t <= boundary_timeseries.get_end_date());
+        // Считываем временные ряды параметров
+        /*csv_multiple_tag_reader etalon_tags(etalon_parameters);
+        etalon_tag_data = etalon_tags.read_csvs(start_period, end_period);*/
+
+        
     }
 };
 
-TEST(Test, QuasiStationaryFull)
+/// @brief Стационарный расчёт с текущей реологией 
+TEST_F(IsothermalQuasistaticModelWithRealData, StationaryCurrentReology)
 {
-    vector<int> v1 = { 1, 2, 3, 4, 5 };
-    vector<int> v2;
-    v2 = vector<int>(v1.begin() + 1, v1.begin() + 5);
-
-    cout << v2.size() << endl;
-}
-
-
-/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
-TEST_F(RealPipeline, QuasiStationaryFull)
-{
-    // Создаём папку с результатами и получаем путь к ней
-    string path = prepare_research_folder_for_qsm_model();
-
-    vector<pair<string, string>>parameters =
-    {
-        { folder + "Q_in", "m3/h-m3/s"s },
-        { folder + "p_in", "MPa"s },
-        { folder + "rho_in", "kg/m3"s },
-        { folder + "visc_in", "mm^2/s-m^2/s"s },
-        { folder + "p_out", "MPa"s}
-
-    };
-
-    vector<pair<string, string>> etalon_parameters =
-    {
-        { folder + "p_out", "MPa"s}
-    };
-
-    // Задаём период
-    string start_period = "01.08.2021 00:00:00";
-    string end_period = "01.09.2021 00:00:00";
-
-    // Считываем временные ряды параметров
-    csv_multiple_tag_reader tags(parameters);
-    auto tag_data = tags.read_csvs(start_period, end_period);
-
     // Помещаем временные ряды в вектор
     vector_timeseries_t params(tag_data);
-
-    // Считываем временные ряды параметров
-    csv_multiple_tag_reader etalon_tags(etalon_parameters);
-    auto etalon_tag_data = tags.read_csvs(start_period, end_period);
 
     // Помещаем временные ряды в вектор
     vector_timeseries_t etalon_params(etalon_tag_data);
 
-    perform_quasistatic_simulation<advection_moc_solver, quasistatic_printer>(
-        path, pipe, params, etalon_params
+    // Производим расчёт и записываем результаты в файлы
+    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
+        path, pipe, params, ModelType::Stationary, etalon_params
     );
 }
+
+/// @brief Стационарный расчёт с реологией из начала периода
+TEST_F(IsothermalQuasistaticModelWithRealData, StationaryInitialReology)
+{
+    auto tag_data_initial = tag_data;
+
+    auto& density_time_series = tag_data_initial[2];
+    auto& density_values = density_time_series.second; // second - это значения (first - время, здесь не надо)
+
+    // ставим везде начальное значение плотности
+    double initial_density = density_values.front(); 
+    for (double& value : density_values) {
+        value = initial_density;
+    }
+
+    auto& viscosity_time_series = tag_data_initial[3];
+    auto& viscosity_values = viscosity_time_series.second; // second - это значения (first - время, здесь не надо)
+
+    // ставим везде начальное значение плотности
+    double initial_viscosity = viscosity_values.front();
+    for (double& value : viscosity_values) {
+        value = initial_viscosity;
+    }
+
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t params(tag_data_initial);
+
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t etalon_params(etalon_tag_data);
+
+    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
+        path, pipe, params, ModelType::Stationary, etalon_params
+    );
+}
+
+/// @brief Стационарный расчёт со средней за период реологией 
+TEST_F(IsothermalQuasistaticModelWithRealData, StationaryMeanReology)
+{
+    auto tag_data_initial = tag_data;
+
+    auto& density_values = tag_data_initial[2].second; // second - это значения (first - время, здесь не надо)
+    double sum = std::accumulate(density_values.begin(), density_values.end(), 0.0);
+    double mean_density = sum / density_values.size();
+
+    for (double& value : density_values) {
+        value = mean_density;
+    }
+
+    auto& viscosity_values = tag_data_initial[3].second;
+    sum = std::accumulate(viscosity_values.begin(), viscosity_values.end(), 0.0);
+    double mean_viscosity = sum / viscosity_values.size();
+
+    for (double& value : viscosity_values) {
+        value = mean_viscosity;
+    }
+
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t params(tag_data_initial);
+
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t etalon_params(etalon_tag_data);
+
+    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
+        path, pipe, params, ModelType::Stationary, etalon_params
+    );
+}
+
+/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
+TEST_F(IsothermalQuasistaticModelWithRealData, QuasiStationaryFullReology)
+{
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t params(tag_data);
+
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t etalon_params(etalon_tag_data);
+
+    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
+        path, pipe, params, ModelType::FullQuasi, etalon_params
+    );
+}
+
+/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
+TEST_F(IsothermalQuasistaticModelWithRealData, QuasiStationaryDensityOnly)
+{
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t params(tag_data);
+
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t etalon_params(etalon_tag_data);
+
+    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
+        path, pipe, params, ModelType::DensityQuasi, etalon_params
+    );
+}
+
+/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
+TEST_F(IsothermalQuasistaticModelWithRealData, QuasiStationaryViscosityOnly)
+{
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t params(tag_data);
+
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t etalon_params(etalon_tag_data);
+
+    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
+        path, pipe, params, ModelType::ViscosityQuasi, etalon_params
+    );
+}
+

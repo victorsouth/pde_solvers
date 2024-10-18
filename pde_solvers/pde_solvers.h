@@ -9,6 +9,7 @@
 #define TECHNICAL_ATMOSPHERE 98097.0
 
 
+#include <pde_solvers/timeseries.h>
 
 #include "core/ring_buffer.h"
 #include "core/differential_equation.h"
