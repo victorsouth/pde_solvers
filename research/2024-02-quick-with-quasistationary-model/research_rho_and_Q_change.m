@@ -44,9 +44,9 @@ function processDirectoryData(upperPath, relativePath, name)
     %minValue4 = 2.43e+06;
     %maxValue4 = 2.44e+06;
     % Отображение данных перед началом цикла и получение гифки
-    plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name);
-    createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name);
-    %plotScaledData(data, data3, km, minValue3, maxValue3, name);
+%     plotData(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name);
+%     createGif(data, data2, data3, km, minValue, maxValue, minValue2, maxValue2, minValue3, maxValue3, minValue4, maxValue4, name);
+    plotScaledData(data, data3, km, minValue3, maxValue3, name);
 end
 
 function [data, data2, data3] = loadDataFromFiles(upperPath, relativePath)
