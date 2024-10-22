@@ -19,6 +19,7 @@ Unicode_Check:
     paths:
       - pipeline/pipeline_result
 
+
 #Clang_test:
 #  stage: Static_test
 #  tags:
