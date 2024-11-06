@@ -1,18 +1,5 @@
 ﻿#pragma once
 //
-//VectorXd rosenbrock_function_terms(const VectorXd& value)
-//{
-//    VectorXd result(2);
-//    result(0) = 10 * (value(1) - value(0) * value(0));
-//    result(1) = 1 - value(0);
-//    return result;
-//};
-//
-//double rosenbrock_function(const VectorXd& value)
-//{
-//    //return 100*sqr(value(1) - sqr(value(0))) + sqr(1-value(0));
-//    return rosenbrock_function_terms(value).squaredNorm();
-//}
 //
 //
 //
@@ -246,6 +233,20 @@
 #include <Eigen/Dense>
 using namespace Eigen;
 
+//VectorXd rosenbrock_function_terms(const VectorXd& value)
+//{
+//    VectorXd result(2);
+//    result(0) = 10 * (value(1) - value(0) * value(0));
+//    result(1) = 1 - value(0);
+//    return result;
+//};
+//
+//double rosenbrock_function(const VectorXd& value)
+//{
+//    //return 100*sqr(value(1) - sqr(value(0))) + sqr(1-value(0));
+//    return rosenbrock_function_terms(value).squaredNorm();
+//}
+
 /// @brief Система алгебраических уравнений - базовый класс
 //template <std::ptrdiff_t ResidualsDimension, std::ptrdiff_t ArgumentDimension>
 class fixed_least_squares_function_t {
@@ -391,6 +392,7 @@ private:
     }
 
 public:
+
     /// @brief Запуск численного метода
     /// @tparam LineSearch Алгоритм регулировки шага поиска
     /// @param residuals Функция невязок
@@ -513,11 +515,20 @@ public:
             //    break;
             //}
         }
-    }
+    };
 
 };
 
+template <typename ResidualFunction>
+static VectorXd optimize_gauss_newton(ResidualFunction& function, const VectorXd& initial)
+{
+    fixed_solver_parameters_t<-1, 0, golden_section_search> parameters;
+    fixed_solver_result_t<-1> result;
 
+    fixed_optimize_gauss_newton::optimize(function, initial, parameters, &result);
+
+    return result.argument;
+};
 
 TEST(OptimiseGaussNewton, Test1)
 {
@@ -533,14 +544,29 @@ TEST(OptimiseGaussNewton, Test1)
         }
     };
 
+    VectorXd initial = VectorXd::Zero(2);
     simple_sum_of_squares_function function;
-    fixed_solver_parameters_t<-1, 0, golden_section_search> parameters;
-    fixed_solver_result_t<-1> result;
+
+    auto res = optimize_gauss_newton<simple_sum_of_squares_function>(function, initial);
+}
+
+TEST(OptimiseGaussNewton, RosenbrokFunction)
+{
+    /// @brief J(x1, x2) = (x1 - 2)^2 + (x2 - 1)^2 
+    class rosenbrock_function_t : public fixed_least_squares_function_t
+    {
+    public:
+        VectorXd residuals(const VectorXd& x) {
+            VectorXd result(2);
+            result[0] = 10 * (x(1) - x(0) * x(0));
+            result[1] = 1 - x(0);
+            return result;
+        }
+    };
 
     VectorXd initial = VectorXd::Zero(2);
+    rosenbrock_function_t function;
 
-    fixed_optimize_gauss_newton::optimize(function, initial, parameters, &result);
-
-    //fixed_newton_raphson<2>::solve_dense(test, { 0, 0 }, parameters, &result);
-
+    auto res = optimize_gauss_newton<rosenbrock_function_t>(function, initial);
 }
+
