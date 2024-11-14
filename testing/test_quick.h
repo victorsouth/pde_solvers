@@ -27,9 +27,9 @@ protected:
         simple_pipe_properties simple_pipe = simple_pipe_properties::sample_district();
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
-        Q = vector<double> (pipe.profile.getPointCount(), 0.5);
+        Q = vector<double> (pipe.profile.get_point_count(), 0.5);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -66,9 +66,9 @@ protected:
         simple_pipe.dx = 100; // тест трубы 700км
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
-        Q = vector<double>(pipe.profile.getPointCount(), 0.5);
+        Q = vector<double>(pipe.profile.get_point_count(), 0.5);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -105,9 +105,9 @@ protected:
         simple_pipe.dx = 100; // тест трубы 700км
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
-        Q = vector<double>(pipe.profile.getPointCount(), 0.5);
+        Q = vector<double>(pipe.profile.get_point_count(), 0.5);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -144,9 +144,9 @@ protected:
         simple_pipe.dx = 100; // тест трубы 700км
         pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
-        Q = vector<double>(pipe.profile.getPointCount(), 0.5);
+        Q = vector<double>(pipe.profile.get_point_count(), 0.5);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -155,7 +155,7 @@ protected:
 
 /// @brief Проверка, правильно ли учитывается инверсия потока
 TEST_F(UpstreamDifferencing, CanConsiderFlowSwap) {
-    Q = vector<double>(pipe.profile.getPointCount(), -0.5);
+    Q = vector<double>(pipe.profile.get_point_count(), -0.5);
 
     //Получение текущего/предыдущего слоя
     layer_t& prev = buffer->previous();
@@ -207,7 +207,7 @@ TEST_F(UpstreamDifferencing, UseCaseStepDensity)
 
     for (double Cr = 0.5; Cr < 0.51; Cr += 0.05) {
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -262,7 +262,7 @@ TEST_F(QUICK, UseCaseStepDensity)
 
     for (double Cr = 0.5; Cr < 0.51; Cr += 0.05) {
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -318,7 +318,7 @@ TEST_F(QUICKEST, UseCaseStepDensity)
 
     for (double Cr = 0.5; Cr < 0.51; Cr += 0.05) {
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -383,7 +383,7 @@ TEST(MOC_Solver, MOC_Compare_With_QUICK)
         moc_solver<1>::specific_layer> single_var_moc_t;
 
 
-    vector<double> Q(pipe.profile.getPointCount(), 0.5); // задаем по трубе расход 0.5 м3/с
+    vector<double> Q(pipe.profile.get_point_count(), 0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);
 
     const auto& x = advection_model.get_grid();
@@ -393,7 +393,7 @@ TEST(MOC_Solver, MOC_Compare_With_QUICK)
 
     for (double Cr = 0.05; Cr < 0.51; Cr += 0.05) {
         PipeQAdvection advection_model(pipe, Q);
-        ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
+        ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.get_point_count());
         buffer.advance(+1);
         single_var_moc_t& prev = buffer.previous();
         single_var_moc_t& next = buffer.current();
@@ -445,7 +445,7 @@ TEST_F(QUICKEST_ULTIMATE, UseCaseStepDensity)
 
     for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.getPointCount());
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
 
         layer_t& prev = buffer->previous();
         prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 850);
@@ -486,7 +486,7 @@ TEST_F(QUICKEST_ULTIMATE, UseCaseStepDensity)
 
 /// @brief Проверка QUICKEST-ULTIMATE, правильно ли учитывается инверсия потока
 TEST_F(QUICKEST_ULTIMATE, CanConsiderFlowSwap) {
-    Q = vector<double>(pipe.profile.getPointCount(), -0.5);
+    Q = vector<double>(pipe.profile.get_point_count(), -0.5);
 
     //Получение текущего/предыдущего слоя
     layer_t& prev = buffer->previous();
