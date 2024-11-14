@@ -59,7 +59,11 @@ protected: // обработка координаток
 
         return grid;
     }
-
+public:
+    /// @brief Создает сетку с равным шагом по координате, не меньшим, чем desired_uniform_segment 
+    /// @param initial_coordinate Начальное смещение координаты (если труба начинается не с 0 км)
+    /// @param pipe_length Длина трубы
+    /// @param desired_uniform_segment Минимальная труба сегмента 
     static vector<double> generate_uniform_grid(double initial_coordinate,
         double pipe_length, double desired_uniform_segment)
     {
