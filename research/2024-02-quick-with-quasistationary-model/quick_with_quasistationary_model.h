@@ -170,7 +170,7 @@ TEST_F(IsothermalQuasistaticModel, QuickWithQuasiStationaryModel)
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
     double dt = 75;
     perform_quasistatic_simulation<quickest_ultimate_fv_solver, matlab_printer<quickest_ultimate_fv_solver>>(
-        path, pipe, initial_boundaries, time_series, ModelType::FullQuasi, dt);
+        path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi, dt);
 }
 /// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом (идеальные настройки)
 TEST_F(IsothermalQuasistaticModel, IdealQuickWithQuasiStationaryModel)
@@ -200,7 +200,7 @@ TEST_F(IsothermalQuasistaticModel, IdealQuickWithQuasiStationaryModel)
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
     // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
     perform_quasistatic_simulation<quickest_ultimate_fv_solver, matlab_printer<quickest_ultimate_fv_solver>>(
-        path, pipe, initial_boundaries, time_series, ModelType::FullQuasi);
+        path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi);
 }
 /// @brief Пример использования метода характеристик с гидравлическим расчетом  
 TEST_F(IsothermalQuasistaticModel, MocWithQuasiStationaryModel)
@@ -223,7 +223,7 @@ TEST_F(IsothermalQuasistaticModel, MocWithQuasiStationaryModel)
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
     double dt = 75;
     perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
-        path, pipe, initial_boundaries, time_series, ModelType::FullQuasi, dt);
+        path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi, dt);
 }
 /// @brief Пример использования метода характеристик (переменный шаг) с гидравлическим расчетом  
 TEST_F(IsothermalQuasistaticModel, OptionalStepMocWithQuasiStationaryModel)
@@ -245,7 +245,7 @@ TEST_F(IsothermalQuasistaticModel, OptionalStepMocWithQuasiStationaryModel)
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
     perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
-        path, pipe, initial_boundaries, time_series, ModelType::FullQuasi);
+        path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi);
 }
 
 /// @brief Пример использования метода характеристик с гидравлическим расчетом (идеальные настройки)  
@@ -274,7 +274,7 @@ TEST_F(IsothermalQuasistaticModel, IdealMocWithQuasiStationaryModel)
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
     perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
-        path, pipe, initial_boundaries, time_series, ModelType::FullQuasi);
+        path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi);
 }
 
 /// @brief Пример использования метода характеристик с гидравлическим расчетом (идеальные настройки)
@@ -306,7 +306,7 @@ TEST_F(IsothermalQuasistaticModel, IdealImpulsMocWithQuasiStationaryModel)
     // Вызываем метод расчета квазистационарной модели с помощью МХ
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings, jump_time, jump_value, "rho_in");
     perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
-        path, pipe, initial_boundaries, time_series, ModelType::FullQuasi);
+        path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi);
 }
 
 
@@ -343,7 +343,7 @@ TEST_F(IsothermalQuasistaticModel, ShowProfileImpactInQuasiStationaryModel)
     // Вызываем метод расчета квазистационарной модели с помощью МХ для полного профиля 
     vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
     perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
-        path_full_profile, pipe, initial_boundaries, time_series, ModelType::FullQuasi);
+        path_full_profile, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi);
 
     pipe.profile = PipeProfile::create(
         pipe.profile.getPointCount(), 
@@ -356,7 +356,7 @@ TEST_F(IsothermalQuasistaticModel, ShowProfileImpactInQuasiStationaryModel)
     // Вызываем метод расчета квазистационарной модели с помощью МХ для профиля по первой и последней точкам
     vector_timeseries_t time_series_2 = generate_timeseries(timeseries_initial_values, settings);
     perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
-        path_start_end_profile, pipe, initial_boundaries, time_series_2, ModelType::FullQuasi);
+        path_start_end_profile, pipe, initial_boundaries, time_series_2, QuasistaticModelType::FullQuasi);
 }
 
 

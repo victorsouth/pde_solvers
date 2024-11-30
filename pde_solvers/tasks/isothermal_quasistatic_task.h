@@ -12,7 +12,7 @@ using std::string;
 /// DensityQuasi - квазистац по плотности, вязкость рассчитывается как в стационаре
 /// ViscosityQuasi - квазистац по вязкости, плотность рассчитывается как в стационаре
 /// FullQuasi - полный квазистац
-enum class ModelType {
+enum class QuasistaticModelType {
     Stationary, DensityQuasi, ViscosityQuasi, FullQuasi
 };
 
@@ -93,18 +93,21 @@ struct isothermal_quasistatic_task_boundaries_t {
 /// @tparam Solver Тип солвера партий (advection_moc_solver или quickest_ultimate_fv_solver)
 template <typename Solver=advection_moc_solver>
 class isothermal_quasistatic_task_t {
+public:
+    typedef density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true> layer_type;
+    typedef ring_buffer_t<layer_type> buffer_type;
 private:
     // Модель трубы
     pipe_properties_t pipe;
     // Создаётся буфер, тип слоя которого определяется в зависимости от типа солвера
-    ring_buffer_t<density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true>> buffer;
+    buffer_type buffer;
     // Тип расчёта
-    ModelType model_type;
+    QuasistaticModelType model_type;
 
 public:
     /// @brief Конструктор
     /// @param pipe Модель трубопровода
-    isothermal_quasistatic_task_t(const pipe_properties_t& pipe, ModelType model_type = ModelType::FullQuasi)
+    isothermal_quasistatic_task_t(const pipe_properties_t& pipe, QuasistaticModelType model_type = QuasistaticModelType::FullQuasi)
         : pipe(pipe)
         , buffer(2, pipe.profile.getPointCount())
         , model_type( model_type )
@@ -116,7 +119,8 @@ public:
         return buffer.current();
     }
 
-    /// @brief Начальный стационарный расчёт
+    /// @brief Начальный стационарный расчёт. 
+    /// Ставим по всей трубе реологию из initial_conditions, делаем гидравлический расчет
     /// @param initial_conditions Начальные условия
     void solve(const isothermal_quasistatic_task_boundaries_t& initial_conditions)
     {
@@ -162,7 +166,7 @@ private:
             // считаем партии методом характеристик
 
             // плотность - квазистац или стац
-            if (model_type == ModelType::FullQuasi || model_type == ModelType::DensityQuasi) {
+            if (model_type == QuasistaticModelType::FullQuasi || model_type == QuasistaticModelType::DensityQuasi) {
                 // Шаг по плотности
                 advection_moc_solver solver_rho(pipe, Q_profile[0], buffer.previous().density, buffer.current().density);
                 solver_rho.step(dt, boundaries.density, boundaries.density);
@@ -170,7 +174,7 @@ private:
                 buffer.current().density = vector<double>(buffer.current().density.size(), boundaries.density);
 
             // вязкость - квазистац или стац
-            if (model_type == ModelType::FullQuasi || model_type == ModelType::ViscosityQuasi) {
+            if (model_type == QuasistaticModelType::FullQuasi || model_type == QuasistaticModelType::ViscosityQuasi) {
                 // Шаг по вязкости
                 advection_moc_solver solver_nu(pipe, Q_profile[0], buffer.previous().viscosity, buffer.current().viscosity);
                 solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
@@ -182,7 +186,7 @@ private:
             PipeQAdvection advection_model(pipe, Q_profile);
 
             // плотность - квазистац или стац
-            if (model_type == ModelType::FullQuasi || model_type == ModelType::DensityQuasi) {
+            if (model_type == QuasistaticModelType::FullQuasi || model_type == QuasistaticModelType::DensityQuasi) {
                 // Шаг по плотности
                 auto density_wrapper = buffer.get_buffer_wrapper(
                     &density_viscosity_quasi_layer<1>::get_density_wrapper);
@@ -194,7 +198,7 @@ private:
             }
 
             // вязкость - квазистац или стац
-            if (model_type == ModelType::FullQuasi || model_type == ModelType::ViscosityQuasi) {
+            if (model_type == QuasistaticModelType::FullQuasi || model_type == QuasistaticModelType::ViscosityQuasi) {
                 auto viscosity_wrapper = buffer.get_buffer_wrapper(
                     &density_viscosity_quasi_layer<1>::get_viscosity_wrapper);
                 
@@ -242,21 +246,9 @@ public:
     /// @brief Возвращает ссылку на буфер
     auto& get_buffer()
     {
-        return buffer.buffer;
+        return buffer;
     }
 };
-
-/// @brief Стационарный расчет (с помощью initial boundaries),
-/// а затем квазистационарный расчет по краевым условиям (boundary_timeseries)
-/// @tparam Solver Численный метод расчета движения партий
-/// @tparam Printer Класс для вывода результатов в файл
-/// @param path Путь к файлу с результатом
-/// @param pipe Модель трубы
-/// @param boundary_timeseries Краевые условия
-/// !!! Важно, чтобы вектор на заданный момент времени был совместим по порядку параметров с isothermal_quasistatic_task_boundaries_t !!!
-/// @param etalon_timeseries Эталонные данные давления в конце трубопровода 
-/// @param dt Шаг по времени либо задаётся постоянным, 
-/// либо рассчитывается на каждом шаге моделирования для Cr = 1 (для )
 
 
 /// @brief Стационарный расчет (с помощью initial boundaries),
@@ -278,7 +270,7 @@ inline void perform_quasistatic_simulation(
     const pipe_properties_t& pipe,
     const isothermal_quasistatic_task_boundaries_t& initial_boundaries,
     const vector_timeseries_t& boundary_timeseries,
-    const ModelType& model_type,
+    const QuasistaticModelType& model_type,
     const vector_timeseries_t& etalon_timeseries,
     double dt
 )
@@ -323,6 +315,7 @@ inline void perform_quasistatic_simulation(
         }
 
     } while (t <= boundary_timeseries.get_end_date());
+
 }
 
 /// @brief Перегрузка функции для возможности 
@@ -332,7 +325,7 @@ inline void perform_quasistatic_simulation(
     const string& path,
     const pipe_properties_t& pipe,
     const vector_timeseries_t& boundary_timeseries,
-    const ModelType& model_type,
+    const QuasistaticModelType& model_type,
     const vector_timeseries_t& etalon_timeseries,
     double dt=std::numeric_limits<double>::quiet_NaN())
 {
@@ -351,7 +344,7 @@ inline void perform_quasistatic_simulation(
     const pipe_properties_t& pipe,
     const isothermal_quasistatic_task_boundaries_t& initial_boundaries,
     const vector_timeseries_t& boundary_timeseries,
-    const ModelType& model_type,
+    const QuasistaticModelType& model_type,
     double dt=std::numeric_limits<double>::quiet_NaN())
 {
     perform_quasistatic_simulation<Solver, Printer>(path, pipe, initial_boundaries, boundary_timeseries, model_type, vector_timeseries_t({}), dt);
