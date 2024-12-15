@@ -117,8 +117,8 @@ TEST_F(IdentIsothermalQSM, Diameter)
 
     ident_isothermal_qsm_pipe_diameter_t test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
 
-    fixed_solver_result_t<-1> result;
-    fixed_solver_result_analysis_t<-1> analysis;
+    fixed_optimizer_result_t result;
+    fixed_optimizer_result_analysis_t analysis;
 
     double result_d = test_ident.ident(&result, &analysis);
 }

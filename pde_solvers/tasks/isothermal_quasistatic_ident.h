@@ -97,10 +97,10 @@ public:
 
         return result;
     }
-    double ident(fixed_solver_result_t<-1>* result = nullptr, fixed_solver_result_analysis_t<-1>* analysis = nullptr) {
-        fixed_solver_parameters_t<-1, 0, golden_section_search> parameters;
+    double ident(fixed_optimizer_result_t* result = nullptr, fixed_optimizer_result_analysis_t* analysis = nullptr) {
+        fixed_optimizer_parameters_t parameters;
 
-        fixed_solver_result_t<-1> result_local;
+        fixed_optimizer_result_t result_local;
         if (result == nullptr) {
             result = &result_local;
         }
