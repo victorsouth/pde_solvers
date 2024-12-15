@@ -350,4 +350,69 @@ inline void perform_quasistatic_simulation(
     perform_quasistatic_simulation<Solver, Printer>(path, pipe, initial_boundaries, boundary_timeseries, model_type, vector_timeseries_t({}), dt);
 }
 
+
+
+
+/// @brief Обработчик результатов расчета при пакетном расчете с предподсчитанными временными метками
+/// @tparam LayerType Тип слоя (под МХ, под QUICKEST)
+template <typename LayerType>
+class batch_processor_precalculated_times {
+public:
+    virtual void process_data(size_t step_index, const LayerType& layer) = 0;
+};
+
+/// @brief Накапливает результаты по выходному давлению
+class isothermal_qsm_batch_Pout_collector_t
+    : public batch_processor_precalculated_times<density_viscosity_quasi_layer<true>>
+{
+public:
+    typedef density_viscosity_quasi_layer<true> layer_type;
+protected:
+    vector<double> pipe_pressure_out;
+public:
+    isothermal_qsm_batch_Pout_collector_t(const vector<double>& times)
+        : pipe_pressure_out(times.size(), std::numeric_limits<double>::quiet_NaN())
+    {
+
+    }
+    virtual void process_data(size_t step_index,
+        const density_viscosity_quasi_layer<true>& layer) override
+    {
+        // at() - проверяет выход за границы массива
+        //pipe_pressure_out.at(step_index) = layer.pressure.back();
+        pipe_pressure_out[step_index] = layer.pressure.back();
+    }
+    const vector<double>& get_pressure_out_calculated() const {
+        return pipe_pressure_out;
+    }
+};
+
+/// @brief Пакетный изотермический квазистатический расчет с предподсчитанным временем
+/// делает статический расчет task.solve, а затем столько раз task.step, сколько временных меток в times
+/// @tparam Solver МХ или QUICKEST
+/// @tparam LayerType Точки под МХ или ячейки под QUICKEST
+template <typename Solver, typename LayerType>
+inline void isothermal_quasistatic_batch(
+    isothermal_quasistatic_PQ_task_t<Solver>& task,
+    const vector<double>& times,
+    const vector<vector<double>>& boundary_timeseries,
+    batch_processor_precalculated_times<LayerType>* data_processor
+)
+{
+    isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries(boundary_timeseries[0]);
+    task.solve(initial_boundaries);
+    data_processor->process_data(0, task.get_buffer().current());
+
+    for (size_t step_index = 1; step_index < times.size(); step_index++)
+    {
+        double time_step = times[step_index] - times[step_index - 1];
+        isothermal_quasistatic_PQ_task_boundaries_t boundaries(boundary_timeseries[step_index]);
+
+        task.step(time_step, boundaries);
+
+        data_processor->process_data(step_index, task.get_buffer().current());
+    }
+};
+
+
 }

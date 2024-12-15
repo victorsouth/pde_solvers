@@ -2,151 +2,6 @@
 
 
 
-template <typename LayerType>
-class data_processor_t {
-public:
-    virtual void process_data(size_t step_index, const LayerType& layer) = 0;
-};
-
-
-class isothermal_qsm_simulation_result_collector_t
-    : public data_processor_t<density_viscosity_quasi_layer<true>>
-{
-public:
-    typedef density_viscosity_quasi_layer<true> layer_type;
-protected:
-    vector<double> pipe_pressure_out;
-public:
-    isothermal_qsm_simulation_result_collector_t(const vector<double>& times)
-        : pipe_pressure_out(times.size(), std::numeric_limits<double>::quiet_NaN())
-    {
-
-    }
-    virtual void process_data(size_t step_index, 
-        const density_viscosity_quasi_layer<true>& layer) override
-    {
-        // at() - проверяет выход за границы массива
-        //pipe_pressure_out.at(step_index) = layer.pressure.back();
-        pipe_pressure_out[step_index] = layer.pressure.back();
-    }
-    const vector<double>& get_pressure_out_calculated() const {
-        return pipe_pressure_out;
-    }
-};
-
-/// @brief Пакетный изотермический квазистатический расчет с предподсчитанным временем
-/// делает статический расчет task.solve, а затем столько раз task.step, сколько временных меток в times
-/// @tparam Solver МХ или QUICKEST
-/// @tparam LayerType Точки под МХ или ячейки под QUICKEST
-template <typename Solver, typename LayerType>
-inline void isothermal_quasistatic_batch(
-    isothermal_quasistatic_PQ_task_t<Solver>& task,
-    const vector<double>& times,
-    const vector<vector<double>>& boundary_timeseries,
-    data_processor_t<LayerType>* data_processor
-)
-{
-    isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries(boundary_timeseries[0]);
-    task.solve(initial_boundaries);
-    data_processor->process_data(0, task.get_buffer().current());
-
-    for (size_t step_index = 1; step_index < times.size(); step_index++)
-    {
-        double time_step = times[step_index] - times[step_index - 1];
-        isothermal_quasistatic_PQ_task_boundaries_t boundaries(boundary_timeseries[step_index]);
-
-        task.step(time_step, boundaries);
-
-        data_processor->process_data(step_index, task.get_buffer().current());
-    }
-};
-
-TEST(TimeSeries, PrepareTimeSeries)
-{
-    // Параметры трубы
-    pipe_properties_t pipe;
-    // Путь к результатам ресёрча
-    string path;
-    // Путь к реальным данным с трубопровода
-    std::string folder = "../research/2024-08-quasistationary-with-real-data/data/";
-    // Временные ряды краевых условий
-    vector<pair<vector<time_t>, vector<double>>> control_tag_data;
-    // Временные ряды эталонных данных
-    vector<pair<vector<time_t>, vector<double>>> etalon_tag_data;
-    // Задаём период
-    string start_period = "02.08.2021 00:00:00";
-    string end_period = "02.08.2021 02:00:00";
-
-    // Указываем имя файла и желаемый шаг новой сетки
-    string file_name = folder + "coord_heights.csv";
-    //Желаемый шаг
-    double desired_dx = 200;
-
-    // Создаём новый профиль с постоянным шагом
-    pipe.profile = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, file_name);
-    pipe.wall.diameter = 1;
-
-    vector<pair<string, string>>parameters =
-    {
-        { folder + "Q_in", "m3/h-m3/s"s },
-        { folder + "p_in", "MPa"s },
-        { folder + "rho_in", "kg/m3"s },
-        { folder + "visc_in", "mm^2/s-m^2/s"s },
-        { folder + "p_out", "MPa"s}
-
-    };
-
-    // Считываем временные ряды параметров
-    csv_multiple_tag_reader tags(parameters);
-    etalon_tag_data = { control_tag_data.back() };
-    control_tag_data.pop_back();
-
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t control_parameters_time_series(control_tag_data);
-    vector_timeseries_t etalon_parameters_time_series(etalon_tag_data);
-
-    double step = 600;
-
-    time_t start_period_time = max(control_parameters_time_series.get_start_date(), etalon_parameters_time_series.get_start_date());
-    time_t end_period_time = min(control_parameters_time_series.get_end_date(), etalon_parameters_time_series.get_end_date());
-    time_t duration = (end_period_time - start_period_time);
-
-    size_t dots_count = static_cast<size_t>(ceil(duration / step) + 0.00001);
-
-    vector<double> times(dots_count);
-    vector<vector<double>> control_data(dots_count);
-    vector<vector<double>> etalon_pressure(dots_count);
-
-    for (size_t i = 0; i < dots_count; i++)
-    {
-        times[i] = step * i;
-        time_t t = start_period_time + static_cast<time_t>(times[i] + 0.5);
-
-        control_data[i] = control_parameters_time_series(t);
-        etalon_pressure[i] = control_parameters_time_series(t);
-
-    }
-    
-};
-
-pipe_properties_t read_profile_data()
-{
-    pipe_properties_t pipe;
-    // Путь к реальным данным с трубопровода
-    std::string folder = "../research/2024-08-quasistationary-with-real-data/data/";
-
-    // Указываем имя файла и желаемый шаг новой сетки
-    string file_name = folder + "coord_heights.csv";
-    //Желаемый шаг
-    double desired_dx = 200;
-
-    // Создаём новый профиль с постоянным шагом
-    pipe.profile = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, file_name);
-    pipe.wall.diameter = 1;
-    return pipe;
-};
-
-
 inline pipe_properties_t prepare_pipe(const std::string& path)
 {
     // Указываем имя файла и желаемый шаг новой сетки
@@ -287,11 +142,11 @@ public:
 protected:
     vector<double> calc_vector_residuals(const ident_parameters_isothermal_qsm& ident_parameters)
     {
-        isothermal_qsm_simulation_result_collector_t collector(times);
+        isothermal_qsm_batch_Pout_collector_t collector(times);
         ident_parameters.set_adaptation(pipe_nominal, &pipe_to_ident);
 
         isothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver> task(pipe_to_ident);
-        isothermal_quasistatic_batch<quickest_ultimate_fv_solver, isothermal_qsm_simulation_result_collector_t::layer_type>(
+        isothermal_quasistatic_batch<quickest_ultimate_fv_solver, isothermal_qsm_batch_Pout_collector_t::layer_type>(
             task,
             times,
             control_data,
@@ -352,7 +207,7 @@ void print_j_d(const double d, const double J, const std::string folder)
 }
 
 
-TEST(OptimiseGaussNewton, PipeIdentification)
+TEST(IdentIsothermalQSM, Diameter)
 {
     // Путь к реальным данным с трубопровода
     std::string data_path = "../research/2024-08-quasistationary-with-real-data/data/";
@@ -371,7 +226,7 @@ TEST(OptimiseGaussNewton, PipeIdentification)
     double result_d = test_ident.ident(&result, &analysis);
 }
 
-TEST(OptimiseGaussNewton, PipeIdentificationWithPrinter)
+TEST(IdentIsothermalQSM, PipeIdentificationWithPrinter)
 {
     std::string path = prepare_research_folder_for_qsm_model();
 
