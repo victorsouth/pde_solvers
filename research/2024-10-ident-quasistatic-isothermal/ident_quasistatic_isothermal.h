@@ -341,8 +341,8 @@ TEST(OptimiseGaussNewton, PipeIdentification)
     pipe_identification_t test_ident;
     //VectorXd residuals = test_ident.residuals(initial_d);
 
-    fixed_solver_parameters_t<-1, 0, golden_section_search> parameters;
-    fixed_solver_result_t<-1> result;
+    fixed_optimizer_parameters_t parameters;
+    fixed_optimizer_result_t result;
 
     fixed_optimize_gauss_newton::optimize(test_ident, initial_d, parameters, &result);
 
@@ -357,8 +357,8 @@ TEST(OptimiseGaussNewton, PipeIdentificationWithPrinter)
     pipe_identification_t test_ident;
     //VectorXd residuals = test_ident.residuals(initial_d);
 
-    fixed_solver_parameters_t<-1, 0, golden_section_search> parameters;
-    fixed_solver_result_t<-1> result;
+    fixed_optimizer_parameters_t parameters;
+    fixed_optimizer_result_t result;
 
     fixed_optimize_gauss_newton::optimize(test_ident, initial_d, parameters, &result);
 
