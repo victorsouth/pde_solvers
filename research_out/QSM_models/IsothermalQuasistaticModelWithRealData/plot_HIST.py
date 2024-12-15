@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import tabulate
+import math
 
 experiments_type = {
     'Выбор задания реологии в стационарной модели' : ['StationaryInitialReology', 'StationaryCurrentReology', 'StationaryMeanReology'],
@@ -70,10 +71,16 @@ while True:
         def draw_fun():
             global dfs
             for i in range(len(parameters_names)):
+                fsize = 20
+                xright = 1000
                 bins_count = int((dfs[i][parameters_names[i]].max() - dfs[i][parameters_names[i]].min()) / interval)
                 top_pos = y_top - 400
                 axes[i].hist(dfs[i][parameters_names[i]], bins=bins_count, color='skyblue', edgecolor='black')
-                axes[i].text(x_right - 200, top_pos, f'СКО: {dfs[i][parameters_names[i]].std():.4f}', fontsize=12, bbox={'facecolor': 'white', 'alpha': 1})
+                axes[i].text(x_right - xright, top_pos - 4800, f'СКО: {dfs[i][parameters_names[i]].std():.4f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})
+                axes[i].text(x_right - xright, top_pos - 1800, f'Среднее: {dfs[i][parameters_names[i]].mean():.4f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})
+                # dfs[i]['sum_square'] = dfs[i][parameters_names[i]].apply(lambda x: x ** 2)
+                # axes[i].text(x_right - 950, top_pos - 4000, f'ЦФ: {math.sqrt((dfs[i]["sum_square"].sum()) / len(dfs[i]["sum_square"])):.4f}', fontsize=12, bbox={'facecolor': 'white', 'alpha': 1})
+                axes[i].set_xlim(-200, 200)
 
         init_func()
 
