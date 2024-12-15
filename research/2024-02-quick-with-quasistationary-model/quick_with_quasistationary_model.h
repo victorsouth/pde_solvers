@@ -156,7 +156,7 @@ TEST_F(IsothermalQuasistaticModel, QuickWithQuasiStationaryModel)
 
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
-    isothermal_quasistatic_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
+    isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3
@@ -180,7 +180,7 @@ TEST_F(IsothermalQuasistaticModel, IdealQuickWithQuasiStationaryModel)
 
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
-    isothermal_quasistatic_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
+    isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3
@@ -209,7 +209,7 @@ TEST_F(IsothermalQuasistaticModel, MocWithQuasiStationaryModel)
     string path = prepare_research_folder_for_qsm_model();
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
-    isothermal_quasistatic_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
+    isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3
@@ -232,7 +232,7 @@ TEST_F(IsothermalQuasistaticModel, OptionalStepMocWithQuasiStationaryModel)
     string path = prepare_research_folder_for_qsm_model();
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
-    isothermal_quasistatic_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
+    isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3
@@ -255,7 +255,7 @@ TEST_F(IsothermalQuasistaticModel, IdealMocWithQuasiStationaryModel)
     string path = prepare_research_folder_for_qsm_model();
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
-    isothermal_quasistatic_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
+    isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3
@@ -285,7 +285,7 @@ TEST_F(IsothermalQuasistaticModel, IdealImpulsMocWithQuasiStationaryModel)
     string path = prepare_research_folder_for_qsm_model();
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
-    isothermal_quasistatic_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
+    isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3
@@ -319,7 +319,7 @@ TEST_F(IsothermalQuasistaticModel, ShowProfileImpactInQuasiStationaryModel)
     string path_full_profile = prepare_research_folder_for_qsm_model("path_full_profile");
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
-    isothermal_quasistatic_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
+    isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3

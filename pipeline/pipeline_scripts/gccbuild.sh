@@ -18,17 +18,17 @@ MAKE_RESULT=$?
 grep -E "error:|fatal error:|Error" ${LOG_DIR}/pde_solvers_build.log
 if [ $MAKE_RESULT -ne 0 ]; then
     echo "--------------- Result ---------------"
-	echo "Ошибка: сборка pde_solvers не удалась"
+	echo "Ошибка: сборка pde_solvers [$PDE_SOLVERS_BRANCH] не удалась"
     echo "--------------------------------------"
 	exit 1
 fi
-echo "pde_solvers успешно собран"
+echo "pde_solvers [$PDE_SOLVERS_BRANCH] успешно собран"
 #Устанавливаем pde_solvers
 make install >> ${LOG_DIR}/pde_solvers_build.log 2>&1
 if [ $? -ne 0 ]; then
     echo "--------------- Result ---------------"
-	echo "Ошибка: установка pde_solvers не удалась"
+	echo "Ошибка: установка pde_solvers [$PDE_SOLVERS_BRANCH] не удалась"
 	echo "--------------------------------------"
     exit 1
 fi
-echo "pde_solvers успешно установлен"
+echo "pde_solvers [$PDE_SOLVERS_BRANCH] успешно установлен"

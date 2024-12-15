@@ -32,3 +32,4 @@
 #include "solvers/diffusion_solver.h" // нужно инклудить после объявления трубы и проч.
 
 #include "tasks/isothermal_quasistatic_task.h"
+#include "tasks/isothermal_quasistatic_ident.h"

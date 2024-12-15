@@ -57,7 +57,7 @@ struct density_viscosity_quasi_layer {
 };
 
 /// @brief Структура, содержащая в себе краевые условия задачи PQ
-struct isothermal_quasistatic_task_boundaries_t {
+struct isothermal_quasistatic_PQ_task_boundaries_t {
     /// @brief Изначальный объемный расход
     double volumetric_flow;
     /// @brief Изначальное давление на входе
@@ -67,9 +67,9 @@ struct isothermal_quasistatic_task_boundaries_t {
     /// @brief Изначальная вязкость на входе
     double viscosity;
 
-    isothermal_quasistatic_task_boundaries_t() = default;
+    isothermal_quasistatic_PQ_task_boundaries_t() = default;
 
-    isothermal_quasistatic_task_boundaries_t(const vector<double>& values) {
+    isothermal_quasistatic_PQ_task_boundaries_t(const vector<double>& values) {
         volumetric_flow = values[0];
         pressure_in = values[1];
         density = values[2];
@@ -77,8 +77,8 @@ struct isothermal_quasistatic_task_boundaries_t {
     }
 
     /// @brief Создание структуры со значениями по умолчанию
-    static isothermal_quasistatic_task_boundaries_t default_values() {
-        isothermal_quasistatic_task_boundaries_t result;
+    static isothermal_quasistatic_PQ_task_boundaries_t default_values() {
+        isothermal_quasistatic_PQ_task_boundaries_t result;
         result.volumetric_flow = 0.2;
         result.pressure_in = 6e6;
         result.density = 850;
@@ -92,7 +92,7 @@ struct isothermal_quasistatic_task_boundaries_t {
 /// Расчет партий делается методом характеристик или Quickest-Ultimate
 /// @tparam Solver Тип солвера партий (advection_moc_solver или quickest_ultimate_fv_solver)
 template <typename Solver=advection_moc_solver>
-class isothermal_quasistatic_task_t {
+class isothermal_quasistatic_PQ_task_t {
 public:
     typedef density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true> layer_type;
     typedef ring_buffer_t<layer_type> buffer_type;
@@ -107,7 +107,7 @@ private:
 public:
     /// @brief Конструктор
     /// @param pipe Модель трубопровода
-    isothermal_quasistatic_task_t(const pipe_properties_t& pipe, QuasistaticModelType model_type = QuasistaticModelType::FullQuasi)
+    isothermal_quasistatic_PQ_task_t(const pipe_properties_t& pipe, QuasistaticModelType model_type = QuasistaticModelType::FullQuasi)
         : pipe(pipe)
         , buffer(2, pipe.profile.getPointCount())
         , model_type( model_type )
@@ -122,7 +122,7 @@ public:
     /// @brief Начальный стационарный расчёт. 
     /// Ставим по всей трубе реологию из initial_conditions, делаем гидравлический расчет
     /// @param initial_conditions Начальные условия
-    void solve(const isothermal_quasistatic_task_boundaries_t& initial_conditions)
+    void solve(const isothermal_quasistatic_PQ_task_boundaries_t& initial_conditions)
     {
         // Количество точек
         size_t n = pipe.profile.getPointCount();
@@ -156,7 +156,7 @@ private:
     /// @brief Проводится рассчёт шага движения партии
     /// @param dt Временной шаг моделирования
     /// @param boundaries Краевые условия
-    void make_rheology_step(double dt, const isothermal_quasistatic_task_boundaries_t& boundaries) {
+    void make_rheology_step(double dt, const isothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
         size_t n = pipe.profile.getPointCount();
         vector<double>Q_profile(n, boundaries.volumetric_flow); // задаем по трубе новый расход из временного ряда
 
@@ -212,7 +212,7 @@ private:
 
     /// @brief Рассчёт профиля давления методом Эйлера (задача PQ)
     /// @param boundaries Краевые условия
-    void calc_pressure_layer(const isothermal_quasistatic_task_boundaries_t& boundaries) {
+    void calc_pressure_layer(const isothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
 
         auto& current = buffer.current();
 
@@ -232,7 +232,7 @@ public:
     /// Функция делат сдвиг буфера (advance) так, что buffer.current после вызова содержит свежерасчитанный слой
     /// @param dt временной шаг моделирования
     /// @param boundaries Краевые условие
-    void step(double dt, const isothermal_quasistatic_task_boundaries_t& boundaries) {
+    void step(double dt, const isothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
         make_rheology_step(dt, boundaries);
         calc_pressure_layer(boundaries);
     }
@@ -268,7 +268,7 @@ template <typename Solver, typename Printer>
 inline void perform_quasistatic_simulation(
     const string& path,
     const pipe_properties_t& pipe,
-    const isothermal_quasistatic_task_boundaries_t& initial_boundaries,
+    const isothermal_quasistatic_PQ_task_boundaries_t& initial_boundaries,
     const vector_timeseries_t& boundary_timeseries,
     const QuasistaticModelType& model_type,
     const vector_timeseries_t& etalon_timeseries,
@@ -278,7 +278,7 @@ inline void perform_quasistatic_simulation(
     time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
     Printer layer_printer;
 
-    isothermal_quasistatic_task_t<Solver> task(pipe, model_type);
+    isothermal_quasistatic_PQ_task_t<Solver> task(pipe, model_type);
     task.solve(initial_boundaries);
 
 
@@ -291,7 +291,7 @@ inline void perform_quasistatic_simulation(
     {
         // Интерполируем значения параметров в заданный момент времени
         vector<double> values_in_time_model = boundary_timeseries(t);
-        isothermal_quasistatic_task_boundaries_t boundaries(values_in_time_model);
+        isothermal_quasistatic_PQ_task_boundaries_t boundaries(values_in_time_model);
 
         double time_step = dt;
         if (std::isnan(time_step)) {
@@ -331,7 +331,7 @@ inline void perform_quasistatic_simulation(
 {
 
     time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
-    isothermal_quasistatic_task_boundaries_t initial_boundaries(boundary_timeseries(t));
+    isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries(boundary_timeseries(t));
 
     perform_quasistatic_simulation<Solver, Printer>(path, pipe, initial_boundaries, boundary_timeseries, model_type, etalon_timeseries, dt);
 }
@@ -342,12 +342,77 @@ template <typename Solver, typename Printer>
 inline void perform_quasistatic_simulation(
     const string& path,
     const pipe_properties_t& pipe,
-    const isothermal_quasistatic_task_boundaries_t& initial_boundaries,
+    const isothermal_quasistatic_PQ_task_boundaries_t& initial_boundaries,
     const vector_timeseries_t& boundary_timeseries,
     const QuasistaticModelType& model_type,
     double dt=std::numeric_limits<double>::quiet_NaN())
 {
     perform_quasistatic_simulation<Solver, Printer>(path, pipe, initial_boundaries, boundary_timeseries, model_type, vector_timeseries_t({}), dt);
 }
+
+
+
+
+/// @brief Обработчик результатов расчета при пакетном расчете с предподсчитанными временными метками
+/// @tparam LayerType Тип слоя (под МХ, под QUICKEST)
+template <typename LayerType>
+class batch_processor_precalculated_times {
+public:
+    virtual void process_data(size_t step_index, const LayerType& layer) = 0;
+};
+
+/// @brief Накапливает результаты по выходному давлению
+class isothermal_qsm_batch_Pout_collector_t
+    : public batch_processor_precalculated_times<density_viscosity_quasi_layer<true>>
+{
+public:
+    typedef density_viscosity_quasi_layer<true> layer_type;
+protected:
+    vector<double> pipe_pressure_out;
+public:
+    isothermal_qsm_batch_Pout_collector_t(const vector<double>& times)
+        : pipe_pressure_out(times.size(), std::numeric_limits<double>::quiet_NaN())
+    {
+
+    }
+    virtual void process_data(size_t step_index,
+        const density_viscosity_quasi_layer<true>& layer) override
+    {
+        // at() - проверяет выход за границы массива
+        //pipe_pressure_out.at(step_index) = layer.pressure.back();
+        pipe_pressure_out[step_index] = layer.pressure.back();
+    }
+    const vector<double>& get_pressure_out_calculated() const {
+        return pipe_pressure_out;
+    }
+};
+
+/// @brief Пакетный изотермический квазистатический расчет с предподсчитанным временем
+/// делает статический расчет task.solve, а затем столько раз task.step, сколько временных меток в times
+/// @tparam Solver МХ или QUICKEST
+/// @tparam LayerType Точки под МХ или ячейки под QUICKEST
+template <typename Solver, typename LayerType>
+inline void isothermal_quasistatic_batch(
+    isothermal_quasistatic_PQ_task_t<Solver>& task,
+    const vector<double>& times,
+    const vector<vector<double>>& boundary_timeseries,
+    batch_processor_precalculated_times<LayerType>* data_processor
+)
+{
+    isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries(boundary_timeseries[0]);
+    task.solve(initial_boundaries);
+    data_processor->process_data(0, task.get_buffer().current());
+
+    for (size_t step_index = 1; step_index < times.size(); step_index++)
+    {
+        double time_step = times[step_index] - times[step_index - 1];
+        isothermal_quasistatic_PQ_task_boundaries_t boundaries(boundary_timeseries[step_index]);
+
+        task.step(time_step, boundaries);
+
+        data_processor->process_data(step_index, task.get_buffer().current());
+    }
+};
+
 
 }

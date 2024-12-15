@@ -116,6 +116,21 @@ struct pipe_wall_model_t {
     /// Значение по умолчанию взято из [Лурье 2017], стр. 93
     double poissonStrain{ 0.28 };
 
+
+    /// @brief Формула расчета гидравлического сопротивления
+    double(*resistance_function_pointer)(double, double) { hydraulic_resistance_isaev };
+    double resistance_function_adaptation{ 1 };
+
+    /// @brief Формула расчета гидравлического сопротивления
+    /// Параметры шероховатости подхватывается из этой структуры
+    double resistance_function(double Re) const {
+        double eps = relativeRoughness();
+        double lambda = resistance_function_pointer(Re, eps);
+        lambda *= resistance_function_adaptation;
+        return lambda;
+    }
+
+
     /// @brief Коэффициент сжимаемости для трубы (1/Па)
     /// Коэффициент, учитывающий изменение площади сечения при отклонении давления от номинального
     /// В документах обозначает как \beta_S
@@ -167,9 +182,13 @@ struct pipe_properties
     /// @brief Параметры адаптации
     AdaptationParameters adaptation;
     /// @brief Формула расчета гидравлического сопротивления
-    double(*resistance_function)(double, double) { hydraulic_resistance_isaev };
+    /// Параметры шероховатости подхватывается из wall
+    double resistance_function(double Re) const {
+        return wall.resistance_function(Re);
+    }
 
-    /// @brief Скорость звука в жидкости, м^2/с
+
+    /// @brief Скорость звука в жидкости, м/с^2
     /// TODO: указать источник литературы
     double getSoundVelocity(const oil_parameters_t& oil) const
     {
