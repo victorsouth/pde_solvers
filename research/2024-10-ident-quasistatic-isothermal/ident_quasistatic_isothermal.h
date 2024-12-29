@@ -5,26 +5,39 @@
 /// @brief Тесты для расчёта на реальных данных
 class IdentIsothermalQSM : public ::testing::Test {
 protected:
-    // Путь к реальным данным с трубопровода
+    /// @brief Путь к реальным данным с Линейного участка трубопровода
     const std::string data_path = "../research/2024-08-quasistationary-with-real-data/data/";
 
-
+    /// @brief Создание модели трубопровода по реальным данным 
+    /// @param path Путь к файлу с профилем реального ЛУ
+    /// @return Модель трубы с профилем на основе профиля реального участка трубы
     static pipe_properties_t prepare_pipe(const std::string& path)
     {
-        // Указываем имя файла и желаемый шаг новой сетки
-        //string file_name = folder + "coord_heights.csv";
-        //Желаемый шаг
+        // Указываем имя файла
         std::string folder = path + "coord_heights.csv";
+        //Желаемый шаг
         double desired_dx = 200;
+
         pipe_properties_t pipe;
 
         // Создаём новый профиль с постоянным шагом
         pipe.profile = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, folder);
+        // Номинальный диаметр трубы
         pipe.wall.diameter = 1;
 
         return pipe;
     };
 
+    /// @brief Для моделирования работы ЛУ считываем значения параметров с реального трубопровода
+    /// и на основе этих данных предпосчитываем интерполированные значения 
+    /// краевых условий (плотность, вязкость, расход и давление в начале ЛУ) 
+    /// и эталонного параметра (давление на выходе трубопровода)
+    /// для временной сетки с шагом равным одной минуте
+    /// @param path_to_real_data Путь к данным с реального трубопровода
+    /// @return Кортёж, состоящий из 3-х элементов
+    /// 1. Временная сетка
+    /// 2. Предпосчитанные краевые условия
+    /// 3. Эталонные значения
     static std::tuple<vector<double>, vector<vector<double>>, vector<double>> prepare_real_data(const std::string& path_to_real_data)
     {
         // Временные ряды краевых условий
@@ -35,6 +48,7 @@ protected:
         string start_period = "01.08.2021 00:00:00";
         string end_period = "01.09.2021 00:00:00";
 
+        // Прописываем названия файлов и единицы измерения параметров
         vector<pair<string, string>>parameters =
         {
             { path_to_real_data + "Q_in", "m3/h-m3/s"s },
@@ -55,12 +69,17 @@ protected:
         vector_timeseries_t control_parameters_time_series(control_tag_data);
         vector_timeseries_t etalon_parameters_time_series(etalon_tag_data);
 
+        // Задаём шаг для временной сетки - 1 минута
         double step = 60;
 
+        // Определяем начало периода
         time_t start_period_time = max(control_parameters_time_series.get_start_date(), etalon_parameters_time_series.get_start_date());
+        // Определяем конец периода
         time_t end_period_time = min(control_parameters_time_series.get_end_date(), etalon_parameters_time_series.get_end_date());
+        // Определяем продолжительность периода
         time_t duration = (end_period_time - start_period_time);
 
+        // Считаем количество точек в сетке
         size_t dots_count = static_cast<size_t>(ceil(duration / step) + 0.00001);
 
         vector<double>  times = vector<double>(dots_count);
@@ -69,9 +88,12 @@ protected:
 
         for (size_t i = 0; i < dots_count; i++)
         {
+            // Заполняем временную сетку
             times[i] = step * i;
+            // Определяем момент времени
             time_t t = start_period_time + static_cast<time_t>(times[i] + 0.5);
 
+            // Получаем интерполированные значения краевых условий и эталонных значений
             control_data[i] = control_parameters_time_series(t);
             etalon_pressure[i] = etalon_parameters_time_series(t).front();
 
@@ -81,32 +103,6 @@ protected:
     }
 };
 
-
-
-//void print_diff_pressure_before_after(const double d_before, const double d_after)
-//{
-//    python_printer printer;
-//
-//    printer.print_profiles<double>(static_cast<time_t>(0),
-//        times,
-//        vector<vector<double>>{ calc_vector_residuals(d_before), calc_vector_residuals(d_after) },
-//        "time,time,diff_press_before,diff_press_after",
-//        folder + "diff_press.csv");
-//}
-
-
-
-void print_j_d(const double d, const double J, const std::string folder)
-{
-    python_printer printer;
-    printer.print_profiles<double>(static_cast<time_t>(0),
-        { d },
-        vector<vector<double>>{ {J} },
-        "time,d,J",
-        folder + "j.csv");
-}
-
-
 TEST_F(IdentIsothermalQSM, Diameter)
 {
     pipe_properties_t pipe = prepare_pipe(data_path);
@@ -115,7 +111,7 @@ TEST_F(IdentIsothermalQSM, Diameter)
     ident_isothermal_qsm_pipe_settings ident_settings;
     ident_settings.ident_diameter = true;
 
-    ident_isothermal_qsm_pipe_diameter_t test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
+    ident_isothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
 
     fixed_optimizer_result_t result;
     fixed_optimizer_result_analysis_t analysis;
@@ -123,26 +119,18 @@ TEST_F(IdentIsothermalQSM, Diameter)
     double result_d = test_ident.ident(&result, &analysis);
 }
 
-TEST_F(IdentIsothermalQSM, PipeIdentificationWithPrinter)
+TEST_F(IdentIsothermalQSM, Friction)
 {
-    std::string path = prepare_research_folder_for_qsm_model();
+    pipe_properties_t pipe = prepare_pipe(data_path);
+    auto [times, control_data, etalon_pressure] = prepare_real_data(data_path);
 
+    ident_isothermal_qsm_pipe_settings ident_settings;
+    ident_settings.ident_friction = true;
 
-    //string folder = prepare_research_folder_for_qsm_model();
+    ident_isothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
 
-    //VectorXd initial_d = VectorXd::Zero(1);
-    //initial_d(0) = 1;
+    fixed_optimizer_result_t result;
+    fixed_optimizer_result_analysis_t analysis;
 
-    //// Путь к реальным данным с трубопровода
-    //std::string data_path = "../research/2024-08-quasistationary-with-real-data/data/";
-    //pipe_properties_t pipe = prepare_pipe(data_path);
-    //auto [times, control_data, etalon_pressure] = prepare_real_data(data_path);
-
-    //ident_isothermal_qsm_pipe_diameter_t test_ident;
-    ////VectorXd residuals = test_ident.residuals(initial_d);
-
-
-
-    //test_ident.print_diff_pressure_before_after(initial_d(0), result.argument(0));
-
+    double result_d = test_ident.ident(&result, &analysis);
 }

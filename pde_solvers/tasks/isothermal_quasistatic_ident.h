@@ -21,7 +21,15 @@ struct ident_parameters_isothermal_qsm {
 struct ident_isothermal_qsm_pipe_settings {
     bool ident_diameter{ false };
     bool ident_friction{ false };
-    ident_parameters_isothermal_qsm unpack_ident_parameters(const VectorXd& packed_ident_parameters) {
+
+    void check_parameters() const {
+        // если ничего не задано или наоборот, все задано, кинуть исключение
+        if (!(ident_diameter ^ ident_friction))
+            throw std::runtime_error("Identification parameters are incorrectly selected");
+    }
+
+    ident_parameters_isothermal_qsm unpack_ident_parameters(const VectorXd& packed_ident_parameters) const {
+        check_parameters();
         ident_parameters_isothermal_qsm result;
         size_t index = 0;
         if (ident_diameter) {
@@ -32,14 +40,10 @@ struct ident_isothermal_qsm_pipe_settings {
         }
         return result;
     }
-    void check_parameters() const {
-        // если ничего не задано или наоборот, все задано, кинуть исключение
-        // throw std::runtime_error("");
-    }
 };
 
 
-class ident_isothermal_qsm_pipe_diameter_t : public fixed_least_squares_function_t
+class ident_isothermal_qsm_pipe_parameters_t : public fixed_least_squares_function_t
 {
     const ident_isothermal_qsm_pipe_settings settings;
     const pipe_properties_t pipe_nominal;
@@ -49,7 +53,7 @@ class ident_isothermal_qsm_pipe_diameter_t : public fixed_least_squares_function
     const vector<vector<double>>& control_data;
     const vector<double>& etalon_pressure;
 public:
-    ident_isothermal_qsm_pipe_diameter_t(
+    ident_isothermal_qsm_pipe_parameters_t(
         const ident_isothermal_qsm_pipe_settings& settings,
         const pipe_properties_t& pipe, const vector<double>& times, const vector<vector<double>>& control_data, const vector<double>& etalon_pressure)
         : settings(settings)
@@ -85,10 +89,10 @@ protected:
         return simulation_result;
     }
 public:
-    virtual VectorXd residuals(const VectorXd& d) override {
+    virtual VectorXd residuals(const VectorXd& parameters) override {
 
-        ident_parameters_isothermal_qsm ident_parameters;
-        ident_parameters.diameter_adaptation = d(0);
+        ident_parameters_isothermal_qsm ident_parameters = settings.unpack_ident_parameters(parameters);
+        //ident_parameters.diameter_adaptation = parameters(0);
 
 
         vector<double> simulation_result = calc_vector_residuals(ident_parameters);
@@ -105,9 +109,9 @@ public:
             result = &result_local;
         }
 
-        VectorXd initial_d(1);
-        initial_d(0) = 1;
-        fixed_optimize_gauss_newton::optimize(*this, initial_d, parameters, result, analysis);
+        VectorXd initial_ident_parameter(1);
+        initial_ident_parameter(0) = 1;
+        fixed_optimize_gauss_newton::optimize(*this, initial_ident_parameter, parameters, result, analysis);
 
         if (result->result_code == numerical_result_code_t::Converged) {
             return result->argument(0);
