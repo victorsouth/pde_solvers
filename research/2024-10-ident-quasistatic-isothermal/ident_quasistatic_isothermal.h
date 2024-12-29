@@ -103,32 +103,42 @@ protected:
     }
 };
 
+/// @brief Пример идентификации модели трубопровода по диаметру
 TEST_F(IdentIsothermalQSM, Diameter)
 {
+    // Подготавливаем модель трубопровода и параметры для идентификации 
     pipe_properties_t pipe = prepare_pipe(data_path);
     auto [times, control_data, etalon_pressure] = prepare_real_data(data_path);
 
+    // Выбираем в настройках параметр идентификации - диаметр
     ident_isothermal_qsm_pipe_settings ident_settings;
     ident_settings.ident_diameter = true;
 
+    // Создаём класс для идентификации
     ident_isothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
-
+    
+    // Создаём сущности для хранения результата и аналитики
     fixed_optimizer_result_t result;
     fixed_optimizer_result_analysis_t analysis;
 
     double result_d = test_ident.ident(&result, &analysis);
 }
 
+/// @brief Пример идентификации модели трубопровода по коэффициенту гидравлического сопротивления
 TEST_F(IdentIsothermalQSM, Friction)
 {
+    // Подготавливаем модель трубопровода и параметры для идентификации 
     pipe_properties_t pipe = prepare_pipe(data_path);
     auto [times, control_data, etalon_pressure] = prepare_real_data(data_path);
 
+    // Выбираем в настройках параметр идентификации - диаметр
     ident_isothermal_qsm_pipe_settings ident_settings;
     ident_settings.ident_friction = true;
 
+    // Создаём класс для идентификации
     ident_isothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
 
+    // Создаём сущности для хранения результата и аналитики
     fixed_optimizer_result_t result;
     fixed_optimizer_result_analysis_t analysis;
 
