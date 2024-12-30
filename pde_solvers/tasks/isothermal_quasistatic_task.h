@@ -358,6 +358,9 @@ inline void perform_quasistatic_simulation(
 template <typename LayerType>
 class batch_processor_precalculated_times {
 public:
+    /// @brief Шаблон для задания функции обработки результатов расчёта
+    /// @param step_index Текущий шаг моделирования
+    /// @param layer Текущий слой
     virtual void process_data(size_t step_index, const LayerType& layer) = 0;
 };
 
@@ -366,15 +369,23 @@ class isothermal_qsm_batch_Pout_collector_t
     : public batch_processor_precalculated_times<density_viscosity_quasi_layer<true>>
 {
 public:
+    /// @brief Тип данных слоя буфера изотермической квазистационарной модели
     typedef density_viscosity_quasi_layer<true> layer_type;
 protected:
+    /// @brief Вектор расчётных значений давления на выходе ЛУ
     vector<double> pipe_pressure_out;
 public:
+    /// @brief Конструктор обработчика
+    /// @param times Предпосчитанная временная сетка моделирования работы ЛУ
     isothermal_qsm_batch_Pout_collector_t(const vector<double>& times)
         : pipe_pressure_out(times.size(), std::numeric_limits<double>::quiet_NaN())
     {
 
     }
+
+    /// @brief Сохранение результатов расчёта давления в конце ЛУ в вектор
+    /// @param step_index Текущий шаг моделирования
+    /// @param layer Текущий слой
     virtual void process_data(size_t step_index,
         const density_viscosity_quasi_layer<true>& layer) override
     {
@@ -399,6 +410,7 @@ inline void isothermal_quasistatic_batch(
     batch_processor_precalculated_times<LayerType>* data_processor
 )
 {
+    // Вычленение начальных условий
     isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries(boundary_timeseries[0]);
     task.solve(initial_boundaries);
     data_processor->process_data(0, task.get_buffer().current());

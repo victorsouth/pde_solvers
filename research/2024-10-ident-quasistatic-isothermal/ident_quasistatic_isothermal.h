@@ -37,7 +37,7 @@ protected:
     /// @return Кортёж, состоящий из 3-х элементов
     /// 1. Временная сетка
     /// 2. Предпосчитанные краевые условия
-    /// 3. Эталонные значения
+    /// 3. Предпосчитанные эталонные значения
     static std::tuple<vector<double>, vector<vector<double>>, vector<double>> prepare_real_data(const std::string& path_to_real_data)
     {
         // Временные ряды краевых условий
@@ -131,7 +131,7 @@ TEST_F(IdentIsothermalQSM, Friction)
     pipe_properties_t pipe = prepare_pipe(data_path);
     auto [times, control_data, etalon_pressure] = prepare_real_data(data_path);
 
-    // Выбираем в настройках параметр идентификации - диаметр
+    // Выбираем в настройках параметр идентификации - коэффициент гидравлического сопротивления
     ident_isothermal_qsm_pipe_settings ident_settings;
     ident_settings.ident_friction = true;
 
