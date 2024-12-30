@@ -44,12 +44,17 @@ struct density_viscosity_quasi_layer {
         , pressure_delta(point_count)
     {}
 
-    // @brief Подготовка плотности для расчета методом конечных объемов 
+    /// @brief Подготовка плотности для расчета методом конечных объемов 
+    /// @param layer Слой
+    /// @return Обертка над составным слоем
     static quickest_ultimate_fv_wrapper<1> get_density_wrapper(density_viscosity_quasi_layer& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.density, layer.specific);
     }
-    /// @brief Подготовка вязкости для расчета методом конечных объемов 
+
+    /// @brief Подготовка вязкости для расчета методом конечных объемов
+    /// @param layer Слой
+    /// @return Обертка над составным слоем
     static quickest_ultimate_fv_wrapper<1> get_viscosity_wrapper(density_viscosity_quasi_layer& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.viscosity, layer.specific);
@@ -67,8 +72,11 @@ struct isothermal_quasistatic_PQ_task_boundaries_t {
     /// @brief Изначальная вязкость на входе
     double viscosity;
 
+    /// @brief Конструктор по умолчанию
     isothermal_quasistatic_PQ_task_boundaries_t() = default;
 
+    /// @brief Конструктор краевых условий
+    /// @param values Значения краевых условий
     isothermal_quasistatic_PQ_task_boundaries_t(const vector<double>& values) {
         volumetric_flow = values[0];
         pressure_in = values[1];
@@ -94,7 +102,9 @@ struct isothermal_quasistatic_PQ_task_boundaries_t {
 template <typename Solver=advection_moc_solver>
 class isothermal_quasistatic_PQ_task_t {
 public:
+    /// @brief Тип слоя
     typedef density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true> layer_type;
+    /// @brief Тип буфера
     typedef ring_buffer_t<layer_type> buffer_type;
 private:
     // Модель трубы
@@ -393,6 +403,8 @@ public:
         //pipe_pressure_out.at(step_index) = layer.pressure.back();
         pipe_pressure_out[step_index] = layer.pressure.back();
     }
+    /// @brief Геттер для вектора собранных результатов расчёта давления в конце ЛУ
+    /// @return Вектор расчётных значений давления на выходе ЛУ
     const vector<double>& get_pressure_out_calculated() const {
         return pipe_pressure_out;
     }
