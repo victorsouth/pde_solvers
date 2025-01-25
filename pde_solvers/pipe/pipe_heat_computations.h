@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 
 namespace pde_solvers {
@@ -9,7 +9,7 @@ inline double temperature_shukhov(
     const oil_parameters_t& oil,
     double Tleft, double mass_flow, double coordinate)
 {
-    // формула Шухова (Лурье-2012, формула 1.52),
+    // С„РѕСЂРјСѓР»Р° РЁСѓС…РѕРІР° (Р›СѓСЂСЊРµ-2012, С„РѕСЂРјСѓР»Р° 1.52),
     double T0 = Tleft;
     double S_0 = pipe.wall.getArea();
 
@@ -27,7 +27,7 @@ inline double temperature_shukhov(
 }
 
 
-/// @brief Расчет распределения по Шухову по Лурье 2019, параграф 6.2 стр. 241
+/// @brief Р Р°СЃС‡РµС‚ СЂР°СЃРїСЂРµРґРµР»РµРЅРёСЏ РїРѕ РЁСѓС…РѕРІСѓ РїРѕ Р›СѓСЂСЊРµ 2019, РїР°СЂР°РіСЂР°С„ 6.2 СЃС‚СЂ. 241
 inline void compute_shuhov_temperature_distribution(
     const pipe_noniso_properties_t & pipe,
     const oil_parameters_t& oil,
@@ -47,10 +47,10 @@ inline void compute_shuhov_temperature_distribution(
     double Re = v * pipe.wall.diameter / oil.viscosity();
     double lambda = hydraulic_resistance_shifrinson(Re, pipe.wall.relativeRoughness());
 
-    // Расчет выделения тепла за счет внутреннего трения
+    // Р Р°СЃС‡РµС‚ РІС‹РґРµР»РµРЅРёСЏ С‚РµРїР»Р° Р·Р° СЃС‡РµС‚ РІРЅСѓС‚СЂРµРЅРЅРµРіРѕ С‚СЂРµРЅРёСЏ
     double Tx = lambda * density * pow(v, 3) / (8 * Kt);
 
-    // Расчет распределения
+    // Р Р°СЃС‡РµС‚ СЂР°СЃРїСЂРµРґРµР»РµРЅРёСЏ
     double Tstationary = pipe.heat.ambientTemperature + Tx;
     for (size_t i = 0; i < temperature.size(); i++)
     {

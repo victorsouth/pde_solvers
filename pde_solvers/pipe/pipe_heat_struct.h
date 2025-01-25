@@ -1,18 +1,18 @@
-#pragma once
+п»ї#pragma once
 
 
 namespace pde_solvers {
 ;
 
-/// @brief Теплофизические свойства вещества (грунта, металла)
+/// @brief РўРµРїР»РѕС„РёР·РёС‡РµСЃРєРёРµ СЃРІРѕР№СЃС‚РІР° РІРµС‰РµСЃС‚РІР° (РіСЂСѓРЅС‚Р°, РјРµС‚Р°Р»Р»Р°)
 struct thermophysical_properties_t {
-    /// @brief Теплопроводность \lambda, Вт*м-1*К-1
-    double conductivity = 1.6; // значение для грунта
-    /// @brief Удельная массовая теплоемкость C, Дж/кг-К
-    double heat_capacity = 2000; // значение для грунта
-    /// @brief Плотность \rho, кг/м3
-    double density = 1500; // грунт
-    /// @brief Температуропроводность
+    /// @brief РўРµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚СЊ \lambda, Р’С‚*Рј-1*Рљ-1
+    double conductivity = 1.6; // Р·РЅР°С‡РµРЅРёРµ РґР»СЏ РіСЂСѓРЅС‚Р°
+    /// @brief РЈРґРµР»СЊРЅР°СЏ РјР°СЃСЃРѕРІР°СЏ С‚РµРїР»РѕРµРјРєРѕСЃС‚СЊ C, Р”Р¶/РєРі-Рљ
+    double heat_capacity = 2000; // Р·РЅР°С‡РµРЅРёРµ РґР»СЏ РіСЂСѓРЅС‚Р°
+    /// @brief РџР»РѕС‚РЅРѕСЃС‚СЊ \rho, РєРі/Рј3
+    double density = 1500; // РіСЂСѓРЅС‚
+    /// @brief РўРµРјРїРµСЂР°С‚СѓСЂРѕРїСЂРѕРІРѕРґРЅРѕСЃС‚СЊ
     double get_thermal_diffusivity() const {
         return conductivity / (density * heat_capacity);
     }
