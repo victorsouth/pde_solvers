@@ -138,7 +138,7 @@ TEST_F(IsothermalQuasistaticModelWithRealData, StationaryCurrentReology)
 
     // Производим расчёт и записываем результаты в файлы
     perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
-        path, pipe, params, ModelType::Stationary, etalon_params
+        path, pipe, params, QuasistaticModelType::Stationary, etalon_params
     );
 }
 
@@ -172,7 +172,7 @@ TEST_F(IsothermalQuasistaticModelWithRealData, StationaryInitialReology)
     vector_timeseries_t etalon_params(etalon_tag_data);
 
     perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
-        path, pipe, params, ModelType::Stationary, etalon_params
+        path, pipe, params, QuasistaticModelType::Stationary, etalon_params
     );
 }
 
@@ -204,7 +204,7 @@ TEST_F(IsothermalQuasistaticModelWithRealData, StationaryMeanReology)
     vector_timeseries_t etalon_params(etalon_tag_data);
 
     perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
-        path, pipe, params, ModelType::Stationary, etalon_params
+        path, pipe, params, QuasistaticModelType::Stationary, etalon_params
     );
 }
 
@@ -218,7 +218,7 @@ TEST_F(IsothermalQuasistaticModelWithRealData, QuasiStationaryFullReology)
     vector_timeseries_t etalon_params(etalon_tag_data);
 
     perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
-        path, pipe, params, ModelType::FullQuasi, etalon_params
+        path, pipe, params, QuasistaticModelType::FullQuasi, etalon_params
     );
 }
 
@@ -232,7 +232,7 @@ TEST_F(IsothermalQuasistaticModelWithRealData, QuasiStationaryDensityOnly)
     vector_timeseries_t etalon_params(etalon_tag_data);
 
     perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
-        path, pipe, params, ModelType::DensityQuasi, etalon_params
+        path, pipe, params, QuasistaticModelType::DensityQuasi, etalon_params
     );
 }
 
@@ -246,7 +246,7 @@ TEST_F(IsothermalQuasistaticModelWithRealData, QuasiStationaryViscosityOnly)
     vector_timeseries_t etalon_params(etalon_tag_data);
 
     perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
-        path, pipe, params, ModelType::ViscosityQuasi, etalon_params
+        path, pipe, params, QuasistaticModelType::ViscosityQuasi, etalon_params
     );
 }
 

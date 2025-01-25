@@ -68,7 +68,7 @@ while True:
 
                 [imin, imax] = find_prob_x(res.cdf.quantiles, res.cdf.probabilities, p, q)
 
-                fsize = 11
+                fsize = 20
                 msize = 5
                 axes[i].text(imin - 50, 0.08, f'{imin:.1f}', fontsize=fsize)
                 axes[i].text(imax , 0.90, f'{imax:.1f}', fontsize=fsize)
