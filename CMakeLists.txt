@@ -24,6 +24,12 @@ set(HEADERS_PIPE
     pde_solvers/pipe/pipe_hydraulic_computations.h
     pde_solvers/pipe/pipe_hydraulic_struct.h
     pde_solvers/pipe/pipe_profile_utils.h
+    pde_solvers/pipe/heat_transfer.h          
+    pde_solvers/pipe/pipe_dynamic_soil_multizone.h  
+    pde_solvers/pipe/pipe_heat_computations.h
+    pde_solvers/pipe/pipe_heat_pde.h
+    pde_solvers/pipe/pipe_heat_struct.h
+    pde_solvers/pipe/pipe_dynamic_soil.h      
 )
 set(HEADERS_SOLVERS
     pde_solvers/solvers/diffusion_solver.h
