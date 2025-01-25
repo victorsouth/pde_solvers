@@ -1,9 +1,32 @@
 stages:
   - Static_test
+  - Defining_branches
   - Build
 
+#==================================================================================================
+# load branches (utils)
+#==================================================================================================
+
+.load_branches_sh:
+  script:
+    - export $(cat branches.txt | xargs)
+
+.load_branches_ps:
+  script:
+    - |
+      Get-Content branches.txt | ForEach-Object {
+        $parts = $_ -split '='
+        $variableName = $parts[0]
+        $variableValue = $parts[1]
+        Set-Item -Path "ENV:$variableName" -Value $variableValue
+      }
+
+#==================================================================================================
+# Static_test
+#==================================================================================================
+ 
 #Проверка кодировки файлов с расширением .m .cpp .h на соответствие UTF-8
-Unicode_Check:
+Unicode:
   stage: Static_test
   tags:
     - docker
@@ -19,20 +42,59 @@ Unicode_Check:
     paths:
       - pipeline/pipeline_result
 
-#Clang_test:
-#  stage: Static_test
-#  tags:
-#    - docker
-#  image: hub.ktk.gubkin.ru/proxy/jhasse/clang-tidy:latest
-#  script:
-#    - mkdir -p pipeline/pipeline_result
-#    - bash ./pipeline/pipeline_scripts/Clang_test.sh
-#  allow_failure: true
-#  artifacts:
-#    expire_in: 48 hour
-#    when: always
-#    paths:
-#      - pipeline/pipeline_result
+Doxygen:
+  stage: Static_test
+  tags:
+    - docker
+  image: hub.ktk.gubkin.ru/library/greenbone/doxygen:latest
+  script:
+    - mkdir -p pipeline/pipeline_result
+    - bash ./pipeline/pipeline_scripts/doxygen_test.sh
+  allow_failure: true
+  artifacts:
+    expire_in: 48 hour
+    when: always
+    paths:
+      - pipeline/pipeline_result
+
+Clang:
+  stage: Static_test
+  tags:
+    - docker
+  image: hub.ktk.gubkin.ru/proxy/jhasse/clang-tidy:latest
+  #image: jhasse/clang-tidy
+  script:
+    - mkdir -p pipeline/pipeline_result
+    - bash ./pipeline/pipeline_scripts/Clang_test.sh
+  allow_failure: true
+  artifacts:
+    expire_in: 48 hour
+    when: always
+    paths:
+      - pipeline/pipeline_result
+
+#==================================================================================================
+# Defining_branches
+#==================================================================================================
+
+#Выбор веток
+Defining_branches:
+  stage: Defining_branches
+  tags:
+    - docker
+  image: hub.ktk.gubkin.ru/proxy/gcc
+  script:
+    - bash pipeline/pipeline_scripts/defining_branch.sh
+  allow_failure: false
+  artifacts:
+    expire_in: 48 hour
+    when: always
+    paths:
+      - branches.txt
+
+#==================================================================================================
+# Build
+#==================================================================================================
 
 #Сборка проекта GCC
 GCC_build:
@@ -41,6 +103,13 @@ GCC_build:
     - docker
   image: hub.ktk.gubkin.ru/library/gcc_cmake_boost_eigen_gtest:latest
   script:
+    - !reference [.load_branches_sh, script]
+    - git clone https://gitlab-ci-token:${CI_FIXED_SOLVERS_TOKEN}@git.ktk.gubkin.ru/solvers/fixed_solvers.git --depth 1 -b $FIXED_SOLVERS_BRANCH
+    - |
+      cd fixed_solvers
+      bash pipeline/pipeline_scripts/gccbuild.sh
+      cp -r Libs/ ../
+      cd ../
     - bash pipeline/pipeline_scripts/gccbuild.sh
   allow_failure: false
   artifacts:
@@ -56,6 +125,13 @@ MinGW_build:
   tags:
     - windows
   script:
+    - !reference [.load_branches_ps, script]
+    - git clone https://gitlab-ci-token:${CI_FIXED_SOLVERS_TOKEN}@git.ktk.gubkin.ru/solvers/fixed_solvers.git --depth 1 -b $env:FIXED_SOLVERS_BRANCH
+    - |
+      cd fixed_solvers/pipeline/pipeline_scripts/
+      .\mingwbuild.ps1
+      cp -r ../Libs/ ../../
+      cd ../../
     - cd pipeline/pipeline_scripts/
     - .\mingwbuild.ps1
   resource_group: dev-build
