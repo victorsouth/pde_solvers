@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <./FVMSystemLib/PipeModelHeatTask.h>
+//#include <./FVMSystemLib/PipeModelHeatTask.h>
 
 /// @brief Тесты для расчёта на реальных данных
 class IdentNonisothermalQSM : public ::testing::Test {
@@ -8,7 +8,7 @@ protected:
     /// @brief Путь к реальным данным с Линейного участка трубопровода
     const std::string data_path = "../research/2025-01-ident-quasistatic-nonisothermal/data/";
     
-    /*
+    
     // @brief Создание модели трубопровода по реальным данным 
     /// @param path Путь к файлу с профилем реального ЛУ
     /// @return Модель трубы с профилем на основе профиля реального участка трубы 
@@ -19,7 +19,7 @@ protected:
         //Желаемый шаг
         double desired_dx = 200;
 
-        pipe_properties_t pipe;
+        pipe_noniso_properties_t pipe;
 
         // Создаём новый профиль с постоянным шагом
         pipe.profile = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, folder);
@@ -28,7 +28,7 @@ protected:
 
         return pipe;
     };
-    */
+    
 
     /// @brief Для моделирования работы ЛУ считываем значения параметров с реального трубопровода
     /// и на основе этих данных предпосчитываем интерполированные значения 

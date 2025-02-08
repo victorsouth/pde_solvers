@@ -75,7 +75,7 @@ public:
     /// @param etalon_temp Предпосчитанные эталонные значения
     ident_nonisothermal_qsm_pipe_parameters_t(
         const ident_nonisothermal_qsm_pipe_settings& settings,
-        const pipe_noniso_properties_t& pipe, const vector<double>& times, const vector<vector<double>>& control_data, const vector<double>& etalon_pressure)
+        const pipe_noniso_properties_t& pipe, const vector<double>& times, const vector<vector<double>>& control_data, const vector<double>& etalon_temp)
         : settings(settings)
         , pipe_nominal{ pipe }
         , pipe_to_ident{ pipe }
@@ -92,24 +92,24 @@ protected:
     /// @return Вектор невязок - расхождения расчётного и фактического давления на выхое ЛУ
     vector<double> calc_vector_residuals(const ident_parameters_nonisothermal_qsm& ident_parameters)
     {
-        // Сущность для сбора расчётных данных давления в конце ЛУ
+        // Сущность для сбора расчётных данных температуры в конце ЛУ
         nonisothermal_qsm_batch_Tout_collector_t collector(times);
         // Применяем текущие параметры идентификации на модели трубопровода
         ident_parameters.set_adaptation(pipe_nominal, &pipe_to_ident);
 
         // Проводим гидравлический изотермический квазистационарный расчёт
-        nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver> task(pipe_to_ident); //TQ?
-        nonisothermal_quasistatic_batch<quickest_ultimate_fv_solver, isothermal_qsm_batch_Pout_collector_t::layer_type>(
+        nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver> task(pipe_to_ident);
+        nonisothermal_quasistatic_batch<quickest_ultimate_fv_solver, nonisothermal_qsm_batch_Tout_collector_t::layer_type>(
             task,
             times,
             control_data,
             &collector
         );
-        ///выпилить
-        const vector<double>& calc_pressure = collector.get_pressure_out_calculated();
+        
+        const vector<double>& calc_temp = collector.get_temp_out_calculated();
         vector<double> simulation_result(times.size());
         // Считаем расхождение расчёта и факта
-        std::transform(calc_pressure.begin(), calc_pressure.end(), etalon_pressure.begin(), simulation_result.begin(),
+        std::transform(calc_temp.begin(), calc_temp.end(), etalon_temp.begin(), simulation_result.begin(),
             [](double etalon, double calc) { return etalon - calc; });
 
 
