@@ -1,5 +1,5 @@
 #!/bin/bash
-# Скрипт для статического анализа всей кодовой базы pdelib
+# Скрипт для статического анализа всей кодовой базы
 
 #Получаем абсолютный путь к директории, в которой находится этот скрипт
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -20,7 +20,7 @@ for i in $path
 do
     if [ -f "$i" ];
     then
-        echo "${i%/*}""/""${i##*/}"| grep -owP "[^\s]+\.cpp|[^\s]+\.h"| grep -E "testing" >> files
+        echo "${i%/*}""/""${i##*/}"| grep -owP "[^\s]+\.cpp|[^\s]+\.h" >> files
     fi
 done
 

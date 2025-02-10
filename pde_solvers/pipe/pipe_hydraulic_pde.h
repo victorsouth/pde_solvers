@@ -71,7 +71,7 @@ public:
         double S_0 = pipe.wall.getArea();
         double v = G / (rho * S_0);
         double Re = v * pipe.wall.diameter / oil.viscosity();
-        double lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
+        double lambda = pipe.resistance_function(Re);
         double tau_w = lambda / 8 * rho * v * abs(v);
         double s1 = -M_PI * pipe.wall.diameter * tau_w;
 
@@ -322,7 +322,7 @@ public:
         double v = G / (rho * S_0);
         double Re = v * pipe.wall.diameter / oil.viscosity(temperature[grid_index]);
 
-        double lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
+        double lambda = pipe.resistance_function(Re);
         //double lambda = hydraulic_resistance_shifrinson(Re, pipe.wall.relativeRoughness());
         double tau_w = lambda / 8 * rho * v * abs(v);
         double s1 = -M_PI * pipe.wall.diameter * tau_w;
@@ -423,7 +423,7 @@ public:
 
         double T = temperature[grid_index];
         double Re = v * d / oil.get_viscosity(grid_index, T);
-        double lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
+        double lambda = pipe.resistance_function(Re);
         lambda *= pipe.adaptation.friction;
         double tau_w = lambda / 8 * rho * v * abs(v);
 
@@ -542,7 +542,7 @@ public:
         double S_0 = pipe.wall.getArea();
         double v = flow / (S_0);
         double Re = v * pipe.wall.diameter / nu_profile[reo_index];
-        double lambda = pipe.resistance_function(Re, pipe.wall.relativeRoughness());
+        double lambda = pipe.resistance_function(Re);
         double tau_w = lambda / 8 * rho * v * abs(v);
         double height_derivative = pipe.profile.get_height_derivative(grid_index, solver_direction);
         double result = -4 * tau_w / pipe.wall.diameter - rho * M_G * height_derivative;

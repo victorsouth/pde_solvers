@@ -5,7 +5,7 @@ import os
 import glob
 
 
-plots = os.listdir('data/')
+plots = os.listdir('.')
 
 dfs = list()
 
@@ -13,8 +13,8 @@ for plot in plots:
     #if 'p_' in plot or 'Q_' in plot:
         
         
-    if True:#'series.csv' in plot:
-        dfs.append(pd.read_csv(f'data/{plot}', encoding='windows-1251'))
+    if True and'coord_heights' not in plot and '.py' not in plot:
+        dfs.append(pd.read_csv(f'{plot}', encoding='windows-1251', sep=';'))
             
 
 rawData = dfs

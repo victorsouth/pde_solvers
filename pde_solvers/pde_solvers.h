@@ -29,6 +29,14 @@
 #include "pipe/pipe_advection_pde.h"
 #include "pipe/pipe_advection_solver.h"
 
+#include "pipe/heat_transfer.h"
+#include "pipe/pipe_heat_struct.h"
+#include "pipe/pipe_dynamic_soil.h"
+#include "pipe/pipe_dynamic_soil_multizone.h"
+#include "pipe/pipe_heat_computations.h"
+#include "pipe/pipe_heat_pde.h"
+
 #include "solvers/diffusion_solver.h" // нужно инклудить после объявления трубы и проч.
 
 #include "tasks/isothermal_quasistatic_task.h"
+#include "tasks/isothermal_quasistatic_ident.h"
