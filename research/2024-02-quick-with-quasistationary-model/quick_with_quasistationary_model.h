@@ -103,9 +103,9 @@ public:
         double z_min = 140;
         double z_max = 180;
         double z_start = (z_max + z_min) / 2;
-        double dz = (z_max - z_start) / pipe.profile.getPointCount();
+        double dz = (z_max - z_start) / pipe.profile.get_point_count();
 
-        vector<double> heights(pipe.profile.getPointCount(), z_start);
+        vector<double> heights(pipe.profile.get_point_count(), z_start);
 
         const vector<double>& coordinates = pipe.profile.coordinates;
         for (size_t index = 1; index < heights.size(); index++)
@@ -345,8 +345,8 @@ TEST_F(IsothermalQuasistaticModel, ShowProfileImpactInQuasiStationaryModel)
     perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
         path_full_profile, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi);
 
-    pipe.profile = PipeProfile::create(
-        pipe.profile.getPointCount(), 
+    pipe.profile = pipe_profile_t::create(
+        pipe.profile.get_point_count(), 
         pipe.profile.coordinates.front(),
         pipe.profile.coordinates.back(),
         profile.front(),

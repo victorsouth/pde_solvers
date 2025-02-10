@@ -66,7 +66,7 @@ TEST(MOC_Solver, UseCase_Advection)
     // Одна переменная, и структуры метода характеристик для нееm
     typedef composite_layer_t<profile_collection_t<1>, moc_solver<1>::specific_layer> single_var_moc_t;
 
-    ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
+    ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.get_point_count());
 
     auto& rho_initial = buffer.previous().vars.point_double[0];
     rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
@@ -75,7 +75,7 @@ TEST(MOC_Solver, UseCase_Advection)
     single_var_moc_t& prev = buffer.previous();
     single_var_moc_t& next = buffer.current();
 
-    vector<double> Q(pipe.profile.getPointCount(), 0.5); // задаем по трубе расход 0.5 м3/с
+    vector<double> Q(pipe.profile.get_point_count(), 0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);
 
     moc_solver<1> solver(advection_model, 
@@ -132,10 +132,10 @@ TEST(MOC_Solver, UseCase_Advection_Density_Viscosity)
     simple_pipe.dx = 1000;
 
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-    vector<double> Q(pipe.profile.getPointCount(), -0.5); // задаем по трубе расход 0.5 м3/с
+    vector<double> Q(pipe.profile.get_point_count(), -0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);
 
-    ring_buffer_t<density_viscosity_layer> buffer(2, pipe.profile.getPointCount());
+    ring_buffer_t<density_viscosity_layer> buffer(2, pipe.profile.get_point_count());
 
     auto& rho_initial = buffer[0].density;
     auto& viscosity_initial = buffer[0].viscosity;

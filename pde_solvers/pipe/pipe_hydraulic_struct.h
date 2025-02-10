@@ -35,7 +35,7 @@ struct simple_pipe_properties {
 };
 
 /// @brief Сущность профиля трубы
-struct PipeProfile {
+struct pipe_profile_t {
     /// @brief Координатные отметки, м
     vector<double> coordinates;
     /// @brief Высотные отметки, м
@@ -47,10 +47,10 @@ struct PipeProfile {
     double get_height_derivative(ptrdiff_t index, int direction) const {
         ptrdiff_t neighbour_index = index + direction;
 
-        if (neighbour_index < 0 || neighbour_index >= static_cast<ptrdiff_t>(getPointCount()))
+        if (neighbour_index < 0 || neighbour_index >= static_cast<ptrdiff_t>(get_point_count()))
             throw std::runtime_error("Wrong neighbour profile index");
 
-        if (index < 0 || index >= static_cast<ptrdiff_t>(getPointCount()))
+        if (index < 0 || index >= static_cast<ptrdiff_t>(get_point_count()))
             throw std::runtime_error("Wrong profile index");
 
         double dx = coordinates[neighbour_index] - coordinates[index];
@@ -60,12 +60,12 @@ struct PipeProfile {
     }
 
     /// @brief Длина участка трубы, м
-    double getLength() const
+    double get_length() const
     {
         return coordinates.back() - coordinates.front();
     }
     /// @brief Количество границ расчетной сетки
-    size_t getPointCount() const
+    size_t get_point_count() const
     {
         return coordinates.size();
     }
@@ -77,12 +77,12 @@ struct PipeProfile {
     /// @param z_end 
     /// @param capacity 
     /// @return 
-    static PipeProfile create(size_t segment_count,
+    static pipe_profile_t create(size_t segment_count,
         double x_begin, double x_end, double z_begin, double z_end,
         double capacity)
     {
         size_t n = segment_count + 1;
-        PipeProfile result;
+        pipe_profile_t result;
         result.coordinates = result.heights = vector<double>(n);
         result.capacity = vector<double>(n, capacity);
         double length = x_end - x_begin;
@@ -176,7 +176,7 @@ template <typename AdaptationParameters>
 struct pipe_properties
 {
     /// @brief Профиль для расчета (сетка). Не исходный профиль
-    PipeProfile profile;
+    pipe_profile_t profile;
     /// @brief Модель для расчета стенок
     pipe_wall_model_t wall;
     /// @brief Параметры адаптации
@@ -233,7 +233,7 @@ struct pipe_properties
 
         double Pcapacity = 10e6; // несущая способность
         size_t segment_count = simple.get_segment_count();
-        pipe.profile = PipeProfile::create(segment_count, 0, simple.length, 0, simple.elevation, Pcapacity);
+        pipe.profile = pipe_profile_t::create(segment_count, 0, simple.length, 0, simple.elevation, Pcapacity);
         pipe.wall.equivalent_roughness = 0.0001;
 
         // это диаметр внутренний

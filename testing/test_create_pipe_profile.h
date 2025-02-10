@@ -15,9 +15,9 @@ inline vector<double> build_heights_on_harmonic_function(const vector<double>& c
 /// @brief Генерация профиля трубопровода с непостоянным шагом по детерменированной функции
 /// @param length Длина генерируемого профиля
 /// @param step Примерный шаг сетки по координате
-inline PipeProfile build_profile_with_diff_step(const double length, const double step)
+inline pipe_profile_t build_profile_with_diff_step(const double length, const double step)
 {
-	PipeProfile source_prof;
+	pipe_profile_t source_prof;
 	source_prof.coordinates = { 0 };
 	size_t point_count = static_cast<size_t>(length / step);
 
@@ -32,7 +32,7 @@ inline PipeProfile build_profile_with_diff_step(const double length, const doubl
 	// Построение профиля высоток
 	source_prof.heights = build_heights_on_harmonic_function(source_prof.coordinates);
 	// Несущая способность
-	source_prof.capacity = vector<double>(source_prof.getPointCount(), 10e6);
+	source_prof.capacity = vector<double>(source_prof.get_point_count(), 10e6);
 
 	return source_prof;
 }
@@ -46,13 +46,13 @@ inline PipeProfile build_profile_with_diff_step(const double length, const doubl
 /// @param write_flg Флаг записи профилей в файл
 /// @param file_name Название файла для вывода
 /// @return Возвращает пару - исходный профиль с переменным шагом и новый с постоянным шагом
-inline std::pair<PipeProfile, PipeProfile> create_uniform_prof_from_generated_prof(const double L, const double dx, const double desired_dx, const string file_name = "")
+inline std::pair<pipe_profile_t, pipe_profile_t> create_uniform_prof_from_generated_prof(const double L, const double dx, const double desired_dx, const string file_name = "")
 {
 	// Генерируем исходный профиль по детерменированной функции с переменным шагом
-	PipeProfile source_profile = build_profile_with_diff_step(L, dx);
+	pipe_profile_t source_profile = build_profile_with_diff_step(L, dx);
 
 	// Создаём новый профиль с постоянным шагом
-	PipeProfile new_prof = create_uniform_profile(source_profile, desired_dx);
+	pipe_profile_t new_prof = create_uniform_profile(source_profile, desired_dx);
 
 	// Записываем в файлы при необходимости
 	if (!file_name.empty())
@@ -113,7 +113,7 @@ TEST(UniformProfile, HandlesShortProfile)
 	auto [source_prof, new_prof] = create_uniform_prof_from_generated_prof(L, dx, desired_dx);
 
 	// Проверка на неравенство желаемого шага и реального в новом профиле
-	ASSERT_NEAR(desired_dx, new_prof.getLength(), 1e-8);
+	ASSERT_NEAR(desired_dx, new_prof.get_length(), 1e-8);
 }
 
 /// @brief Строит графики сравнения итоговых профилей при различных видах исходного профиля
@@ -154,6 +154,6 @@ TEST(UniformProfile, UseCaseSourceProfFromFile)
 	double desired_dx = 100;
 
 	// Создаём новый профиль с постоянным шагом
-	PipeProfile new_prof = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, file_name);
+	pipe_profile_t new_prof = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, file_name);
 }
 
