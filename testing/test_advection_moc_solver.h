@@ -14,7 +14,7 @@ public:
         double d = 1;
         size_t n = 100;
 
-        pipe.profile = PipeProfile::create(n, x0, xl, 0, 0, 10e6);
+        pipe.profile = pipe_profile_t::create(n, x0, xl, 0, 0, 10e6);
         pipe.wall.diameter = d;
 
         return pipe;
@@ -40,7 +40,7 @@ TEST_F(AdvectionMocSolver, UseCaseDensity)
     // Зададимся расходом внутри трубопровода
     double volumetric_flow = 0.5;
 
-    size_t point_count = pipe.profile.getPointCount();
+    size_t point_count = pipe.profile.get_point_count();
 
     // Буфер для хранения слоёв
     ring_buffer_t<vector<double>> buffer(2, point_count);
@@ -69,7 +69,7 @@ TEST_F(AdvectionMocSolver, ConsiderFlowSwap)
     // Зададимся расходом внутри трубопровода для инверсии потока
     double volumetric_flow = -0.5;
 
-    size_t point_count = pipe.profile.getPointCount();
+    size_t point_count = pipe.profile.get_point_count();
 
     // Буфер для хранения слоёв
     ring_buffer_t<vector<double>> buffer(2, point_count);
@@ -93,7 +93,7 @@ TEST_F(AdvectionMocSolver, ConsiderCrLessOne)
     // Посчитаем шаг по времени, при котором Курант равен единице
     double time_step = (pipe.profile.coordinates[1] - pipe.profile.coordinates[0]) / (volumetric_flow / pipe.wall.getArea());
 
-    size_t point_count = pipe.profile.getPointCount();
+    size_t point_count = pipe.profile.get_point_count();
 
     // Буфер для хранения слоёв
     ring_buffer_t<vector<double>> buffer(2, point_count);
@@ -122,7 +122,7 @@ TEST_F(AdvectionMocSolver, ConsiderCrLessOneInverseFlow)
     // Посчитаем шаг по времени, при котором Курант равен единице
     double time_step = (pipe.profile.coordinates[1] - pipe.profile.coordinates[0]) / (-volumetric_flow / pipe.wall.getArea());
 
-    size_t point_count = pipe.profile.getPointCount();
+    size_t point_count = pipe.profile.get_point_count();
 
     // Буфер для хранения слоёв
     ring_buffer_t<vector<double>> buffer(2, point_count);

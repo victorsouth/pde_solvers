@@ -478,7 +478,7 @@ struct zoned_pipe_properties : public pipe_properties_t {
                 eqzone.coordinate_end = heat_zones[index + 1].coordinate_begin;
             }
             else {
-                eqzone.coordinate_end = profile.getPointCount() - 1;
+                eqzone.coordinate_end = profile.get_point_count() - 1;
             }
 
             result.emplace_back(eqzone);

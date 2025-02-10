@@ -140,7 +140,7 @@ public:
         double delta_t, vector<double> input,
         double v, bool use_offset_trick)
     {
-        double pipe_length = pipe.profile.getLength();
+        double pipe_length = pipe.profile.get_length();
         double K = calc_diffusion_coefficient(pipe, oil, v);
 
         double offset = 0;

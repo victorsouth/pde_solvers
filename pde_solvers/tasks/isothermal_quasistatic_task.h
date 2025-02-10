@@ -119,7 +119,7 @@ public:
     /// @param pipe Модель трубопровода
     isothermal_quasistatic_PQ_task_t(const pipe_properties_t& pipe, QuasistaticModelType model_type = QuasistaticModelType::FullQuasi)
         : pipe(pipe)
-        , buffer(2, pipe.profile.getPointCount())
+        , buffer(2, pipe.profile.get_point_count())
         , model_type( model_type )
     {
     }
@@ -135,7 +135,7 @@ public:
     void solve(const isothermal_quasistatic_PQ_task_boundaries_t& initial_conditions)
     {
         // Количество точек
-        size_t n = pipe.profile.getPointCount();
+        size_t n = pipe.profile.get_point_count();
 
         // Инициализация реологии
         auto& current = buffer.current();
@@ -167,7 +167,7 @@ private:
     /// @param dt Временной шаг моделирования
     /// @param boundaries Краевые условия
     void make_rheology_step(double dt, const isothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
-        size_t n = pipe.profile.getPointCount();
+        size_t n = pipe.profile.get_point_count();
         vector<double>Q_profile(n, boundaries.volumetric_flow); // задаем по трубе новый расход из временного ряда
 
         advance(); // Сдвигаем текущий и предыдущий слои

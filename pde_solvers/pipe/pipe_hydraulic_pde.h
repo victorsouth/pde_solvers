@@ -436,7 +436,7 @@ public:
             density_gradient = (density_profile[+1] - density_profile[0]) / (grid[+1] - grid[0]);
             height_gradient = (height_profile[+1] - height_profile[0]) / (grid[+1] - grid[0]);
         }
-        else if (grid_index == pipe.profile.getPointCount() - 1) {
+        else if (grid_index == pipe.profile.get_point_count() - 1) {
             density_gradient = (density_profile[0] - density_profile[-1]) / (grid[0] - grid[-1]);
             height_gradient = (height_profile[0] - height_profile[-1]) / (grid[0] - grid[-1]);
         }
@@ -523,7 +523,7 @@ public:
         /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
         size_t reo_index = grid_index;
 
-        if (pipe.profile.getPointCount() == rho_profile.size())
+        if (pipe.profile.get_point_count() == rho_profile.size())
         {
             // Случай расчета партий в точках (например для метода характеристик)
             if (solver_direction == +1)
