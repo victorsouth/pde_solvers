@@ -341,3 +341,5 @@ BUILD*/
 
 # Исключаем csv с реальными данными трубопровода
 !research/2024-08-quasistationary-with-real-data/data/*.csv
+
+/msvc_cmake/*
