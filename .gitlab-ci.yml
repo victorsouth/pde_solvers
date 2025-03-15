@@ -30,7 +30,7 @@ Unicode:
   stage: Static_test
   tags:
     - docker
-  image: hub.ktk.gubkin.ru/proxy/gcc
+  image: $DOCKER_REGISTRY/$DOCKER_REPO/gcc
   script:
     - mkdir -p pipeline/pipeline_result
     - touch encoding_error_list.txt pipeline/pipeline_result
@@ -46,7 +46,7 @@ Doxygen:
   stage: Static_test
   tags:
     - docker
-  image: hub.ktk.gubkin.ru/library/greenbone/doxygen:latest
+  image: $DOCKER_REGISTRY/$DOCKER_REPO/greenbone/doxygen:latest
   script:
     - mkdir -p pipeline/pipeline_result
     - bash ./pipeline/pipeline_scripts/doxygen_test.sh
@@ -61,7 +61,7 @@ Clang:
   stage: Static_test
   tags:
     - docker
-  image: hub.ktk.gubkin.ru/proxy/jhasse/clang-tidy:latest
+  image: $DOCKER_REGISTRY/$DOCKER_REPO/jhasse/clang-tidy:latest
   #image: jhasse/clang-tidy
   script:
     - mkdir -p pipeline/pipeline_result
@@ -82,7 +82,7 @@ Defining_branches:
   stage: Defining_branches
   tags:
     - docker
-  image: hub.ktk.gubkin.ru/proxy/gcc
+  image: $DOCKER_REGISTRY/$DOCKER_REPO/gcc
   script:
     - bash pipeline/pipeline_scripts/defining_branch.sh
   allow_failure: false
@@ -101,7 +101,7 @@ GCC_build:
   stage: Build
   tags:
     - docker
-  image: hub.ktk.gubkin.ru/library/gcc_cmake_boost_eigen_gtest:latest
+  image: $DOCKER_REGISTRY/$DOCKER_REPO/gcc_cmake_boost_eigen_gtest:latest
   script:
     - !reference [.load_branches_sh, script]
     - git clone https://gitlab-ci-token:${CI_FIXED_SOLVERS_TOKEN}@git.ktk.gubkin.ru/solvers/fixed_solvers.git --depth 1 -b $FIXED_SOLVERS_BRANCH
