@@ -5,6 +5,7 @@ project(pde_solvers)
 
 set(CMAKE_CXX_STANDARD 17)#23?
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+cmake_policy(SET CMP0012 NEW)
 
 if(NOT TARGET fixed_solvers::fixed_solvers)
 find_package(fixed_solvers)
@@ -105,5 +106,6 @@ set(TESTS_HEADERS
 )
 add_executable(pde_tests testing/test_main.cpp ${TESTS_HEADERS})
 target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
+install(TARGETS pde_tests DESTINATION bin)
 
 endif()
