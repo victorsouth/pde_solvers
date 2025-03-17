@@ -119,11 +119,34 @@ GCC_build:
       - pipeline/pipeline_result/build_gcc_result
       - Libs/GCC
 
+#Сборка проекта Clang
+Clang_build:
+  stage: Build
+  tags:
+    - dev-build-clang
+  script:
+    - !reference [.load_branches_ps, script]
+    - git clone https://gitlab-ci-token:${CI_FIXED_SOLVERS_TOKEN}@git.ktk.gubkin.ru/solvers/fixed_solvers.git --depth 1 -b $env:FIXED_SOLVERS_BRANCH
+    - |
+      cd fixed_solvers/pipeline/pipeline_scripts/
+      .\clangbuild.ps1
+      cp -r ../Libs/ ../../
+      cd ../../
+    - cd pipeline/pipeline_scripts/
+    - .\clangbuild.ps1
+  allow_failure: false
+  artifacts:
+    expire_in: 24 hour
+    when: always
+    paths:
+      - pipeline/pipeline_result/build_clang_result
+      - Libs/Clang
+
 #Сборка проекта MinGW
 MinGW_build:
   stage: Build
   tags:
-    - windows
+    - ktk-dev-build
   script:
     - !reference [.load_branches_ps, script]
     - git clone https://gitlab-ci-token:${CI_FIXED_SOLVERS_TOKEN}@git.ktk.gubkin.ru/solvers/fixed_solvers.git --depth 1 -b $env:FIXED_SOLVERS_BRANCH
@@ -134,7 +157,6 @@ MinGW_build:
       cd ../../
     - cd pipeline/pipeline_scripts/
     - .\mingwbuild.ps1
-  resource_group: dev-build
   allow_failure: false
   artifacts:
     expire_in: 24 hour
