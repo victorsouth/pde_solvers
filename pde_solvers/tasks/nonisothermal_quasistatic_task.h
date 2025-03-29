@@ -118,7 +118,7 @@ public:
     /// @param pipe Модель трубопровода
     nonisothermal_quasistatic_PQ_task_t(const pipe_noniso_properties_t& pipe, noniso_qsm_model_type model_type = noniso_qsm_model_type::FullQuasi)
         : pipe(pipe)
-        , buffer(2, pipe.profile.getPointCount())
+        , buffer(2, pipe.profile.get_point_count())
         , model_type(model_type)
     {
     }
@@ -134,7 +134,7 @@ public:
     void solve(const nonisothermal_quasistatic_PQ_task_boundaries_t& initial_conditions)
     {
         // Количество точек
-        size_t n = pipe.profile.getPointCount();
+        size_t n = pipe.profile.get_point_count();
 
         // Инициализация реологии
         auto& current = buffer.current();
@@ -171,7 +171,7 @@ private:
     /// @param dt Временной шаг моделирования
     /// @param boundaries Краевые условия
     void make_rheology_step(double dt, const nonisothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
-        size_t n = pipe.profile.getPointCount();
+        size_t n = pipe.profile.get_point_count();
         vector<double>Q_profile(n, boundaries.volumetric_flow); // задаем по трубе новый расход из временного ряда
 
         advance(); // Сдвигаем текущий и предыдущий слои
@@ -210,7 +210,7 @@ private:
             // считаем партии с помощью QUICKEST-ULTIMATE
             //PipeQAdvection advection_model(pipe, Q_profile); 
             oil_parameters_t oil = get_noniso_default_oil(); /// нужно ли передавать в нефть новую вязкость, плотность
-            vector<double> G(pipe.profile.getPointCount(), Q_profile[0] * boundaries.density);   ///массовый расход?
+            vector<double> G(pipe.profile.get_point_count(), Q_profile[0] * boundaries.density);   ///массовый расход?
             auto heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);
             // плотность - квазистац или стац
             if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::DensityQuasi) {

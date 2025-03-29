@@ -28,7 +28,7 @@ inline pipe_noniso_properties_t  get_noniso_default_pipe(double length = 12000, 
     pipe_noniso_properties_t  pipe;
 
     //pipe.profile = PipeProfile::create(120, 0, 120000, 150, 30, 10e6);
-    pipe.profile = PipeProfile::create(static_cast<size_t>(0.5 + length / dx), 0, length, 150, 30, 10e6);
+    pipe.profile = pipe_profile_t::create(static_cast<size_t>(0.5 + length / dx), 0, length, 150, 30, 10e6);
     pipe.wall.equivalent_roughness = 0.0001;
 
     // это диаметр внутренний
@@ -60,7 +60,7 @@ inline zoned_pipe_properties get_zoned_pipe(
     pipe.model_version = model_version;
 
     //pipe.profile = PipeProfile::create(120, 0, 120000, 150, 30, 10e6);
-    pipe.profile = PipeProfile::create(
+    pipe.profile = pipe_profile_t::create(
         static_cast<size_t>(0.5 + spipe.length / spipe.dx),
         0, spipe.length,
         0, spipe.elevation, 10e6);
@@ -72,7 +72,7 @@ inline zoned_pipe_properties get_zoned_pipe(
     pipe.wall.wallThickness = 0.01;
 
     size_t index = 0;
-    size_t n = pipe.profile.getPointCount();
+    size_t n = pipe.profile.get_point_count();
 
     double sensor_step = 20e3; // датчики каждые 20 км
     int sensor_count = std::max(2, static_cast<int>(spipe.length / sensor_step + 0.5) + 1);
