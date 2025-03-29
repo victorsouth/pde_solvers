@@ -36,7 +36,12 @@
 #include "pipe/pipe_heat_computations.h"
 #include "pipe/pipe_heat_pde.h"
 
+
+
 #include "solvers/diffusion_solver.h" // нужно инклудить после объявления трубы и проч.
 
+#include "tasks/pipe_heat_task_util.h"
 #include "tasks/isothermal_quasistatic_task.h"
 #include "tasks/isothermal_quasistatic_ident.h"
+#include "tasks/nonisothermal_quasistatic_task.h"
+#include "tasks/nonisothermal_quasistatic_ident.h"

@@ -1,7 +1,5 @@
 ﻿#pragma once
-//#include "../pde_solvers/tasks/nonisothermal_quasistatic_ident.h"
-//#include "../pde_solvers/tasks/nonisothermal_quasistatic_task.h"
-//#include <./FVMSystemLib/PipeModelHeatTask.h>
+
 
 /// @brief Тесты для расчёта на реальных данных
 class IdentNonisothermalQSM : public ::testing::Test {
@@ -112,12 +110,12 @@ TEST_F(IdentNonisothermalQSM, HTC)
 
     // Подготавливаем модель трубопровода и параметры для идентификации 
     //pipe_properties_t pipe = prepare_pipe(data_path);
-    pipe_noniso_properties_t pipe = get_default_pipe();
+    pipe_noniso_properties_t pipe = get_noniso_default_pipe();
     auto [times, control_data, etalon_pressure] = prepare_real_data(data_path);
 
     // Выбираем в настройках параметр идентификации - коэффициент теплообмена
     ident_nonisothermal_qsm_pipe_settings ident_settings;
-    ident_settings.ident_friction = true;
+    ident_settings.ident_htc = true;
 
     // Создаём класс для идентификации
     ident_nonisothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, times, control_data, etalon_pressure);

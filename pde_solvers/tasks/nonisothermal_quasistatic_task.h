@@ -1,21 +1,11 @@
 ﻿#pragma once
 #include <string>
 #include <vector>
-#include "../timeseries/timeseries_helpers.h"
-#include <./FVMSystemLib/PipeModelHeatTask.h>
+
 namespace pde_solvers {
 ;
 
 using std::string;
-
-/// @brief Варианты расчёта квазистационарной модели
-/// Stationary - стационарный расчёт (частный случай квазистаца)
-/// DensityQuasi - квазистац по плотности, вязкость рассчитывается как в стационаре
-/// ViscosityQuasi - квазистац по вязкости, плотность рассчитывается как в стационаре
-/// FullQuasi - полный квазистац
-enum class QuasistaticModelType {
-    Stationary, DensityQuasi, ViscosityQuasi, TempQuasi, FullQuasi
-};
 
 /// @brief Проблемно-ориентированный слой для TQ расчета
 /// @tparam CellFlag Флаг расчёта реологии 
@@ -100,6 +90,10 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t {           ///как на
     }
 };
 
+enum class noniso_qsm_model_type {
+    Stationary, DensityQuasi, ViscosityQuasi, FullQuasi, TempQuasi
+};
+
 /// @brief Расчетная задача (task) для гидравлического неизотермического 
 /// квазистационарного расчета в условиях движения партий с разной плотностью и вязкостью, температурой
 /// Расчет партий делается методом характеристик или Quickest-Ultimate
@@ -117,12 +111,12 @@ private:
     // Создаётся буфер, тип слоя которого определяется в зависимости от типа солвера
     buffer_type buffer;
     // Тип расчёта
-    QuasistaticModelType model_type;
+    noniso_qsm_model_type model_type;
 
 public:
     /// @brief Конструктор
     /// @param pipe Модель трубопровода
-    nonisothermal_quasistatic_PQ_task_t(const pipe_noniso_properties_t& pipe, QuasistaticModelType model_type = QuasistaticModelType::FullQuasi)
+    nonisothermal_quasistatic_PQ_task_t(const pipe_noniso_properties_t& pipe, noniso_qsm_model_type model_type = noniso_qsm_model_type::FullQuasi)
         : pipe(pipe)
         , buffer(2, pipe.profile.getPointCount())
         , model_type(model_type)
@@ -186,7 +180,7 @@ private:
             // считаем партии методом характеристик
 
             // плотность - квазистац или стац
-            if (model_type == QuasistaticModelType::FullQuasi || model_type == QuasistaticModelType::DensityQuasi) {
+            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::DensityQuasi) {
                 // Шаг по плотности
                 advection_moc_solver solver_rho(pipe, Q_profile[0], buffer.previous().density, buffer.current().density);
                 solver_rho.step(dt, boundaries.density, boundaries.density);
@@ -195,7 +189,7 @@ private:
                 buffer.current().density = vector<double>(buffer.current().density.size(), boundaries.density);
 
             // вязкость - квазистац или стац
-            if (model_type == QuasistaticModelType::FullQuasi || model_type == QuasistaticModelType::ViscosityQuasi) {
+            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::ViscosityQuasi) {
                 // Шаг по вязкости
                 advection_moc_solver solver_nu(pipe, Q_profile[0], buffer.previous().viscosity, buffer.current().viscosity);
                 solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
@@ -204,7 +198,7 @@ private:
                 buffer.current().viscosity = vector<double>(buffer.current().viscosity.size(), boundaries.viscosity);
             
             // температура - квазистац или стац
-            if (model_type == QuasistaticModelType::FullQuasi || model_type == QuasistaticModelType::TempQuasi) {
+            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::TempQuasi) {
                 // Шаг по temp
                 advection_moc_solver solver_tm(pipe, Q_profile[0], buffer.previous().temp, buffer.current().temp);
                 solver_tm.step(dt, boundaries.temp, boundaries.temp);
@@ -215,11 +209,11 @@ private:
         else {
             // считаем партии с помощью QUICKEST-ULTIMATE
             //PipeQAdvection advection_model(pipe, Q_profile); 
-            oil_parameters_t oil = get_default_oil();                                         /// нужно ли передавать в нефть новую вязкость, плотность
+            oil_parameters_t oil = get_noniso_default_oil(); /// нужно ли передавать в нефть новую вязкость, плотность
             vector<double> G(pipe.profile.getPointCount(), Q_profile[0] * boundaries.density);   ///массовый расход?
-            heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);            
+            auto heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);
             // плотность - квазистац или стац
-            if (model_type == QuasistaticModelType::FullQuasi || model_type == QuasistaticModelType::DensityQuasi) {
+            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::DensityQuasi) {
                 // Шаг по плотности
                 auto density_wrapper = buffer.get_buffer_wrapper(
                     &density_viscosity_temp_quasi_layer<1>::get_density_wrapper);
@@ -231,7 +225,7 @@ private:
             }
 
             // вязкость - квазистац или стац
-            if (model_type == QuasistaticModelType::FullQuasi || model_type == QuasistaticModelType::ViscosityQuasi) {
+            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::ViscosityQuasi) {
                 auto viscosity_wrapper = buffer.get_buffer_wrapper(
                     &density_viscosity_temp_quasi_layer<1>::get_viscosity_wrapper);
 
@@ -244,8 +238,8 @@ private:
             }
 
             // temp - квазистац или стац
-            if (model_type == QuasistaticModelType::FullQuasi || model_type == QuasistaticModelType::TempQuasi) {
-                auto viscosity_wrapper = buffer.get_buffer_wrapper(
+            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::TempQuasi) {
+                auto temp_wrapper = buffer.get_buffer_wrapper(
                     &density_viscosity_temp_quasi_layer<1>::get_temp_wrapper);
 
                 // Шаг по вязкости
@@ -392,7 +386,7 @@ inline void perform_quasistatic_simulation(
 template <typename Solver, typename Printer>
 inline void perform_quasistatic_simulation(
     const string& path,
-    const pipe_noniso_properties_tt& pipe,
+    const pipe_noniso_properties_t& pipe,
     const nonisothermal_quasistatic_PQ_task_boundaries_t& initial_boundaries,
     const vector_timeseries_t& boundary_timeseries,
     const QuasistaticModelType& model_type,
@@ -401,55 +395,6 @@ inline void perform_quasistatic_simulation(
     perform_quasistatic_simulation<Solver, Printer>(path, pipe, initial_boundaries, boundary_timeseries, model_type, vector_timeseries_t({}), dt);
 }
 
-
-
-
-/// @brief Обработчик результатов расчета при пакетном расчете с предподсчитанными временными метками
-/// @tparam LayerType Тип слоя (под МХ, под QUICKEST)
-template <typename LayerType>
-class batch_processor_precalculated_times {
-public:
-    /// @brief Шаблон для задания функции обработки результатов расчёта
-    /// @param step_index Текущий шаг моделирования
-    /// @param layer Текущий слой
-    virtual void process_data(size_t step_index, const LayerType& layer) = 0;
-};
-
-/// @brief Накапливает результаты по выходной температуре
-class nonisothermal_qsm_batch_Tout_collector_t
-    : public batch_processor_precalculated_times<density_viscosity_temp_quasi_layer<true>>
-{
-public:
-    /// @brief Тип данных слоя буфера изотермической квазистационарной модели
-    typedef density_viscosity_temp_quasi_layer<true> layer_type;
-protected:
-    /// @brief Вектор расчётных значений давления на выходе ЛУ
-    vector<double> pipe_temp_out;
-public:
-    /// @brief Конструктор обработчика
-    /// @param times Предпосчитанная временная сетка моделирования работы ЛУ
-    nonisothermal_qsm_batch_Tout_collector_t(const vector<double>& times)
-        : pipe_temp_out(times.size(), std::numeric_limits<double>::quiet_NaN())
-    {
-
-    }
-
-    /// @brief Сохранение результатов расчёта давления в конце ЛУ в вектор
-    /// @param step_index Текущий шаг моделирования
-    /// @param layer Текущий слой
-    virtual void process_data(size_t step_index,
-        const density_viscosity_temp_quasi_layer<true>& layer) override
-    {
-        // at() - проверяет выход за границы массива
-        //pipe_pressure_out.at(step_index) = layer.pressure.back();
-        pipe_temp_out[step_index] = layer.temp.back();
-    }
-    /// @brief Геттер для вектора собранных результатов расчёта давления в конце ЛУ
-    /// @return Вектор расчётных значений давления на выходе ЛУ
-    const vector<double>& get_temp_out_calculated() const {
-        return pipe_temp_out;
-    }
-};
 
 /// @brief Накапливает результаты по выходной температуре
 class nonisothermal_qsm_batch_Tout_collector_t
