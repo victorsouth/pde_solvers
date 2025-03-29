@@ -1,5 +1,6 @@
 ﻿#pragma once
-
+//#include "../pde_solvers/tasks/nonisothermal_quasistatic_ident.h"
+//#include "../pde_solvers/tasks/nonisothermal_quasistatic_task.h"
 //#include <./FVMSystemLib/PipeModelHeatTask.h>
 
 /// @brief Тесты для расчёта на реальных данных
@@ -107,6 +108,8 @@ protected:
 /// @brief Пример идентификации модели трубопровода по коэффициенту теплообмена
 TEST_F(IdentNonisothermalQSM, HTC) 
 {
+    using namespace pde_solvers;
+
     // Подготавливаем модель трубопровода и параметры для идентификации 
     //pipe_properties_t pipe = prepare_pipe(data_path);
     pipe_noniso_properties_t pipe = get_default_pipe();

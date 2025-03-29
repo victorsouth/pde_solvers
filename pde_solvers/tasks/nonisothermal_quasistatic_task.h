@@ -100,12 +100,12 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t {           ///как на
     }
 };
 
-/// @brief Расчетная задача (task) для гидравлического изотермического 
-/// квазистационарного расчета в условиях движения партий с разной плотностью и вязкостью
+/// @brief Расчетная задача (task) для гидравлического неизотермического 
+/// квазистационарного расчета в условиях движения партий с разной плотностью и вязкостью, температурой
 /// Расчет партий делается методом характеристик или Quickest-Ultimate
 /// @tparam Solver Тип солвера партий (advection_moc_solver или quickest_ultimate_fv_solver)
 template <typename Solver = advection_moc_solver>
-class nonisothermal_quasistatic_PQ_task_t {  /// TQ????????????
+class nonisothermal_quasistatic_PQ_task_t {  
 public:
     /// @brief Тип слоя
     typedef density_viscosity_temp_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true> layer_type;
@@ -153,7 +153,7 @@ public:
         for (double& viscosity : current.viscosity) {
             viscosity = initial_conditions.viscosity;
         }
-        // Инициализация начального профиля темп (не важно, ячейки или точки)
+        // Инициализация начального профиля температуры (не важно, ячейки или точки)
         for (double& temp : current.temp) {
             temp = initial_conditions.temp;
         }
@@ -283,7 +283,7 @@ public:
     /// Функция делат сдвиг буфера (advance) так, что buffer.current после вызова содержит свежерасчитанный слой
     /// @param dt временной шаг моделирования
     /// @param boundaries Краевые условие
-    void step(double dt, const isothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
+    void step(double dt, const nonisothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
         make_rheology_step(dt, boundaries);
 //        calc_pressure_layer(boundaries);
     }

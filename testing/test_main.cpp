@@ -7,6 +7,9 @@
 
 #include <fixed/fixed.h>
 #include <pde_solvers/pde_solvers.h>
+//#include "../pde_solvers/tasks/nonisothermal_quasistatic_ident.h"
+//#include "../pde_solvers/tasks/nonisothermal_quasistatic_task.h"
+
 
 #include <iostream>
 #include <fstream>
@@ -44,6 +47,8 @@ inline std::string prepare_research_folder()
     return path;
 }
 
+
+
 #include "test_diffusion.h"
 #include "test_moc.h"
 #include "test_quick.h"
@@ -57,6 +62,7 @@ inline std::string prepare_research_folder()
 #include "../research/2024-02-quick-with-quasistationary-model/quick_with_quasistationary_model.h"
 #include "../research/2024-08-quasistationary-with-real-data/quasistationary_with_real_data.h"
 #include "../research/2024-10-ident-quasistatic-isothermal/ident_quasistatic_isothermal.h"
+//#include "../research/2025-01-ident-quasistatic-nonisothermal/ident_quasistatic_nonisothermal.h"
 
 
 int main(int argc, char **argv) {
