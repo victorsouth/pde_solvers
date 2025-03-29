@@ -329,6 +329,7 @@ __pycache__/
 /testing_out/QUICKEST_ULTIMATE.UseCaseStepDensity
 /out/build/x64-Debug
 /msvc/*.txt
+/msvc_cmake/*.txt
 /research/graphs.asv
 /testing_out/MOC_Solver.MOC_Compare_With_QUICK/*.csv
 /research_out/DiffusionOfAdvection/CompareQuickestDiffusion
