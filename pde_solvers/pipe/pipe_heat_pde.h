@@ -1,12 +1,12 @@
-#pragma once
+п»ї#pragma once
 
 namespace pde_solvers {
 ;
 
 
-/// @brief Уравнение притока тепла через формулу Ньютона q = -Kt(T - T_outer)
-/// Беспартийный расчет
-/// по документу "Полный вывод НЕизотермических уравнений..."
+/// @brief РЈСЂР°РІРЅРµРЅРёРµ РїСЂРёС‚РѕРєР° С‚РµРїР»Р° С‡РµСЂРµР· С„РѕСЂРјСѓР»Сѓ РќСЊСЋС‚РѕРЅР° q = -Kt(T - T_outer)
+/// Р‘РµСЃРїР°СЂС‚РёР№РЅС‹Р№ СЂР°СЃС‡РµС‚
+/// РїРѕ РґРѕРєСѓРјРµРЅС‚Сѓ "РџРѕР»РЅС‹Р№ РІС‹РІРѕРґ РќР•РёР·РѕС‚РµСЂРјРёС‡РµСЃРєРёС… СѓСЂР°РІРЅРµРЅРёР№..."
 class PipeHeatInflowConstArea : public pde_t<1> {
 public:
     using pde_t<1>::equation_coeffs_type;
@@ -16,7 +16,7 @@ protected:
     const pipe_noniso_properties_t& pipe;
     const oil_parameters_t& oil;
 
-    /// @brief массовый расход (в ячейках или точках??)
+    /// @brief РјР°СЃСЃРѕРІС‹Р№ СЂР°СЃС…РѕРґ (РІ СЏС‡РµР№РєР°С… РёР»Рё С‚РѕС‡РєР°С…??)
     const vector<double>& mass_flow;
 
 public:
@@ -28,12 +28,12 @@ public:
         , mass_flow(mass_flow)
     {}
 
-    /// @brief Возвращает известную уравнению сетку
+    /// @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ РёР·РІРµСЃС‚РЅСѓСЋ СѓСЂР°РІРЅРµРЅРёСЋ СЃРµС‚РєСѓ
     virtual const vector<double>& get_grid() const override {
         return pipe.profile.coordinates;
     }
 
-    /// @brief Левая часть
+    /// @brief Р›РµРІР°СЏ С‡Р°СЃС‚СЊ
     /// @param index 
     /// @return 
     virtual equation_coeffs_type getEquationsCoeffs(
@@ -51,8 +51,8 @@ public:
         return 1 / getEquationsCoeffs(grid_index, point_vector);
     }
 
-    /// @brief Получение собственных чисел и соответствующих им ЛЕВЫХ собственных векторов
-    /// \return Список собственных чисел, список собственных векторов
+    /// @brief РџРѕР»СѓС‡РµРЅРёРµ СЃРѕР±СЃС‚РІРµРЅРЅС‹С… С‡РёСЃРµР» Рё СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёС… РёРј Р›Р•Р’Р«РҐ СЃРѕР±СЃС‚РІРµРЅРЅС‹С… РІРµРєС‚РѕСЂРѕРІ
+    /// \return РЎРїРёСЃРѕРє СЃРѕР±СЃС‚РІРµРЅРЅС‹С… С‡РёСЃРµР», СЃРїРёСЃРѕРє СЃРѕР±СЃС‚РІРµРЅРЅС‹С… РІРµРєС‚РѕСЂРѕРІ
     virtual pair<var_type, equation_coeffs_type> GetLeftEigens(
         size_t grid_index, const var_type& point_vector) const override
     {
@@ -67,8 +67,8 @@ public:
         return std::make_pair(v, v);
     }
 
-    /// @brief Правая часть уравнения притока тепла
-    /// по документу "Полный вывод НЕизотермических уравнений...", формула (8)
+    /// @brief РџСЂР°РІР°СЏ С‡Р°СЃС‚СЊ СѓСЂР°РІРЅРµРЅРёСЏ РїСЂРёС‚РѕРєР° С‚РµРїР»Р°
+    /// РїРѕ РґРѕРєСѓРјРµРЅС‚Сѓ "РџРѕР»РЅС‹Р№ РІС‹РІРѕРґ РќР•РёР·РѕС‚РµСЂРјРёС‡РµСЃРєРёС… СѓСЂР°РІРЅРµРЅРёР№...", С„РѕСЂРјСѓР»Р° (8)
     virtual right_party_type getSourceTerm(
         size_t grid_index, const var_type& point_var) const override
     {
@@ -109,9 +109,9 @@ public:
 
 
 
-/// @brief Уравление притока тепла, учитывающее теплообмен с динамическим грунтом
-/// Беспартийный расчет
-/// по документу "Полный вывод НЕизотермических уравнений..."
+/// @brief РЈСЂР°РІР»РµРЅРёРµ РїСЂРёС‚РѕРєР° С‚РµРїР»Р°, СѓС‡РёС‚С‹РІР°СЋС‰РµРµ С‚РµРїР»РѕРѕР±РјРµРЅ СЃ РґРёРЅР°РјРёС‡РµСЃРєРёРј РіСЂСѓРЅС‚РѕРј
+/// Р‘РµСЃРїР°СЂС‚РёР№РЅС‹Р№ СЂР°СЃС‡РµС‚
+/// РїРѕ РґРѕРєСѓРјРµРЅС‚Сѓ "РџРѕР»РЅС‹Р№ РІС‹РІРѕРґ РќР•РёР·РѕС‚РµСЂРјРёС‡РµСЃРєРёС… СѓСЂР°РІРЅРµРЅРёР№..."
 class PipeSoilHeatInflowConstArea : public pde_t<1>
 {
 public:
@@ -119,16 +119,16 @@ public:
     using pde_t<1>::right_party_type;
     using pde_t<1>::var_type;
 protected:
-    /// @brief Труба
+    /// @brief РўСЂСѓР±Р°
     const zoned_pipe_properties& pipe;
-    /// @brief Нефть (считается одной и той же по всей трубе)
+    /// @brief РќРµС„С‚СЊ (СЃС‡РёС‚Р°РµС‚СЃСЏ РѕРґРЅРѕР№ Рё С‚РѕР№ Р¶Рµ РїРѕ РІСЃРµР№ С‚СЂСѓР±Рµ)
     const oil_parameters_t& oil;
-    /// @brief Массовый расход (в ячейках или точках??)
+    /// @brief РњР°СЃСЃРѕРІС‹Р№ СЂР°СЃС…РѕРґ (РІ СЏС‡РµР№РєР°С… РёР»Рё С‚РѕС‡РєР°С…??)
     const vector<double>& mass_flow;
-    /// @brief Средняя температура грунта (если null, то используется ambient_temperature)
+    /// @brief РЎСЂРµРґРЅСЏСЏ С‚РµРјРїРµСЂР°С‚СѓСЂР° РіСЂСѓРЅС‚Р° (РµСЃР»Рё null, С‚Рѕ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ ambient_temperature)
     const vector<double>* temperature_soil{ nullptr };
 public:
-    /// @brief Конструктор для модель с тепловой динамикой грунта
+    /// @brief РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґР»СЏ РјРѕРґРµР»СЊ СЃ С‚РµРїР»РѕРІРѕР№ РґРёРЅР°РјРёРєРѕР№ РіСЂСѓРЅС‚Р°
     PipeSoilHeatInflowConstArea(const zoned_pipe_properties& pipe, const oil_parameters_t& oil,
         const vector<double>& mass_flow, const vector<double>& temperature_soil)
         : pipe(pipe)
@@ -136,7 +136,7 @@ public:
         , mass_flow(mass_flow)
         , temperature_soil(&temperature_soil)
     {}
-    /// @brief Конструктор для модели Шухова
+    /// @brief РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґР»СЏ РјРѕРґРµР»Рё РЁСѓС…РѕРІР°
     PipeSoilHeatInflowConstArea(const zoned_pipe_properties& pipe, const oil_parameters_t& oil,
         const vector<double>& mass_flow)
         : pipe(pipe)
@@ -145,12 +145,12 @@ public:
         , temperature_soil(nullptr)
     {}
 
-    /// @brief Возвращает известную уравнению сетку
+    /// @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ РёР·РІРµСЃС‚РЅСѓСЋ СѓСЂР°РІРЅРµРЅРёСЋ СЃРµС‚РєСѓ
     virtual const vector<double>& get_grid() const override {
         return pipe.profile.coordinates;
     }
 
-    /// @brief Левая часть
+    /// @brief Р›РµРІР°СЏ С‡Р°СЃС‚СЊ
     /// @param index 
     /// @return 
     virtual equation_coeffs_type getEquationsCoeffs(
@@ -168,8 +168,8 @@ public:
         return 1 / getEquationsCoeffs(grid_index, point_vector);
     }
 
-    /// @brief Получение собственных чисел и соответствующих им ЛЕВЫХ собственных векторов
-    /// \return Список собственных чисел, список собственных векторов
+    /// @brief РџРѕР»СѓС‡РµРЅРёРµ СЃРѕР±СЃС‚РІРµРЅРЅС‹С… С‡РёСЃРµР» Рё СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёС… РёРј Р›Р•Р’Р«РҐ СЃРѕР±СЃС‚РІРµРЅРЅС‹С… РІРµРєС‚РѕСЂРѕРІ
+    /// \return РЎРїРёСЃРѕРє СЃРѕР±СЃС‚РІРµРЅРЅС‹С… С‡РёСЃРµР», СЃРїРёСЃРѕРє СЃРѕР±СЃС‚РІРµРЅРЅС‹С… РІРµРєС‚РѕСЂРѕРІ
     virtual pair<var_type, equation_coeffs_type> GetLeftEigens(
         size_t grid_index, const var_type& point_vector) const override
     {
@@ -187,8 +187,8 @@ public:
 
 
 
-    /// @brief Правая часть уравнения притока тепла
-    /// по документу "Полный вывод НЕизотермических уравнений...", формула (8)
+    /// @brief РџСЂР°РІР°СЏ С‡Р°СЃС‚СЊ СѓСЂР°РІРЅРµРЅРёСЏ РїСЂРёС‚РѕРєР° С‚РµРїР»Р°
+    /// РїРѕ РґРѕРєСѓРјРµРЅС‚Сѓ "РџРѕР»РЅС‹Р№ РІС‹РІРѕРґ РќР•РёР·РѕС‚РµСЂРјРёС‡РµСЃРєРёС… СѓСЂР°РІРЅРµРЅРёР№...", С„РѕСЂРјСѓР»Р° (8)
     virtual right_party_type getSourceTerm(
         size_t grid_index, const var_type& point_var) const override
     {
@@ -239,9 +239,9 @@ public:
 };
 
 
-/// @brief Уравление притока тепла, учитывающее теплообмен с динамическим грунтом,
-/// партийность жидкости
-/// по документу "Полный вывод НЕизотермических уравнений..."
+/// @brief РЈСЂР°РІР»РµРЅРёРµ РїСЂРёС‚РѕРєР° С‚РµРїР»Р°, СѓС‡РёС‚С‹РІР°СЋС‰РµРµ С‚РµРїР»РѕРѕР±РјРµРЅ СЃ РґРёРЅР°РјРёС‡РµСЃРєРёРј РіСЂСѓРЅС‚РѕРј,
+/// РїР°СЂС‚РёР№РЅРѕСЃС‚СЊ Р¶РёРґРєРѕСЃС‚Рё
+/// РїРѕ РґРѕРєСѓРјРµРЅС‚Сѓ "РџРѕР»РЅС‹Р№ РІС‹РІРѕРґ РќР•РёР·РѕС‚РµСЂРјРёС‡РµСЃРєРёС… СѓСЂР°РІРЅРµРЅРёР№..."
 class PipeSoilHeatInflowSortedConstArea : public pde_t<1>
 {
 public:
@@ -249,16 +249,16 @@ public:
     using pde_t<1>::right_party_type;
     using pde_t<1>::var_type;
 protected:
-    /// @brief Профиль свойств жидкости
+    /// @brief РџСЂРѕС„РёР»СЊ СЃРІРѕР№СЃС‚РІ Р¶РёРґРєРѕСЃС‚Рё
     const fluid_properties_profile_t& oil;
-    /// @brief Труба
+    /// @brief РўСЂСѓР±Р°
     const zoned_pipe_properties& pipe;
-    /// @brief Объемный расход
+    /// @brief РћР±СЉРµРјРЅС‹Р№ СЂР°СЃС…РѕРґ
     const vector<double>& Q;
-    /// @brief Средняя температура грунта (если null, то используется ambient_temperature)
+    /// @brief РЎСЂРµРґРЅСЏСЏ С‚РµРјРїРµСЂР°С‚СѓСЂР° РіСЂСѓРЅС‚Р° (РµСЃР»Рё null, С‚Рѕ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ ambient_temperature)
     const vector<double>* temperature_soil{ nullptr };
 public:
-    /// @brief Конструктор для партийной модели с тепловой динамикой грунта
+    /// @brief РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґР»СЏ РїР°СЂС‚РёР№РЅРѕР№ РјРѕРґРµР»Рё СЃ С‚РµРїР»РѕРІРѕР№ РґРёРЅР°РјРёРєРѕР№ РіСЂСѓРЅС‚Р°
     PipeSoilHeatInflowSortedConstArea(const zoned_pipe_properties& pipe,
         const fluid_properties_profile_t& oil,
         const vector<double>& vol_flow, const vector<double>& temperature_soil)
@@ -267,7 +267,7 @@ public:
         , Q(vol_flow)
         , temperature_soil(&temperature_soil)
     {}
-    /// @brief Конструктор для модели Шухова
+    /// @brief РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґР»СЏ РјРѕРґРµР»Рё РЁСѓС…РѕРІР°
     PipeSoilHeatInflowSortedConstArea(const zoned_pipe_properties& pipe,
         const fluid_properties_profile_t& oil,
         const vector<double>& vol_flow)
@@ -277,12 +277,12 @@ public:
         , temperature_soil(nullptr)
     {}
 
-    /// @brief Возвращает известную уравнению сетку
+    /// @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ РёР·РІРµСЃС‚РЅСѓСЋ СѓСЂР°РІРЅРµРЅРёСЋ СЃРµС‚РєСѓ
     virtual const vector<double>& get_grid() const override {
         return pipe.profile.coordinates;
     }
 
-    /// @brief Левая часть
+    /// @brief Р›РµРІР°СЏ С‡Р°СЃС‚СЊ
     /// @param index 
     /// @return 
     virtual equation_coeffs_type getEquationsCoeffs(
@@ -301,8 +301,8 @@ public:
         return 1 / v;
     }
 
-    /// @brief Получение собственных чисел и соответствующих им ЛЕВЫХ собственных векторов
-    /// \return Список собственных чисел, список собственных векторов
+    /// @brief РџРѕР»СѓС‡РµРЅРёРµ СЃРѕР±СЃС‚РІРµРЅРЅС‹С… С‡РёСЃРµР» Рё СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёС… РёРј Р›Р•Р’Р«РҐ СЃРѕР±СЃС‚РІРµРЅРЅС‹С… РІРµРєС‚РѕСЂРѕРІ
+    /// \return РЎРїРёСЃРѕРє СЃРѕР±СЃС‚РІРµРЅРЅС‹С… С‡РёСЃРµР», СЃРїРёСЃРѕРє СЃРѕР±СЃС‚РІРµРЅРЅС‹С… РІРµРєС‚РѕСЂРѕРІ
     virtual pair<var_type, equation_coeffs_type> GetLeftEigens(
         size_t grid_index, const var_type& point_vector) const override
     {
@@ -317,8 +317,8 @@ public:
         return std::make_pair(v, v);
     }
 
-    /// @brief Правая часть уравнения притока тепла
-    /// по документу "Полный вывод НЕизотермических уравнений...", формула (8)
+    /// @brief РџСЂР°РІР°СЏ С‡Р°СЃС‚СЊ СѓСЂР°РІРЅРµРЅРёСЏ РїСЂРёС‚РѕРєР° С‚РµРїР»Р°
+    /// РїРѕ РґРѕРєСѓРјРµРЅС‚Сѓ "РџРѕР»РЅС‹Р№ РІС‹РІРѕРґ РќР•РёР·РѕС‚РµСЂРјРёС‡РµСЃРєРёС… СѓСЂР°РІРЅРµРЅРёР№...", С„РѕСЂРјСѓР»Р° (8)
     virtual right_party_type getSourceTerm(
         size_t grid_index, const var_type& point_var) const override
     {
@@ -328,7 +328,7 @@ public:
         double d = pipe.wall.diameter;
         double S_0 = pipe.wall.getArea();
         d *= da;
-        S_0 *= da * da; // квадрат
+        S_0 *= da * da; // РєРІР°РґСЂР°С‚
         double density = oil.nominal_density[grid_index];
         double v = Q[grid_index] / S_0;
 
@@ -350,7 +350,7 @@ public:
             q = model.get_heat_flow(T, model.temperature_ambient);
         }
 
-        double Cp = oil.heat_capacity; // Можно использовать формулу Крэго.
+        double Cp = oil.heat_capacity; // РњРѕР¶РЅРѕ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ С„РѕСЂРјСѓР»Сѓ РљСЂСЌРіРѕ.
         Cp *= pipe.adaptation.heat_capacity;
 
         double s_heat = M_PI * d * q;

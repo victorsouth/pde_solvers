@@ -34,7 +34,7 @@ protected:
         oil.viscosity.nominal_viscosity = 6e-7; // и для расчёта границ физической диффузии
 
         // Инициализация профиля расхода
-        Q = vector<double>(pipe.profile.getPointCount(), volumetric_flow);
+        Q = vector<double>(pipe.profile.get_point_count(), volumetric_flow);
         advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
 
     }
@@ -93,7 +93,7 @@ protected:
         typedef composite_layer_t<target_var_t, specific_data_t> quickest_advection_layer_t;
 
         //std::unique_ptr<ring_buffer_t<quickest_advection_layer_t>> buffer;
-        ring_buffer_t<quickest_advection_layer_t> buffer(2, pipe.profile.getPointCount());
+        ring_buffer_t<quickest_advection_layer_t> buffer(2, pipe.profile.get_point_count());
 
         // Задаём исходные значения
         quickest_advection_layer_t& prev = buffer.previous();
@@ -224,7 +224,7 @@ protected:
     /// @return Возвращает длину области смеси в метрах
     double calc_physical_diffusion_length(const double speed)
     {
-        double L = pipe.profile.getLength();
+        double L = pipe.profile.get_length();
         double S = M_PI * pow(pipe.wall.diameter, 2) / 4; 
         double kc_v = diffusion_transport_solver::calc_diffusion_coefficient(pipe, oil, speed) / speed;
         double vc = 6.58 * S * sqrt(kc_v) * sqrt(L); // Расчёт объёма смеси, формула из учебника Лурье 2012, с. 409
@@ -274,7 +274,7 @@ protected:
         typedef composite_layer_t<profile_collection_t<1>,
             moc_solver<1>::specific_layer> single_var_moc_t;
         // буфер, содержащий в себе слои
-        ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
+        ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.get_point_count());
         // объявляем переменную
         single_var_moc_t& prev = buffer.previous();
         // задаем исходные значения

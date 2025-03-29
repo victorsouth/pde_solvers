@@ -1,60 +1,60 @@
-#pragma once
+п»ї#pragma once
 
 namespace pde_solvers {
 ;
 
 /*
-  Структуры данных и расчеты для однозонной модели.
-   - Параметры идентификации однозонной модели
-   - Исходные параметры Системы "труба, изоляция, грунт"
-   - Эквивалентная модель Системы: эквивалентные радиусы слоев, коэффициенты моделей
-   - Отнаследованная структура трубопровода, к которому добавлена тепловая модель
-   - Вычисления по формулам статей Лурье-Чупраковой
+  РЎС‚СЂСѓРєС‚СѓСЂС‹ РґР°РЅРЅС‹С… Рё СЂР°СЃС‡РµС‚С‹ РґР»СЏ РѕРґРЅРѕР·РѕРЅРЅРѕР№ РјРѕРґРµР»Рё.
+   - РџР°СЂР°РјРµС‚СЂС‹ РёРґРµРЅС‚РёС„РёРєР°С†РёРё РѕРґРЅРѕР·РѕРЅРЅРѕР№ РјРѕРґРµР»Рё
+   - РСЃС…РѕРґРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ РЎРёСЃС‚РµРјС‹ "С‚СЂСѓР±Р°, РёР·РѕР»СЏС†РёСЏ, РіСЂСѓРЅС‚"
+   - Р­РєРІРёРІР°Р»РµРЅС‚РЅР°СЏ РјРѕРґРµР»СЊ РЎРёСЃС‚РµРјС‹: СЌРєРІРёРІР°Р»РµРЅС‚РЅС‹Рµ СЂР°РґРёСѓСЃС‹ СЃР»РѕРµРІ, РєРѕСЌС„С„РёС†РёРµРЅС‚С‹ РјРѕРґРµР»РµР№
+   - РћС‚РЅР°СЃР»РµРґРѕРІР°РЅРЅР°СЏ СЃС‚СЂСѓРєС‚СѓСЂР° С‚СЂСѓР±РѕРїСЂРѕРІРѕРґР°, Рє РєРѕС‚РѕСЂРѕРјСѓ РґРѕР±Р°РІР»РµРЅР° С‚РµРїР»РѕРІР°СЏ РјРѕРґРµР»СЊ
+   - Р’С‹С‡РёСЃР»РµРЅРёСЏ РїРѕ С„РѕСЂРјСѓР»Р°Рј СЃС‚Р°С‚РµР№ Р›СѓСЂСЊРµ-Р§СѓРїСЂР°РєРѕРІРѕР№
 */
 
-/// @brief Параметры идентификации однозонной эквивалентной модели
+/// @brief РџР°СЂР°РјРµС‚СЂС‹ РёРґРµРЅС‚РёС„РёРєР°С†РёРё РѕРґРЅРѕР·РѕРЅРЅРѕР№ СЌРєРІРёРІР°Р»РµРЅС‚РЅРѕР№ РјРѕРґРµР»Рё
 struct thermal_model_ident_parameters_t {
-    /// @brief Теплопроводность слоя изоляции
+    /// @brief РўРµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚СЊ СЃР»РѕСЏ РёР·РѕР»СЏС†РёРё
     double conductivity_isolation{ std::numeric_limits<double>::quiet_NaN() };
-    /// @brief Теплопроводность слоя грунта
+    /// @brief РўРµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚СЊ СЃР»РѕСЏ РіСЂСѓРЅС‚Р°
     double conductivity_soil{ std::numeric_limits<double>::quiet_NaN() };
-    /// @brief Удельная объемная теплоемкость грунта
+    /// @brief РЈРґРµР»СЊРЅР°СЏ РѕР±СЉРµРјРЅР°СЏ С‚РµРїР»РѕРµРјРєРѕСЃС‚СЊ РіСЂСѓРЅС‚Р°
     double volume_heat_capacity_soil{ std::numeric_limits<double>::quiet_NaN() };
 };
 
 
 
-/// @brief Параметры тепловой модели системы "труба, изоляция, грунт". 
-/// Одна зона грунта
+/// @brief РџР°СЂР°РјРµС‚СЂС‹ С‚РµРїР»РѕРІРѕР№ РјРѕРґРµР»Рё СЃРёСЃС‚РµРјС‹ "С‚СЂСѓР±Р°, РёР·РѕР»СЏС†РёСЏ, РіСЂСѓРЅС‚". 
+/// РћРґРЅР° Р·РѕРЅР° РіСЂСѓРЅС‚Р°
 struct pipe_heat_model_t {
-    /// @brief Толщина стенки, слоев изоляции и защитного слоя, м
-    /// первый слой изоляции, второй слой изоляции, защитный слой
+    /// @brief РўРѕР»С‰РёРЅР° СЃС‚РµРЅРєРё, СЃР»РѕРµРІ РёР·РѕР»СЏС†РёРё Рё Р·Р°С‰РёС‚РЅРѕРіРѕ СЃР»РѕСЏ, Рј
+    /// РїРµСЂРІС‹Р№ СЃР»РѕР№ РёР·РѕР»СЏС†РёРё, РІС‚РѕСЂРѕР№ СЃР»РѕР№ РёР·РѕР»СЏС†РёРё, Р·Р°С‰РёС‚РЅС‹Р№ СЃР»РѕР№
     array<double, 4> layerThickness{ 0.010, 0.003, 0.050, 0.005 };
 
-    /// @brief Теплопроводность материалов трубопровода, Вт*м-1*К-1
-    /// сталь, первый слой изоляции, второй слой изоляции, защитный слой
+    /// @brief РўРµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚СЊ РјР°С‚РµСЂРёР°Р»РѕРІ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґР°, Р’С‚*Рј-1*Рљ-1
+    /// СЃС‚Р°Р»СЊ, РїРµСЂРІС‹Р№ СЃР»РѕР№ РёР·РѕР»СЏС†РёРё, РІС‚РѕСЂРѕР№ СЃР»РѕР№ РёР·РѕР»СЏС†РёРё, Р·Р°С‰РёС‚РЅС‹Р№ СЃР»РѕР№
     array<double, 4> thermalConductivity{ 40, 0.2, 0.035, 0.3 };
 
-    /// @brief Температура окружающей среды, К
+    /// @brief РўРµРјРїРµСЂР°С‚СѓСЂР° РѕРєСЂСѓР¶Р°СЋС‰РµР№ СЃСЂРµРґС‹, Рљ
     double ambientTemperature{ KELVIN_OFFSET - 5 };
 
-    // @brief Глубина залегания - толщина слоя грунта, м
+    // @brief Р“Р»СѓР±РёРЅР° Р·Р°Р»РµРіР°РЅРёСЏ - С‚РѕР»С‰РёРЅР° СЃР»РѕСЏ РіСЂСѓРЅС‚Р°, Рј
     double depthOfOccurrence = 1.5;
-    /// @brief Теплофизические свойства грунта
+    /// @brief РўРµРїР»РѕС„РёР·РёС‡РµСЃРєРёРµ СЃРІРѕР№СЃС‚РІР° РіСЂСѓРЅС‚Р°
     thermophysical_properties_t soil;
-    /// @brief Коэффициент теплообмена с окружающей средой
+    /// @brief РљРѕСЌС„С„РёС†РёРµРЅС‚ С‚РµРїР»РѕРѕР±РјРµРЅР° СЃ РѕРєСЂСѓР¶Р°СЋС‰РµР№ СЃСЂРµРґРѕР№
     double ambient_heat_transfer{ 0 };
 
-    /// @brief Простая зависимость теплового потока
+    /// @brief РџСЂРѕСЃС‚Р°СЏ Р·Р°РІРёСЃРёРјРѕСЃС‚СЊ С‚РµРїР»РѕРІРѕРіРѕ РїРѕС‚РѕРєР°
     ///  q = -Kt(T - T_ground)
-    /// Согласно Лурье 2017, стр. 57 называется формулой Ньютона
-    /// @param temperature Температура потока в трубе
-    /// @return Тепловой поток
+    /// РЎРѕРіР»Р°СЃРЅРѕ Р›СѓСЂСЊРµ 2017, СЃС‚СЂ. 57 РЅР°Р·С‹РІР°РµС‚СЃСЏ С„РѕСЂРјСѓР»РѕР№ РќСЊСЋС‚РѕРЅР°
+    /// @param temperature РўРµРјРїРµСЂР°С‚СѓСЂР° РїРѕС‚РѕРєР° РІ С‚СЂСѓР±Рµ
+    /// @return РўРµРїР»РѕРІРѕР№ РїРѕС‚РѕРє
     double get_heat_flow_newton(double temperature) const {
         double q = -ambient_heat_transfer * (temperature - ambientTemperature);
         return q;
     }
-    /// @brief Возвращает начальные оценки параметров идентификации, рассчитанные авторским способом
+    /// @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ РЅР°С‡Р°Р»СЊРЅС‹Рµ РѕС†РµРЅРєРё РїР°СЂР°РјРµС‚СЂРѕРІ РёРґРµРЅС‚РёС„РёРєР°С†РёРё, СЂР°СЃСЃС‡РёС‚Р°РЅРЅС‹Рµ Р°РІС‚РѕСЂСЃРєРёРј СЃРїРѕСЃРѕР±РѕРј
     thermal_model_ident_parameters_t get_ident_parameters() const {
         thermal_model_ident_parameters_t result;
         result.conductivity_isolation = thermalConductivity[2];
@@ -62,7 +62,7 @@ struct pipe_heat_model_t {
         result.volume_heat_capacity_soil = soil.density * soil.heat_capacity;
         return result;
     }
-    /// @brief Изменяет параметры идентификации
+    /// @brief РР·РјРµРЅСЏРµС‚ РїР°СЂР°РјРµС‚СЂС‹ РёРґРµРЅС‚РёС„РёРєР°С†РёРё
     /// @param ident_parameters 
     void set_ident_parameters(const thermal_model_ident_parameters_t& ident_parameters) {
         thermalConductivity[2] = ident_parameters.conductivity_isolation;
@@ -72,15 +72,15 @@ struct pipe_heat_model_t {
 
 };
 
-/// @brief Параметры эквивалентной модели
+/// @brief РџР°СЂР°РјРµС‚СЂС‹ СЌРєРІРёРІР°Р»РµРЅС‚РЅРѕР№ РјРѕРґРµР»Рё
 struct equivalent_thermal_model_t {
-    /// @brief Коэффициент теплообмена в эквивалентном слое изоляции
+    /// @brief РљРѕСЌС„С„РёС†РёРµРЅС‚ С‚РµРїР»РѕРѕР±РјРµРЅР° РІ СЌРєРІРёРІР°Р»РµРЅС‚РЅРѕРј СЃР»РѕРµ РёР·РѕР»СЏС†РёРё
     double Kt1;
-    /// @brief Коэффициент теплообмена в эквивалентном слое грунта
+    /// @brief РљРѕСЌС„С„РёС†РёРµРЅС‚ С‚РµРїР»РѕРѕР±РјРµРЅР° РІ СЌРєРІРёРІР°Р»РµРЅС‚РЅРѕРј СЃР»РѕРµ РіСЂСѓРЅС‚Р°
     double Kt2;
-    /// @brief Внешний радиус эквивалентного слоя изоляции
+    /// @brief Р’РЅРµС€РЅРёР№ СЂР°РґРёСѓСЃ СЌРєРІРёРІР°Р»РµРЅС‚РЅРѕРіРѕ СЃР»РѕСЏ РёР·РѕР»СЏС†РёРё
     double r1eq;
-    /// @brief Внешний радиус эквивалентного слоя грунта
+    /// @brief Р’РЅРµС€РЅРёР№ СЂР°РґРёСѓСЃ СЌРєРІРёРІР°Р»РµРЅС‚РЅРѕРіРѕ СЃР»РѕСЏ РіСЂСѓРЅС‚Р°
     double r2eq;
 
     double al1; // alpha1
@@ -97,26 +97,26 @@ struct equivalent_thermal_model_t {
     double C;
     double F;
 
-    /// @brief Время релаксации T грунта
+    /// @brief Р’СЂРµРјСЏ СЂРµР»Р°РєСЃР°С†РёРё T РіСЂСѓРЅС‚Р°
     double get_relaxation_time() const {
         return -1.0 / F;
     }
-    /// @brief Коэффициент усиления влияния T жидкости на T грунта
+    /// @brief РљРѕСЌС„С„РёС†РёРµРЅС‚ СѓСЃРёР»РµРЅРёСЏ РІР»РёСЏРЅРёСЏ T Р¶РёРґРєРѕСЃС‚Рё РЅР° T РіСЂСѓРЅС‚Р°
     double get_gain() const {
         return -C / F;
     }
-    /// @brief Тепловой поток от термически ВОЗМУЩЕННОГО грунта в трубопровод
-    /// @param T_oil Температура жидкости в трубопроводе
-    /// @param T_soil Температура термически возмущенного грунта
-    /// @param ambient_temperature Температура термически невозмущенного грунта
+    /// @brief РўРµРїР»РѕРІРѕР№ РїРѕС‚РѕРє РѕС‚ С‚РµСЂРјРёС‡РµСЃРєРё Р’РћР—РњРЈР©Р•РќРќРћР“Рћ РіСЂСѓРЅС‚Р° РІ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґ
+    /// @param T_oil РўРµРјРїРµСЂР°С‚СѓСЂР° Р¶РёРґРєРѕСЃС‚Рё РІ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґРµ
+    /// @param T_soil РўРµРјРїРµСЂР°С‚СѓСЂР° С‚РµСЂРјРёС‡РµСЃРєРё РІРѕР·РјСѓС‰РµРЅРЅРѕРіРѕ РіСЂСѓРЅС‚Р°
+    /// @param ambient_temperature РўРµРјРїРµСЂР°С‚СѓСЂР° С‚РµСЂРјРёС‡РµСЃРєРё РЅРµРІРѕР·РјСѓС‰РµРЅРЅРѕРіРѕ РіСЂСѓРЅС‚Р°
     double get_heat_flow(double T_oil, double T_soil, double ambient_temperature) {
         double DT = T_oil - ambient_temperature;
         double DTsr = T_soil - ambient_temperature;
         double q = (A + B * C) * DT + F * B * DTsr;
         return q;
-        double q_st = A * DT; // для сравнения
+        double q_st = A * DT; // РґР»СЏ СЃСЂР°РІРЅРµРЅРёСЏ
     }
-    /// @brief Тепловой поток от термически НЕВОЗМУЩЕННОГО грунта в трубопровод
+    /// @brief РўРµРїР»РѕРІРѕР№ РїРѕС‚РѕРє РѕС‚ С‚РµСЂРјРёС‡РµСЃРєРё РќР•Р’РћР—РњРЈР©Р•РќРќРћР“Рћ РіСЂСѓРЅС‚Р° РІ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґ
     /// @param T_oil 
     /// @param ambient_temperature 
     /// @return 
@@ -128,26 +128,26 @@ struct equivalent_thermal_model_t {
 };
 
 
-/// @brief Трубопровод с тепловой однозонной моделью
+/// @brief РўСЂСѓР±РѕРїСЂРѕРІРѕРґ СЃ С‚РµРїР»РѕРІРѕР№ РѕРґРЅРѕР·РѕРЅРЅРѕР№ РјРѕРґРµР»СЊСЋ
 struct pipe_noniso_properties_t : public pipe_properties_t {
-    /// @brief Тепловая модель
+    /// @brief РўРµРїР»РѕРІР°СЏ РјРѕРґРµР»СЊ
     pipe_heat_model_t heat;
 
 
 
-    /// @brief Расчет коэффициентов теплообмена эквивалентных слоев Kt1, Kt2
-    /// @param fluid Параметры флюида
+    /// @brief Р Р°СЃС‡РµС‚ РєРѕСЌС„С„РёС†РёРµРЅС‚РѕРІ С‚РµРїР»РѕРѕР±РјРµРЅР° СЌРєРІРёРІР°Р»РµРЅС‚РЅС‹С… СЃР»РѕРµРІ Kt1, Kt2
+    /// @param fluid РџР°СЂР°РјРµС‚СЂС‹ С„Р»СЋРёРґР°
     /// @return 
     pair<double, double> get_equivalent_heat_transfers(const oil_parameters_t& fluid) const
     {
-        // Коэффициент внутренней теплоотдачи
+        // РљРѕСЌС„С„РёС†РёРµРЅС‚ РІРЅСѓС‚СЂРµРЅРЅРµР№ С‚РµРїР»РѕРѕС‚РґР°С‡Рё
         double a1 = fluid.heat.internalHeatTransferCoefficient;
 
-        // Внутренний радиус труб ()
+        // Р’РЅСѓС‚СЂРµРЅРЅРёР№ СЂР°РґРёСѓСЃ С‚СЂСѓР± ()
         //double r1 = (PipeP.wall.diameter - PipeP.heat.layerThickness[0]) / 2;
         double r1 = wall.diameter / 2;
 
-        // Коэффициент теплопередачи эквивалентного слоя изоляции
+        // РљРѕСЌС„С„РёС†РёРµРЅС‚ С‚РµРїР»РѕРїРµСЂРµРґР°С‡Рё СЌРєРІРёРІР°Р»РµРЅС‚РЅРѕРіРѕ СЃР»РѕСЏ РёР·РѕР»СЏС†РёРё
         double temp1 = 1 / (a1 * 2 * r1);
         double temp0 = temp1;
 
@@ -169,19 +169,19 @@ struct pipe_noniso_properties_t : public pipe_properties_t {
         return std::make_pair(Kt1, Kt2);
     }
 
-    /// @brief Вычисляет радиусы эквивалентных слоев изоляции (r1) и грунта (r2)
+    /// @brief Р’С‹С‡РёСЃР»СЏРµС‚ СЂР°РґРёСѓСЃС‹ СЌРєРІРёРІР°Р»РµРЅС‚РЅС‹С… СЃР»РѕРµРІ РёР·РѕР»СЏС†РёРё (r1) Рё РіСЂСѓРЅС‚Р° (r2)
     /// @param Kt1 
     /// @param Kt2 
-    /// Коэффициент теплопроводности эквивалентного слоя изоляции. 
-    /// По умолчанию не задается, а принимается равным теплопроводности реального слоя изоляции
-    /// Если задан, то имеет смысл параметра идентификации
+    /// РљРѕСЌС„С„РёС†РёРµРЅС‚ С‚РµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚Рё СЌРєРІРёРІР°Р»РµРЅС‚РЅРѕРіРѕ СЃР»РѕСЏ РёР·РѕР»СЏС†РёРё. 
+    /// РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РЅРµ Р·Р°РґР°РµС‚СЃСЏ, Р° РїСЂРёРЅРёРјР°РµС‚СЃСЏ СЂР°РІРЅС‹Рј С‚РµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚Рё СЂРµР°Р»СЊРЅРѕРіРѕ СЃР»РѕСЏ РёР·РѕР»СЏС†РёРё
+    /// Р•СЃР»Рё Р·Р°РґР°РЅ, С‚Рѕ РёРјРµРµС‚ СЃРјС‹СЃР» РїР°СЂР°РјРµС‚СЂР° РёРґРµРЅС‚РёС„РёРєР°С†РёРё
     /// @return 
     pair<double, double> get_equivalent_radiuses(double Kt1, double Kt2) const
     {
-        // Коэффициенты экв. слоя изоляции, берем самый толстый слой
+        // РљРѕСЌС„С„РёС†РёРµРЅС‚С‹ СЌРєРІ. СЃР»РѕСЏ РёР·РѕР»СЏС†РёРё, Р±РµСЂРµРј СЃР°РјС‹Р№ С‚РѕР»СЃС‚С‹Р№ СЃР»РѕР№
         double isolatonConductivity = heat.thermalConductivity[2];
 
-        // Эквивалентные радиусы
+        // Р­РєРІРёРІР°Р»РµРЅС‚РЅС‹Рµ СЂР°РґРёСѓСЃС‹
         double r1 = wall.diameter / 2;
         double r1eq, r2eq;
         r1eq = r1 * exp(isolatonConductivity / (Kt1 * r1));
@@ -190,9 +190,9 @@ struct pipe_noniso_properties_t : public pipe_properties_t {
         return std::make_pair(r1eq, r2eq);
     }
 
-    /// @brief Расчет параметров эквивалентной модели тепловой динамики в системе трубопровод-грунт
-    /// @param fluid Параметры перекачиваемой жидкости
-    /// @return Параметров эквивалентной модели 
+    /// @brief Р Р°СЃС‡РµС‚ РїР°СЂР°РјРµС‚СЂРѕРІ СЌРєРІРёРІР°Р»РµРЅС‚РЅРѕР№ РјРѕРґРµР»Рё С‚РµРїР»РѕРІРѕР№ РґРёРЅР°РјРёРєРё РІ СЃРёСЃС‚РµРјРµ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґ-РіСЂСѓРЅС‚
+    /// @param fluid РџР°СЂР°РјРµС‚СЂС‹ РїРµСЂРµРєР°С‡РёРІР°РµРјРѕР№ Р¶РёРґРєРѕСЃС‚Рё
+    /// @return РџР°СЂР°РјРµС‚СЂРѕРІ СЌРєРІРёРІР°Р»РµРЅС‚РЅРѕР№ РјРѕРґРµР»Рё 
     equivalent_thermal_model_t get_heat_eqivalent_model(const oil_parameters_t& fluid,
         const thermal_model_ident_parameters_t& ident = thermal_model_ident_parameters_t()
     ) const
@@ -214,11 +214,11 @@ struct pipe_noniso_properties_t : public pipe_properties_t {
             soilHeatCapacityVolume = ident.volume_heat_capacity_soil;
 
 
-        // Коэффициент температуропроводности грунта, отнесенный к квадрату внутреннего радиуса трубопровода
+        // РљРѕСЌС„С„РёС†РёРµРЅС‚ С‚РµРјРїРµСЂР°С‚СѓСЂРѕРїСЂРѕРІРѕРґРЅРѕСЃС‚Рё РіСЂСѓРЅС‚Р°, РѕС‚РЅРµСЃРµРЅРЅС‹Р№ Рє РєРІР°РґСЂР°С‚Сѓ РІРЅСѓС‚СЂРµРЅРЅРµРіРѕ СЂР°РґРёСѓСЃР° С‚СЂСѓР±РѕРїСЂРѕРІРѕРґР°
         double aSqr = soilConductivity / (soilHeatCapacityVolume * pow(r1, 2));
         double a = sqrt(aSqr);
 
-        // Отношение радиусов
+        // РћС‚РЅРѕС€РµРЅРёРµ СЂР°РґРёСѓСЃРѕРІ
         double al1 = result.al1
             = result.r1eq / r1; // alpha1
         double al2 = result.al2
@@ -228,7 +228,7 @@ struct pipe_noniso_properties_t : public pipe_properties_t {
             + soilConductivity / log(al2);
 
 
-        // Коэффициенты уравнения связи температур T1 и Tsr
+        // РљРѕСЌС„С„РёС†РёРµРЅС‚С‹ СѓСЂР°РІРЅРµРЅРёСЏ СЃРІСЏР·Рё С‚РµРјРїРµСЂР°С‚СѓСЂ T1 Рё Tsr
         double& A1 = result.A1;
         double& A2 = result.A2;
         double& A3 = result.A3;
@@ -238,7 +238,7 @@ struct pipe_noniso_properties_t : public pipe_properties_t {
         A3 = isolatonConductivity / (b * log(al1));
         A4 = soilConductivity * (2 * log(al2) - pow(al2, 2) + 1);
 
-        // Коэффициенты для выражения теплового потока
+        // РљРѕСЌС„С„РёС†РёРµРЅС‚С‹ РґР»СЏ РІС‹СЂР°Р¶РµРЅРёСЏ С‚РµРїР»РѕРІРѕРіРѕ РїРѕС‚РѕРєР°
 
         result.A = -2 * M_PI * soilConductivity * isolatonConductivity / (b * log(al1) * log(al2));
         result.B = M_PI * soilConductivity * (2 * log(al2) - pow(al2, 2) + 1) *
@@ -253,7 +253,7 @@ struct pipe_noniso_properties_t : public pipe_properties_t {
 
 
 
-/// @brief Расчет профиля средней темературы грунта по Лурье, Чупракова 2021, формула 14
+/// @brief Р Р°СЃС‡РµС‚ РїСЂРѕС„РёР»СЏ СЃСЂРµРґРЅРµР№ С‚РµРјРµСЂР°С‚СѓСЂС‹ РіСЂСѓРЅС‚Р° РїРѕ Р›СѓСЂСЊРµ, Р§СѓРїСЂР°РєРѕРІР° 2021, С„РѕСЂРјСѓР»Р° 14
 inline void compute_soil_mean_temperature_distribution(
     const pipe_noniso_properties_t& pipe,
     const oil_parameters_t& oil,
@@ -264,7 +264,7 @@ inline void compute_soil_mean_temperature_distribution(
 {
     vector<double>& temperature = *_result;
 
-    double lambda = pipe.heat.thermalConductivity[2]; //Стоит разобраться, почему выбирают именно этот слой
+    double lambda = pipe.heat.thermalConductivity[2]; //РЎС‚РѕРёС‚ СЂР°Р·РѕР±СЂР°С‚СЊСЃСЏ, РїРѕС‡РµРјСѓ РІС‹Р±РёСЂР°СЋС‚ РёРјРµРЅРЅРѕ СЌС‚РѕС‚ СЃР»РѕР№
 
     equivalent_thermal_model_t heat_dynamic_model = pipe.get_heat_eqivalent_model(oil, ident);
 
@@ -272,20 +272,20 @@ inline void compute_soil_mean_temperature_distribution(
     double al2 = heat_dynamic_model.al2;
     double b = heat_dynamic_model.b;
 
-    //Расчет коэффициента связи средней температуры грунта и температуры флюида
+    //Р Р°СЃС‡РµС‚ РєРѕСЌС„С„РёС†РёРµРЅС‚Р° СЃРІСЏР·Рё СЃСЂРµРґРЅРµР№ С‚РµРјРїРµСЂР°С‚СѓСЂС‹ РіСЂСѓРЅС‚Р° Рё С‚РµРјРїРµСЂР°С‚СѓСЂС‹ С„Р»СЋРёРґР°
     double K = lambda * (pow(al2, 2) - 2 * log(al2) - 1) / (2 * b * log(al1) * log(al2) * (pow(al2, 2) - 1));
     double K1 = -heat_dynamic_model.C / heat_dynamic_model.F;
 
-    // Расчет распределения Тср
+    // Р Р°СЃС‡РµС‚ СЂР°СЃРїСЂРµРґРµР»РµРЅРёСЏ РўСЃСЂ
     for (size_t i = 0; i < temperature.size(); i++)
     {
-        // среднее превышение температурой гранута Tгр(r) наружной температуры Tнар = Tгр(r_2)
+        // СЃСЂРµРґРЅРµРµ РїСЂРµРІС‹С€РµРЅРёРµ С‚РµРјРїРµСЂР°С‚СѓСЂРѕР№ РіСЂР°РЅСѓС‚Р° TРіСЂ(r) РЅР°СЂСѓР¶РЅРѕР№ С‚РµРјРїРµСЂР°С‚СѓСЂС‹ TРЅР°СЂ = TРіСЂ(r_2)
         double DT1 = temperature_oil[i] - pipe.heat.ambientTemperature;
         temperature[i] = K1 * DT1 + pipe.heat.ambientTemperature;
     }
 }
 
-/// @brief Пересчет профиля темературы флюида по Лурье, Чупракова 2021, стр. 6
+/// @brief РџРµСЂРµСЃС‡РµС‚ РїСЂРѕС„РёР»СЏ С‚РµРјРµСЂР°С‚СѓСЂС‹ С„Р»СЋРёРґР° РїРѕ Р›СѓСЂСЊРµ, Р§СѓРїСЂР°РєРѕРІР° 2021, СЃС‚СЂ. 6
 inline void compute_new_fluid_temperature_distribution(
     //const PipeHeatInflowConstArea& heat_pde,
     const pipe_noniso_properties_t& pipe,
@@ -322,8 +322,8 @@ inline void compute_new_fluid_temperature_distribution(
     }
 }
 
-/// @brief Пересчет профиля темературы флюида. 
-/// Попытка избавиться от артефакта метода
+/// @brief РџРµСЂРµСЃС‡РµС‚ РїСЂРѕС„РёР»СЏ С‚РµРјРµСЂР°С‚СѓСЂС‹ С„Р»СЋРёРґР°. 
+/// РџРѕРїС‹С‚РєР° РёР·Р±Р°РІРёС‚СЊСЃСЏ РѕС‚ Р°СЂС‚РµС„Р°РєС‚Р° РјРµС‚РѕРґР°
 inline void compute_new_fluid_temperature_distribution2(
     //const PipeHeatInflowConstArea& heat_pde,
     const pipe_noniso_properties_t& pipe,
@@ -382,7 +382,7 @@ inline void compute_new_fluid_temperature_distribution2(
 }
 
 
-/// @brief Пересчет профиля средней темературы грунта по Лурье, Чупракова 2021, стр. 6
+/// @brief РџРµСЂРµСЃС‡РµС‚ РїСЂРѕС„РёР»СЏ СЃСЂРµРґРЅРµР№ С‚РµРјРµСЂР°С‚СѓСЂС‹ РіСЂСѓРЅС‚Р° РїРѕ Р›СѓСЂСЊРµ, Р§СѓРїСЂР°РєРѕРІР° 2021, СЃС‚СЂ. 6
 inline void compute_new_soil_mean_temperature_distribution(
     const pipe_noniso_properties_t& pipe,
     const oil_parameters_t& oil,
@@ -411,7 +411,7 @@ inline void compute_new_soil_mean_temperature_distribution(
     }
 }
 
-/// @brief Расчет теплового потока по Лурье, Чупракова 2021, формула 13
+/// @brief Р Р°СЃС‡РµС‚ С‚РµРїР»РѕРІРѕРіРѕ РїРѕС‚РѕРєР° РїРѕ Р›СѓСЂСЊРµ, Р§СѓРїСЂР°РєРѕРІР° 2021, С„РѕСЂРјСѓР»Р° 13
 inline void compute_heat_flow_distribution(
     const pipe_noniso_properties_t& pipe,
     const oil_parameters_t& oil,
@@ -431,10 +431,10 @@ inline void compute_heat_flow_distribution(
     double C = heat_dynamic_model.C;
     double F = heat_dynamic_model.F;
 
-    // Расчет распределения qT
+    // Р Р°СЃС‡РµС‚ СЂР°СЃРїСЂРµРґРµР»РµРЅРёСЏ qT
     for (size_t i = 0; i < qT.size(); i++)
     {
-        //double qt_furie = pipe.heat.get_heat_flow_newton(T1[i]); // для сравнения
+        //double qt_furie = pipe.heat.get_heat_flow_newton(T1[i]); // РґР»СЏ СЃСЂР°РІРЅРµРЅРёСЏ
 
         double DT1 = T1[i] - pipe.heat.ambientTemperature;
         double DTsr = Tsr[i] - pipe.heat.ambientTemperature;
@@ -446,7 +446,7 @@ inline void compute_heat_flow_distribution(
     }
 }
 
-/// @brief Расчет граничной температуры между изоляцией и грунтом
+/// @brief Р Р°СЃС‡РµС‚ РіСЂР°РЅРёС‡РЅРѕР№ С‚РµРјРїРµСЂР°С‚СѓСЂС‹ РјРµР¶РґСѓ РёР·РѕР»СЏС†РёРµР№ Рё РіСЂСѓРЅС‚РѕРј
 inline void compute_isolation_boundary_temperature(
     const pipe_noniso_properties_t& pipe,
     const oil_parameters_t& oil,
@@ -466,7 +466,7 @@ inline void compute_isolation_boundary_temperature(
     double C = heat_dynamic_model.C;
     double F = heat_dynamic_model.F;
 
-    // Расчет распределения qT
+    // Р Р°СЃС‡РµС‚ СЂР°СЃРїСЂРµРґРµР»РµРЅРёСЏ qT
     for (size_t i = 0; i < Tiso.size(); i++)
     {
         double DT1 = T1[i] - pipe.heat.ambientTemperature;
