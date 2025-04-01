@@ -106,10 +106,10 @@ GCC_build:
     - !reference [.load_branches_sh, script]
     - git clone https://gitlab-ci-token:${CI_FIXED_SOLVERS_TOKEN}@git.ktk.gubkin.ru/solvers/fixed_solvers.git --depth 1 -b $FIXED_SOLVERS_BRANCH
     - |
-      cd fixed_solvers
+      cd ${CI_PROJECT_DIR}/fixed_solvers
       bash pipeline/pipeline_scripts/build.sh GCC
-      cp -r Libs/ ../
-      cd ../
+      cp -r Libs/ ${CI_PROJECT_DIR}
+      cd ${CI_PROJECT_DIR}
     - bash pipeline/pipeline_scripts/build.sh GCC
   allow_failure: false
   artifacts:
@@ -129,10 +129,10 @@ Clang_build:
     - !reference [.load_branches_ps, script]
     - git clone https://gitlab-ci-token:${CI_FIXED_SOLVERS_TOKEN}@git.ktk.gubkin.ru/solvers/fixed_solvers.git --depth 1 -b $env:FIXED_SOLVERS_BRANCH
     - |
-      cd fixed_solvers
+      cd ${CI_PROJECT_DIR}/fixed_solvers
       c:\msys64\msys2_shell.cmd -defterm -here -no-start -clang64 -c "./pipeline/pipeline_scripts/build.sh Clang"
-      cp -r Libs/ ../
-      cd ../
+      cp -r Libs/ ${CI_PROJECT_DIR}
+      cd ${CI_PROJECT_DIR}
     - c:\msys64\msys2_shell.cmd -defterm -here -no-start -clang64 -c "./pipeline/pipeline_scripts/build.sh Clang"
   allow_failure: false
   artifacts:
@@ -152,10 +152,10 @@ MinGW_build:
     - !reference [.load_branches_ps, script]
     - git clone https://gitlab-ci-token:${CI_FIXED_SOLVERS_TOKEN}@git.ktk.gubkin.ru/solvers/fixed_solvers.git --depth 1 -b $env:FIXED_SOLVERS_BRANCH
     - |
-      cd fixed_solvers
+      cd ${CI_PROJECT_DIR}/fixed_solvers
       c:\msys64\msys2_shell.cmd -defterm -here -no-start -mingw64 -c "./pipeline/pipeline_scripts/build.sh MinGW"
-      cp -r Libs/ ../
-      cd ../
+      cp -r Libs/ ${CI_PROJECT_DIR}
+      cd ${CI_PROJECT_DIR}
     - c:\msys64\msys2_shell.cmd -defterm -here -no-start -mingw64 -c "./pipeline/pipeline_scripts/build.sh MinGW"
   allow_failure: false
   artifacts:
