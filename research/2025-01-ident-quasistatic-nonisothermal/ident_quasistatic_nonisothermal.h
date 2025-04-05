@@ -53,15 +53,16 @@ protected:
         vector<pair<string, string>>parameters =
         {
             { path_to_real_data + "Q_in", "m3/h-m3/s"s },
-            { path_to_real_data + "t_in", "C"s },
+            { path_to_real_data + "t_in_n", "C"s },
             { path_to_real_data + "rho_in", "kg/m3"s },
             { path_to_real_data + "visc_in", "mm^2/s-m^2/s"s },
-            { path_to_real_data + "t_out", "C"s}
+            { path_to_real_data + "t_out_n", "C"s}
 
         };
         // Считываем временные ряды параметров
         csv_multiple_tag_reader tags(parameters);
-        control_tag_data = tags.read_csvs(start_period, end_period);
+        
+        control_tag_data = tags.read_csvs(start_period, end_period); //чувствителен к отсутствию явного формата секунд для некоторых csv файлов (по опыту, когда секунды :00)
         etalon_tag_data = { control_tag_data.back() };
         control_tag_data.pop_back();
 

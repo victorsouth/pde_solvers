@@ -211,7 +211,7 @@ private:
             //PipeQAdvection advection_model(pipe, Q_profile); 
             oil_parameters_t oil = get_noniso_default_oil(); /// нужно ли передавать в нефть новую вязкость, плотность
             vector<double> G(pipe.profile.get_point_count(), Q_profile[0] * boundaries.density);   ///массовый расход?
-            auto heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);
+            auto heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);              // Не учитывается теплоемкость!!!!!!!!!!!!!!!!!!
             // плотность - квазистац или стац
             if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::DensityQuasi) {
                 // Шаг по плотности
