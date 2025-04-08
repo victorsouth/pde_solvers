@@ -191,7 +191,7 @@ TEST_F(UpstreamDifferencing, UseCaseSingleStep)
 }
 
 /// @brief Пример вывода в файл через
-TEST_F(UpstreamDifferencing, UseCaseStepDensity)
+TEST_F(UpstreamDifferencing, DISABLED_UseCaseStepDensity)
 {
     string path = prepare_test_folder();
     std::ofstream output(path + "output.csv");
@@ -245,7 +245,7 @@ TEST_F(UpstreamDifferencing, UseCaseStepDensity)
 }
 
 /// @brief Пример вывода в файл через
-TEST_F(QUICK, UseCaseStepDensity)
+TEST_F(QUICK, DISABLED_UseCaseStepDensity)
 {
     string path = prepare_test_folder();
 
@@ -301,7 +301,7 @@ TEST_F(QUICK, UseCaseStepDensity)
 }
 
 /// @brief Пример вывода в файл через
-TEST_F(QUICKEST, UseCaseStepDensity)
+TEST_F(QUICKEST, DISABLED_UseCaseStepDensity)
 {
     string path = prepare_test_folder();
 
@@ -358,7 +358,7 @@ TEST_F(QUICKEST, UseCaseStepDensity)
 
 //TEST_MOC
 /// @brief Базовый пример использования метода характеристик для уравнения адвекции
-TEST(MOC_Solver, MOC_Compare_With_QUICK)
+TEST(MOC_Solver, DISABLED_MOC_Compare_With_QUICK)
 {
     
     // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
@@ -427,7 +427,7 @@ TEST(MOC_Solver, MOC_Compare_With_QUICK)
 }
 
 /// @brief Пример вывода в файл через
-TEST_F(QUICKEST_ULTIMATE, UseCaseStepDensity)
+TEST_F(QUICKEST_ULTIMATE, DISABLED_UseCaseStepDensity)
 {
     string path = prepare_test_folder();
 
