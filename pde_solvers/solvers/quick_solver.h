@@ -591,7 +591,7 @@ public:
             if (Cr > 1) {
                 throw std::runtime_error("Quickest-ultimate is called with Cr > 1");
             }
-            U_new[cell] = U[cell] + dt / dx * ((F[cell] - F[cell + 1])) - pde.getSourceTerm(cell, U[cell]);
+            U_new[cell] = U[cell] + dt / dx * ((F[cell] - F[cell + 1])) + (dt * pde.getSourceTerm(cell, U[cell]));
         }
 
     }
