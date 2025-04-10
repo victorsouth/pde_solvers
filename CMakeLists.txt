@@ -29,6 +29,7 @@ set(HEADERS_PIPE
     pde_solvers/pipe/pipe_heat_computations.h
     pde_solvers/pipe/pipe_heat_pde.h
     pde_solvers/pipe/pipe_heat_struct.h
+    pde_solvers/pipe/pipe_heat_util.h
     pde_solvers/pipe/pipe_dynamic_soil.h      
 )
 set(HEADERS_SOLVERS

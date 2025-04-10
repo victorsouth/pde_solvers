@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+namespace pde_solvers {
+;
+
 /// @brief Точка вискограммы
 struct viscosity_data_point {
     double temperature;
@@ -310,9 +313,6 @@ struct fluid_properties_profile_t :
     }
 
 };
-
-namespace pde_solvers { // по хорошему, все убрать в этот неймспейс
-;
 
 struct fluid_properties_t :
     fluid_properties_dynamic<double, double>,

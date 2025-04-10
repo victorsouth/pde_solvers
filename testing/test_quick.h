@@ -504,3 +504,95 @@ TEST_F(QUICKEST_ULTIMATE, CanConsiderFlowSwap) {
     ASSERT_GT(rho_curr.back(), rho_prev.back()); // плотность в конце выросла
     ASSERT_NEAR(rho_curr.front(), rho_prev.front(), 1e-8); // плотность в начале не изменилась
 }
+
+
+
+/// @brief Тесты для солвера quickest_ultimate_fv_solver
+class QUICKEST_ULTIMATE2 : public ::testing::Test {
+protected:
+    // Профиль переменных
+    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
+    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
+
+    // Слой: переменных Vars + сколько угодно служебных Specific
+    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
+protected:
+    /// @brief Параметры трубы
+    pipe_noniso_properties_t pipe;
+    oil_parameters_t oil;
+    /// @brief Профиль расхода
+    vector<double> G;
+    std::unique_ptr<PipeHeatInflowConstArea> heatModel;
+    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
+protected:
+
+    /// @brief Подготовка к расчету для семейства тестов
+    virtual void SetUp() override {
+        oil_parameters_t oil = get_default_oil_heatmodel();
+        pipe_noniso_properties_t  pipe = get_default_pipe_heatmodel();
+        auto model = pipe.get_heat_eqivalent_model(oil);
+        pipe.heat.ambient_heat_transfer = -model.A;    // Использовать пока Кт константу 1-5
+
+        vector<double> G(pipe.profile.get_point_count(), 300);
+        PipeHeatInflowConstArea heatModel(pipe, oil, G);
+
+        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
+
+        layer_t& prev = buffer->previous();
+        prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 300);
+    }
+};
+
+
+void plot_with_gnuplot(const std::vector<double>& x, const std::vector<double>& y) {
+    std::ofstream file("data.txt");
+    for (size_t i = 0; i < x.size(); ++i) {
+        file << x[i] << " " << y[i] << "\n";
+    }
+    file.close();
+
+    // Отправляем команды в Gnuplot
+    FILE* gnuplot = _popen("gnuplot -persist", "w");
+    fprintf(gnuplot, "set title 'Graph'\n");
+    fprintf(gnuplot, "plot 'data.txt' with lines\n");
+    _pclose(gnuplot);
+}
+
+/// @brief Базовый пример использования метода характеристик для уравнения адвекции
+TEST_F(QUICKEST_ULTIMATE2, Quick_UseCase_Advection_Temperature)
+{
+    std::vector<double> x = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+
+    double temp_in = 310; // темп нефти, закачиваемой на входе трубы при положительном расходе
+    double temp_out = 290; // темп нефти, закачиваемой с выхода трубы при отрицательном расходе
+
+    double t = 0;
+    //const auto& x = heatModel->get_grid();
+    //double dx = x[1] - x[0];
+    //double v = heatModel->getEquationsCoeffs(0, 0);
+    //double dt_ideal = abs(dx / v);
+    //double Cr = 0.9;
+    double dt = 1000;
+    oil_parameters_t oil = pde_solvers::get_default_oil_heatmodel();
+    pipe_noniso_properties_t  pipe = pde_solvers::get_default_pipe_heatmodel();
+    auto model = pipe.get_heat_eqivalent_model(oil);
+    pipe.heat.ambient_heat_transfer = -model.A;
+
+    vector<double> G(pipe.profile.get_point_count(), 300);
+    heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);
+    buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
+    layer_t& prev = buffer->previous();
+    prev.vars.cell_double[0] = vector<double>(prev.vars.cell_double[0].size(), 300);
+
+    for (size_t index = 0; index < 10; ++index) {
+
+        quickest_ultimate_fv_solver solver(*heatModel, *buffer);
+        t += dt;
+        solver.step(dt, temp_in, temp_out);
+
+        //auto& curr = buffer[0].layers;
+        layer_t& next = buffer->current();
+        plot_with_gnuplot(x, next.vars.cell_double[0]);
+        buffer->advance(+1);
+    }
+}

@@ -35,6 +35,7 @@
 #include "pipe/pipe_dynamic_soil_multizone.h"
 #include "pipe/pipe_heat_computations.h"
 #include "pipe/pipe_heat_pde.h"
+#include "pipe/pipe_heat_util.h"
 
 
 
