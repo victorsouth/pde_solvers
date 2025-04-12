@@ -57,6 +57,7 @@ inline std::string prepare_research_folder()
 #include "../research/2024-02-quick-with-quasistationary-model/quick_with_quasistationary_model.h"
 #include "../research/2024-08-quasistationary-with-real-data/quasistationary_with_real_data.h"
 #include "../research/2024-10-ident-quasistatic-isothermal/ident_quasistatic_isothermal.h"
+#include "../research/2025-04-calc-mass-on-isothermal-quasistatic/calc_mass_on_isothermal_quasistatic.h"
 
 
 int main(int argc, char **argv) {
