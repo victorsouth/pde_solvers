@@ -2,20 +2,21 @@
 // Среднее значение коэффициента сжимаемости нефти 
 #define AVG_OIL_COMPRESSIBILITY_COEFF 0.00078e-6 // МПа-1 - надо ли переводить?
 
+/// @brief Тесты на расчёт массы с учётом движения партий
 class CalcMassQSM : public ::testing::Test {
 
 protected:
-    // Модель трубы
+    /// @brief Модель трубы
     pipe_properties_t pipe;
-    // Краевые условия по плотности
+    /// @brief Краевые условия по плотности
     vector<double> density;
-    // Краевые условия по давлению в начале ЛУ
+    /// @brief Краевые условия по давлению в начале ЛУ
     vector<double> pressure_in;
-    // Краевые условия по давлению в конце ЛУ
+    /// @brief Краевые условия по давлению в конце ЛУ
     vector<double> pressure_out;
-    // Краевые условия по объёмному расходу
+    /// @brief Краевые условия по объёмному расходу
     vector<double> Q;
-    // Временная сетка моделирования
+    /// @brief Временная сетка моделирования
     vector<double> times;
 
     /// @brief Подготовка к расчету
@@ -277,6 +278,10 @@ public:
     {
 
     }
+
+    /// @brief Сбор профилей массы
+    /// @param step_index Номер шага моделирования
+    /// @param layer Текущий слой
     virtual void process_data(size_t step_index,
         const quasi_layer_for_mass_calculation& layer) override
     {
