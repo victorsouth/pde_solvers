@@ -91,15 +91,25 @@ protected:
     }
 };
 
-/// @brief Тип слоя
-typedef density_viscosity_quasi_layer<true> quasi_layer_for_quickest_ultimate;
+/// @brief  Проблемно-ориентированный слой для расчёта профиля массы с учётом движения партий на QUICKEST-ULTIMATE
+struct quasi_layer_for_mass_calculation : public density_viscosity_quasi_layer<true>
+{
+    /// @brief Профиль массы в ячейках ЛУ
+    vector<double> mass;
+    /// @brief Инициализация профилей
+    /// @param point_count Кол-во точек
+    quasi_layer_for_mass_calculation(size_t point_count)
+        : density_viscosity_quasi_layer<true>(point_count)
+        , mass(point_count - 1)
+    {}
+};
 
 /// @brief Задача расчёта движения партий на QUICKEST-ULTIMATE 
 /// и расчёта профиля массы с учётом растяжения стенок трубы и сжимаемости нефти 
 class mass_calculation_on_qsm_task_t {
 public:
     /// @brief Тип буфера
-    typedef ring_buffer_t<quasi_layer_for_quickest_ultimate> buffer_type;
+    typedef ring_buffer_t<quasi_layer_for_mass_calculation> buffer_type;
 private:
     // Модель трубы
     pipe_properties_t pipe;
@@ -116,7 +126,7 @@ public:
     }
 
     /// @brief Геттер для текущего слоя  
-    quasi_layer_for_quickest_ultimate get_current_layer() {
+    quasi_layer_for_mass_calculation get_current_layer() {
         return buffer.current();
     }
 
@@ -170,7 +180,7 @@ private:
     /// @brief Расчёт нового профиля плотности методом QUICKEST_ULTIMATE
     /// @param dt Временной шаг моделирования
     /// @param volumetric_flow Объёмный расход
-    /// @param density Плотность партии на входе в трубопровод
+    /// @param working_density Плотность партии на входе в трубопровод
     void make_rheology_step(double dt, double volumetric_flow, double density) {
         size_t n = pipe.profile.get_point_count();
         vector<double>Q_profile(n, volumetric_flow); // задаем по трубе новый расход из временного ряда
@@ -219,20 +229,21 @@ public:
     /// Функция делает сдвиг буфера (advance) так, что buffer.current после вызова содержит свежерасчитанный слой
     /// @param dt Временной шаг моделирования
     /// @param volumetric_flow Объёмный расход
-    /// @param density Фактическая плотность на входе в линейный участок
+    /// @param working_density Фактическая плотность на входе в линейный участок
     /// @param p_in Давление на входе
     /// @param p_out Давление на выходе
-    void step(double dt, double volumetric_flow, double density, double p_in, double p_out) {
+    void step(double dt, double volumetric_flow, double working_density, double p_in, double p_out) {
         auto& current = buffer.current();
         current.pressure = interpolate_pressure_profile(p_in, p_out);
 
-        double nominal_density = density / calc_density_ratio(p_in);
+        double nominal_density = working_density / calc_density_ratio(p_in);
         make_rheology_step(dt, volumetric_flow, nominal_density);
 
         for (size_t index = 0; index < pipe.profile.get_point_count() - 1; index++) {
             double cell_pressure = (current.pressure[index] + current.pressure[index + 1]) / 2;
             double A = calc_nominal_area(cell_pressure);
-            current.mass[index] = current.density[index] * A * (pipe.profile.coordinates[index + 1] - pipe.profile.coordinates[index]);
+            double dx = pipe.profile.coordinates[index + 1] - pipe.profile.coordinates[index];
+            current.mass[index] = current.density[index] * A * dx;
         }
     }
 
@@ -251,7 +262,7 @@ public:
 
 /// @brief Накапливает результаты по профилям массы
 class mass_collector_from_calculation_on_qsm_t
-    : public batch_processor_precalculated_times<quasi_layer_for_quickest_ultimate>
+    : public batch_processor_precalculated_times<quasi_layer_for_mass_calculation>
 {
 protected:
     /// @brief Вектор расчётных профилей массы ЛУ
@@ -267,7 +278,7 @@ public:
 
     }
     virtual void process_data(size_t step_index,
-        const quasi_layer_for_quickest_ultimate& layer) override
+        const quasi_layer_for_mass_calculation& layer) override
     {
         // Копирование данных
         std::copy(layer.mass.begin(), layer.mass.end(), mass_profile[step_index].begin());
@@ -285,7 +296,7 @@ public:
 /// а также с учётом движения партий на QUICKEST-ULTIMATE
 /// @param task Задача расчёта движения партий и расчёта профиля массы
 /// @param times Предпосчитанная временная сетка моделирования работы ЛУ
-/// @param density Краевые условия по плотности
+/// @param working_density Краевые условия по плотности
 /// @param p_in Краевые условия по давлению в начале ЛУ
 /// @param p_out Краевые условия по давлению в конце ЛУ
 /// @param volumetric_flow Краевые условия по объёмному расходу

@@ -32,8 +32,6 @@ struct density_viscosity_quasi_layer {
     std::vector<double> pressure_delta;
     /// @brief Изначальный профиль давления
     std::vector<double> pressure_initial;
-    /// @brief Профиль массы
-    std::vector<double> mass;
     /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
     /// @brief Инициализация профилей
@@ -41,7 +39,6 @@ struct density_viscosity_quasi_layer {
     density_viscosity_quasi_layer(size_t point_count)
         : density(point_count - static_cast<int>(CellFlag))
         , viscosity(point_count - static_cast<int>(CellFlag))
-        , mass(point_count - static_cast<int>(CellFlag))
         , specific(point_count)
         , pressure(point_count)
         , pressure_delta(point_count)
