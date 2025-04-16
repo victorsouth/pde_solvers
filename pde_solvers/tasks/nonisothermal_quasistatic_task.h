@@ -310,7 +310,7 @@ public:
 /// @param dt Шаг по времени либо задаётся постоянным, 
 /// либо рассчитывается на каждом шаге моделирования для Cr = 1 
 template <typename Solver, typename Printer>
-inline void perform_quasistatic_simulation(
+inline void perform_noniso_quasistatic_simulation(
     const string& path,
     const pipe_noniso_properties_t& pipe,
     const nonisothermal_quasistatic_PQ_task_boundaries_t& initial_boundaries,
@@ -330,7 +330,7 @@ inline void perform_quasistatic_simulation(
     // Печатаем профиль трубы и первый слой к нему
     write_profile(pipe.profile, path + "pipe_coord_heights");
     // Вывод начального расчёта
-    layer_printer.print_all(path, t, pipe, task.get_current_layer());
+    layer_printer.print_t_all(path, t, pipe, task.get_current_layer());
 
     do
     {
@@ -352,11 +352,11 @@ inline void perform_quasistatic_simulation(
         if (etalon_timeseries.data.empty())
         {
 
-            layer_printer.print_all(path, t, pipe, task.get_current_layer());
+            layer_printer.print_t_all(path, t, pipe, task.get_current_layer());
         }
         else {
 
-            layer_printer.print_all(path, t, pipe, task.get_current_layer(), etalon_timeseries(t));
+            layer_printer.print_t_all(path, t, pipe, task.get_current_layer(), etalon_timeseries(t));
         }
 
     } while (t <= boundary_timeseries.get_end_date());
@@ -366,7 +366,7 @@ inline void perform_quasistatic_simulation(
 /// @brief Перегрузка функции для возможности 
 /// не передавать начальные условия
 template <typename Solver, typename Printer>
-inline void perform_quasistatic_simulation(
+inline void perform_noniso_quasistatic_simulation(
     const string& path,
     const pipe_noniso_properties_t& pipe,
     const vector_timeseries_t& boundary_timeseries,
@@ -378,13 +378,13 @@ inline void perform_quasistatic_simulation(
     time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
     nonisothermal_quasistatic_PQ_task_boundaries_t initial_boundaries(boundary_timeseries(t));
 
-    perform_quasistatic_simulation<Solver, Printer>(path, pipe, initial_boundaries, boundary_timeseries, model_type, etalon_timeseries, dt);
+    perform_noniso_quasistatic_simulation<Solver, Printer>(path, pipe, initial_boundaries, boundary_timeseries, model_type, etalon_timeseries, dt);
 }
 
 /// @brief Перегрузка функции для возможности задания постоянного
 /// шага по времени без эталонных данных
 template <typename Solver, typename Printer>
-inline void perform_quasistatic_simulation(
+inline void perform_noniso_quasistatic_simulation(
     const string& path,
     const pipe_noniso_properties_t& pipe,
     const nonisothermal_quasistatic_PQ_task_boundaries_t& initial_boundaries,
@@ -392,7 +392,7 @@ inline void perform_quasistatic_simulation(
     const QuasistaticModelType& model_type,
     double dt=std::numeric_limits<double>::quiet_NaN())
 {
-    perform_quasistatic_simulation<Solver, Printer>(path, pipe, initial_boundaries, boundary_timeseries, model_type, vector_timeseries_t({}), dt);
+    perform_noniso_quasistatic_simulation<Solver, Printer>(path, pipe, initial_boundaries, boundary_timeseries, model_type, vector_timeseries_t({}), dt);
 }
 
 

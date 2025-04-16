@@ -27,6 +27,7 @@
     <ClInclude Include="..\research\2024-08-quasistationary-with-real-data\quasistationary_with_real_data.h" />
     <ClInclude Include="..\research\2024-10-ident-quasistatic-isothermal\ident_quasistatic_isothermal.h" />
     <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\ident_quasistatic_nonisothermal.h" />
+    <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\nonisothermal_quasistationary_with_real_data.h" />
     <ClInclude Include="..\testing\test_advection_moc_solver.h" />
     <ClInclude Include="..\testing\test_create_pipe_profile.h" />
     <ClInclude Include="..\testing\test_diffusion.h" />

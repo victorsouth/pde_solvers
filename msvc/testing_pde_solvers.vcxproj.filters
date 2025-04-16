@@ -74,5 +74,8 @@
     <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\ident_quasistatic_nonisothermal.h">
       <Filter>Header Files\IdentQuasistaticNonisothermal</Filter>
     </ClInclude>
+    <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\nonisothermal_quasistationary_with_real_data.h">
+      <Filter>Header Files\IdentQuasistaticNonisothermal</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

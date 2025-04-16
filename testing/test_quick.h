@@ -532,6 +532,7 @@ protected:
         pipe_noniso_properties_t  pipe = get_default_pipe_heatmodel();
         auto model = pipe.get_heat_eqivalent_model(oil);
         pipe.heat.ambient_heat_transfer = -model.A;    // Использовать пока Кт константу 1-5
+        
 
         vector<double> G(pipe.profile.get_point_count(), 300);
         PipeHeatInflowConstArea heatModel(pipe, oil, G);
@@ -576,7 +577,8 @@ TEST_F(QUICKEST_ULTIMATE2, Quick_UseCase_Advection_Temperature)
     oil_parameters_t oil = pde_solvers::get_default_oil_heatmodel();
     pipe_noniso_properties_t  pipe = pde_solvers::get_default_pipe_heatmodel();
     auto model = pipe.get_heat_eqivalent_model(oil);
-    pipe.heat.ambient_heat_transfer = -model.A;
+    //pipe.heat.ambient_heat_transfer = -model.A;
+    pipe.heat.ambient_heat_transfer = 3;
 
     vector<double> G(pipe.profile.get_point_count(), 300);
     heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);
