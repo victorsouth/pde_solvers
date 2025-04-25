@@ -13,7 +13,7 @@ using std::string;
 /// ViscosityQuasi - квазистац по вязкости, плотность рассчитывается как в стационаре
 /// FullQuasi - полный квазистац
 enum class QuasistaticModelType {
-    Stationary, DensityQuasi, ViscosityQuasi, FullQuasi
+    Stationary, DensityQuasi, ViscosityQuasi, FullQuasi, TempQuasi
 };
 
 /// @brief Проблемно-ориентированный слой для гидравлического квазистационарного расчета

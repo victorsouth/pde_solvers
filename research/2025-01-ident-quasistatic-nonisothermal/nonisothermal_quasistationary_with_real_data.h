@@ -37,7 +37,7 @@ struct python_t_printer {
         output_file.close();
     };
 
-    /// @brief Вывод профилей плотности, вязкости и давления
+    /// @brief Вывод профилей плотности, вязкости и темп
     /// @param t Время моделирования
     /// @param pipe Модель трубы
     /// @param layer Слой, хранящий информацию о 
@@ -46,8 +46,8 @@ struct python_t_printer {
     static void print_t_all(
         std::string folder,
         const time_t& t,
-        const pipe_properties_t& pipe,
-        const density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true >& layer,
+        const pipe_noniso_properties_t& pipe,
+        const density_viscosity_temp_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true >& layer,
         const vector<double>& etalon_values = {}
     ) {
         print_t_profiles<double>(
@@ -58,14 +58,16 @@ struct python_t_printer {
             folder + "results.csv"
         );
 
-        // Вывод временного ряда отклонения расчётного давления от фактического
+        // Вывод временного ряда отклонения расчётного температуры от фактического
         if (!etalon_values.empty())
         {
             double temp_delta = etalon_values[0] - layer.temp.back();
+            double etalon = etalon_values[0];
+            double calculated = layer.temp.back();
             print_t_profiles<std::string>(static_cast<time_t>(0),
                 vector<string>{ UnixToString(t) },
-                vector<vector<double>>{ { temp_delta  } },
-                "time,time,diff_temp",
+                vector<vector<double>>{ { etalon }, { calculated }, { temp_delta } },
+                "time,time,etalon,calculated,diff_temp",
                 folder + "diff_temp.csv");
         }
     }
@@ -75,7 +77,7 @@ struct python_t_printer {
 class NonisothermalQuasistaticModelWithRealData : public ::testing::Test {
 protected:
     // Параметры трубы
-    pipe_properties_t pipe;
+    pipe_noniso_properties_t pipe;
     // Путь к результатам ресёрча
     string path;
     // Временные ряды краевых условий
@@ -137,7 +139,8 @@ TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology)
     vector_timeseries_t etalon_params(etalon_tag_data);
 
     perform_noniso_quasistatic_simulation<advection_moc_solver, python_t_printer<advection_moc_solver>>(
-        path, pipe, params, QuasistaticModelType::FullQuasi, etalon_params
+    //perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_t_printer<quickest_ultimate_fv_solver>>(
+        path, pipe, params, noniso_qsm_model_type::FullQuasi, etalon_params
     );
 }
 
