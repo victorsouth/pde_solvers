@@ -281,7 +281,7 @@ public:
             double b = pde.getSourceTerm(index, u_old);
 
             double& u_new = curr_values[index];
-            u_new = u_old - time_step * b;
+            u_new = u_old + time_step * b;
         }
 
         return time_step;

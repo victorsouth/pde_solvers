@@ -11,7 +11,7 @@ protected:
     // @brief Создание модели трубопровода по реальным данным 
     /// @param path Путь к файлу с профилем реального ЛУ
     /// @return Модель трубы с профилем на основе профиля реального участка трубы 
-    static pipe_properties_t prepare_pipe(const std::string& path)
+    static pipe_noniso_properties_t prepare_pipe(const std::string& path)
     {
         // Указываем имя файла
         std::string folder = path + "coord_heights.csv";
@@ -110,8 +110,8 @@ TEST_F(IdentNonisothermalQSM, HTC)
     using namespace pde_solvers;
 
     // Подготавливаем модель трубопровода и параметры для идентификации 
-    //pipe_properties_t pipe = prepare_pipe(data_path);
-    pipe_noniso_properties_t pipe = get_noniso_default_pipe();
+    //pipe_noniso_properties_t pipe = get_noniso_default_pipe();
+    pipe_noniso_properties_t pipe = prepare_pipe(data_path);
     auto [times, control_data, etalon_pressure] = prepare_real_data(data_path);
 
     // Выбираем в настройках параметр идентификации - коэффициент теплообмена

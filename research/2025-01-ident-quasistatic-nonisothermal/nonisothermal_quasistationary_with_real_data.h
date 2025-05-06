@@ -138,8 +138,8 @@ TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology)
     // Помещаем временные ряды в вектор
     vector_timeseries_t etalon_params(etalon_tag_data);
 
-    perform_noniso_quasistatic_simulation<advection_moc_solver, python_t_printer<advection_moc_solver>>(
-    //perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_t_printer<quickest_ultimate_fv_solver>>(
+    //perform_noniso_quasistatic_simulation<advection_moc_solver, python_t_printer<advection_moc_solver>>(
+    perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_t_printer<quickest_ultimate_fv_solver>>(
         path, pipe, params, noniso_qsm_model_type::FullQuasi, etalon_params
     );
 }

@@ -215,7 +215,7 @@ private:
         oil.viscosity.nominal_viscosity = boundaries.viscosity;
         oil.density.nominal_density = boundaries.density;
         vector<double> G(pipe.profile.get_point_count(), Q_profile[0] * boundaries.density);   /// массовый расход , плотность пробивает CR!!!!!!!!!!!!!! 
-        //pipe.heat.ambient_heat_transfer = 1;
+        //pipe.heat.ambient_heat_transfer = 0.43995060088309634;
         auto heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);
         //PipeHeatInflowConstArea heatModel(pipe, oil, G);
 
