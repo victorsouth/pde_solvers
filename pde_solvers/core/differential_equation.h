@@ -42,32 +42,46 @@ public:
     using typename ode_t<Dimension>::right_party_type;
     using typename ode_t<Dimension>::var_type;
 public:
-
+    /// @brief Получение матрицы коэффициентов уравнений
+    /// @param grid_index Индекс точки в расчетной сетке
+    /// @param point_vector Вектор переменных в точке
+    /// @return Матрица коэффициентов уравнений
     virtual equation_coeffs_type getEquationsCoeffs(
         size_t grid_index, const var_type& point_vector) const = 0;
-
+    /// @brief Получение обратной матрицы коэффициентов уравнений
+    /// @param grid_index Индекс точки в расчетной сетке
+    /// @param point_vector Вектор переменных в точке
+    /// @return Обратная матрица коэффициентов уравнений
     virtual equation_coeffs_type getEquationsCoeffsInv(
         size_t grid_index, const var_type& point_vector) const = 0;
+    /// @brief Получение вектора правой части системы (источниковый член)
+    /// @param grid_index Индекс точки в расчетной сетке
+    /// @param point_vector Вектор переменных в точке
+    /// @return Вектор правой части системы
     virtual right_party_type getSourceTerm(
         size_t grid_index, const var_type& point_vector) const = 0;
-
-
     /// @brief Получение собственных чисел и соответствующих им ЛЕВЫХ собственных векторов
-    /// \param curr
-    /// \param index
-    /// \return Список собственных чисел, список собственных векторов
+    /// @param index Индекс точки в расчетной сетке
+    /// @param u Вектор переменных в точке
+    /// @return Пара: Список собственных чисел, список собственных векторов
     virtual std::pair<var_type, equation_coeffs_type> GetLeftEigens(
         size_t index, const var_type& u) const = 0;
-
+    /// @brief Вычисление правых собственных векторов и собственных значений
+    /// @return Пара: вектор собственных значений и матрица правых собственных векторов
     virtual std::pair<var_type, equation_coeffs_type> GetRightEigens(
         size_t index, const var_type& u) const = 0;
-
+    /// @brief Получение правого собственного вектора
+    /// @param profile_index Индекс точки в расчетной сетке
+    /// @param eigen_index Индекс собственного значения
+    /// @param u Вектор переменных в точке
     virtual var_type GetRightEigenVector(
         size_t profile_index, size_t eigen_index, const var_type& u) const = 0;
-
+    /// @brief Где-то используется, но в pde_solvers нет (9.05.2025)
     virtual double get_wave_strength(
         size_t profile_index, size_t eigen_index, const var_type& u) const = 0;
-
+    /// @brief Вычисление правой части системы ОДУ
+    /// Реализация метода из базового класса ode_t. Вычисляет правую часть как:
+    /// Ux = A^-1 * b, где A - матрица коэффициентов, b - вектор источников
     virtual right_party_type ode_right_party(
         size_t grid_index, const var_type& point_vector) const override
     {
