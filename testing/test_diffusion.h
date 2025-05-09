@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 
-using namespace pde_solvers;
 
 template <typename ContainerType, typename StreamType>
 inline StreamType& send_stream(StreamType& o, const ContainerType& x)
