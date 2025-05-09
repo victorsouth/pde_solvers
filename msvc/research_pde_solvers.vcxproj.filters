@@ -30,35 +30,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\testing\test_moc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\testing\test_static_pipe_solver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\testing\test_quick.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\testing\test_diffusion.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\research\2023-12-diffusion-of-advection\diffusion_of_advection.h">
       <Filter>Header Files\DiffusionOfAdvection</Filter>
     </ClInclude>
-    <ClInclude Include="..\testing\test_timeseries.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\research\2024-02-quick-with-quasistationary-model\quick_with_quasistationary_model.h">
       <Filter>Header Files\QuickWithQuasiStationaryModel</Filter>
-    </ClInclude>
-    <ClInclude Include="..\testing\test_advection_moc_solver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\testing\test_synthetic_timeseries.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\testing\test_create_pipe_profile.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\research\2024-08-quasistationary-with-real-data\quasistationary_with_real_data.h">
       <Filter>Header Files\QuasistationaryWithRealData</Filter>
