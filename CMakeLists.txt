@@ -98,12 +98,30 @@ option(PDE_SOLVERS_BUILD_TESTS "" OFF)
 
 if(PDE_SOLVERS_BUILD_TESTS)
 
-find_package(Threads)
-find_package(GTest REQUIRED)
-set(TESTS_HEADERS
-    testing/test_advection_moc_solver.h  testing/test_diffusion.h  testing/test_moc.h  testing/test_quick.h  testing/test_static_pipe_solver.h  testing/test_timeseries.h
-)
-add_executable(pde_tests testing/test_main.cpp ${TESTS_HEADERS})
-target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
+    find_package(Threads)
+    find_package(GTest REQUIRED)
+    set(TESTS_HEADERS
+        testing/test_advection_moc_solver.h
+        testing/test_diffusion.h
+        testing/test_moc.h
+        testing/test_quick.h
+        testing/test_static_pipe_solver.h
+        testing/test_timeseries.h
+    )
+    add_executable(pde_tests testing/test_main.cpp ${TESTS_HEADERS})
+    target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
+
+
+    set(RESEARCH_HEADERS
+        research/2023-12-diffusion-of-advection/diffusion_of_advection.h
+        research/2024-02-quick-with-quasistationary-model/quick_with_quasistationary_model.h
+        research/2024-08-quasistationary-with-real-data/quasistationary_with_real_data.h
+        research/2024-10-ident-quasistatic-isothermal/ident_quasistatic_isothermal.h
+        research/2025-04-calc-mass-on-isothermal-quasistatic/calc_mass_on_isothermal_quasistatic.h
+    )
+    add_executable(pde_research research/research_main.cpp ${RESEARCH_HEADERS})
+    target_link_libraries(pde_research pde_solvers::pde_solvers GTest::gtest)
+
+
 
 endif()

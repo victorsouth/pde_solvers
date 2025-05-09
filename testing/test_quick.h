@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-using namespace std;
 
 
 /// @brief Тесты для солвера upstream_fv_solver
