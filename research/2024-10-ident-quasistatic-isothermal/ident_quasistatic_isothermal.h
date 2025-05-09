@@ -46,7 +46,8 @@ protected:
         vector<pair<vector<time_t>, vector<double>>> etalon_tag_data;
         // Задаём период
         string start_period = "01.08.2021 00:00:00";
-        string end_period = "01.09.2021 00:00:00";
+        string end_period = "01.09.2021 00:00:00"; 
+        //string end_period = "05.08.2021 00:00:00"; 
 
         // Прописываем названия файлов и единицы измерения параметров
         vector<pair<string, string>>parameters =
@@ -144,3 +145,71 @@ TEST_F(IdentIsothermalQSM, Friction)
 
     double result_d = test_ident.ident(&result, &analysis);
 }
+
+void print_identification_result(
+    const vector<double>& times,
+    ident_isothermal_qsm_pipe_parameters_t& test_ident,
+    const fixed_optimizer_result_analysis_t& analysis,
+    const string& path_to_ident_results
+) 
+{
+    auto& target_function = analysis.target_function;
+    auto& argument_history = analysis.argument_history;
+    auto& steps = analysis.steps;
+
+    auto& init_arg = argument_history.front();
+    auto& res_arg = argument_history.back();
+
+    VectorXd residuals_initial = test_ident.residuals(init_arg);
+    VectorXd residuals_result = test_ident.residuals(res_arg);
+
+    vector<double>  initial(residuals_initial.data(), residuals_initial.data() + residuals_initial.size());
+    vector<double>  results(residuals_result.data(), residuals_result.data() + residuals_result.size());
+
+    python_printer<quickest_ultimate_fv_solver> printer;
+
+    // Вывод невязок до и после идентификации
+    printer.print_profiles<double>(static_cast<time_t>(0),
+        times,
+        vector<vector<double>>{ initial, results },
+        "time,time,diff_press_before_ident,diff_press_after_ident",
+        path_to_ident_results + "ident_diff_press.csv");
+
+   /* for (size_t index = 0; index < target_function.size(); index++)
+    {
+        double step = (index == 0) ? 0.0 : steps[index - 1];
+        printer.print_profiles<size_t>(static_cast<time_t>(0),
+            vector<size_t>{ index },
+            vector<vector<double>>{ { target_function[index]  } },
+            "time,time,diff_press",
+            path_to_ident_results + "diff_press.csv");
+    }*/
+}
+
+/// @brief Пример идентификации модели трубопровода по диаметру c выводом результатов в файл
+TEST_F(IdentIsothermalQSM, DiameterWithPrint)
+{
+    // Подготавливаем модель трубопровода и параметры для идентификации 
+    pipe_properties_t pipe = prepare_pipe(data_path);
+    auto [times, control_data, etalon_pressure] = prepare_real_data(data_path);
+
+    // Выбираем в настройках параметр идентификации - диаметр
+    ident_isothermal_qsm_pipe_settings ident_settings;
+    ident_settings.ident_diameter = true;
+
+    // Создаём класс для идентификации
+    ident_isothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
+
+    // Создаём сущности для хранения результата и аналитики
+    fixed_optimizer_result_t result;
+    fixed_optimizer_result_analysis_t analysis;
+
+    double result_d = test_ident.ident(&result, &analysis);
+
+    // Создаём папку с результатами и получаем путь к ней
+    string path_to_ident_reults = prepare_research_folder_for_qsm_model();
+
+    print_identification_result(times, test_ident, analysis, path_to_ident_reults);
+}
+
+

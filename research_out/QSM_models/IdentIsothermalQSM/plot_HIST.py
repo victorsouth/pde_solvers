@@ -6,14 +6,12 @@ import tabulate
 import math
 
 experiments_type = {
-    'Выбор задания реологии в стационарной модели' : ['StationaryInitialReology', 'StationaryCurrentReology', 'StationaryMeanReology'],
-    'Сравнение стационарной и квазистационарной модели' : ['QuasiStationaryFullReology', 'StationaryCurrentReology'],
-    'Исследование влияния плотности и вязкости на квазистац' : ['QuasiStationaryDensityOnly', 'QuasiStationaryFullReology', 'QuasiStationaryViscosityOnly']
+    'Идентификация по диаметру' : ['DiameterWithPrint'],
 }
 
 # folders = ['/' + folder + '/' for folder in os.listdir()]
 folders = [folder for folder in os.listdir()]
-filename = '/diff_press.csv'
+filename = '/ident_diff_press.csv'
 while True:
     ch_dict = {}
     for i, research_name in enumerate(experiments_type.keys()):
@@ -21,14 +19,23 @@ while True:
         print(f'{i + 1}. {research_name}')
 
     try:
-        choice = int(input('Выберите эксперимент: ')) - 1
+        # choice = int(input('Выберите эксперимент: ')) - 1
+        choice = 0
         dfs = []
         for folder in folders:
             if folder in experiments_type[ch_dict[choice]]:
-                df_r = pd.read_csv(os.getcwd() + '/' + folder + filename, encoding='windows-1251')
-                df_r['diff_press'] = df_r['diff_press'] / 1000.0
-                df_r.columns.name = folder
-                dfs.append(df_r)
+                column_names = ['time','time','diff_press']
+
+                df_before = pd.read_csv(os.getcwd() + '/' + folder + filename, encoding='windows-1251')
+                df_before['diff_press'] = df_before['diff_press_before_ident'] / 1000.0
+                df_before = df_before[column_names]
+                df_before.columns.name = "Перед идентификацией"
+                dfs.append(df_before)
+                df_after = pd.read_csv(os.getcwd() + '/' + folder + filename, encoding='windows-1251')
+                df_after['diff_press'] = df_after['diff_press_after_ident'] / 1000.0
+                df_after=df_after[column_names]
+                df_after.columns.name = "После идентификации"
+                dfs.append(df_after)
 
         parameters_names = [df.columns.tolist()[2] for df in dfs]
 
@@ -62,17 +69,17 @@ while True:
             for i in range(len(axes)):
                 axes[i].clear()
                 axes[i].grid(visible=True)
-                axes[i].set_xlabel('Погрешность давления в конце ЛУ, кПа', fontsize=14)
+                axes[i].set_xlabel('Погрешность давления в конце ЛУ, кПа', fontsize=18)
                 print(dfs[i].columns.name)
-                axes[i].set_ylabel(dfs[i].columns.name, fontsize=14)
+                axes[i].set_ylabel(dfs[i].columns.name, fontsize=18)
                 axes[i].set_xlim(x_left, x_right)
                 axes[i].set_ylim(y_bot, y_top + 100)
 
         def draw_fun():
             global dfs
             for i in range(len(parameters_names)):
-                fsize = 14
-                xright = 1000
+                fsize = 18
+                xright = 900
                 bins_count = int((dfs[i][parameters_names[i]].max() - dfs[i][parameters_names[i]].min()) / interval)
                 top_pos = y_top - 400
                 axes[i].hist(dfs[i][parameters_names[i]], bins=bins_count, color='skyblue', edgecolor='black')
@@ -92,7 +99,7 @@ while True:
 
         plt.show()
         
-    except:
-        print('Ошибка выбора!')
+    except Exception as err:
+        print('Ошибка выбора!', err)
         continue
 
