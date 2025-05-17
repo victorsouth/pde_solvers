@@ -10,6 +10,7 @@ folders = [folder for folder in os.listdir()]
 filename = '/diff_press.csv'
 
 experiments_type = {
+    'Выбор cпособа интерполяции' : ['StationaryCurrentReologyStep', 'StationaryCurrentReology'],
     'Выбор задания реологии в стационарной модели' : ['StationaryInitialReology', 'StationaryCurrentReology', 'StationaryMeanReology'],
     'Сравнение стационарной и квазистационарной модели' : ['QuasiStationaryFullReology', 'StationaryCurrentReology'],
     'Исследование влияния плотности и вязкости на квазистац' : ['QuasiStationaryDensityOnly', 'QuasiStationaryFullReology', 'QuasiStationaryViscosityOnly']
