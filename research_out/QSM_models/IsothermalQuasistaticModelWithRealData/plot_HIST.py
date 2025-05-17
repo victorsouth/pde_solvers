@@ -62,19 +62,20 @@ while True:
             for i in range(len(axes)):
                 axes[i].clear()
                 axes[i].grid(visible=True)
-                axes[i].set_xlabel('Погрешность давления в конце ЛУ, кПа', fontsize=14)
+                axes[i].set_xlabel('Погрешность давления в конце ЛУ, кПа', fontsize=20)
                 print(dfs[i].columns.name)
-                axes[i].set_ylabel(dfs[i].columns.name, fontsize=14)
+                axes[i].set_ylabel(dfs[i].columns.name, fontsize=20)
                 axes[i].set_xlim(x_left, x_right)
                 axes[i].set_ylim(y_bot, y_top + 100)
 
         def draw_fun():
             global dfs
             for i in range(len(parameters_names)):
-                fsize = 14
-                xright = 1000
+                fsize = 20
+                xright = 1050
                 bins_count = int((dfs[i][parameters_names[i]].max() - dfs[i][parameters_names[i]].min()) / interval)
-                top_pos = y_top - 400
+                # bins_count = int(1 + 3.3221 * np.log(len(dfs[i][parameters_names[i]])))
+                top_pos = y_top - 1000
                 axes[i].hist(dfs[i][parameters_names[i]], bins=bins_count, color='skyblue', edgecolor='black')
                 axes[i].text(x_right - xright, top_pos - 4800, f'СКО: {dfs[i][parameters_names[i]].std():.4f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})
                 axes[i].text(x_right - xright, top_pos - 1800, f'Среднее: {dfs[i][parameters_names[i]].mean():.4f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})

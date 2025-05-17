@@ -22,7 +22,7 @@ def compare_samples(compare_data, file_name='diff_press.csv', alpha=0.05):
         data = {}
         for group_name, folder in groups.items():
             df = pd.read_csv(f'{folder}/{file_name}')
-            data[group_name] = df['diff_press'].dropna().values
+            data[group_name] = df['diff_press'].dropna().values / 1000
         
         if len(data) < 2:
             raise ValueError(f"В эксперименте '{exp_name}' должно быть минимум 2 выборки!")
@@ -105,6 +105,14 @@ compare_data = {
     'Квазистац VS Квазистац на вязкости': {
         'Квазистац на вязкости': 'QuasiStationaryViscosityOnly',
         'Квазистац': 'QuasiStationaryFullReology'
+    },
+    'Стац VS Квазистац на плотности': {
+        'Квазистац на плотности': 'QuasiStationaryDensityOnly',
+        'Стац': 'StationaryCurrentReology'
+    },
+    'Стац VS Квазистац на вязкости': {
+        'Квазистац на вязкости': 'QuasiStationaryViscosityOnly',
+        'Стац': 'StationaryCurrentReology'
     },
 }
 

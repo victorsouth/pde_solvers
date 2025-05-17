@@ -28,7 +28,7 @@ def compare_samples(compare_data, file_name='ident_diff_press.csv', alpha=0.05):
                 clmn = 'diff_press_after_ident'
             else:
                 raise Exception("Непонятно какая идентификация")
-            data[group_name] = df[clmn].dropna().values
+            data[group_name] = df[clmn].dropna().values / 1000
         
         if len(data) < 2:
             raise ValueError(f"В эксперименте '{exp_name}' должно быть минимум 2 выборки!")
@@ -66,10 +66,10 @@ def compare_samples(compare_data, file_name='ident_diff_press.csv', alpha=0.05):
                 'Эксперимент': exp_name,
                 'Группа': group,
                 'Мат. ожидание': np.mean(data[group]),
-                '|Мат. ожидание|': mean_abs[group],
-                'Отличие мат. ожидания от лучшего': mean_diff[group],
+                # '|Мат. ожидание|': mean_abs[group],
+                # 'Отличие мат. ожидания от лучшего': mean_diff[group],
                 'СКО': std_values[group],
-                'Отличие СКО от лучшего': std_diff[group],
+                # 'Отличие СКО от лучшего': std_diff[group],
                 'Лучшая группа по среднему': best_mean_group,
                 'Лучшая группа по СКО': best_std_group,
                 'Тест для средних': test_name_mean,
@@ -87,7 +87,16 @@ compare_data = {
     'Идентификация по деаметру': {
             'До идентификации': 'DiameterWithPrint',
             'После идентификации': 'DiameterWithPrint'
-    }
+    },
+    'Идентификация по лямбде': {
+            'До идентификации': 'FrictionWithPrinter',
+            'После идентификации': 'FrictionWithPrinter'
+    },
+    'Между собой': {
+            'После D': 'DiameterWithPrint',
+            'После L': 'FrictionWithPrinter'
+    },
+    
 }
 
 results_df = compare_samples(compare_data)

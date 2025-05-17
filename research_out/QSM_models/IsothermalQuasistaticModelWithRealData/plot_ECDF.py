@@ -10,9 +10,13 @@ folders = [folder for folder in os.listdir()]
 filename = '/diff_press.csv'
 
 experiments_type = {
-    'Выбор задания реологии в стационарной модели' : ['StationaryInitialReology', 'StationaryCurrentReology', 'StationaryMeanReology'],
+    'Выбор задания реологии в стационарной модели Тек+Начальная' : ['StationaryCurrentReology','StationaryInitialReology', ],
+    'Выбор задания реологии в стационарной модели Тек+Ср' : ['StationaryCurrentReology', 'StationaryMeanReology'],
+    'Выбор задания реологии Full' : ['StationaryCurrentReology','StationaryInitialReology', 'StationaryMeanReology'],
     'Сравнение стационарной и квазистационарной модели' : ['QuasiStationaryFullReology', 'StationaryCurrentReology'],
-    'Исследование влияния плотности и вязкости на квазистац' : ['QuasiStationaryDensityOnly', 'QuasiStationaryFullReology', 'QuasiStationaryViscosityOnly']
+    'Исследование влияния плотности и вязкости на квазистац FULL' : ['QuasiStationaryDensityOnly', 'QuasiStationaryFullReology', 'QuasiStationaryViscosityOnly'],
+    'Исследование влияния плотности и вязкости на квазистац RHOvsVISC' : ['QuasiStationaryDensityOnly','QuasiStationaryViscosityOnly'],
+    'Исследование влияния плотности и вязкости на квазистац KVvsVSIC' : ['QuasiStationaryFullReology', 'QuasiStationaryViscosityOnly']
 }
  
 while True:
@@ -54,9 +58,9 @@ while True:
             for i in range(len(axes)):
                 axes[i].clear()
                 axes[i].grid(visible=True)
-                axes[i].set_xlabel('Погрешность давления в конце ЛУ, кПа')
+                axes[i].set_xlabel('Погрешность давления в конце ЛУ, кПа', fontsize=20)
                 print(dfs[i].columns.name)
-                axes[i].set_ylabel(dfs[i].columns.name)
+                axes[i].set_ylabel(dfs[i].columns.name, fontsize=20)
                 axes[i].set_xlim(-200, 200)
 
         def draw_fun(p):
@@ -74,7 +78,7 @@ while True:
                 axes[i].text(imax , 0.90, f'{imax:.1f}', fontsize=fsize)
                 axes[i].text(-180, 0.5, f'delta = {(imax - imin):.1f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})
                 axes[i].text(-190, p, f'p = {p:.2f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})
-                
+                axes[i].tick_params(axis='both', labelsize=20)
                 axes[i].axhline(y = q, color = 'r', linestyle = '--') 
                 axes[i].axhline(y = p + q, color = 'r', linestyle = '--') 
                 axes[i].plot(imin, q, 'bo', markersize=msize)
@@ -87,10 +91,10 @@ while True:
 
         init_func()
 
-        draw_fun(0.90)
+        draw_fun(0.95)
 
         ax_time = plt.axes([0.15, 0.0001, 0.5, 0.04])
-        time_slider = Slider(ax_time, 'p', 0, 1, valstep=0.05, valinit=0.90)
+        time_slider = Slider(ax_time, 'p', 0, 1, valstep=0.05, valinit=0.95)
 
         time_slider.on_changed(change)    
 

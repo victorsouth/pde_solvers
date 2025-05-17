@@ -10,7 +10,9 @@ folders = [folder for folder in os.listdir()]
 filename = '/ident_diff_press.csv'
 
 experiments_type = {
+    'Идентификация' : ['DiameterWithPrint', 'FrictionWithPrinter'],
     'Идентификация по диаметру' : ['DiameterWithPrint'],
+    'Идентификация по лямбде' : ['FrictionWithPrinter'],
 }
 
 while True:
@@ -20,22 +22,24 @@ while True:
         print(f'{i+1}. {research_name}')
     try:
         choice = int(input('Выберите эксперимент: ')) - 1
-
+        # choice = 0
 
         dfs = []
+        before_flg = True
         for folder in folders:
             if folder in experiments_type[ch_dict[choice]]:
                 column_names = ['time','time','diff_press']
-
-                df_before = pd.read_csv(os.getcwd() + '/' + folder + filename, encoding='windows-1251')
-                df_before['diff_press'] = df_before['diff_press_before_ident'] / 1000.0
-                df_before = df_before[column_names]
-                df_before.columns.name = "Перед идентификацией"
-                dfs.append(df_before)
+                if before_flg:
+                    df_before = pd.read_csv(os.getcwd() + '/' + folder + filename, encoding='windows-1251')
+                    df_before['diff_press'] = df_before['diff_press_before_ident'] / 1000.0
+                    df_before = df_before[column_names]
+                    df_before.columns.name = "До идентификации"
+                    dfs.append(df_before)
+                    before_flg = False
                 df_after = pd.read_csv(os.getcwd() + '/' + folder + filename, encoding='windows-1251')
                 df_after['diff_press'] = df_after['diff_press_after_ident'] / 1000.0
                 df_after=df_after[column_names]
-                df_after.columns.name = "После идентификации"
+                df_after.columns.name = f"По {'лямбде' if folder == 'FrictionWithPrinter' else 'диаметру'}"
                 dfs.append(df_after)
         print(dfs)
 
@@ -60,9 +64,9 @@ while True:
             for i in range(len(axes)):
                 axes[i].clear()
                 axes[i].grid(visible=True)
-                axes[i].set_xlabel('Погрешность давления в конце ЛУ, кПа')
+                axes[i].set_xlabel('Погрешность давления в конце ЛУ, кПа', fontsize=20)
                 print(dfs[i].columns.name)
-                axes[i].set_ylabel(dfs[i].columns.name)
+                axes[i].set_ylabel(dfs[i].columns.name, fontsize=20)
                 axes[i].set_xlim(-200, 200)
 
         def draw_fun(p):
@@ -77,10 +81,10 @@ while True:
                 fsize = 20
                 msize = 5
                 axes[i].text(imin - 50, 0.08, f'{imin:.1f}', fontsize=fsize)
-                axes[i].text(imax , 0.90, f'{imax:.1f}', fontsize=fsize)
+                axes[i].text(imax , 0.95, f'{imax:.1f}', fontsize=fsize)
                 axes[i].text(-180, 0.5, f'delta = {(imax - imin):.1f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})
                 axes[i].text(-190, p, f'p = {p:.2f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})
-                
+                axes[i].tick_params(axis='both', labelsize=20)
                 axes[i].axhline(y = q, color = 'r', linestyle = '--') 
                 axes[i].axhline(y = p + q, color = 'r', linestyle = '--') 
                 axes[i].plot(imin, q, 'bo', markersize=msize)
@@ -93,10 +97,10 @@ while True:
 
         init_func()
 
-        draw_fun(0.90)
+        draw_fun(0.95)
 
         ax_time = plt.axes([0.15, 0.0001, 0.5, 0.04])
-        time_slider = Slider(ax_time, 'p', 0, 1, valstep=0.05, valinit=0.90)
+        time_slider = Slider(ax_time, 'p', 0, 1, valstep=0.05, valinit=0.95)
 
         time_slider.on_changed(change)    
 
