@@ -149,6 +149,11 @@ public:
     double ident(fixed_optimizer_result_t* result = nullptr, fixed_optimizer_result_analysis_t* analysis = nullptr) {
         // Настроечные параметры процесса идентификации
         fixed_optimizer_parameters_t parameters;
+        if (analysis != nullptr) {
+            parameters.analysis.objective_function_history = true;
+            parameters.analysis.steps = true;
+            parameters.analysis.argument_history = true;
+        }
 
         fixed_optimizer_result_t result_local;
         if (result == nullptr) {

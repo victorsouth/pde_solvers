@@ -5,15 +5,29 @@ import os
 import tabulate
 import math
 
+def remove_duplicate_columns(df_list):
+    seen_columns = set()
+    unique_dfs = []
+    
+    for df in df_list:
+        # Создаем неизменяемый ключ из отсортированного списка колонок
+        columns_key = frozenset(df.columns)
+        
+        if columns_key not in seen_columns:
+            seen_columns.add(columns_key)
+            unique_dfs.append(df)
+    
+    return unique_dfs
+
 experiments_type = {
-    'Выбор задания реологии в стационарной модели' : ['StationaryInitialReology', 'StationaryCurrentReology', 'StationaryMeanReology'],
-    'Сравнение стационарной и квазистационарной модели' : ['QuasiStationaryFullReology', 'StationaryCurrentReology'],
-    'Исследование влияния плотности и вязкости на квазистац' : ['QuasiStationaryDensityOnly', 'QuasiStationaryFullReology', 'QuasiStationaryViscosityOnly']
+    'Идентификация' : ['DiameterWithPrint', 'FrictionWithPrinter'],
+    'Идентификация по диаметру' : ['DiameterWithPrint'],
+    'Идентификация по лямбде' : ['FrictionWithPrinter'],
 }
 
 # folders = ['/' + folder + '/' for folder in os.listdir()]
 folders = [folder for folder in os.listdir()]
-filename = '/diff_press.csv'
+filename = '/ident_diff_press.csv'
 while True:
     ch_dict = {}
     for i, research_name in enumerate(experiments_type.keys()):
@@ -22,14 +36,27 @@ while True:
 
     try:
         choice = int(input('Выберите эксперимент: ')) - 1
+        # choice = 0
         dfs = []
+        before_flg = True
         for folder in folders:
             if folder in experiments_type[ch_dict[choice]]:
-                df_r = pd.read_csv(os.getcwd() + '/' + folder + filename, encoding='windows-1251')
-                df_r['diff_press'] = df_r['diff_press'] / 1000.0
-                df_r.columns.name = folder
-                dfs.append(df_r)
+                column_names = ['time','time','diff_press']
+                if before_flg:
+                    df_before = pd.read_csv(os.getcwd() + '/' + folder + filename, encoding='windows-1251')
+                    df_before['diff_press'] = df_before['diff_press_before_ident'] / 1000.0
+                    df_before = df_before[column_names]
+                    df_before.columns.name = "До идентификации"
+                    dfs.append(df_before)
+                    before_flg = False
+                df_after = pd.read_csv(os.getcwd() + '/' + folder + filename, encoding='windows-1251')
+                df_after['diff_press'] = df_after['diff_press_after_ident'] / 1000.0
+                df_after=df_after[column_names]
+                df_after.columns.name = f"По {'лямбде' if folder == 'FrictionWithPrinter' else 'диаметру'}"
+                dfs.append(df_after)
 
+
+        # dfs = remove_duplicate_columns(dfs)
         parameters_names = [df.columns.tolist()[2] for df in dfs]
 
         x_right = dfs[0][parameters_names[0]].max()
@@ -62,23 +89,22 @@ while True:
             for i in range(len(axes)):
                 axes[i].clear()
                 axes[i].grid(visible=True)
-                axes[i].set_xlabel('Погрешность давления в конце ЛУ, кПа', fontsize=20)
+                axes[i].set_xlabel('Погрешность давления в конце ЛУ, кПа', fontsize=18)
                 print(dfs[i].columns.name)
-                axes[i].set_ylabel(dfs[i].columns.name, fontsize=20)
+                axes[i].set_ylabel(dfs[i].columns.name, fontsize=18)
                 axes[i].set_xlim(x_left, x_right)
-                axes[i].set_ylim(y_bot, y_top + 100)
+                axes[i].set_ylim(y_bot, y_top + 1000)
 
         def draw_fun():
             global dfs
             for i in range(len(parameters_names)):
-                fsize = 20
-                xright = 1050
+                fsize = 18
+                xright = 650
                 bins_count = int((dfs[i][parameters_names[i]].max() - dfs[i][parameters_names[i]].min()) / interval)
-                # bins_count = int(1 + 3.3221 * np.log(len(dfs[i][parameters_names[i]])))
-                top_pos = y_top - 1000
+                top_pos = y_top
                 axes[i].hist(dfs[i][parameters_names[i]], bins=bins_count, color='skyblue', edgecolor='black')
-                axes[i].text(x_right - xright, top_pos - 4800, f'СКО: {dfs[i][parameters_names[i]].std():.4f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})
-                axes[i].text(x_right - xright, top_pos - 1800, f'Среднее: {dfs[i][parameters_names[i]].mean():.4f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})
+                axes[i].text(x_right - xright, top_pos - 8500, f'СКО: {dfs[i][parameters_names[i]].std():.4f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})
+                axes[i].text(x_right - xright, top_pos - 3000, f'Среднее: {dfs[i][parameters_names[i]].mean():.4f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})
                 # dfs[i]['sum_square'] = dfs[i][parameters_names[i]].apply(lambda x: x ** 2)
                 # axes[i].text(x_right - 950, top_pos - 4000, f'ЦФ: {math.sqrt((dfs[i]["sum_square"].sum()) / len(dfs[i]["sum_square"])):.4f}', fontsize=12, bbox={'facecolor': 'white', 'alpha': 1})
                 axes[i].tick_params(axis='both', labelsize=20)
@@ -93,7 +119,7 @@ while True:
 
         plt.show()
         
-    except:
-        print('Ошибка выбора!')
+    except Exception as err:
+        print('Ошибка выбора!', err)
         continue
 
