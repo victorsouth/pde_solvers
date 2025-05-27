@@ -79,7 +79,7 @@ public:
         double density = oil.density.nominal_density;
         double v = mass_flow[grid_index] / (S_0 * density);
 
-        double Re = v * pipe.wall.diameter / oil.viscosity();
+        double Re = v * pipe.wall.diameter / oil.viscosity(T);
         double lambda = hydraulic_resistance_shifrinson(Re, pipe.wall.relativeRoughness());
 
         double n_inner = -lambda / 2 * v * v * v / d;

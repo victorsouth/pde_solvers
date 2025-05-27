@@ -550,5 +550,80 @@ public:
     }
 };
 
+/// @brief Уравнение трубы для задачи PQ с учетом движения партий
+/// Учитывается, что параметры партий могут задавать в точках, и в ячейках
+class nonisothermal_pipe_PQ_parties_t : public ode_t<1>
+{
+public:
+    using ode_t<1>::equation_coeffs_type;
+    using ode_t<1>::right_party_type;
+    using ode_t<1>::var_type;
+protected:
+    const vector<double>& t_profile;
+    const oil_parameters_t& oil;
+    const pipe_properties_t& pipe;
+    const double flow;
+    const int solver_direction;
+    size_t flag_for_points;
+public:
+    /// @brief Констуктор уравнения трубы
+    /// @param pipe Ссылка на сущность трубы
+    /// @param oil Ссылка на сущность нефти
+    /// @param flow Объемный расход
+    /// @param solver_direction Направление расчета по Эйлеру, должно обязательно совпадать с параметром солвера Эйлера
+    nonisothermal_pipe_PQ_parties_t(const pipe_properties_t& pipe, const oil_parameters_t& oil, const vector<double>& t_profile, double flow,
+        int solver_direction, size_t flag_for_points = 0)
+        : pipe(pipe)
+        , oil(oil)
+        , t_profile(t_profile)
+        , flow(flow)
+        , solver_direction(solver_direction)
+        , flag_for_points(flag_for_points)
+    {
+    }
+
+    /// @brief Возвращает известную уравнению сетку
+    virtual const vector<double>& get_grid() const override {
+        return pipe.profile.coordinates;
+    }
+
+    /// @brief Возвращает значение правой части ДУ
+    /// @param grid_index Обсчитываемый индекс расчетной сетки
+    /// @param point_vector Начальные условия
+    /// @return Значение правой части ДУ в точке point_vector
+    virtual right_party_type ode_right_party(
+        size_t grid_index, const var_type& point_vector) const override
+    {
+
+        /// Обработка индекса в случае расчетов на границах трубы
+        /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
+        size_t reo_index = grid_index;
+
+        if (pipe.profile.get_point_count() == t_profile.size())
+        {
+            // Случай расчета партий в точках (например для метода характеристик)
+            if (solver_direction == +1)
+                reo_index += 1;
+            else
+                reo_index -= 1;
+        }
+        else
+        {
+            // Случай расчета партий в ячейках (например для quickest ultimate) 
+            reo_index = solver_direction == +1
+                ? grid_index
+                : grid_index - 1;
+        }
+        double rho = oil.density.nominal_density;
+        double S_0 = pipe.wall.getArea();
+        double v = flow / (S_0);
+        double Re = v * pipe.wall.diameter / oil.viscosity(t_profile[reo_index]);
+        double lambda = pipe.resistance_function(Re);
+        double tau_w = lambda / 8 * rho * v * abs(v);
+        double height_derivative = pipe.profile.get_height_derivative(grid_index, solver_direction);
+        double result = -4 * tau_w / pipe.wall.diameter - rho * M_G * height_derivative;
+        return result;
+    }
+};
 
 }
