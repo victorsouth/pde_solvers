@@ -36,6 +36,7 @@
     <ClInclude Include="..\testing\test_static_pipe_solver.h" />
     <ClInclude Include="..\testing\test_synthetic_timeseries.h" />
     <ClInclude Include="..\testing\test_timeseries.h" />
+    <ClInclude Include="..\testing\test_viscosity.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D96B0787-48BD-4108-87D2-0AFAB045343A}</ProjectGuid>

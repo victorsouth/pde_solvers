@@ -46,7 +46,7 @@ inline std::string prepare_research_folder()
 }
 
 
-
+#include "test_viscosity.h"
 #include "test_diffusion.h"
 #include "test_moc.h"
 #include "test_quick.h"

@@ -208,9 +208,7 @@ private:
 
         // Посчитано по Филонову для температур 0, 20, 50
         std::array<double, 3> visc{ 35.2166964842424e-6, 15.1959389818927e-6, 4.30720885400170e-6 };
-        auto coeffs = viscosity_table_model_t::reconstruct(visc);
-        oil.viscosity.nominal_viscosity = coeffs[0];
-        oil.viscosity.temperature_coefficient = coeffs[1];      /// заданная вискограмма
+        oil.viscosity = oil_viscosity_parameters_t(visc);
         oil.density.nominal_density = 860;
         pipe.heat.ambientTemperature = 286.15;              /// Задал температуру грунта
 
