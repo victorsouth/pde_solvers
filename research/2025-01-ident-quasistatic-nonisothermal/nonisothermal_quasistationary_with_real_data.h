@@ -182,7 +182,7 @@ protected:
         vector<pair<string, string>>parameters =
         {
             { folder + "Q_in", "m3/h-m3/s"s },
-            { folder + "t_in_n", "C"s },
+            { folder + "t_in_nps", "C"s },
             { folder + "rho_in", "kg/m3"s },
             { folder + "visc_in", "mm^2/s-m^2/s"s },
             { folder + "t_out_n", "C"s}

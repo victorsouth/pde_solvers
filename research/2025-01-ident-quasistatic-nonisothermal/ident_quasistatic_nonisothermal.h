@@ -53,7 +53,7 @@ protected:
         vector<pair<string, string>>parameters =
         {
             { path_to_real_data + "Q_in", "m3/h-m3/s"s },
-            { path_to_real_data + "t_in_n", "C"s },
+            { path_to_real_data + "t_in_nps", "C"s },
             { path_to_real_data + "rho_in", "kg/m3"s },
             { path_to_real_data + "visc_in", "mm^2/s-m^2/s"s },
             { path_to_real_data + "t_out_n", "C"s}
@@ -85,7 +85,7 @@ protected:
 
         vector<double>  times = vector<double>(dots_count);
         vector<vector<double>> control_data = vector<vector<double>>(dots_count);
-        vector<double> etalon_pressure = vector<double>(dots_count);
+        vector<double> etalon_temp = vector<double>(dots_count);
 
         for (size_t i = 0; i < dots_count; i++)
         {
@@ -96,11 +96,11 @@ protected:
 
             // Получаем интерполированные значения краевых условий и эталонных значений
             control_data[i] = control_parameters_time_series(t);
-            etalon_pressure[i] = etalon_parameters_time_series(t).front();
+            etalon_temp[i] = etalon_parameters_time_series(t).front();
 
         };
 
-        return std::make_tuple(std::move(times), std::move(control_data), std::move(etalon_pressure));
+        return std::make_tuple(std::move(times), std::move(control_data), std::move(etalon_temp));
     }
 };
 
@@ -112,14 +112,14 @@ TEST_F(IdentNonisothermalQSM, HTC)
     // Подготавливаем модель трубопровода и параметры для идентификации 
     //pipe_noniso_properties_t pipe = get_noniso_default_pipe();
     pipe_noniso_properties_t pipe = prepare_pipe(data_path);
-    auto [times, control_data, etalon_pressure] = prepare_real_data(data_path);
+    auto [times, control_data, etalon_temp] = prepare_real_data(data_path);
 
     // Выбираем в настройках параметр идентификации - коэффициент теплообмена
     ident_nonisothermal_qsm_pipe_settings ident_settings;
     ident_settings.ident_htc = true;
 
     // Создаём класс для идентификации
-    ident_nonisothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
+    ident_nonisothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, times, control_data, etalon_temp);
 
     // Создаём сущности для хранения результата и аналитики
     fixed_optimizer_result_t result;
