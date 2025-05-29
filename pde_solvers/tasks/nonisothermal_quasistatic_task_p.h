@@ -422,7 +422,6 @@ inline void perform_noniso_quasistatic_simulation_p(
     const vector_timeseries_t& etalon_timeseries,
     double dt=std::numeric_limits<double>::quiet_NaN())
 {
-
     time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
     nonisothermal_quasistatic_PQ_task_boundaries_t_p initial_boundaries(boundary_timeseries(t));
 
@@ -443,44 +442,6 @@ inline void perform_noniso_quasistatic_simulation_p(
 {
     perform_noniso_quasistatic_simulation_p<Solver, Printer>(path, pipe, oil, initial_boundaries, boundary_timeseries, model_type, vector_timeseries_t({}), dt);
 }
-
-/*
-/// @brief Накапливает результаты по выходной температуре
-class nonisothermal_qsm_batch_Tout_collector_t
-    : public batch_processor_precalculated_times<density_viscosity_temp_quasi_layer<true>>
-{
-public:
-    /// @brief Тип данных слоя буфера изотермической квазистационарной модели
-    typedef density_viscosity_temp_quasi_layer<true> layer_type;
-protected:
-    /// @brief Вектор расчётных значений давления на выходе ЛУ
-    vector<double> pipe_temp_out;
-public:
-    /// @brief Конструктор обработчика
-    /// @param times Предпосчитанная временная сетка моделирования работы ЛУ
-    nonisothermal_qsm_batch_Tout_collector_t(const vector<double>& times)
-        : pipe_temp_out(times.size(), std::numeric_limits<double>::quiet_NaN())
-    {
-
-    }
-
-    /// @brief Сохранение результатов расчёта давления в конце ЛУ в вектор
-    /// @param step_index Текущий шаг моделирования
-    /// @param layer Текущий слой
-    virtual void process_data(size_t step_index,
-        const density_viscosity_temp_quasi_layer<true>& layer) override
-    {
-        // at() - проверяет выход за границы массива
-        //pipe_pressure_out.at(step_index) = layer.pressure.back();
-        pipe_temp_out[step_index] = layer.temp.back();
-    }
-    /// @brief Геттер для вектора собранных результатов расчёта давления в конце ЛУ
-    /// @return Вектор расчётных значений давления на выходе ЛУ
-    const vector<double>& get_temp_out_calculated() const {
-        return pipe_temp_out;
-    }
-};
-*/
 
 /// @brief Пакетный изотермический квазистатический расчет с предподсчитанным временем
 /// делает статический расчет task.solve, а затем столько раз task.step, сколько временных меток в times

@@ -199,11 +199,6 @@ public:
         for (double& temp_shukhov : current.temp_shukhov) {
             temp_shukhov = initial_conditions.temp_shukhov;
         }
-        /*
-        //// Начальный гидравлический расчет
-        calc_pressure_layer(initial_conditions);
-        buffer.previous().pressure_initial = current.pressure_initial = current.pressure; // Получаем изначальный профиль давлений
-        */
     }
 public:
     /// @brief Рассчёт шага по времени для Cr = 1
@@ -219,58 +214,35 @@ private:
     /// @param dt Временной шаг моделирования
     /// @param boundaries Краевые условия
     void make_rheology_step(double dt, const nonisothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
+        
         size_t n = pipe.profile.get_point_count();
-        vector<double>Q_profile(n, boundaries.volumetric_flow); // задаем по трубе новый расход из временного ряда
+        vector<double>Q_profile(n, boundaries.volumetric_flow); /// задаем по трубе новый расход из временного ряда
         PipeQAdvection advection_model(pipe, Q_profile);
-        oil_parameters_t oil = get_noniso_default_oil(); /// Нужно передать новую плоскость и вязкость для heatModel
-
-        pipe.heat.ambientTemperature = 286.15;              /// Задал температуру грунта
+        oil_parameters_t oil = get_noniso_default_oil();        /// Нужно передать новую плоскость и вязкость для heatModel
+        
+        pipe.heat.ambientTemperature = 286.15;                  /// Задал температуру грунта
+        pipe.heat.ambient_heat_transfer = 1.1251848316089959;   /// Идентицифрованный параметр
+        oil.density.nominal_density = 860;
         // Посчитано по Филонову для температур 0, 20, 50
         std::array<double, 3> visc{ 35.2166964842424e-6, 15.1959389818927e-6, 4.30720885400170e-6 };
-        auto coeffs = viscosity_table_model_t::reconstruct(visc);
-        oil.viscosity.nominal_viscosity = coeffs[0];
-        oil.viscosity.temperature_coefficient = coeffs[1];      /// заданная вискограмма
-
-        //oil.viscosity.nominal_viscosity = boundaries.viscosity;
-        //oil.density.nominal_density = boundaries.density;
+        oil.viscosity = oil_viscosity_parameters_t(visc);
+        
         vector<double> G(pipe.profile.get_point_count(), Q_profile[0] * boundaries.density);   /// массовый расход
-        //pipe.heat.ambient_heat_transfer = 0.43995060088309634;
-        pipe.heat.ambient_heat_transfer = 1.1251848316089959;
         auto heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);   
-        PipeHeatInflowConstArea heatModel_sh(pipe, oil, G);                                 /// один хитмодел для квикеста, второй для Шухова
+        PipeHeatInflowConstArea heatModel_sh(pipe, oil, G);         /// один хитмодел для квикеста, второй для Шухова
         
         advance(); // Сдвигаем текущий и предыдущий слои
 
+        /// Солвер для Шухова
         solve_euler_corrector<1>(heatModel_sh, +1, { boundaries.temp }, &buffer.current().temp_shukhov);
 
         if constexpr (std::is_same<Solver, advection_moc_solver>::value) {
             // считаем партии методом характеристик
-            // грохнуть
-            // плотность - квазистац или стац
-            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::DensityQuasi) {
-                // Шаг по плотности
-                advection_moc_solver solver_rho(pipe, Q_profile[0], buffer.previous().density, buffer.current().density);
-                solver_rho.step(dt, boundaries.density, boundaries.density);
-            }
-            else
-                buffer.current().density = vector<double>(buffer.current().density.size(), boundaries.density);
-
-            // вязкость - квазистац или стац
-            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::ViscosityQuasi) {
-                // Шаг по вязкости
-                advection_moc_solver solver_nu(pipe, Q_profile[0], buffer.previous().viscosity, buffer.current().viscosity);
-                solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
-            }
-            else
-                buffer.current().viscosity = vector<double>(buffer.current().viscosity.size(), boundaries.viscosity);
-            
             // температура - квазистац или стац
             if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::TempQuasi) {
                 // Шаг по temp
-                //ring_buffer_t<density_viscosity_temp_quasi_layer<0>> buffer(2, pipe.profile.get_point_count());
                 auto temperature_buffer = buffer.get_buffer_wrapper(&density_viscosity_temp_quasi_layer<0>::get_temperature_moc_wrapper);               
-                //ring_buffer_t<temperature_layer> buffer2(2, pipe.profile.get_point_count());
-                //auto temperature_buffer2 = buffer2.get_buffer_wrapper(&temperature_layer::get_temperature_moc_wrapper);
+
                 moc_solver<1> solver_tm(*heatModel, temperature_buffer);
                 solver_tm.step_optional_boundaries(dt, boundaries.temp, boundaries.temp);
             }
@@ -278,34 +250,7 @@ private:
                 buffer.current().temp = vector<double>(buffer.current().temp.size(), boundaries.temp);
         }
         else {
-            // считаем партии с помощью QUICKEST-ULTIMATE
-            
-            // плотность - квазистац или стац
-            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::DensityQuasi) {
-                auto density_wrapper = buffer.get_buffer_wrapper(
-                    &density_viscosity_temp_quasi_layer<1>::get_density_wrapper);
-
-                // Шаг по плотности
-                quickest_ultimate_fv_solver solver_rho(advection_model, density_wrapper);
-                solver_rho.step(dt, boundaries.density, boundaries.density);
-            }
-            else {
-                buffer.current().density = vector<double>(buffer.current().density.size(), boundaries.density);
-            }
-
-            // вязкость - квазистац или стац
-            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::ViscosityQuasi) {
-                auto viscosity_wrapper = buffer.get_buffer_wrapper(
-                    &density_viscosity_temp_quasi_layer<1>::get_viscosity_wrapper);
-
-                // Шаг по вязкости
-                quickest_ultimate_fv_solver solver_nu(advection_model, viscosity_wrapper);
-                solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
-            }
-            else {
-                buffer.current().viscosity = vector<double>(buffer.current().viscosity.size(), boundaries.viscosity);
-            }
-
+            // считаем партии с помощью QUICKEST-ULTIMATE       
             // temp - квазистац или стац
             if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::TempQuasi) {
                 auto temp_wrapper = buffer.get_buffer_wrapper(
@@ -318,29 +263,9 @@ private:
             else {
                 buffer.current().temp = vector<double>(buffer.current().temp.size(), boundaries.temp);
             }
-
-
         }
     }
-    /*
-    /// @brief Рассчёт профиля давления методом Эйлера (задача PQ) 
-    /// @param boundaries Краевые условия                                       
-    void calc_pressure_layer(const isothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
 
-        auto& current = buffer.current();
-
-        vector<double>& p_profile = current.pressure;
-        int euler_direction = +1; // Задаем направление для Эйлера
-
-        isothermal_pipe_PQ_parties_t pipeModel(pipe, current.density, current.viscosity, boundaries.volumetric_flow, euler_direction);
-        solve_euler<1>(pipeModel, euler_direction, boundaries.pressure_in, &p_profile);
-        // Получаем дифференциальный профиль давлений
-        std::transform(current.pressure_initial.begin(), current.pressure_initial.end(), p_profile.begin(),
-            current.pressure_delta.begin(),
-            [](double initial, double current) {return initial - current;  });
-
-    }
-    */
 public:
     /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
     /// Функция делат сдвиг буфера (advance) так, что buffer.current после вызова содержит свежерасчитанный слой
@@ -348,7 +273,7 @@ public:
     /// @param boundaries Краевые условие
     void step(double dt, const nonisothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
         make_rheology_step(dt, boundaries);
-//        calc_pressure_layer(boundaries);
+
     }
 
     /// @brief Сдвиг текущего слоя в буфере
@@ -446,7 +371,6 @@ inline void perform_noniso_quasistatic_simulation(
     const vector_timeseries_t& etalon_timeseries,
     double dt=std::numeric_limits<double>::quiet_NaN())
 {
-
     time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
     nonisothermal_quasistatic_PQ_task_boundaries_t initial_boundaries(boundary_timeseries(t));
 
