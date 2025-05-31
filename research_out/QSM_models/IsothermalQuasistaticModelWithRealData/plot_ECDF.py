@@ -10,7 +10,8 @@ folders = [folder for folder in os.listdir()]
 filename = '/diff_press.csv'
 
 experiments_type = {
-    'Выбор cпособа интерполяции' : ['StationaryCurrentReologyStep', 'StationaryCurrentReology'],
+    'Выбор cпособа интерполяции СТАЦ' : ['StationaryCurrentReologyStep', 'StationaryCurrentReology'],
+    'Выбор cпособа интерполяции КВАЗИСТАЦ' : ['QuasiStationaryFullReologyStep', 'QuasiStationaryFullReology'],
     'Выбор задания реологии в стационарной модели' : ['StationaryInitialReology', 'StationaryCurrentReology', 'StationaryMeanReology'],
     'Сравнение стационарной и квазистационарной модели' : ['QuasiStationaryFullReology', 'StationaryCurrentReology'],
     'Исследование влияния плотности и вязкости на квазистац' : ['QuasiStationaryDensityOnly', 'QuasiStationaryFullReology', 'QuasiStationaryViscosityOnly']
@@ -88,10 +89,10 @@ while True:
 
         init_func()
 
-        draw_fun(0.90)
+        draw_fun(0.95)
 
         ax_time = plt.axes([0.15, 0.0001, 0.5, 0.04])
-        time_slider = Slider(ax_time, 'p', 0, 1, valstep=0.05, valinit=0.90)
+        time_slider = Slider(ax_time, 'p', 0, 1, valstep=0.05, valinit=0.95)
 
         time_slider.on_changed(change)    
 

@@ -250,7 +250,8 @@ TEST_F(IsothermalQuasistaticModelWithRealData, QuasiStationaryViscosityOnly)
     );
 }
 
-/// @brief Стационарный расчёт с текущей реологией со ступенчатой реологией
+/// @brief Стационарный расчёт с текущей реологией со ступенчатой интерполяцией
+/// временных рядов краевых условий и эталонных значений
 TEST_F(IsothermalQuasistaticModelWithRealData, StationaryCurrentReologyStep)
 {
     // Помещаем временные ряды в вектор
