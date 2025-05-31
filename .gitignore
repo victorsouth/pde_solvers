@@ -334,6 +334,7 @@ __pycache__/
 /testing_out/MOC_Solver.MOC_Compare_With_QUICK/*.csv
 /research_out/DiffusionOfAdvection/CompareQuickestDiffusion
 *.csv
+*.xlsx
 *.png
 /research_out/DiffusionOfAdvection/CompareUpstreamDiffAndMOC
 
