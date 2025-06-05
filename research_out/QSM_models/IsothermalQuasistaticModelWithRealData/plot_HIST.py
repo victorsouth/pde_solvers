@@ -6,6 +6,8 @@ import tabulate
 import math
 
 experiments_type = {
+    'Выбор cпособа интерполяции СТАЦ' : ['StationaryCurrentReologyStep', 'StationaryCurrentReology'],
+    'Выбор cпособа интерполяции КВАЗИСТАЦ' : ['QuasiStationaryFullReologyStep', 'QuasiStationaryFullReology'],
     'Выбор задания реологии в стационарной модели' : ['StationaryInitialReology', 'StationaryCurrentReology', 'StationaryMeanReology'],
     'Сравнение стационарной и квазистационарной модели' : ['QuasiStationaryFullReology', 'StationaryCurrentReology'],
     'Исследование влияния плотности и вязкости на квазистац' : ['QuasiStationaryDensityOnly', 'QuasiStationaryFullReology', 'QuasiStationaryViscosityOnly']
@@ -93,7 +95,7 @@ while True:
 
         plt.show()
         
-    except:
-        print('Ошибка выбора!')
+    except Exception as err:
+        print('Ошибка выбора!', err)
         continue
 

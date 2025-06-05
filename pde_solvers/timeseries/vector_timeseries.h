@@ -5,9 +5,19 @@ using std::vector;
 using std::pair;
 
 
+/// @brief Способы интерполяции временных рядов
+/// Step - Ступенчатая интерполяция
+/// Linear - линейная интерполяция
+enum class InterplationMethod {
+    Step, Linear
+};
+
+
 /// @brief Векторный верменной ряд
 class vector_timeseries_t {
 private:
+    /// @brief Метод интерполяции
+    InterplationMethod interpolation_method;
     /// @brief Самое позднее начальное время среди временных рядов
     time_t start_date{ std::numeric_limits<time_t>::min() };
     /// @brief Самое ранее конечное время среди временных рядов
@@ -28,8 +38,9 @@ public:
     /// @param data Вектор временных рядов, каждый элемент которого
     /// представляет собой пару, в которой первый элемент это временная сетка,
     /// а второй - вектор значений параметров в соответствующие моменты времени
-    vector_timeseries_t(const vector<pair<vector<time_t>, vector<double>>>& data)
+    vector_timeseries_t(const vector<pair<vector<time_t>, vector<double>>>& data, InterplationMethod interpolation_method = InterplationMethod::Linear)
         : data(data)
+        , interpolation_method(interpolation_method)
     {
         if (data.empty())
             return;
@@ -85,11 +96,11 @@ public:
                     result[i] = values[k];
                 }
                 else {
-                    // точное число режит между values[k-1] и values[k]
+                    // точное число лежит между values[k-1] и values[k]
                     if (k == 0) {
                         result[i] = std::numeric_limits<double>::quiet_NaN();
                     }
-                    else {
+                    else if (interpolation_method == InterplationMethod::Linear){
                         time_t t_prev = times[k - 1];
                         time_t t_next = times[k];
 
@@ -100,6 +111,12 @@ public:
                         double v_next = values[k];
 
                         result[i] = (1 - alpha) * v_prev + alpha * v_next;
+                    }
+                    else if (interpolation_method == InterplationMethod::Step) {
+                        result[i] = values[k - 1];
+                    }
+                    else {
+                        throw std::logic_error("wrong interpolation method");
                     }
                 }
 
