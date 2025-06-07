@@ -441,12 +441,13 @@ struct zoned_pipe_properties : public pipe_properties_t {
     }
 
     /// @brief Возвращает параметры эквивалентных теплофизических моделей
-    vector<equivalent_heat_zone_coefficients_t> get_coeff_zones(const vector<heat_zone_adaptation_t>& adaptation_zones) const
+    vector<equivalent_heat_zone_coefficients_t> get_coeff_zones(
+        const vector<heat_zone_adaptation_t>& adapt_zones) const
     {
         vector<equivalent_heat_zone_coefficients_t> result;
         for (size_t index = 0; index < eqheat_zones.size(); ++index) {
-            if (adaptation_zones.size() == eqheat_zones.size()) {
-                result.emplace_back(eqheat_zones[index].get_coefficients(adaptation_zones[index]));
+            if (adapt_zones.size() == eqheat_zones.size()) {
+                result.emplace_back(eqheat_zones[index].get_coefficients(adapt_zones[index]));
             }
             else {
                 heat_zone_adaptation_t zone_ident;
