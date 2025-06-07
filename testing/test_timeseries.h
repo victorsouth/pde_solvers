@@ -10,11 +10,11 @@ TEST(CsvRead, ReadStream)
     ss << "10.08.2021 08:50:50;6.2" << std::endl;
 
     // Читаем данных из потока
-    auto [time, values] = csv_tag_reader::read_from_stream(ss, "MPa-kPa");
+    auto [time, values] = csv_tag_reader::read_from_stream(ss, "MPa");
 
     // Проверяем корректность считанных данных
     ASSERT_EQ(UnixToString(time[1]), "10.08.2021 08:40:50");
-    ASSERT_NEAR(6200.0, values[2], 1);
+    ASSERT_NEAR(6200000.0, values[2], 1);
 }
 
 /// @brief Проверяет способность чтения данных из потока за заданный период
@@ -28,13 +28,13 @@ TEST(CsvRead, ReadStreamWithPeriod)
     ss << "10.08.2021 09:55:50;5.5" << std::endl;
 
     // Читаем данные из потока для заданного периода 
-    auto [time, values] = csv_tag_reader::read_from_stream(ss, "MPa-kPa", 
+    auto [time, values] = csv_tag_reader::read_from_stream(ss, "MPa", 
         StringToUnix("10.08.2021 08:35:50;5"), StringToUnix("10.08.2021 09:30:50"));
 
     // Проверяем корректность считанных данных
     ASSERT_EQ(UnixToString(time[0]), "10.08.2021 08:40:50");
     ASSERT_EQ(time.size(), 2);
-    ASSERT_NEAR(6200.0, values[1], 1);
+    ASSERT_NEAR(6200000, values[1], 1);
 }
 
 /// @brief Проверка функции интерполяции временных рядов 
@@ -48,7 +48,7 @@ TEST(VectorTimeseries, InterpolateTimeseries)
     pres << "10.08.2021 09:55:50;5.5" << std::endl;
 
     // Читаем данные из потока
-    auto press = csv_tag_reader::read_from_stream(pres, "MPa-kPa");
+    auto press = csv_tag_reader::read_from_stream(pres, "MPa");
 
     // Записываем временной ряд в вектор временных рядов
     vector_timeseries_t timeseries({ press });
@@ -58,8 +58,43 @@ TEST(VectorTimeseries, InterpolateTimeseries)
     vector<double> inter_values = timeseries(test_time);
 
     // Проверяем соответствие полученного значения
-    ASSERT_NEAR(inter_values[0], 6100, 10);
+    ASSERT_NEAR(inter_values[0], 6100000, 10);
 
+}
+
+/// @brief Проверка функционала по выбору способа интерполяции
+TEST(VectorTimeseries, CheckInterpolationMethods)
+{
+    // Записываем в поток данные параметра
+    stringstream pres;
+    pres << "10.08.2021 08:30:50;5" << std::endl;
+    pres << "10.08.2021 08:40:50;6" << std::endl;
+    pres << "10.08.2021 08:50:50;6.2" << std::endl;
+    pres << "10.08.2021 09:55:50;5.5" << std::endl;
+
+    // Читаем данные из потока для заданного периода
+    auto press = csv_tag_reader::read_from_stream(pres, "MPa");
+
+    // Заданный момент времени
+    time_t test_time = StringToUnix("10.08.2021 08:45:50");
+
+    // Записываем временной ряд в вектор временных рядов и указываем линейный способ интерполяции
+    vector_timeseries_t timeseries_linear({ press }, InterplationMethod::Linear);
+
+    // Интерполируем значение параметра в заданный момент времени
+    vector<double> inter_values = timeseries_linear(test_time);
+
+    // Проверяем соответствие полученного значения при линейной интерполяции
+    ASSERT_NEAR(inter_values[0], 6100000, 10);
+
+    // Записываем временной ряд в вектор временных рядов и указываем ступенчатый способ интерполяции
+    vector_timeseries_t timeseries_step({ press }, InterplationMethod::Step);
+
+    // Интерполируем значение параметра в заданный момент времени
+    inter_values = timeseries_step(test_time);
+
+    // Проверяем соответствие полученного значения при ступенчатой интерполяции
+    ASSERT_NEAR(inter_values[0], 6000000, 10);
 }
 
 /// @brief Проверка обработки случая, когда момент времени
@@ -74,7 +109,7 @@ TEST(VectorTimeseries, CheckWrongTime)
     pres << "10.08.2021 09:55:50;5.5" << std::endl;
 
     // Читаем данные из потока для заданного периода
-    auto press = csv_tag_reader::read_from_stream(pres, "MPa-kPa");
+    auto press = csv_tag_reader::read_from_stream(pres, "MPa");
 
     // Записываем временной ряд в вектор временных рядов
     vector_timeseries_t timeseries({ press });
