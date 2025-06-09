@@ -26,34 +26,34 @@ inline static T _interpolate(T* values, double interpolation_offset)
 /// @param profiles 
 /// @return 
 template <size_t Dimension, typename DataType>
-inline array<vector<DataType>*, Dimension> get_profiles_pointers(array<vector<DataType>, Dimension>& profiles)
+inline std::array<std::vector<DataType>*, Dimension> get_profiles_pointers(std::array<std::vector<DataType>, Dimension>& profiles)
 {
     return create_array<Dimension>([&](int dimension) { return &profiles[dimension]; });
 }
 
 
 /// @brief Собирает из составной профиль
-/// Из скалярных профилей собрать векторный профиль: double -> array<double, Dim>
-/// Из векторных профилей собрать матричный профиль: array<double, Dim> -> array<array<double, Dim>, Dim>
+/// Из скалярных профилей собрать векторный профиль: double -> std::array<double, Dim>
+/// Из векторных профилей собрать матричный профиль: std::array<double, Dim> -> std::array<std::array<double, Dim>, Dim>
 template <typename T, size_t Dimension>
 class profile_wrapper {
 protected:
-    array<vector<T>*, Dimension> profiles;
+    std::array<std::vector<T>*, Dimension> profiles;
 public:
     typedef typename fixed_system_types<Dimension>::var_type vector_type;
 
     const size_t n;
 public:
-    profile_wrapper(vector<double>& profile);
+    profile_wrapper(std::vector<double>& profile);
 
-    profile_wrapper(array<vector<T>*, Dimension>* profiles)
+    profile_wrapper(std::array<std::vector<T>*, Dimension>* profiles)
         : profiles(*profiles)
         , n(profiles->front()->size())
     {
 
     }
 
-    profile_wrapper(array<vector<T>*, Dimension> profiles)
+    profile_wrapper(std::array<std::vector<T>*, Dimension> profiles)
         : profiles(profiles)
         , n(profiles.front()->size())
     {
@@ -121,10 +121,10 @@ public:
     {
         return profiles[dimension]->at(profile_index);
     }
-    const vector<T>& profile(size_t profile_index) const {
+    const std::vector<T>& profile(size_t profile_index) const {
         return *profiles[profile_index];
     }
-    vector<T>& profile(size_t profile_index) {
+    std::vector<T>& profile(size_t profile_index) {
         return *profiles[profile_index];
     }
 
@@ -150,14 +150,14 @@ profile_wrapper<double, 1>::interpolate(size_t profile_index, double frac_offset
 
 
 template <>
-inline profile_wrapper<double, 1>::profile_wrapper(vector<double>& profile)
+inline profile_wrapper<double, 1>::profile_wrapper(std::vector<double>& profile)
     : n(profile.size())
 {
     profiles[0] = &profile;
 }
 
 template <>
-inline profile_wrapper<double, 1>::profile_wrapper(array<vector<double>*, 1>* profiles)
+inline profile_wrapper<double, 1>::profile_wrapper(std::array<std::vector<double>*, 1>* profiles)
     : profiles(*profiles)
     , n(profiles->front()->size())
 {
@@ -180,23 +180,23 @@ struct profile_collection_t
 
 
     /// @brief Список скалярных профилей на границах ячеек
-    array<vector<double>, PointScalar> point_double;
+    std::array<std::vector<double>, PointScalar> point_double;
     /// @brief Список скалярных профилей в ячейках
-    array<vector<double>, CellScalar> cell_double;
+    std::array<std::vector<double>, CellScalar> cell_double;
     /// @brief Список векторных профилей на границах ячеек
-    array<vector<point_vector_type>, PointVector> point_vector;
+    std::array<std::vector<point_vector_type>, PointVector> point_vector;
     /// @brief Список векторных профилей в ячейках
-    array<vector<cell_vector_type>, CellVector> cell_vector;
+    std::array<std::vector<cell_vector_type>, CellVector> cell_vector;
 
-    vector<double>& get_point_profile(size_t profile_index) {
+    std::vector<double>& get_point_profile(size_t profile_index) {
         return point_double[profile_index];
     }
 
     profile_collection_t(size_t point_count)
-        : point_double{ array_maker<vector<double>, PointScalar>::make_array(vector<double>(point_count)) }
-        , point_vector{ array_maker<vector<point_vector_type>, PointVector>::make_array(vector<point_vector_type>(point_count)) }
-        , cell_double{ array_maker<vector<double>, CellScalar>::make_array(vector<double>(point_count - 1)) }
-        , cell_vector{ array_maker<vector<cell_vector_type>, CellVector>::make_array(vector<cell_vector_type>(point_count)) }
+        : point_double{ array_maker<std::vector<double>, PointScalar>::make_array(std::vector<double>(point_count)) }
+        , point_vector{ array_maker<std::vector<point_vector_type>, PointVector>::make_array(std::vector<point_vector_type>(point_count)) }
+        , cell_double{ array_maker<std::vector<double>, CellScalar>::make_array(std::vector<double>(point_count - 1)) }
+        , cell_vector{ array_maker<std::vector<cell_vector_type>, CellVector>::make_array(std::vector<cell_vector_type>(point_count)) }
     {
 
     }
@@ -207,7 +207,7 @@ struct profile_collection_t
     /// @param t Время
     /// @param os Поток для вывода
     void print(double t, std::ostream& os) {
-        auto print_vector = [&](const vector<double>& data) {
+        auto print_vector = [&](const std::vector<double>& data) {
             if (data.empty())
                 return;
             os << data[0];

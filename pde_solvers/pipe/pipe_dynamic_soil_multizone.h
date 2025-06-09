@@ -193,10 +193,10 @@ struct primary_heat_zone_parameters_t {
     size_t coordinate_begin;
     /// @brief Толщина стенки, слоев изоляции и защитного слоя, м
     /// стальная стенка трубы, первый слой изоляции, второй слой изоляции, защитный слой
-    array<double, 4> isolation_thickness{ 0.010, 0.003, 0.050, 0.005 };
+    std::array<double, 4> isolation_thickness{ 0.010, 0.003, 0.050, 0.005 };
     /// @brief Теплопроводность материалов трубопровода, Вт*м-1*К-1
     /// сталь, первый слой изоляции, второй слой изоляции, защитный слой
-    array<double, 4> isolation_conductivity{ 40, 0.2, 0.035, 0.3 };
+    std::array<double, 4> isolation_conductivity{ 40, 0.2, 0.035, 0.3 };
     /// @brief Глубина залегания - толщина слоя грунта, м
     double depth = 1.5;
     /// @brief Теплофизические параметры грунта
