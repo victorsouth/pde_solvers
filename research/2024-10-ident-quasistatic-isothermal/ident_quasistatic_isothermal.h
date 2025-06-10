@@ -47,6 +47,7 @@ protected:
         // Задаём период
         string start_period = "01.08.2021 00:00:00";
         string end_period = "01.09.2021 00:00:00"; 
+        using namespace std::string_literals;
 
         // Прописываем названия файлов и единицы измерения параметров
         vector<pair<string, string>>parameters =
@@ -73,9 +74,9 @@ protected:
         double step = 60;
 
         // Определяем начало периода
-        time_t start_period_time = max(control_parameters_time_series.get_start_date(), etalon_parameters_time_series.get_start_date());
+        time_t start_period_time = std::max(control_parameters_time_series.get_start_date(), etalon_parameters_time_series.get_start_date());
         // Определяем конец периода
-        time_t end_period_time = min(control_parameters_time_series.get_end_date(), etalon_parameters_time_series.get_end_date());
+        time_t end_period_time = std::min(control_parameters_time_series.get_end_date(), etalon_parameters_time_series.get_end_date());
         // Определяем продолжительность периода
         time_t duration = (end_period_time - start_period_time);
 

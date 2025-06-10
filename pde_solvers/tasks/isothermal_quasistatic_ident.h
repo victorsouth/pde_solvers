@@ -1,6 +1,9 @@
 ﻿#pragma once
 #include <string>
 #include <vector>
+#include <Eigen/Sparse>
+#include "pipe/pipe_hydraulic_struct.h"
+#include <fixed/fixed_optimizer.h>
 //#include "../timeseries/timeseries_helpers.h"
 
 namespace pde_solvers {
@@ -41,7 +44,7 @@ struct ident_isothermal_qsm_pipe_settings {
     /// @brief Распаковываем переданный в residuals VectorXd в зависимости от того, какой параметр был выбран
     /// @param packed_ident_parameters Переданный в функцию расчёта невязок набор аргументов
     /// @return Распакованный набор параметров идентификации
-    ident_parameters_isothermal_qsm unpack_ident_parameters(const VectorXd& packed_ident_parameters) const {
+    ident_parameters_isothermal_qsm unpack_ident_parameters(const Eigen::VectorXd& packed_ident_parameters) const {
         
         ident_parameters_isothermal_qsm result;
         // Распаковываем набор аргументов
@@ -70,12 +73,12 @@ class ident_isothermal_qsm_pipe_parameters_t : public fixed_least_squares_functi
     pipe_properties_t pipe_to_ident;
 
     /// @brief Предпосчитанная временная сетка для моделирования работы ЛУ
-    const vector<double>& times;
+    const std::vector<double>& times;
     /// @brief Интерполированные значения временных рядов СДКУ 
     /// (давление, расход, плотность и вязкость в начале ЛУ) - краевые условия
-    const vector<vector<double>>& control_data;
+    const std::vector<std::vector<double>>& control_data;
     /// @brief Интерполированные значения временного рядка СДКУ (давление в конце ЛУ) - эталонные значения
-    const vector<double>& etalon_pressure;
+    const std::vector<double>& etalon_pressure;
 public:
     /// @brief Конструктор класса для идентификации
     /// @param settings Настройка, определяющая выбор параметра идентификации
@@ -85,7 +88,7 @@ public:
     /// @param etalon_pressure Предпосчитанные эталонные значения
     ident_isothermal_qsm_pipe_parameters_t(
         const ident_isothermal_qsm_pipe_settings& settings,
-        const pipe_properties_t& pipe, const vector<double>& times, const vector<vector<double>>& control_data, const vector<double>& etalon_pressure)
+        const pipe_properties_t& pipe, const std::vector<double>& times, const std::vector<std::vector<double>>& control_data, const std::vector<double>& etalon_pressure)
         : settings(settings)
         , pipe_nominal{ pipe }
         , pipe_to_ident{ pipe }
@@ -100,7 +103,7 @@ protected:
     /// @brief Расчёт невязок - проводится моделирование работы ЛУ и считается отклонение расчётного и фактического давления в конце ЛУ 
     /// @param ident_parameters Текущие значения параметров адаптации
     /// @return Вектор невязок - расхождения расчётного и фактического давления на выхое ЛУ
-    vector<double> calc_vector_residuals(const ident_parameters_isothermal_qsm& ident_parameters)
+    std::vector<double> calc_vector_residuals(const ident_parameters_isothermal_qsm& ident_parameters)
     {
         // Сущность для сбора расчётных данных давления в конце ЛУ
         isothermal_qsm_batch_Pout_collector_t collector(times);
@@ -129,15 +132,15 @@ public:
     /// @brief Инициализация расчёта вектора невязок
     /// @param parameters Текущие значения параметров идентификации
     /// @return Вектор невязок - расхождения расчётного и фактического давления на выхое ЛУ
-    virtual VectorXd residuals(const VectorXd& parameters) override {
+    virtual Eigen::VectorXd residuals(const Eigen::VectorXd& parameters) override {
 
         ident_parameters_isothermal_qsm ident_parameters = settings.unpack_ident_parameters(parameters);
         //ident_parameters.diameter_adaptation = parameters(0);
 
 
-        vector<double> simulation_result = calc_vector_residuals(ident_parameters);
+        std::vector<double> simulation_result = calc_vector_residuals(ident_parameters);
 
-        Eigen::Map<VectorXd> result(simulation_result.data(), simulation_result.size());
+        Eigen::Map<Eigen::VectorXd> result(simulation_result.data(), simulation_result.size());
 
         return result;
     }
@@ -161,7 +164,7 @@ public:
         }
 
         // Задание начального значения параметра идентификации 
-        VectorXd initial_ident_parameter(1);
+        Eigen::VectorXd initial_ident_parameter(1);
         initial_ident_parameter(0) = 1;
         // Запуск алгоритма идентификации 
         fixed_optimize_gauss_newton::optimize(*this, initial_ident_parameter, parameters, result, analysis);

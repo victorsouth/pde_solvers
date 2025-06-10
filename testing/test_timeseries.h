@@ -4,7 +4,7 @@
 TEST(CsvRead, ReadStream)
 {
     // Записываем в поток данные параметра
-    stringstream ss;
+    std::stringstream ss;
     ss << "10.08.2021 08:30:50;5" << std::endl;
     ss << "10.08.2021 08:40:50;6" << std::endl;
     ss << "10.08.2021 08:50:50;6.2" << std::endl;
@@ -21,7 +21,7 @@ TEST(CsvRead, ReadStream)
 TEST(CsvRead, ReadStreamWithPeriod)
 {
     // Записываем в поток данные параметра
-    stringstream ss;
+    std::stringstream ss;
     ss << "10.08.2021 08:30:50;5" << std::endl;
     ss << "10.08.2021 08:40:50;6" << std::endl;
     ss << "10.08.2021 08:50:50;6.2" << std::endl;
@@ -41,7 +41,7 @@ TEST(CsvRead, ReadStreamWithPeriod)
 TEST(VectorTimeseries, InterpolateTimeseries)
 {
     // Записываем в поток данные параметра
-    stringstream pres;
+    std::stringstream pres;
     pres << "10.08.2021 08:30:50;5" << std::endl;
     pres << "10.08.2021 08:40:50;6" << std::endl;
     pres << "10.08.2021 08:50:50;6.2" << std::endl;
@@ -102,7 +102,7 @@ TEST(VectorTimeseries, CheckInterpolationMethods)
 TEST(VectorTimeseries, CheckWrongTime)
 {
     // Записываем в поток данные параметра
-    stringstream pres;
+    std::stringstream pres;
     pres << "10.08.2021 08:30:50;5" << std::endl;
     pres << "10.08.2021 08:40:50;6" << std::endl;
     pres << "10.08.2021 08:50:50;6.2" << std::endl;
@@ -116,7 +116,7 @@ TEST(VectorTimeseries, CheckWrongTime)
 
     // Интерполируем значение параметра в заданный момент времени
     time_t test_time = StringToUnix("10.08.2021 08:45:50");
-    vector<double> inter_values = timeseries(test_time);
+    std::vector<double> inter_values = timeseries(test_time);
 
     // Выбираем момент времени левее точки предыдущей интерполяции
     time_t wrong_time = StringToUnix("10.08.2021 08:35:50");
@@ -128,6 +128,8 @@ TEST(VectorTimeseries, CheckWrongTime)
 /// @brief Пример использование библиотеки timeseries.h 
 TEST(Timeseries, UseCase)
 {
+    using namespace std::string_literals;
+
     // Записываем пути к историческим данным
     string folder = "data/";
     vector<pair<string, string>>parameters =
