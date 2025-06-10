@@ -93,6 +93,8 @@ TEST(VectorTimeseries, CheckWrongTime)
 /// @brief Пример использование библиотеки timeseries.h 
 TEST(Timeseries, UseCase)
 {
+    using namespace std::string_literals;
+
     // Записываем пути к историческим данным
     string folder = "data/";
     vector<pair<string, string>>parameters =
