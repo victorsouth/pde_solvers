@@ -31,7 +31,6 @@ inline std::string prepare_research_folder()
 }
 
 using namespace pde_solvers;
-using namespace std;
 
 
 #include "../research/2023-12-diffusion-of-advection/diffusion_of_advection.h"
