@@ -33,7 +33,6 @@ inline std::string prepare_test_folder()
 }
 
 using namespace pde_solvers;
-using namespace std;
 
 
 #include "test_diffusion.h"

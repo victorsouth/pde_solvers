@@ -29,11 +29,11 @@ struct thermal_model_ident_parameters_t {
 struct pipe_heat_model_t {
     /// @brief Толщина стенки, слоев изоляции и защитного слоя, м
     /// первый слой изоляции, второй слой изоляции, защитный слой
-    array<double, 4> layerThickness{ 0.010, 0.003, 0.050, 0.005 };
+    std::array<double, 4> layerThickness{ 0.010, 0.003, 0.050, 0.005 };
 
     /// @brief Теплопроводность материалов трубопровода, Вт*м-1*К-1
     /// сталь, первый слой изоляции, второй слой изоляции, защитный слой
-    array<double, 4> thermalConductivity{ 40, 0.2, 0.035, 0.3 };
+    std::array<double, 4> thermalConductivity{ 40, 0.2, 0.035, 0.3 };
 
     /// @brief Температура окружающей среды, К
     double ambientTemperature{ KELVIN_OFFSET - 5 };

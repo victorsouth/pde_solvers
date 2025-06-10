@@ -1,5 +1,6 @@
 ﻿#pragma once
-
+#include <vector>
+#include <stdexcept>
 namespace pde_solvers {
 
 /// @brief Упрощенные параметры трубы
@@ -37,11 +38,11 @@ struct simple_pipe_properties {
 /// @brief Сущность профиля трубы
 struct pipe_profile_t {
     /// @brief Координатные отметки, м
-    vector<double> coordinates;
+    std::vector<double> coordinates;
     /// @brief Высотные отметки, м
-    vector<double> heights;
+    std::vector<double> heights;
     /// @brief Несущая способность, Па
-    vector<double> capacity;
+    std::vector<double> capacity;
 
 
     double get_height_derivative(ptrdiff_t index, int direction) const {
@@ -83,8 +84,8 @@ struct pipe_profile_t {
     {
         size_t n = segment_count + 1;
         pipe_profile_t result;
-        result.coordinates = result.heights = vector<double>(n);
-        result.capacity = vector<double>(n, capacity);
+        result.coordinates = result.heights = std::vector<double>(n);
+        result.capacity = std::vector<double>(n, capacity);
         double length = x_end - x_begin;
         double dx = length / segment_count;
         for (size_t index = 0; index < n; ++index) {

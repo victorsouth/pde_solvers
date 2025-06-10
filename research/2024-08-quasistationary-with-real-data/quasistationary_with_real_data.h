@@ -99,6 +99,8 @@ protected:
         // Создаём папку с результатами и получаем путь к ней
         path = prepare_research_folder_for_qsm_model();
 
+        using namespace std::string_literals;
+
         vector<pair<string, string>>parameters =
         {
             { folder + "Q_in", "m3/h-m3/s"s },
