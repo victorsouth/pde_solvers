@@ -55,7 +55,7 @@ TEST(VectorTimeseries, InterpolateTimeseries)
 
     // Интерполируем значение параметра в заданный момент времени
     time_t test_time = StringToUnix("10.08.2021 08:45:50");
-    vector<double> inter_values = timeseries(test_time);
+    std::vector<double> inter_values = timeseries(test_time);
 
     // Проверяем соответствие полученного значения
     ASSERT_NEAR(inter_values[0], 6100000, 10);
@@ -66,7 +66,7 @@ TEST(VectorTimeseries, InterpolateTimeseries)
 TEST(VectorTimeseries, CheckInterpolationMethods)
 {
     // Записываем в поток данные параметра
-    stringstream pres;
+    std::stringstream pres;
     pres << "10.08.2021 08:30:50;5" << std::endl;
     pres << "10.08.2021 08:40:50;6" << std::endl;
     pres << "10.08.2021 08:50:50;6.2" << std::endl;
@@ -82,7 +82,7 @@ TEST(VectorTimeseries, CheckInterpolationMethods)
     vector_timeseries_t timeseries_linear({ press }, InterplationMethod::Linear);
 
     // Интерполируем значение параметра в заданный момент времени
-    vector<double> inter_values = timeseries_linear(test_time);
+    std::vector<double> inter_values = timeseries_linear(test_time);
 
     // Проверяем соответствие полученного значения при линейной интерполяции
     ASSERT_NEAR(inter_values[0], 6100000, 10);
@@ -132,7 +132,7 @@ TEST(Timeseries, UseCase)
 
     // Записываем пути к историческим данным
     string folder = "data/";
-    vector<pair<string, string>>parameters =
+    std::vector<pair<string, string>>parameters =
     {
         { folder + "rho_in", "kg/m3"s },
         { folder + "visc_in", "mm^2/s-m^2/s"s },
@@ -157,5 +157,5 @@ TEST(Timeseries, UseCase)
     time_t test_time = StringToUnix("10.08.2021 08:53:50");
 
     // Интерополируем значения параметров в заданный момент времени
-    vector<double> values_in_test_time = params(test_time);
+    std::vector<double> values_in_test_time = params(test_time);
 }

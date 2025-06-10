@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-
+#include <Eigen/Sparse>
 
 /// @brief Тесты для расчёта на реальных данных
 class IdentIsothermalQSM : public ::testing::Test {
@@ -38,19 +38,19 @@ protected:
     /// 1. Временная сетка
     /// 2. Предпосчитанные краевые условия
     /// 3. Предпосчитанные эталонные значения
-    static std::tuple<vector<double>, vector<vector<double>>, vector<double>> prepare_real_data(const std::string& path_to_real_data)
+    static std::tuple<std::vector<double>, std::vector<std::vector<double>>, std::vector<double>> prepare_real_data(const std::string& path_to_real_data)
     {
         // Временные ряды краевых условий
-        vector<pair<vector<time_t>, vector<double>>> control_tag_data;
+        std::vector<pair<std::vector<time_t>, std::vector<double>>> control_tag_data;
         // Временные ряды эталонных данных
-        vector<pair<vector<time_t>, vector<double>>> etalon_tag_data;
+        std::vector<pair<std::vector<time_t>, std::vector<double>>> etalon_tag_data;
         // Задаём период
         string start_period = "01.08.2021 00:00:00";
         string end_period = "01.09.2021 00:00:00"; 
         using namespace std::string_literals;
 
         // Прописываем названия файлов и единицы измерения параметров
-        vector<pair<string, string>>parameters =
+        std::vector<pair<string, string>>parameters =
         {
             { path_to_real_data + "Q_in", "m3/h-m3/s"s },
             { path_to_real_data + "p_in", "MPa"s },
@@ -83,9 +83,9 @@ protected:
         // Считаем количество точек в сетке
         size_t dots_count = static_cast<size_t>(ceil(duration / step) + 0.00001);
 
-        vector<double>  times = vector<double>(dots_count);
-        vector<vector<double>> control_data = vector<vector<double>>(dots_count);
-        vector<double> etalon_pressure = vector<double>(dots_count);
+        std::vector<double>  times = std::vector<double>(dots_count);
+        std::vector<std::vector<double>> control_data = std::vector<std::vector<double>>(dots_count);
+        std::vector<double> etalon_pressure = std::vector<double>(dots_count);
 
         for (size_t i = 0; i < dots_count; i++)
         {
@@ -154,7 +154,7 @@ TEST_F(IdentIsothermalQSM, Friction)
 /// значения аргумента, целевой функции и величину шага изменения 
 /// @param path_to_ident_results 
 void print_identification_result(
-    const vector<double>& times,
+    const std::vector<double>& times,
     ident_isothermal_qsm_pipe_parameters_t& test_ident,
     const fixed_optimizer_result_analysis_t& analysis,
     const string& path_to_ident_results
@@ -167,18 +167,18 @@ void print_identification_result(
     auto& init_arg = argument_history.front();
     auto& res_arg = argument_history.back();
 
-    VectorXd residuals_initial = test_ident.residuals(init_arg);
-    VectorXd residuals_result = test_ident.residuals(res_arg);
+    Eigen::VectorXd residuals_initial = test_ident.residuals(init_arg);
+    Eigen::VectorXd residuals_result = test_ident.residuals(res_arg);
 
-    vector<double>  initial(residuals_initial.data(), residuals_initial.data() + residuals_initial.size());
-    vector<double>  results(residuals_result.data(), residuals_result.data() + residuals_result.size());
+    std::vector<double>  initial(residuals_initial.data(), residuals_initial.data() + residuals_initial.size());
+    std::vector<double>  results(residuals_result.data(), residuals_result.data() + residuals_result.size());
 
     python_printer<quickest_ultimate_fv_solver> printer;
 
     // Вывод невязок до и после идентификации
     printer.print_profiles<double>(static_cast<time_t>(0),
         times,
-        vector<vector<double>>{ initial, results },
+        std::vector<std::vector<double>>{ initial, results },
         "time,time,diff_press_before_ident,diff_press_after_ident",
         path_to_ident_results + "ident_diff_press.csv");
 
@@ -188,8 +188,8 @@ void print_identification_result(
     {
         double step = (index == target_function.size() - 1) ? 0.0 : steps[index];
         printer.print_profiles<size_t>(static_cast<time_t>(0),
-            vector<size_t>{ index },
-            vector<vector<double>>{ { target_function[index].front()  }, { argument_history[index][0]}, {step} },
+            std::vector<size_t>{ index },
+            std::vector<std::vector<double>>{ { target_function[index].front()  }, { argument_history[index][0]}, {step} },
             "time,step,target_function,argument_history,steps",
             path_to_ident_results + "ident_history.csv");
     }

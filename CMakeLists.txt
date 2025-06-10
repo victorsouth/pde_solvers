@@ -94,7 +94,7 @@ install(FILES ${HEADERS_TIME} DESTINATION include/pde_solvers/timeseries)
 install(FILES ${HEADERS_TASKS} DESTINATION include/pde_solvers/tasks)
 endif()
 
-option(PDE_SOLVERS_BUILD_TESTS "" OFF)
+option(PDE_SOLVERS_BUILD_TESTS "" ON)
 
 if(PDE_SOLVERS_BUILD_TESTS)
 
