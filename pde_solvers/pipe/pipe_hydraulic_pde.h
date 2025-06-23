@@ -618,6 +618,7 @@ public:
         double S_0 = pipe.wall.getArea();
         double v = flow / (S_0);
         double Re = v * pipe.wall.diameter / oil.viscosity(t_profile[reo_index]);
+        //double check = oil.viscosity(t_profile[reo_index]);
         double lambda = pipe.resistance_function(Re);
         double tau_w = lambda / 8 * rho * v * abs(v);
         double height_derivative = pipe.profile.get_height_derivative(grid_index, solver_direction);

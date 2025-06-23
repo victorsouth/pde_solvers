@@ -24,6 +24,8 @@ protected:
         pipe.profile = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, folder);
         // Номинальный диаметр трубы
         pipe.wall.diameter = 1;
+        //Температура грунта по таблице
+        pipe.heat.ambientTemperature = 286.15;
 
         return pipe;
     };
@@ -109,6 +111,13 @@ TEST_F(IdentNonisothermalQSM, HTC)
 {
     using namespace pde_solvers;
 
+    oil_parameters_t oil;
+    oil = get_noniso_default_oil();
+    oil.density.nominal_density = 860;
+    // Посчитано по Филонову для температур 0, 20, 50
+    std::array<double, 3> visc{ 35.2166964842424e-6, 15.1959389818927e-6, 4.30720885400170e-6 };
+    oil.viscosity = oil_viscosity_parameters_t(visc);
+
     // Подготавливаем модель трубопровода и параметры для идентификации 
     //pipe_noniso_properties_t pipe = get_noniso_default_pipe();
     pipe_noniso_properties_t pipe = prepare_pipe(data_path);
@@ -119,7 +128,7 @@ TEST_F(IdentNonisothermalQSM, HTC)
     ident_settings.ident_htc = true;
 
     // Создаём класс для идентификации
-    ident_nonisothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, times, control_data, etalon_temp);
+    ident_nonisothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, oil, times, control_data, etalon_temp);
 
     // Создаём сущности для хранения результата и аналитики
     fixed_optimizer_result_t result;

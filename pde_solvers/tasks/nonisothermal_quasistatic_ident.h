@@ -57,7 +57,9 @@ class ident_nonisothermal_qsm_pipe_parameters_t : public fixed_least_squares_fun
     const pipe_noniso_properties_t pipe_nominal;
     /// @brief Модель трубопровода с учётом текущего значения параметра идентификации
     pipe_noniso_properties_t pipe_to_ident;
-
+    
+    /// @brief Предпосчитанная временная сетка для моделирования работы ЛУ
+    const oil_parameters_t oil;
     /// @brief Предпосчитанная временная сетка для моделирования работы ЛУ
     const vector<double>& times;
     /// @brief Интерполированные значения временных рядов СДКУ 
@@ -74,10 +76,11 @@ public:
     /// @param etalon_temp Предпосчитанные эталонные значения
     ident_nonisothermal_qsm_pipe_parameters_t(
         const ident_nonisothermal_qsm_pipe_settings& settings,
-        const pipe_noniso_properties_t& pipe, const vector<double>& times, const vector<vector<double>>& control_data, const vector<double>& etalon_temp)
+        const pipe_noniso_properties_t& pipe, const oil_parameters_t& oil, const vector<double>& times, const vector<vector<double>>& control_data, const vector<double>& etalon_temp)
         : settings(settings)
         , pipe_nominal{ pipe }
         , pipe_to_ident{ pipe }
+        , oil{ oil }
         , times{ times }
         , control_data{ control_data }
         , etalon_temp{ etalon_temp }
@@ -97,7 +100,7 @@ protected:
         ident_parameters.set_adaptation(pipe_nominal, &pipe_to_ident);
 
         // Проводим гидравлический изотермический квазистационарный расчёт
-        nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver> task(pipe_to_ident);
+        nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver> task(pipe_to_ident, oil);
         nonisothermal_quasistatic_batch<quickest_ultimate_fv_solver, nonisothermal_qsm_batch_Tout_collector_t::layer_type>(
             task,
             times,

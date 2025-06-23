@@ -49,13 +49,14 @@ struct python_t_printer {
         const time_t& t,
         const pipe_noniso_properties_t& pipe,
         const density_viscosity_temp_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true >& layer,
-        const vector<double>& etalon_values = {}
+        const vector<double>& etalon_values = {},
+        const nonisothermal_quasistatic_PQ_task_boundaries_t& boundaries = nonisothermal_quasistatic_PQ_task_boundaries_t::default_values()
     ) {
         print_t_profiles<double>(
             t,
             pipe.profile.coordinates,
-            { layer.density, layer.viscosity, layer.temp, layer.temp_shukhov},
-            "time,coordinates,density,viscosity,temp,temp_shukhov",
+            { layer.density, layer.viscosity, layer.temp, layer.temp_shukhov_bias},
+            "time,coordinates,density,viscosity,temp,temp_shukhov_bias",
             folder + "results.csv"
         );
 
@@ -63,14 +64,16 @@ struct python_t_printer {
         if (!etalon_values.empty())
         {
             double temp_delta = etalon_values[0] - layer.temp.back();
-            double temp_delta_shukhov = etalon_values[0] - layer.temp_shukhov.back();
+            double temp_delta_shukhov_bias = etalon_values[0] - layer.temp_shukhov_bias.back();
             double etalon = etalon_values[0];
             double calculated = layer.temp.back();
-            double calculated_shukhov = layer.temp_shukhov.back();
+            double temp_in = boundaries.temp;
+            double volum = boundaries.volumetric_flow;
+            double calculated_shukhov_bias = layer.temp_shukhov_bias.back();
             print_t_profiles<std::string>(static_cast<time_t>(0),
                 vector<string>{ UnixToString(t) },
-                vector<vector<double>>{ { etalon }, { calculated }, { temp_delta }, { calculated_shukhov }, { temp_delta_shukhov } },
-                "time,time,etalon,calculated,diff_temp,calculated_shukhov,temp_delta_shukhov",
+                vector<vector<double>>{ { etalon }, { calculated }, { temp_delta }, { calculated_shukhov_bias }, { temp_delta_shukhov_bias }, { temp_in }, { volum }},
+                "time,time,etalon,calculated,diff_temp,calculated_shukhov_bias,temp_delta_shukhov_bias,temp_in,volum",
                 folder + "diff_temp.csv");
         }
     }
@@ -156,6 +159,8 @@ class NonisothermalQuasistaticModelWithRealData : public ::testing::Test {
 protected:
     // Параметры трубы
     pipe_noniso_properties_t pipe;
+    // Параметры нефти
+    oil_parameters_t oil;
     // Путь к результатам ресёрча
     string path;
     // Временные ряды краевых условий
@@ -175,6 +180,14 @@ protected:
         // Создаём новый профиль с постоянным шагом
         pipe.profile = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, file_name);
         pipe.wall.diameter = 1;
+        //Температура грунта по таблице
+        pipe.heat.ambientTemperature = 286.15;
+        // Настройки взякости
+        oil = get_noniso_default_oil();
+        oil.density.nominal_density = 860;
+        // Посчитано по Филонову для температур 0, 20, 50
+        std::array<double, 3> visc{ 35.2166964842424e-6, 15.1959389818927e-6, 4.30720885400170e-6 };
+        oil.viscosity = oil_viscosity_parameters_t(visc);
 
         // Создаём папку с результатами и получаем путь к ней
         path = prepare_research_folder_for_qsm_model();
@@ -199,11 +212,6 @@ protected:
         etalon_tag_data = { tag_data.back() };
         tag_data.pop_back();
 
-        // Считываем временные ряды параметров
-        /*csv_multiple_tag_reader etalon_tags(etalon_parameters);
-        etalon_tag_data = etalon_tags.read_csvs(start_period, end_period);*/
-
-        
     }
 };
 
@@ -233,6 +241,15 @@ protected:
         // Создаём новый профиль с постоянным шагом
         pipe.profile = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, file_name);
         pipe.wall.diameter = 1;
+        //Температура грунта по таблице
+        pipe.heat.ambientTemperature = 286.15;
+        // Настройки взякости
+        oil = get_noniso_default_oil();
+        oil.density.nominal_density = 860;
+        // Посчитано по Филонову для температур 0, 20, 50
+        //std::array<double, 3> visc{ 35.2166964842424e-6, 15.1959389818927e-6, 4.30720885400170e-6 };
+        std::array<double, 3> visc{ 27.028120732908523e-6, 10.937124971104140e-6, 2.815361458795777e-6 };
+        oil.viscosity = oil_viscosity_parameters_t(visc);
 
         // Создаём папку с результатами и получаем путь к ней
         path = prepare_research_folder_for_qsm_model();
@@ -240,7 +257,7 @@ protected:
         vector<pair<string, string>>parameters =
         {
             { folder + "Q_in", "m3/h-m3/s"s },
-            { folder + "t_in_n", "C"s },
+            { folder + "t_in_nps", "C"s },
             { folder + "rho_in", "kg/m3"s },
             { folder + "visc_in", "mm^2/s-m^2/s"s },
             { folder + "p_in", "MPa"s },
@@ -271,7 +288,7 @@ TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology)
     vector_timeseries_t etalon_params(etalon_tag_data);
 
     perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_t_printer<quickest_ultimate_fv_solver>>(
-        path, pipe, params, noniso_qsm_model_type::FullQuasi, etalon_params
+        path, pipe, oil, params, noniso_qsm_model_type::FullQuasi, etalon_params
     );
 }
 
