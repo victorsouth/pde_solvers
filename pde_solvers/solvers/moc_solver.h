@@ -82,16 +82,16 @@ struct moc_layer_wrapper : layer_wrapper<Dimension> {
     moc_layer_wrapper(
         profile_wrapper<double, Dimension> U,
         profile_wrapper<double, Dimension> eigenval,
-        profile_wrapper<array<double, Dimension>, Dimension> eigenvec
+        profile_wrapper<std::array<double, Dimension>, Dimension> eigenvec
     )
         : values(U)
         , eigenval(eigenval)
         , eigenvec(eigenvec)
     {}
     moc_layer_wrapper(
-        array<vector<double>*, Dimension> U,
-        array<vector<double>*, Dimension> eigenval,
-        array<vector<array<double, Dimension>>*, Dimension> eigenvec
+        std::array<vector<double>*, Dimension> U,
+        std::array<vector<double>*, Dimension> eigenval,
+        std::array<vector<std::array<double, Dimension>>*, Dimension> eigenvec
     )
         : values(U)
         , eigenval(eigenval)

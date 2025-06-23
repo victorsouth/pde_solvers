@@ -33,17 +33,8 @@ inline std::string prepare_test_folder()
     return path;
 }
 
-inline std::string prepare_research_folder()
-{
-    auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
-    std::string research_name = std::string(test_info->test_case_name());
-    std::string case_name = std::string(test_info->name());
+using namespace pde_solvers;
 
-    std::string path = std::string("../research_out/") + 
-        research_name + "/" + case_name + "/";
-    std::filesystem::create_directories(path);
-    return path;
-}
 
 
 #include "test_viscosity.h"
@@ -55,14 +46,6 @@ inline std::string prepare_research_folder()
 #include "test_advection_moc_solver.h"
 #include "test_synthetic_timeseries.h"
 #include "test_create_pipe_profile.h"
-
-#include "../research/2023-12-diffusion-of-advection/diffusion_of_advection.h"
-#include "../research/2024-02-quick-with-quasistationary-model/quick_with_quasistationary_model.h"
-#include "../research/2024-08-quasistationary-with-real-data/quasistationary_with_real_data.h"
-#include "../research/2025-01-ident-quasistatic-nonisothermal/nonisothermal_quasistationary_with_real_data.h"
-#include "../research/2024-10-ident-quasistatic-isothermal/ident_quasistatic_isothermal.h"
-#include "../research/2025-01-ident-quasistatic-nonisothermal/ident_quasistatic_nonisothermal.h"
-
 
 
 int main(int argc, char **argv) {

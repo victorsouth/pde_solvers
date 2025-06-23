@@ -164,8 +164,8 @@ struct oil_viscosity_parameters_t
     }
 
     /// @brief Инициализация модели вязкости по вискограмме из двух точек
-    /// @param viscogramm Две точки вискограммы
-    oil_viscosity_parameters_t(const array<viscosity_data_point, 2>& viscogramm)
+    /// @param viscogramm 
+    oil_viscosity_parameters_t(const std::array<viscosity_data_point, 2>& viscogramm)
     {
         const auto& v = viscogramm;
         temperature_coefficient = find_kinematic_viscosity_temperature_coefficient(
@@ -237,17 +237,13 @@ struct oil_heat_parameters_t {
 
 
 /// @brief Сущность нефти
-struct oil_parameters_t
-{
+struct oil_parameters_t {
     /// @brief Модель плотности
     oil_density_parameters_t density;
     /// @brief Модель вязкости
     oil_viscosity_parameters_t viscosity;
     /// @brief Тепловая модель
     oil_heat_parameters_t heat;
-
-
-
     /// @brief Теплоемкость по формуле Крэга
     /// Формула из документа "Полный вывод НЕизотермических..."
     double get_heat_capacity_kreg(double temperature) const {
@@ -256,8 +252,6 @@ struct oil_parameters_t
     }
 
 };
-
-
 
 
 /// @brief Динамические (пересчитываемые в процессе расчета) параметры нефти
@@ -312,14 +306,14 @@ struct fluid_properties_static {
 
 /// @brief Профиль свойств флюида
 struct fluid_properties_profile_t :
-    fluid_properties_dynamic<const vector<double>&, const vector<array<double, 3>>&>,
+    fluid_properties_dynamic<const vector<double>&, const vector<std::array<double, 3>>&>,
     fluid_properties_static
 {
     // здесь все функции зависят от координаты (индекса на профиле)
 
     fluid_properties_profile_t(const vector<double>& nominal_density,
-        const vector<array<double, 3>>& viscosity_approximation)
-        : fluid_properties_dynamic<const vector<double>&, const vector<array<double, 3>>&>(nominal_density, viscosity_approximation)
+        const vector<std::array<double, 3>>& viscosity_approximation)
+        : fluid_properties_dynamic<const vector<double>&, const vector<std::array<double, 3>>&>(nominal_density, viscosity_approximation)
     {
 
     }

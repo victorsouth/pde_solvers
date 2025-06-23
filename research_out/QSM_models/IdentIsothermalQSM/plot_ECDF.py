@@ -7,21 +7,14 @@ from matplotlib.widgets import Slider
 
 # folders = ['/' + folder + '/' for folder in os.listdir()]
 folders = [folder for folder in os.listdir()]
-filename = '/diff_press.csv'
+filename = '/ident_diff_press.csv'
 
 experiments_type = {
-    'Выбор cпособа интерполяции СТАЦ' : ['StationaryCurrentReologyStep', 'StationaryCurrentReology'],
-    'Выбор cпособа интерполяции КВАЗИСТАЦ' : ['QuasiStationaryFullReologyStep', 'QuasiStationaryFullReology'],
-    'Выбор задания реологии в стационарной модели' : ['StationaryInitialReology', 'StationaryCurrentReology', 'StationaryMeanReology'],
-    'Выбор задания реологии в стационарной модели Тек+Начальная' : ['StationaryCurrentReology','StationaryInitialReology', ],
-    'Выбор задания реологии в стационарной модели Тек+Ср' : ['StationaryCurrentReology', 'StationaryMeanReology'],
-    'Выбор задания реологии Full' : ['StationaryCurrentReology','StationaryInitialReology', 'StationaryMeanReology'],
-    'Сравнение стационарной и квазистационарной модели' : ['QuasiStationaryFullReology', 'StationaryCurrentReology'],
-    'Исследование влияния плотности и вязкости на квазистац FULL' : ['QuasiStationaryDensityOnly', 'QuasiStationaryFullReology', 'QuasiStationaryViscosityOnly'],
-    'Исследование влияния плотности и вязкости на квазистац RHOvsVISC' : ['QuasiStationaryDensityOnly','QuasiStationaryViscosityOnly'],
-    'Исследование влияния плотности и вязкости на квазистац KVvsVSIC' : ['QuasiStationaryFullReology', 'QuasiStationaryViscosityOnly']
+    'Идентификация' : ['DiameterWithPrint', 'FrictionWithPrinter'],
+    'Идентификация по диаметру' : ['DiameterWithPrint'],
+    'Идентификация по лямбде' : ['FrictionWithPrinter'],
 }
- 
+
 while True:
     ch_dict = {}
     for i, research_name in enumerate(experiments_type.keys()):
@@ -29,15 +22,25 @@ while True:
         print(f'{i+1}. {research_name}')
     try:
         choice = int(input('Выберите эксперимент: ')) - 1
-
+        # choice = 0
 
         dfs = []
+        before_flg = True
         for folder in folders:
             if folder in experiments_type[ch_dict[choice]]:
-                df_r = pd.read_csv(os.getcwd() + '/' + folder + filename, encoding='windows-1251')
-                df_r['diff_press'] = df_r['diff_press'] / 1000.0
-                df_r.columns.name = folder
-                dfs.append(df_r)
+                column_names = ['time','time','diff_press']
+                if before_flg:
+                    df_before = pd.read_csv(os.getcwd() + '/' + folder + filename, encoding='windows-1251')
+                    df_before['diff_press'] = df_before['diff_press_before_ident'] / 1000.0
+                    df_before = df_before[column_names]
+                    df_before.columns.name = "До идентификации"
+                    dfs.append(df_before)
+                    before_flg = False
+                df_after = pd.read_csv(os.getcwd() + '/' + folder + filename, encoding='windows-1251')
+                df_after['diff_press'] = df_after['diff_press_after_ident'] / 1000.0
+                df_after=df_after[column_names]
+                df_after.columns.name = f"По {'лямбде' if folder == 'FrictionWithPrinter' else 'диаметру'}"
+                dfs.append(df_after)
         print(dfs)
 
         parameters_names = [df.columns.tolist()[2] for df in dfs]
@@ -78,7 +81,7 @@ while True:
                 fsize = 20
                 msize = 5
                 axes[i].text(imin - 50, 0.08, f'{imin:.1f}', fontsize=fsize)
-                axes[i].text(imax , 0.90, f'{imax:.1f}', fontsize=fsize)
+                axes[i].text(imax , 0.95, f'{imax:.1f}', fontsize=fsize)
                 axes[i].text(-180, 0.5, f'delta = {(imax - imin):.1f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})
                 axes[i].text(-190, p, f'p = {p:.2f}', fontsize=fsize, bbox={'facecolor': 'white', 'alpha': 1})
                 axes[i].tick_params(axis='both', labelsize=20)
@@ -105,6 +108,6 @@ while True:
                 wspace=0.2, hspace=0.136)
 
         plt.show()
-    except:
-        print('Ошибка выбора!')
+    except Exception as err:
+        print('Ошибка выбора!', err)
         continue

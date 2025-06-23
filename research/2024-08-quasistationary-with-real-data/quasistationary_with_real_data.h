@@ -99,6 +99,8 @@ protected:
         // Создаём папку с результатами и получаем путь к ней
         path = prepare_research_folder_for_qsm_model();
 
+        using namespace std::string_literals;
+
         vector<pair<string, string>>parameters =
         {
             { folder + "Q_in", "m3/h-m3/s"s },
@@ -250,3 +252,33 @@ TEST_F(IsothermalQuasistaticModelWithRealData, QuasiStationaryViscosityOnly)
     );
 }
 
+/// @brief Стационарный расчёт с текущей реологией со ступенчатой интерполяцией
+/// временных рядов краевых условий и эталонных значений
+TEST_F(IsothermalQuasistaticModelWithRealData, StationaryCurrentReologyStep)
+{
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t params(tag_data, InterplationMethod::Step);
+
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t etalon_params(etalon_tag_data, InterplationMethod::Step);
+
+    // Производим расчёт и записываем результаты в файлы
+    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
+        path, pipe, params, QuasistaticModelType::Stationary, etalon_params
+    );
+}
+
+
+/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом со ступенчатой интерполяцией
+TEST_F(IsothermalQuasistaticModelWithRealData, QuasiStationaryFullReologyStep)
+{
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t params(tag_data, InterplationMethod::Step);
+
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t etalon_params(etalon_tag_data, InterplationMethod::Step);
+
+    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
+        path, pipe, params, QuasistaticModelType::FullQuasi, etalon_params
+    );
+}

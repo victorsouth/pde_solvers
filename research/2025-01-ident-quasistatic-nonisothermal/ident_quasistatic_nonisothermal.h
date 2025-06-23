@@ -43,6 +43,7 @@ protected:
     /// 3. Предпосчитанные эталонные значения
     static std::tuple<vector<double>, vector<vector<double>>, vector<double>> prepare_real_data(const std::string& path_to_real_data)
     {
+        using namespace std;
         // Временные ряды краевых условий
         vector<pair<vector<time_t>, vector<double>>> control_tag_data;
         // Временные ряды эталонных данных
@@ -76,9 +77,9 @@ protected:
         double step = 60;
 
         // Определяем начало периода
-        time_t start_period_time = max(control_parameters_time_series.get_start_date(), etalon_parameters_time_series.get_start_date());
+        time_t start_period_time = std::max(control_parameters_time_series.get_start_date(), etalon_parameters_time_series.get_start_date());
         // Определяем конец периода
-        time_t end_period_time = min(control_parameters_time_series.get_end_date(), etalon_parameters_time_series.get_end_date());
+        time_t end_period_time = std::min(control_parameters_time_series.get_end_date(), etalon_parameters_time_series.get_end_date());
         // Определяем продолжительность периода
         time_t duration = (end_period_time - start_period_time);
 
