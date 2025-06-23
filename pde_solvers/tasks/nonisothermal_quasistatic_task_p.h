@@ -5,8 +5,6 @@
 namespace pde_solvers {
 ;
 
-using std::string;
-
 /// @brief Проблемно-ориентированный слой для PQ расчета
 /// @tparam CellFlag Флаг расчёта реологии 
 /// true - в ячейках для метода конечных объёмов (Quickest-Ultimate)

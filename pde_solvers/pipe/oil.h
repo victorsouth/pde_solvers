@@ -15,7 +15,7 @@ struct viscosity_table_model_t {
     /// @param viscosity_working Рабочая вязкость
     /// @param viscosity_working_temperature Температура при которой измеряется вязкость ()
     /// @return Откорректированная таблица вязкости
-    static inline array<double, 3> adapt(array<double, 3> viscosities,
+    static inline std::array<double, 3> adapt(array<double, 3> viscosities,
         double viscosity_working, double viscosity_working_temperature)
     {
         auto model = reconstruct(viscosities);
@@ -91,7 +91,7 @@ struct viscosity_table_model_t {
     /// @param coeffs 
     /// @param temperature 
     /// @return 
-    static inline double calc(const array<double, 3>& coeffs, double temperature)
+    static inline double calc(const std::array<double, 3>& coeffs, double temperature)
     {
         if (!std::isnan(coeffs[2])) {
             // Фогель-Фульчер-Тамман
