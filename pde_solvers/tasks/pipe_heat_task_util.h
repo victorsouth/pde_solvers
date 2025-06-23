@@ -1,9 +1,9 @@
-#pragma once
+п»ї#pragma once
 
 namespace pde_solvers {
 ;
 
-/// @brief Нефть по умолчанию для тепловых задач
+/// @brief РќРµС„С‚СЊ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РґР»СЏ С‚РµРїР»РѕРІС‹С… Р·Р°РґР°С‡
 inline oil_parameters_t get_noniso_default_oil()
 {
     std::array<viscosity_data_point, 2> viscosity_data{
@@ -22,7 +22,7 @@ inline oil_parameters_t get_noniso_default_oil()
     return oil;
 }
 
-/// @brief Трубопровод по умолчанию для тепловых задач
+/// @brief РўСЂСѓР±РѕРїСЂРѕРІРѕРґ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РґР»СЏ С‚РµРїР»РѕРІС‹С… Р·Р°РґР°С‡
 inline pipe_noniso_properties_t  get_noniso_default_pipe(double length = 12000, double dx = 1000)
 {
     pipe_noniso_properties_t  pipe;
@@ -31,18 +31,18 @@ inline pipe_noniso_properties_t  get_noniso_default_pipe(double length = 12000, 
     pipe.profile = pipe_profile_t::create(static_cast<size_t>(0.5 + length / dx), 0, length, 150, 30, 10e6);
     pipe.wall.equivalent_roughness = 0.0001;
 
-    // это диаметр внутренний
+    // СЌС‚Рѕ РґРёР°РјРµС‚СЂ РІРЅСѓС‚СЂРµРЅРЅРёР№
     pipe.wall.diameter = 0.7;
-    // это толщина одной стенки, к внешнему надо прибавлять удвоенную толщину
+    // СЌС‚Рѕ С‚РѕР»С‰РёРЅР° РѕРґРЅРѕР№ СЃС‚РµРЅРєРё, Рє РІРЅРµС€РЅРµРјСѓ РЅР°РґРѕ РїСЂРёР±Р°РІР»СЏС‚СЊ СѓРґРІРѕРµРЅРЅСѓСЋ С‚РѕР»С‰РёРЅСѓ
     pipe.wall.wallThickness = 0.01;
 
-    // здесь бы структурировать
-    // Теплопроводность материалов трубопровода, Вт*м-1*К-1
-    // сталь, первый слой изоляции, второй слой изоляции, защитный слой
+    // Р·РґРµСЃСЊ Р±С‹ СЃС‚СЂСѓРєС‚СѓСЂРёСЂРѕРІР°С‚СЊ
+    // РўРµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚СЊ РјР°С‚РµСЂРёР°Р»РѕРІ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґР°, Р’С‚*Рј-1*Рљ-1
+    // СЃС‚Р°Р»СЊ, РїРµСЂРІС‹Р№ СЃР»РѕР№ РёР·РѕР»СЏС†РёРё, РІС‚РѕСЂРѕР№ СЃР»РѕР№ РёР·РѕР»СЏС†РёРё, Р·Р°С‰РёС‚РЅС‹Р№ СЃР»РѕР№
     pipe.heat.thermalConductivity = { 40, 0.2, 0.035, 0.3 };
 
-    // Толщина стенки, слоев изоляции и защитного слоя, м
-    // первый слой изоляции, второй слой изоляции, защитный слой
+    // РўРѕР»С‰РёРЅР° СЃС‚РµРЅРєРё, СЃР»РѕРµРІ РёР·РѕР»СЏС†РёРё Рё Р·Р°С‰РёС‚РЅРѕРіРѕ СЃР»РѕСЏ, Рј
+    // РїРµСЂРІС‹Р№ СЃР»РѕР№ РёР·РѕР»СЏС†РёРё, РІС‚РѕСЂРѕР№ СЃР»РѕР№ РёР·РѕР»СЏС†РёРё, Р·Р°С‰РёС‚РЅС‹Р№ СЃР»РѕР№
     pipe.heat.layerThickness = { 0.020, 0.003, 0.050, 0.005 };
 
     return pipe;
@@ -50,7 +50,7 @@ inline pipe_noniso_properties_t  get_noniso_default_pipe(double length = 12000, 
 
 
 
-/// @brief Зонированный трубопровод для тепловых задач с равной длиной участков с разным грунтом
+/// @brief Р—РѕРЅРёСЂРѕРІР°РЅРЅС‹Р№ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґ РґР»СЏ С‚РµРїР»РѕРІС‹С… Р·Р°РґР°С‡ СЃ СЂР°РІРЅРѕР№ РґР»РёРЅРѕР№ СѓС‡Р°СЃС‚РєРѕРІ СЃ СЂР°Р·РЅС‹Рј РіСЂСѓРЅС‚РѕРј
 inline zoned_pipe_properties get_zoned_pipe(
     const simple_pipe_properties& spipe,
     const vector<thermophysical_properties_t>& soils,
@@ -66,17 +66,17 @@ inline zoned_pipe_properties get_zoned_pipe(
         0, spipe.elevation, 10e6);
     pipe.wall.equivalent_roughness = 0.0001;
 
-    // это диаметр внутренний
+    // СЌС‚Рѕ РґРёР°РјРµС‚СЂ РІРЅСѓС‚СЂРµРЅРЅРёР№
     pipe.wall.diameter = spipe.diameter;
-    // это толщина одной стенки, к внешнему надо прибавлять удвоенную толщину
+    // СЌС‚Рѕ С‚РѕР»С‰РёРЅР° РѕРґРЅРѕР№ СЃС‚РµРЅРєРё, Рє РІРЅРµС€РЅРµРјСѓ РЅР°РґРѕ РїСЂРёР±Р°РІР»СЏС‚СЊ СѓРґРІРѕРµРЅРЅСѓСЋ С‚РѕР»С‰РёРЅСѓ
     pipe.wall.wallThickness = 0.01;
 
     size_t index = 0;
     size_t n = pipe.profile.get_point_count();
 
-    double sensor_step = 20e3; // датчики каждые 20 км
+    double sensor_step = 20e3; // РґР°С‚С‡РёРєРё РєР°Р¶РґС‹Рµ 20 РєРј
     int sensor_count = std::max(2, static_cast<int>(spipe.length / sensor_step + 0.5) + 1);
-    sensor_count -= 2; // датчики на границах будут в любом случае
+    sensor_count -= 2; // РґР°С‚С‡РёРєРё РЅР° РіСЂР°РЅРёС†Р°С… Р±СѓРґСѓС‚ РІ Р»СЋР±РѕРј СЃР»СѓС‡Р°Рµ
     vector<double> sensor_coordinates(sensor_count);
     for (size_t index = 0; index < sensor_coordinates.size(); ++index) {
         sensor_coordinates[index] = sensor_step * (index + 1);
@@ -88,11 +88,11 @@ inline zoned_pipe_properties get_zoned_pipe(
         zone.coordinate_begin = index;
         index += n / soils.size();
 
-        // Толщина стенки, слоев изоляции и защитного слоя, м
-        // первый слой изоляции, второй слой изоляции, защитный слой
+        // РўРѕР»С‰РёРЅР° СЃС‚РµРЅРєРё, СЃР»РѕРµРІ РёР·РѕР»СЏС†РёРё Рё Р·Р°С‰РёС‚РЅРѕРіРѕ СЃР»РѕСЏ, Рј
+        // РїРµСЂРІС‹Р№ СЃР»РѕР№ РёР·РѕР»СЏС†РёРё, РІС‚РѕСЂРѕР№ СЃР»РѕР№ РёР·РѕР»СЏС†РёРё, Р·Р°С‰РёС‚РЅС‹Р№ СЃР»РѕР№
         zone.isolation_thickness = { 0.020, 0.003, 0.050, 0.005 };
-        // Теплопроводность материалов трубопровода, Вт*м-1*К-1
-        // сталь, первый слой изоляции, второй слой изоляции, защитный слой
+        // РўРµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚СЊ РјР°С‚РµСЂРёР°Р»РѕРІ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґР°, Р’С‚*Рј-1*Рљ-1
+        // СЃС‚Р°Р»СЊ, РїРµСЂРІС‹Р№ СЃР»РѕР№ РёР·РѕР»СЏС†РёРё, РІС‚РѕСЂРѕР№ СЃР»РѕР№ РёР·РѕР»СЏС†РёРё, Р·Р°С‰РёС‚РЅС‹Р№ СЃР»РѕР№
         zone.isolation_conductivity = { 40, 0.2, 0.035, 0.3 };
 
         zone.soil = soil;
@@ -108,7 +108,7 @@ inline zoned_pipe_properties get_zoned_pipe(
     return pipe;
 }
 
-/// @brief Зонированный трубопровод для тепловых задач с равной длиной участков с разным грунтом
+/// @brief Р—РѕРЅРёСЂРѕРІР°РЅРЅС‹Р№ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґ РґР»СЏ С‚РµРїР»РѕРІС‹С… Р·Р°РґР°С‡ СЃ СЂР°РІРЅРѕР№ РґР»РёРЅРѕР№ СѓС‡Р°СЃС‚РєРѕРІ СЃ СЂР°Р·РЅС‹Рј РіСЂСѓРЅС‚РѕРј
 inline zoned_pipe_properties get_zoned_pipe(
     const vector<thermophysical_properties_t>& soils,
     HeatModelVer model_version = HeatModelVer::V2,

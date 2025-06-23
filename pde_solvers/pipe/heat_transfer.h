@@ -1,24 +1,24 @@
-#pragma once
+п»ї#pragma once
 
 namespace pde_solvers {
 ;
 
 /*
-   Модели теплообмена для трубы без учета тепловой динамики грунта
-   Реализован теплообмен через теплопроводность (твердые тела) 
-     и лучистый перенос (вакуумная изоляция)
-   Параметры трубы (в частности) уже заданы в PipeParameters
+   РњРѕРґРµР»Рё С‚РµРїР»РѕРѕР±РјРµРЅР° РґР»СЏ С‚СЂСѓР±С‹ Р±РµР· СѓС‡РµС‚Р° С‚РµРїР»РѕРІРѕР№ РґРёРЅР°РјРёРєРё РіСЂСѓРЅС‚Р°
+   Р РµР°Р»РёР·РѕРІР°РЅ С‚РµРїР»РѕРѕР±РјРµРЅ С‡РµСЂРµР· С‚РµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚СЊ (С‚РІРµСЂРґС‹Рµ С‚РµР»Р°) 
+     Рё Р»СѓС‡РёСЃС‚С‹Р№ РїРµСЂРµРЅРѕСЃ (РІР°РєСѓСѓРјРЅР°СЏ РёР·РѕР»СЏС†РёСЏ)
+   РџР°СЂР°РјРµС‚СЂС‹ С‚СЂСѓР±С‹ (РІ С‡Р°СЃС‚РЅРѕСЃС‚Рё) СѓР¶Рµ Р·Р°РґР°РЅС‹ РІ PipeParameters
 */
 
-/// @brief Теплоперенос через теплопроводность твердых тел. 
-/// Изоляция однослойная (из одного материала), либо уже предварительно эквивалентированная
+/// @brief РўРµРїР»РѕРїРµСЂРµРЅРѕСЃ С‡РµСЂРµР· С‚РµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚СЊ С‚РІРµСЂРґС‹С… С‚РµР». 
+/// РР·РѕР»СЏС†РёСЏ РѕРґРЅРѕСЃР»РѕР№РЅР°СЏ (РёР· РѕРґРЅРѕРіРѕ РјР°С‚РµСЂРёР°Р»Р°), Р»РёР±Рѕ СѓР¶Рµ РїСЂРµРґРІР°СЂРёС‚РµР»СЊРЅРѕ СЌРєРІРёРІР°Р»РµРЅС‚РёСЂРѕРІР°РЅРЅР°СЏ
 struct thermal_conductivity_parameters_t {
-    /// @brief Толщина цилиндрической стенки от внутреннего диаметра 
+    /// @brief РўРѕР»С‰РёРЅР° С†РёР»РёРЅРґСЂРёС‡РµСЃРєРѕР№ СЃС‚РµРЅРєРё РѕС‚ РІРЅСѓС‚СЂРµРЅРЅРµРіРѕ РґРёР°РјРµС‚СЂР° 
     double thickness;
-    /// @brief Теплопроводность цилиндрической стенки
+    /// @brief РўРµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚СЊ С†РёР»РёРЅРґСЂРёС‡РµСЃРєРѕР№ СЃС‚РµРЅРєРё
     double conductivity;
-    /// @brief Коэффициент теплопроводности UA
-    /// @param diameter_inner Внутренний диаметр трубы
+    /// @brief РљРѕСЌС„С„РёС†РёРµРЅС‚ С‚РµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚Рё UA
+    /// @param diameter_inner Р’РЅСѓС‚СЂРµРЅРЅРёР№ РґРёР°РјРµС‚СЂ С‚СЂСѓР±С‹
     double get_heat_transfer_coefficient(double diameter_inner) const {
         const double& lambda = conductivity;
         double d_in = diameter_inner;
@@ -26,7 +26,7 @@ struct thermal_conductivity_parameters_t {
         double Kt = 2 * lambda / (d_in  * log(d_out / d_in));
         return Kt;
     }
-    /// @brief Тепловой поток теплопроводности
+    /// @brief РўРµРїР»РѕРІРѕР№ РїРѕС‚РѕРє С‚РµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚Рё
     double get_heat_flow(double temperature_inner, 
         double temperature_outer, double diameter_inner) const 
     {
@@ -37,15 +37,15 @@ struct thermal_conductivity_parameters_t {
     }
 };
 
-/// @brief Параметры лучистого переноса тепла между концентрическими трубами
+/// @brief РџР°СЂР°РјРµС‚СЂС‹ Р»СѓС‡РёСЃС‚РѕРіРѕ РїРµСЂРµРЅРѕСЃР° С‚РµРїР»Р° РјРµР¶РґСѓ РєРѕРЅС†РµРЅС‚СЂРёС‡РµСЃРєРёРјРё С‚СЂСѓР±Р°РјРё
 struct radiative_transport_parameters_t {
-    /// @brief Диаметр внешней трубы
+    /// @brief Р”РёР°РјРµС‚СЂ РІРЅРµС€РЅРµР№ С‚СЂСѓР±С‹
     double thickness;
-    /// @brief Степень черноты внутренней трубы
+    /// @brief РЎС‚РµРїРµРЅСЊ С‡РµСЂРЅРѕС‚С‹ РІРЅСѓС‚СЂРµРЅРЅРµР№ С‚СЂСѓР±С‹
     double emissivity_factor_inner{ 0.075 };
-    /// @brief Степень черноты внешней трубы
+    /// @brief РЎС‚РµРїРµРЅСЊ С‡РµСЂРЅРѕС‚С‹ РІРЅРµС€РЅРµР№ С‚СЂСѓР±С‹
     double emissivity_factor_outer{ 0.075 };
-    /// @brief Приведенная степень черноты
+    /// @brief РџСЂРёРІРµРґРµРЅРЅР°СЏ СЃС‚РµРїРµРЅСЊ С‡РµСЂРЅРѕС‚С‹
     double get_reduced_emissivity_factor(double diameter_inner) const {
         double diameter_outer = diameter_inner + 2 * thickness;
         double denum =
@@ -54,7 +54,7 @@ struct radiative_transport_parameters_t {
         double result = 1 / denum;
         return result;
     }
-    /// @brief Удельный тепловой поток
+    /// @brief РЈРґРµР»СЊРЅС‹Р№ С‚РµРїР»РѕРІРѕР№ РїРѕС‚РѕРє
     /// @param temperature_inner 
     /// @return 
     double get_heat_flow(double temperature_inner,
@@ -69,22 +69,22 @@ struct radiative_transport_parameters_t {
     }
 };
 
-/// @brief Базовая модель теплообмена для трубы. 
-/// Характер теплообмен по длине трубы неизменен, зонирования нет!
+/// @brief Р‘Р°Р·РѕРІР°СЏ РјРѕРґРµР»СЊ С‚РµРїР»РѕРѕР±РјРµРЅР° РґР»СЏ С‚СЂСѓР±С‹. 
+/// РҐР°СЂР°РєС‚РµСЂ С‚РµРїР»РѕРѕР±РјРµРЅ РїРѕ РґР»РёРЅРµ С‚СЂСѓР±С‹ РЅРµРёР·РјРµРЅРµРЅ, Р·РѕРЅРёСЂРѕРІР°РЅРёСЏ РЅРµС‚!
 struct heat_model_general_t {
-    /// @brief Температура окружающей средой
+    /// @brief РўРµРјРїРµСЂР°С‚СѓСЂР° РѕРєСЂСѓР¶Р°СЋС‰РµР№ СЃСЂРµРґРѕР№
     double ambient_temperature{ 273 };
     virtual double get_heat_flow(double T_fluid, double diameter_inner) const = 0;
 };
 
-/// @brief Комбинированная модель теплообмена: 
-/// теплопроводность и лучистая
+/// @brief РљРѕРјР±РёРЅРёСЂРѕРІР°РЅРЅР°СЏ РјРѕРґРµР»СЊ С‚РµРїР»РѕРѕР±РјРµРЅР°: 
+/// С‚РµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚СЊ Рё Р»СѓС‡РёСЃС‚Р°СЏ
 struct heat_model_conductivity_radiative_t : public heat_model_general_t {
-    /// @brief Параметры теплопроводности
+    /// @brief РџР°СЂР°РјРµС‚СЂС‹ С‚РµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚Рё
     thermal_conductivity_parameters_t conductivity;
-    /// @brief Параметры лучистого теплообмена
+    /// @brief РџР°СЂР°РјРµС‚СЂС‹ Р»СѓС‡РёСЃС‚РѕРіРѕ С‚РµРїР»РѕРѕР±РјРµРЅР°
     radiative_transport_parameters_t radiative;
-    /// @brief Доля теплопроводности в общем теплообмене (из теплопроводности и лучистого)
+    /// @brief Р”РѕР»СЏ С‚РµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚Рё РІ РѕР±С‰РµРј С‚РµРїР»РѕРѕР±РјРµРЅРµ (РёР· С‚РµРїР»РѕРїСЂРѕРІРѕРґРЅРѕСЃС‚Рё Рё Р»СѓС‡РёСЃС‚РѕРіРѕ)
     double conductivity_frac{ 0.04 };
     virtual double get_heat_flow(double T_fluid, double diameter_inner) const override {
         double q_cond = conductivity.get_heat_flow(T_fluid, ambient_temperature, diameter_inner);
