@@ -151,6 +151,7 @@ struct oil_viscosity_parameters_t
         double k = -log(viscosity1 / viscosity2) / (temperature1 - temperature2);
         return k;
     }
+    /// @brief Расчет вязкости по текущей температуре Филоновым-Рейнольдсом
     double operator()(double temperature) const
     {
         return viscosity_Filonov_Reynolds(nominal_viscosity, nominal_temperature,

@@ -293,7 +293,7 @@ private:
         vector<double>& p_profile = current.pressure;
         int euler_direction = +1; // Задаем направление для Эйлера
 
-        nonisothermal_pipe_PQ_parties_t pipeModel_PQ(pipe, oil, current.temp, boundaries.volumetric_flow, euler_direction);
+        nonisothermal_pipe_PQ_noparties_t pipeModel_PQ(pipe, oil, current.temp, boundaries.volumetric_flow, euler_direction);
         solve_euler<1>(pipeModel_PQ, euler_direction, boundaries.pressure_in, &p_profile);
         // Получаем дифференциальный профиль давлений
         std::transform(current.pressure_initial.begin(), current.pressure_initial.end(), p_profile.begin(),
