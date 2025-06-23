@@ -45,6 +45,20 @@ namespace pde_solvers
 {
 ;
 
+/// @brief Расчетный слой и его код достоверности
+struct confident_layer_t {
+    /// @brief Сам расчетный параметр
+    std::vector<double> value;
+    /// @brief Код достоверности - считается численным методом, 
+    /// поэтому не булевый а вещественный
+    std::vector<double> confidence;
+    /// @brief Принимает количество точек, инициализирует количество ячеек
+    confident_layer_t(size_t point_count, double initial_value)
+        : value(point_count - 1, initial_value)
+        , confidence(point_count - 1, 0.0)
+    { }
+};
+
 /// @brief Расчетные целевые профили по трубе 
 struct pipe_endogenous_variable_layer_t
 {
@@ -55,21 +69,21 @@ struct pipe_endogenous_variable_layer_t
     /// @brief Скорость потока
     std::vector<double> velocity;
     /// @brief Профиль плотности
-    std::vector<double> density;
+    confident_layer_t density;
     /// @brief Профиль вязкости (рабочая при изотермическом расчете)
-    std::vector<double> viscosity;
+    confident_layer_t viscosity;
     /// @brief Серосодержанние
-    std::vector<double> sulfur;
+    confident_layer_t sulfur;
     /// @brief Концентрация ПТП
-    std::vector<double> improver;
+    confident_layer_t improver;
     /// @brief Температура
-    std::vector<double> temperature;
+    confident_layer_t temperature;
     /// @brief Вязкость при 0С (сортовая при неизотермическом расчете)
-    std::vector<double> viscosity0;
+    confident_layer_t viscosity0;
     /// @brief Вязкость при 20С (сортовая при неизотермическом расчете)
-    std::vector<double> viscosity20;
+    confident_layer_t viscosity20;
     /// @brief Вязкость при 50С (сортовая при неизотермическом расчете)
-    std::vector<double> viscosity50;
+    confident_layer_t viscosity50;
     /// @brief Принимает количество точек, инициализирует количество ячеек
     pipe_endogenous_variable_layer_t(size_t point_count)
         : mass_flow(point_count - 1, 0.0)
@@ -101,14 +115,26 @@ struct pipe_endogenous_calc_layer_t : public pipe_endogenous_variable_layer_t
     }
 
     /// @brief Подготовка плотности для расчета методом конечных объемов   
-    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(pipe_endogenous_calc_layer_t& layer)
+    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(
+        pipe_endogenous_calc_layer_t& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.density, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.density.value, layer.specific);
+    }
+    static quickest_ultimate_fv_wrapper<1> get_density_confidence_wrapper(
+        pipe_endogenous_calc_layer_t& layer)
+    {
+        return quickest_ultimate_fv_wrapper<1>(layer.density.confidence, layer.specific);
     }
     /// @brief Подготовка вязкости для расчета методом конечных объемов 
-    static quickest_ultimate_fv_wrapper<1> get_viscosity_wrapper(pipe_endogenous_calc_layer_t& layer)
+    static quickest_ultimate_fv_wrapper<1> get_viscosity_wrapper(
+        pipe_endogenous_calc_layer_t& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.viscosity, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.viscosity.value, layer.specific);
+    }
+    static quickest_ultimate_fv_wrapper<1> get_viscosity_confidence_wrapper(
+        pipe_endogenous_calc_layer_t& layer)
+    {
+        return quickest_ultimate_fv_wrapper<1>(layer.viscosity.confidence, layer.specific);
     }
 };
 
