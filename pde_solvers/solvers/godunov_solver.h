@@ -17,8 +17,8 @@ struct godunov_task_traits
 
 template <size_t Dimension>
 struct godunov_layer_wrapper : layer_wrapper<Dimension> {
-    typedef array<array<double, Dimension>, Dimension> matrix_type;
-    typedef array<double, Dimension> vector_type;
+    typedef std::array<std::array<double, Dimension>, Dimension> matrix_type;
+    typedef std::array<double, Dimension> vector_type;
     typedef typename godunov_task_traits<Dimension>::var_layer_data var_layer_data;
     typedef typename godunov_task_traits<Dimension>::specific_layer specific_layer_data;
 
@@ -40,7 +40,7 @@ struct godunov_layer_wrapper : layer_wrapper<Dimension> {
 
     profile_wrapper<double, Dimension> cell_values;
     profile_wrapper<double, Dimension> cell_eigenvalues;
-    profile_wrapper<array<double, Dimension>, Dimension> cell_eigenvec;
+    profile_wrapper<std::array<double, Dimension>, Dimension> cell_eigenvec;
 
     godunov_layer_wrapper(
         var_layer_data& vars,

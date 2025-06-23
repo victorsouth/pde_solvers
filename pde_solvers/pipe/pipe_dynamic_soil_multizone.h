@@ -193,10 +193,10 @@ struct primary_heat_zone_parameters_t {
     size_t coordinate_begin;
     /// @brief Толщина стенки, слоев изоляции и защитного слоя, м
     /// стальная стенка трубы, первый слой изоляции, второй слой изоляции, защитный слой
-    array<double, 4> isolation_thickness{ 0.010, 0.003, 0.050, 0.005 };
+    std::array<double, 4> isolation_thickness{ 0.010, 0.003, 0.050, 0.005 };
     /// @brief Теплопроводность материалов трубопровода, Вт*м-1*К-1
     /// сталь, первый слой изоляции, второй слой изоляции, защитный слой
-    array<double, 4> isolation_conductivity{ 40, 0.2, 0.035, 0.3 };
+    std::array<double, 4> isolation_conductivity{ 40, 0.2, 0.035, 0.3 };
     /// @brief Глубина залегания - толщина слоя грунта, м
     double depth = 1.5;
     /// @brief Теплофизические параметры грунта
@@ -441,12 +441,13 @@ struct zoned_pipe_properties : public pipe_properties_t {
     }
 
     /// @brief Возвращает параметры эквивалентных теплофизических моделей
-    vector<equivalent_heat_zone_coefficients_t> get_coeff_zones(const vector<heat_zone_adaptation_t>& adaptation_zones) const
+    vector<equivalent_heat_zone_coefficients_t> get_coeff_zones(
+        const vector<heat_zone_adaptation_t>& adapt_zones) const
     {
         vector<equivalent_heat_zone_coefficients_t> result;
         for (size_t index = 0; index < eqheat_zones.size(); ++index) {
-            if (adaptation_zones.size() == eqheat_zones.size()) {
-                result.emplace_back(eqheat_zones[index].get_coefficients(adaptation_zones[index]));
+            if (adapt_zones.size() == eqheat_zones.size()) {
+                result.emplace_back(eqheat_zones[index].get_coefficients(adapt_zones[index]));
             }
             else {
                 heat_zone_adaptation_t zone_ident;

@@ -52,7 +52,7 @@ public:
         double S_0 = pipe.wall.getArea();
         double c = pipe.getSoundVelocity(oil);
 
-        array<array<double, 2>, 2> Ainv;
+        std::array<std::array<double, 2>, 2> Ainv;
         Ainv[0] = { 0, 1 / S_0 };
         Ainv[1] = { S_0 / pow(c, 2), 0 };
 
@@ -210,13 +210,13 @@ public:
     /// @param U_b Значение параметра на граничной ячейке на старом слое
     /// @param boundary_eq Уравнение на границе
     /// @return Решение задачи Римана на границе
-    array<double, 2> riemann_problem_boundary(
+    std::array<double, 2> riemann_problem_boundary(
         size_t point_index,
-        const array<double, 2>& U_b,
-        const pair<array<double, 2>, double>& boundary_eq) const
+        const std::array<double, 2>& U_b,
+        const pair<std::array<double, 2>, double>& boundary_eq) const
     {
-        array<array<double, 2>, 2> A;
-        array<double, 2> b;
+        std::array<std::array<double, 2>, 2> A;
+        std::array<double, 2> b;
 
         bool is_left_boundary = point_index == 0;
 
@@ -225,13 +225,13 @@ public:
             // через характеристику с _правым_ уклоном (см. документ, там есть рисунок)
             // lambda > 0, K_R
             // Выбор уравнения с правым уклоном за счет хардкода eigen_index = 1
-            array<double, 2> K_R = GetRightEigenVector(point_index, 1, U_b);
+            std::array<double, 2> K_R = GetRightEigenVector(point_index, 1, U_b);
             A[0] = { 1 / K_R[0], -1 / K_R[1] };
             b[0] = U_b[0] / K_R[0] - U_b[1] / K_R[1];
 
             A[1] = boundary_eq.first;
             b[1] = boundary_eq.second;
-            array<double, 2> U = solve_linear_system(A, b);
+            std::array<double, 2> U = solve_linear_system(A, b);
             return U;
         }
         else {
@@ -239,14 +239,14 @@ public:
             // через характеристику с _левым_ уклоном (см. документ, там есть рисунок)
             // lambda < 0, K_L
             // Выбор уравнения с правым уклоном за счет хардкода eigen_index = 1
-            array<double, 2> K_L = GetRightEigenVector(point_index, 0, U_b);
+            std::array<double, 2> K_L = GetRightEigenVector(point_index, 0, U_b);
             A[0] = { 1 / K_L[0], -1 / K_L[1] };
             b[0] = U_b[0] / K_L[0] - U_b[1] / K_L[1];
 
             A[1] = boundary_eq.first;
             b[1] = boundary_eq.second;
 
-            array<double, 2> U = solve_linear_system(A, b);
+            std::array<double, 2> U = solve_linear_system(A, b);
             return U;
         }
 
@@ -260,34 +260,34 @@ public:
     /// @param U_L Значение вектора параметров в ячейке слева от границы
     /// @param U_R Значение вектора параметров в ячейке справа от границы
     /// @return Решение задачи Римана на внутренней границе
-    array<double, 2> riemann_problem_inner(
+    std::array<double, 2> riemann_problem_inner(
         size_t point_index,
-        const array<double, 2>& U_L,
-        const array<double, 2>& U_R) const
+        const std::array<double, 2>& U_L,
+        const std::array<double, 2>& U_R) const
     {
-        array<array<double, 2>, 2> A;
-        array<double, 2> b;
+        std::array<std::array<double, 2>, 2> A;
+        std::array<double, 2> b;
 
         // lambda < 0, K_L
-        array<double, 2> K_L = GetRightEigenVector(point_index, 0, U_L);
+        std::array<double, 2> K_L = GetRightEigenVector(point_index, 0, U_L);
         A[0] = { 1 / K_L[0], -1 / K_L[1] };
         b[0] = U_L[0] / K_L[0] - U_L[1] / K_L[1];
 
         // lambda > 0, K_R
-        array<double, 2> K_R = GetRightEigenVector(point_index, 1, U_R);
+        std::array<double, 2> K_R = GetRightEigenVector(point_index, 1, U_R);
         A[1] = { 1 / K_R[0], -1 / K_R[1] };
         b[1] = U_R[0] / K_R[0] - U_R[1] / K_R[1];
 
 
-        array<double, 2> U = solve_linear_system(A, b);
+        std::array<double, 2> U = solve_linear_system(A, b);
 
         return U;
     }
 
-    static pair<array<double, 2>, double> const_pressure_equation(double pressure) {
+    static pair<std::array<double, 2>, double> const_pressure_equation(double pressure) {
         return { {1, 0}, pressure };
     }
-    static pair<array<double, 2>, double> const_mass_flow_equation(double mass_flow) {
+    static pair<std::array<double, 2>, double> const_mass_flow_equation(double mass_flow) {
         return { {0, 1}, mass_flow };
     }
 
@@ -397,7 +397,7 @@ public:
         double beta_S = pipe.wall.getCompressionRatio();
         double beta_rho = oil.get_compression_ratio();
 
-        array<array<double, 2>, 2> Ainv;
+        std::array<std::array<double, 2>, 2> Ainv;
         Ainv[0] = { 0, density / S_0 };
         Ainv[1] = { S_0 * (beta_S + beta_rho), 0 };
 

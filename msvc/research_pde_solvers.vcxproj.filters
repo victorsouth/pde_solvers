@@ -25,39 +25,16 @@
     <Filter Include="Header Files\IdentQuasistaticIsothermal">
       <UniqueIdentifier>{3e678324-82cf-443e-8ffe-127c448e2f6e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\IdentQuasistaticNonisothermal">
-      <UniqueIdentifier>{2502c7fd-69f4-4872-afbc-86e310558d14}</UniqueIdentifier>
+    <Filter Include="Header Files\CalcMassOnQuasistaticIsothermal">
+      <UniqueIdentifier>{a83fc539-3b10-4dad-a01e-860a8092fa32}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\testing\test_main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\testing\test_moc.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\research\2023-12-diffusion-of-advection\diffusion_of_advection.h">
+      <Filter>Header Files\DiffusionOfAdvection</Filter>
     </ClInclude>
-    <ClInclude Include="..\testing\test_static_pipe_solver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\testing\test_quick.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\testing\test_diffusion.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\testing\test_timeseries.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\testing\test_advection_moc_solver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\testing\test_synthetic_timeseries.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\testing\test_create_pipe_profile.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\research\2024-02-quick-with-quasistationary-model\quick_with_quasistationary_model.h">
+      <Filter>Header Files\QuickWithQuasiStationaryModel</Filter>
     </ClInclude>
     <ClInclude Include="..\research\2024-08-quasistationary-with-real-data\quasistationary_with_real_data.h">
       <Filter>Header Files\QuasistationaryWithRealData</Filter>
@@ -65,14 +42,13 @@
     <ClInclude Include="..\research\2024-10-ident-quasistatic-isothermal\ident_quasistatic_isothermal.h">
       <Filter>Header Files\IdentQuasistaticIsothermal</Filter>
     </ClInclude>
-    <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\ident_quasistatic_nonisothermal.h">
-      <Filter>Header Files\IdentQuasistaticNonisothermal</Filter>
+    <ClInclude Include="..\research\2025-04-calc-mass-on-isothermal-quasistatic\calc_mass_on_isothermal_quasistatic.h">
+      <Filter>Header Files\CalcMassOnQuasistaticIsothermal</Filter>
     </ClInclude>
-    <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\nonisothermal_quasistationary_with_real_data.h">
-      <Filter>Header Files\IdentQuasistaticNonisothermal</Filter>
-    </ClInclude>
-    <ClInclude Include="..\testing\test_viscosity.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\research\research_main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

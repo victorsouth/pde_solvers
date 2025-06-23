@@ -154,7 +154,7 @@ public:
         buffer.previous().pressure_initial = current.pressure_initial = current.pressure; // Получаем изначальный профиль давлений
     }
 public:
-    /// @brief Рассчёт шага по времени для Cr = 1
+    /// @brief Расчёт шага по времени для Cr = 1
     /// @param v_max Максимальная скорость течение потока в трубопроводе
     double get_time_step_assuming_max_speed(double v_max) const {
         const auto& x = pipe.profile.coordinates;
@@ -163,7 +163,7 @@ public:
         return dt;
     }
 private:
-    /// @brief Проводится рассчёт шага движения партии
+    /// @brief Проводится расчёт шага движения партии
     /// @param dt Временной шаг моделирования
     /// @param boundaries Краевые условия
     void make_rheology_step(double dt, const isothermal_quasistatic_PQ_task_boundaries_t& boundaries) {

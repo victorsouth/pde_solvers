@@ -163,8 +163,8 @@ struct oil_viscosity_parameters_t
     }
 
     /// @brief Инициализация модели вязкости по вискограмме из двух точек
-    /// @param viscogramm Две точки вискограммы
-    oil_viscosity_parameters_t(const array<viscosity_data_point, 2>& viscogramm)
+    /// @param viscogramm 
+    oil_viscosity_parameters_t(const std::array<viscosity_data_point, 2>& viscogramm)
     {
         const auto& v = viscogramm;
         temperature_coefficient = find_kinematic_viscosity_temperature_coefficient(
@@ -257,6 +257,108 @@ struct oil_parameters_t
 };
 
 
+    /// @brief Корректирует базовую таблицу вязкости под рабочую вязкость
+    /// @param viscosities Базовая таблица вязкости
+    /// @param viscosity_working Рабочая вязкость
+    /// @param viscosity_working_temperature Температура при которой измеряется вязкость ()
+    /// @return Откорректированная таблица вязкости
+    static inline std::array<double, 3> adapt(std::array<double, 3> viscosities,
+        double viscosity_working, double viscosity_working_temperature)
+    {
+        auto model = reconstruct(viscosities);
+
+
+        for (auto& v : viscosities) {
+            v *= mult;
+        }
+
+#ifdef _DEBUG
+        auto model_adapt = reconstruct(viscosities);
+        double visc_adapt = calc(model_adapt, viscosity_working_temperature);
+#endif
+
+        return viscosities;
+    }
+
+
+    /// @brief Восстанавливает аппроксимацию по таблице вязкости
+    /// @param viscosities 
+    /// @return 
+    static inline std::array<double, 3> reconstruct(const std::array<double, 3>& viscosities)
+    {
+        std::array<double, 3> coeffs{
+            std::numeric_limits<double>::quiet_NaN(),
+            std::numeric_limits<double>::quiet_NaN(),
+            std::numeric_limits<double>::quiet_NaN()
+        };
+
+        const auto& v = viscosities;
+
+        constexpr double T1 = viscosity_temperatures[0];
+        constexpr double T2 = viscosity_temperatures[1];
+        constexpr double T3 = viscosity_temperatures[2];
+
+        constexpr double eps1 = 1e-4; // Проверка равенства вязкостей по их отношению (!!надо исследовать!!)
+        constexpr double eps2 = 1e-4; // Проверка 
+
+        constexpr double a1 = (T3 - T2) / (T2 - T1);
+
+        double lognu1div2 = log(v[0] / v[1]);
+        double nu2div3 = v[1] / v[2];
+        double nu3div1 = v[2] / v[0];
+
+        if (abs(nu3div1 - 1) < eps1 && abs(nu2div3 - 1) < eps1) {
+            // Вязкость = const
+            coeffs[0] = v[0];
+            return coeffs;
+        }
+
+        double a = a1 * lognu1div2 / log(nu2div3); // похоже, a > 1
+
+        if (abs(a - 1) < eps2) {
+            // Филонов-Рейнольс
+            coeffs[0] = v[1]; // при двадцати градусах
+
+            constexpr double DT = T2 - T1;
+            coeffs[1] = lognu1div2 / DT; // перепроверить!
+            return coeffs;
+        }
+
+        // Фогель-Фульчер-Тамман
+        coeffs[0] = v[2] * pow(nu3div1, 1.0 / (a - 1)); // nu_inf
+        coeffs[1] = (T3 - a * T1) / (1 - a); // theta
+        const double& theta = coeffs[1];
+        coeffs[2] = (T1 - theta) * (T2 - theta) / (T2 - T1) * lognu1div2; // b
+
+        return coeffs;
+    }
+    /// @brief Расчет вязкости с после реконструкции
+    /// @param coeffs 
+    /// @param temperature 
+    /// @return 
+    static inline double calc(const std::array<double, 3>& coeffs, double temperature)
+    {
+        if (!std::isnan(coeffs[2])) {
+            // Фогель-Фульчер-Тамман
+            const auto& nu_inf = coeffs[0];
+            const auto& theta = coeffs[1];
+            const auto& b = coeffs[2];
+            return nu_inf * exp(b / (temperature - theta));
+        }
+        else if (!std::isnan(coeffs[1])) {
+            // Филонов-Рейнольс
+            const auto& nu_nominal = coeffs[0];
+            const auto& k = coeffs[1];
+            return nu_nominal * exp(-k * (temperature - viscosity_temperatures[1]));
+        }
+        else {
+            // Константа
+            return coeffs[0];
+        }
+    }
+};
+
+
 
 
 /// @brief Динамические (пересчитываемые в процессе расчета) параметры нефти
@@ -311,14 +413,14 @@ struct fluid_properties_static {
 
 /// @brief Профиль свойств флюида
 struct fluid_properties_profile_t :
-    fluid_properties_dynamic<const vector<double>&, const vector<array<double, 3>>&>,
+    fluid_properties_dynamic<const vector<double>&, const vector<std::array<double, 3>>&>,
     fluid_properties_static
 {
     // здесь все функции зависят от координаты (индекса на профиле)
 
     fluid_properties_profile_t(const vector<double>& nominal_density,
-        const vector<array<double, 3>>& viscosity_approximation)
-        : fluid_properties_dynamic<const vector<double>&, const vector<array<double, 3>>&>(nominal_density, viscosity_approximation)
+        const vector<std::array<double, 3>>& viscosity_approximation)
+        : fluid_properties_dynamic<const vector<double>&, const vector<std::array<double, 3>>&>(nominal_density, viscosity_approximation)
     {
 
     }

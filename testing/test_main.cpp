@@ -33,17 +33,8 @@ inline std::string prepare_test_folder()
     return path;
 }
 
-inline std::string prepare_research_folder()
-{
-    auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
-    std::string research_name = std::string(test_info->test_case_name());
-    std::string case_name = std::string(test_info->name());
+using namespace pde_solvers;
 
-    std::string path = std::string("../research_out/") + 
-        research_name + "/" + case_name + "/";
-    std::filesystem::create_directories(path);
-    return path;
-}
 
 
 #include "test_viscosity.h"
