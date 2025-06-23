@@ -430,19 +430,19 @@ public:
         double height_gradient; // dz/dx
         double density_gradient; // d(\rho)/dx
         const double* density_profile = &oil.nominal_density[grid_index];
-        const double* height_profile = &pipe.profile.heights[grid_index];
+        const double* heightemperature_profile = &pipe.profile.heights[grid_index];
         const double* grid = &(get_grid()[grid_index]);
         if (grid_index == 0) {
             density_gradient = (density_profile[+1] - density_profile[0]) / (grid[+1] - grid[0]);
-            height_gradient = (height_profile[+1] - height_profile[0]) / (grid[+1] - grid[0]);
+            height_gradient = (heightemperature_profile[+1] - heightemperature_profile[0]) / (grid[+1] - grid[0]);
         }
         else if (grid_index == pipe.profile.get_point_count() - 1) {
             density_gradient = (density_profile[0] - density_profile[-1]) / (grid[0] - grid[-1]);
-            height_gradient = (height_profile[0] - height_profile[-1]) / (grid[0] - grid[-1]);
+            height_gradient = (heightemperature_profile[0] - heightemperature_profile[-1]) / (grid[0] - grid[-1]);
         }
         else {
             density_gradient = (density_profile[+1] - density_profile[-1]) / (grid[+1] - grid[-1]);
-            height_gradient = (height_profile[+1] - height_profile[-1]) / (grid[+1] - grid[-1]);
+            height_gradient = (heightemperature_profile[+1] - heightemperature_profile[-1]) / (grid[+1] - grid[-1]);
         }
 
         double s1 =
@@ -552,14 +552,14 @@ public:
 
 /// @brief Уравнение трубы для задачи PQ с учетом движения партий
 /// Учитывается, что параметры партий могут задавать в точках, и в ячейках
-class nonisothermal_pipe_PQ_parties_t : public ode_t<1>
+class nonisothermal_pipe_PQ_noparties_t : public ode_t<1>
 {
 public:
     using ode_t<1>::equation_coeffs_type;
     using ode_t<1>::right_party_type;
     using ode_t<1>::var_type;
 protected:
-    const vector<double>& t_profile;
+    const vector<double>& temperature_profile;
     const oil_parameters_t& oil;
     const pipe_properties_t& pipe;
     const double flow;
@@ -571,11 +571,11 @@ public:
     /// @param oil Ссылка на сущность нефти
     /// @param flow Объемный расход
     /// @param solver_direction Направление расчета по Эйлеру, должно обязательно совпадать с параметром солвера Эйлера
-    nonisothermal_pipe_PQ_parties_t(const pipe_properties_t& pipe, const oil_parameters_t& oil, const vector<double>& t_profile, double flow,
+    nonisothermal_pipe_PQ_noparties_t(const pipe_properties_t& pipe, const oil_parameters_t& oil, const vector<double>& temperature_profile, double flow,
         int solver_direction, size_t flag_for_points = 0)
         : pipe(pipe)
         , oil(oil)
-        , t_profile(t_profile)
+        , temperature_profile(temperature_profile)
         , flow(flow)
         , solver_direction(solver_direction)
         , flag_for_points(flag_for_points)
@@ -599,7 +599,7 @@ public:
         /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
         size_t reo_index = grid_index;
 
-        if (pipe.profile.get_point_count() == t_profile.size())
+        if (pipe.profile.get_point_count() == temperature_profile.size())
         {
             // Случай расчета партий в точках (например для метода характеристик)
             if (solver_direction == +1)
@@ -617,8 +617,8 @@ public:
         double rho = oil.density.nominal_density;
         double S_0 = pipe.wall.getArea();
         double v = flow / (S_0);
-        double Re = v * pipe.wall.diameter / oil.viscosity(t_profile[reo_index]);
-        //double check = oil.viscosity(t_profile[reo_index]);
+        double Re = v * pipe.wall.diameter / oil.viscosity(temperature_profile[reo_index]);
+        //double check = oil.viscosity(temperature_profile[reo_index]);
         double lambda = pipe.resistance_function(Re);
         double tau_w = lambda / 8 * rho * v * abs(v);
         double height_derivative = pipe.profile.get_height_derivative(grid_index, solver_direction);

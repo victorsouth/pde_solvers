@@ -28,6 +28,9 @@
     <Filter Include="Header Files\CalcMassOnQuasistaticIsothermal">
       <UniqueIdentifier>{a83fc539-3b10-4dad-a01e-860a8092fa32}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\NonisothermalQuasistationaryWithRealData">
+      <UniqueIdentifier>{2ef66776-6a1a-4795-a477-ce9c2f254592}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\research\2023-12-diffusion-of-advection\diffusion_of_advection.h">
@@ -44,6 +47,9 @@
     </ClInclude>
     <ClInclude Include="..\research\2025-04-calc-mass-on-isothermal-quasistatic\calc_mass_on_isothermal_quasistatic.h">
       <Filter>Header Files\CalcMassOnQuasistaticIsothermal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\nonisothermal_quasistationary_with_real_data.h">
+      <Filter>Header Files\NonisothermalQuasistationaryWithRealData</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
