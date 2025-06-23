@@ -543,21 +543,6 @@ protected:
     }
 };
 
-
-void plot_with_gnuplot(const std::vector<double>& x, const std::vector<double>& y) {
-    std::ofstream file("data.txt");
-    for (size_t i = 0; i < x.size(); ++i) {
-        file << x[i] << " " << y[i] << "\n";
-    }
-    file.close();
-
-    // Отправляем команды в Gnuplot
-    FILE* gnuplot = _popen("gnuplot -persist", "w");
-    fprintf(gnuplot, "set title 'Graph'\n");
-    fprintf(gnuplot, "plot 'data.txt' with lines\n");
-    _pclose(gnuplot);
-}
-
 /// @brief Базовый пример использования метода характеристик для уравнения адвекции
 TEST_F(QUICKEST_ULTIMATE2, Quick_UseCase_Advection_Temperature)
 {
@@ -593,7 +578,6 @@ TEST_F(QUICKEST_ULTIMATE2, Quick_UseCase_Advection_Temperature)
 
         //auto& curr = buffer[0].layers;
         layer_t& next = buffer->current();
-        plot_with_gnuplot(x, next.vars.cell_double[0]);
         buffer->advance(+1);
     }
 }
