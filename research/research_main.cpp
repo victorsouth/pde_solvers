@@ -38,6 +38,8 @@ using namespace pde_solvers;
 #include "../research/2024-08-quasistationary-with-real-data/quasistationary_with_real_data.h"
 #include "../research/2024-10-ident-quasistatic-isothermal/ident_quasistatic_isothermal.h"
 #include "../research/2025-04-calc-mass-on-isothermal-quasistatic/calc_mass_on_isothermal_quasistatic.h"
+#include "../research/2025-01-ident-quasistatic-nonisothermal/nonisothermal_quasistationary_with_real_data.h"
+#include "../research/2025-01-ident-quasistatic-nonisothermal/ident_quasistatic_nonisothermal.h"
 
 
 int main(int argc, char **argv) {
