@@ -172,6 +172,7 @@ protected:
 
     /// @brief Подготовка к расчету для семейства тестов
     virtual void SetUp() override {
+        using namespace std;
         // Указываем имя файла и желаемый шаг новой сетки
         string file_name = folder + "coord_heights.csv";
         //Желаемый шаг
@@ -233,6 +234,8 @@ protected:
 
     /// @brief Подготовка к расчету для семейства тестов
     virtual void SetUp() override {
+        using namespace std;
+
         // Указываем имя файла и желаемый шаг новой сетки
         string file_name = folder + "coord_heights.csv";
         //Желаемый шаг
