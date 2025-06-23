@@ -15,7 +15,7 @@ struct viscosity_table_model_t {
     /// @param viscosity_working Рабочая вязкость
     /// @param viscosity_working_temperature Температура при которой измеряется вязкость ()
     /// @return Откорректированная таблица вязкости
-    static inline std::array<double, 3> adapt(array<double, 3> viscosities,
+    static inline std::array<double, 3> adapt(std::array<double, 3> viscosities,
         double viscosity_working, double viscosity_working_temperature)
     {
         auto model = reconstruct(viscosities);
@@ -39,9 +39,9 @@ struct viscosity_table_model_t {
     /// @brief Восстанавливает аппроксимацию по таблице вязкости
     /// @param viscosities 
     /// @return 
-    static inline array<double, 3> reconstruct(const array<double, 3>& viscosities)
+    static inline std::array<double, 3> reconstruct(const std::array<double, 3>& viscosities)
     {
-        array<double, 3> coeffs{
+        std::array<double, 3> coeffs{
             std::numeric_limits<double>::quiet_NaN(),
             std::numeric_limits<double>::quiet_NaN(),
             std::numeric_limits<double>::quiet_NaN()

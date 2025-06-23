@@ -6,7 +6,7 @@ namespace pde_solvers {
 /// @brief Нефть по умолчанию для тепловых задач
 inline oil_parameters_t get_noniso_default_oil()
 {
-    array<viscosity_data_point, 2> viscosity_data{
+    std::array<viscosity_data_point, 2> viscosity_data{
     viscosity_data_point{60 + KELVIN_OFFSET, 0.0000006},
     viscosity_data_point{10 + KELVIN_OFFSET, 0.00006}
     };

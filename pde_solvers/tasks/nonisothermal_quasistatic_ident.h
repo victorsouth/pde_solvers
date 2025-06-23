@@ -37,7 +37,7 @@ struct ident_nonisothermal_qsm_pipe_settings {
     /// @brief Распаковываем переданный в residuals VectorXd в зависимости от того, какой параметр был выбран
     /// @param packed_ident_parameters Переданный в функцию расчёта невязок набор аргументов
     /// @return Распакованный набор параметров идентификации
-    ident_parameters_nonisothermal_qsm unpack_ident_parameters(const VectorXd& packed_ident_parameters) const {
+    ident_parameters_nonisothermal_qsm unpack_ident_parameters(const Eigen::VectorXd& packed_ident_parameters) const {
 
         ident_parameters_nonisothermal_qsm result;
         // Распаковываем набор аргументов
@@ -121,7 +121,7 @@ public:
     /// @brief Инициализация расчёта вектора невязок
     /// @param parameters Текущие значения параметров идентификации
     /// @return Вектор невязок - расхождения расчётного и фактического давления на выхое ЛУ
-    virtual VectorXd residuals(const VectorXd& parameters) override {
+    virtual Eigen::VectorXd residuals(const Eigen::VectorXd& parameters) override {
 
         ident_parameters_nonisothermal_qsm ident_parameters = settings.unpack_ident_parameters(parameters);
         //ident_parameters.diameter_adaptation = parameters(0);
@@ -129,7 +129,7 @@ public:
 
         vector<double> simulation_result = calc_vector_residuals(ident_parameters);
 
-        Eigen::Map<VectorXd> result(simulation_result.data(), simulation_result.size());
+        Eigen::Map<Eigen::VectorXd> result(simulation_result.data(), simulation_result.size());
 
         return result;
     }
@@ -148,7 +148,7 @@ public:
         }
 
         // Задание начального значения параметра идентификации 
-        VectorXd initial_ident_parameter(1);
+        Eigen::VectorXd initial_ident_parameter(1);
         initial_ident_parameter(0) = 1;
         // Запуск алгоритма идентификации 
         fixed_optimize_gauss_newton::optimize(*this, initial_ident_parameter, parameters, result, analysis);
