@@ -31,6 +31,9 @@
     <Filter Include="Header Files\NonisothermalQuasistationaryWithRealData">
       <UniqueIdentifier>{2ef66776-6a1a-4795-a477-ce9c2f254592}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\IdentQuasistationaryNonisothermal">
+      <UniqueIdentifier>{6ace0b54-42da-4bfe-993f-04bb13cdcf9f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\research\2023-12-diffusion-of-advection\diffusion_of_advection.h">
@@ -50,6 +53,9 @@
     </ClInclude>
     <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\nonisothermal_quasistationary_with_real_data.h">
       <Filter>Header Files\NonisothermalQuasistationaryWithRealData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\ident_quasistatic_nonisothermal.h">
+      <Filter>Header Files\IdentQuasistationaryNonisothermal</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
