@@ -45,6 +45,12 @@ namespace pde_solvers
 {
 ;
 
+/// @brief Интерпретирует степень достоверность как булев флаг достоверности
+inline bool discriminate_confidence_level(double confidence_level)
+{
+    return confidence_level > 0.95; // с константой экспериментируем
+}
+
 /// @brief Расчетный слой и его код достоверности
 struct confident_layer_t {
     /// @brief Сам расчетный параметр
@@ -57,6 +63,13 @@ struct confident_layer_t {
         : value(point_count - 1, initial_value)
         , confidence(point_count - 1, 0.0)
     { }
+    bool is_confident_layer() const {
+        for (double confidence_value : confidence) {
+            if (discriminate_confidence_level(confidence_value) == false)
+                return false;
+        }
+        return true;
+    }
 };
 
 /// @brief Расчетные целевые профили по трубе 
@@ -100,6 +113,22 @@ struct pipe_endogenous_variable_layer_t
 
     }
 };
+
+/// @brief Сбрасывает код достоверности в "ложь"
+inline void reset_confidence(pipe_endogenous_variable_layer_t* layer) {
+    auto invalidate = [](confident_layer_t& parameter_layer) {
+        std::fill(parameter_layer.confidence.begin(), parameter_layer.confidence.end(), false);
+        };
+
+    invalidate(layer->density);
+    invalidate(layer->viscosity);
+    invalidate(layer->sulfur);
+    invalidate(layer->improver);
+    invalidate(layer->temperature);
+    invalidate(layer->viscosity0);
+    invalidate(layer->viscosity20);
+    invalidate(layer->viscosity50);
+}
 
 /// @brief Расчетный профиль на квикест
 struct pipe_endogenous_calc_layer_t : public pipe_endogenous_variable_layer_t
