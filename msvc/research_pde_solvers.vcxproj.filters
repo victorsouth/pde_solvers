@@ -31,7 +31,7 @@
     <Filter Include="Header Files\NonisothermalQuasistationaryWithRealData">
       <UniqueIdentifier>{2ef66776-6a1a-4795-a477-ce9c2f254592}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\IdentQuasistationaryNonisothermal">
+    <Filter Include="Header Files\IdentQuasistaticNonisothermal">
       <UniqueIdentifier>{6ace0b54-42da-4bfe-993f-04bb13cdcf9f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -55,7 +55,7 @@
       <Filter>Header Files\NonisothermalQuasistationaryWithRealData</Filter>
     </ClInclude>
     <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\ident_quasistatic_nonisothermal.h">
-      <Filter>Header Files\IdentQuasistationaryNonisothermal</Filter>
+      <Filter>Header Files\IdentQuasistaticNonisothermal</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
