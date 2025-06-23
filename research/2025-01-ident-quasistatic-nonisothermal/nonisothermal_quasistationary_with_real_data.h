@@ -165,9 +165,9 @@ protected:
     string path;
     // Временные ряды краевых условий
     vector<pair<vector<time_t>, vector<double>>> tag_data;
-    // Временные ряды эталонных данных
+    /// @brief Временные ряды эталонных данных
     vector<pair<vector<time_t>, vector<double>>> etalon_tag_data;
-    // Путь к реальным данным с трубопровода
+    /// @brief Путь к реальным данным с трубопровода
     std::string folder = "../research/2025-01-ident-quasistatic-nonisothermal/data/";
 
     /// @brief Подготовка к расчету для семейства тестов
