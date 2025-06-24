@@ -5,8 +5,6 @@
 namespace pde_solvers {
 ;
 
-using std::string;
-
 /// @brief Варианты расчёта квазистационарной модели
 /// Stationary - стационарный расчёт (частный случай квазистаца)
 /// DensityQuasi - квазистац по плотности, вязкость рассчитывается как в стационаре
@@ -103,9 +101,11 @@ template <typename Solver=advection_moc_solver>
 class isothermal_quasistatic_PQ_task_t {
 public:
     /// @brief Тип слоя
-    typedef density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true> layer_type;
+    using layer_type = density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true>;
     /// @brief Тип буфера
-    typedef ring_buffer_t<layer_type> buffer_type;
+    using buffer_type = ring_buffer_t<layer_type>;
+    /// @brief Тип граничных условий
+    using boundaries_type = isothermal_quasistatic_PQ_task_boundaries_t;
 private:
     // Модель трубы
     pipe_properties_t pipe;
@@ -411,26 +411,31 @@ public:
 };
 
 /// @brief Пакетный изотермический квазистатический расчет с предподсчитанным временем
-/// делает статический расчет task.solve, а затем столько раз task.step, сколько временных меток в times
-/// @tparam Solver МХ или QUICKEST
-/// @tparam LayerType Точки под МХ или ячейки под QUICKEST
-template <typename Solver, typename LayerType>
-inline void isothermal_quasistatic_batch(
-    isothermal_quasistatic_PQ_task_t<Solver>& task,
-    const vector<double>& times,
-    const vector<vector<double>>& boundary_timeseries,
-    batch_processor_precalculated_times<LayerType>* data_processor
+/// делает статический расчет task.solve, 
+/// а затем столько раз task.step, сколько временных меток в times
+/// @tparam Task Тип расчетной задачи
+/// @tparam DataProcessor Обработчик данных каждого расчетного слоя
+/// @param task 
+/// @param times 
+/// @param boundary_timeseries 
+/// @param data_processor 
+template <typename Task, typename DataProcessor>
+inline void quasistatic_batch(
+    Task& task,
+    const std::vector<double>& times,
+    const std::vector<std::vector<double>>& boundary_timeseries,
+    DataProcessor* data_processor
 )
 {
     // Вычленение начальных условий
-    isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries(boundary_timeseries[0]);
+    typename Task::boundaries_type initial_boundaries(boundary_timeseries[0]);
     task.solve(initial_boundaries);
     data_processor->process_data(0, task.get_buffer().current());
 
     for (size_t step_index = 1; step_index < times.size(); step_index++)
     {
         double time_step = times[step_index] - times[step_index - 1];
-        isothermal_quasistatic_PQ_task_boundaries_t boundaries(boundary_timeseries[step_index]);
+        typename Task::boundaries_type boundaries(boundary_timeseries[step_index]);
 
         task.step(time_step, boundaries);
 

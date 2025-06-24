@@ -112,7 +112,7 @@ protected:
 
         // Проводим гидравлический изотермический квазистационарный расчёт
         isothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver> task(pipe_to_ident);
-        isothermal_quasistatic_batch<quickest_ultimate_fv_solver, isothermal_qsm_batch_Pout_collector_t::layer_type>(
+        quasistatic_batch(
             task,
             times,
             control_data,

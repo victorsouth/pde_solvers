@@ -125,9 +125,11 @@ template <typename Solver = advection_moc_solver>
 class nonisothermal_quasistatic_PQ_task_t_p {  
 public:
     /// @brief Тип слоя
-    typedef density_viscosity_temp_p_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true> layer_type;
+    using layer_type = density_viscosity_temp_p_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true> ;
     /// @brief Тип буфера
-    typedef ring_buffer_t<layer_type> buffer_type;
+    using buffer_type = ring_buffer_t<layer_type>;
+    /// @brief Тип граничных условий
+    using boundaries_type = nonisothermal_quasistatic_PQ_task_boundaries_t_p;
 private:
     // Модель трубы
     pipe_noniso_properties_t pipe;
@@ -430,29 +432,29 @@ inline void perform_noniso_quasistatic_simulation_p(
 /// делает статический расчет task.solve, а затем столько раз task.step, сколько временных меток в times
 /// @tparam Solver МХ или QUICKEST
 /// @tparam LayerType Точки под МХ или ячейки под QUICKEST
-template <typename Solver, typename LayerType>
-inline void nonisothermal_quasistatic_batch_p(
-    nonisothermal_quasistatic_PQ_task_t_p<Solver>& task,
-    const vector<double>& times,
-    const vector<vector<double>>& boundary_timeseries,
-    batch_processor_precalculated_times<LayerType>* data_processor
-)
-{
-    // Вычленение начальных условий
-    nonisothermal_quasistatic_PQ_task_boundaries_t_p initial_boundaries(boundary_timeseries[0]);
-    task.solve(initial_boundaries);
-    data_processor->process_data(0, task.get_buffer().current());
-
-    for (size_t step_index = 1; step_index < times.size(); step_index++)
-    {
-        double time_step = times[step_index] - times[step_index - 1];
-        nonisothermal_quasistatic_PQ_task_boundaries_t_p boundaries(boundary_timeseries[step_index]);
-
-        task.step(time_step, boundaries);
-
-        data_processor->process_data(step_index, task.get_buffer().current());
-    }
-};
+//template <typename Solver, typename LayerType>
+//inline void nonisothermal_quasistatic_batch_p(
+//    nonisothermal_quasistatic_PQ_task_t_p<Solver>& task,
+//    const vector<double>& times,
+//    const vector<vector<double>>& boundary_timeseries,
+//    batch_processor_precalculated_times<LayerType>* data_processor
+//)
+//{
+//    // Вычленение начальных условий
+//    nonisothermal_quasistatic_PQ_task_boundaries_t_p initial_boundaries(boundary_timeseries[0]);
+//    task.solve(initial_boundaries);
+//    data_processor->process_data(0, task.get_buffer().current());
+//
+//    for (size_t step_index = 1; step_index < times.size(); step_index++)
+//    {
+//        double time_step = times[step_index] - times[step_index - 1];
+//        nonisothermal_quasistatic_PQ_task_boundaries_t_p boundaries(boundary_timeseries[step_index]);
+//
+//        task.step(time_step, boundaries);
+//
+//        data_processor->process_data(step_index, task.get_buffer().current());
+//    }
+//};
 
 
 }

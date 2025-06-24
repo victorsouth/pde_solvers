@@ -160,9 +160,11 @@ template <typename Solver = advection_moc_solver>
 class nonisothermal_quasistatic_PQ_task_t {  
 public:
     /// @brief Тип слоя
-    typedef density_viscosity_temp_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true> layer_type;
+    using layer_type = density_viscosity_temp_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true>;
     /// @brief Тип буфера
-    typedef ring_buffer_t<layer_type> buffer_type;
+    using buffer_type = ring_buffer_t<layer_type>;
+    /// @brief Тип граничных условий
+    using boundaries_type = nonisothermal_quasistatic_PQ_task_boundaries_t;
 private:
     // Модель трубы
     pipe_noniso_properties_t pipe;
@@ -396,21 +398,6 @@ inline void perform_noniso_quasistatic_simulation(
     perform_noniso_quasistatic_simulation<Solver, Printer>(path, pipe, oil, initial_boundaries, boundary_timeseries, model_type, etalon_timeseries, dt);
 }
 
-/// @brief Перегрузка функции для возможности задания постоянного
-/// шага по времени без эталонных данных
-template <typename Solver, typename Printer>
-inline void perform_noniso_quasistatic_simulation(
-    const string& path,
-    const pipe_noniso_properties_t& pipe,
-    const oil_parameters_t& oil,
-    const nonisothermal_quasistatic_PQ_task_boundaries_t& initial_boundaries,
-    const vector_timeseries_t& boundary_timeseries,
-    const noniso_qsm_model_type& model_type,
-    double dt=std::numeric_limits<double>::quiet_NaN())
-{
-    perform_noniso_quasistatic_simulation<Solver, Printer>(path, pipe, oil, initial_boundaries, boundary_timeseries, model_type, vector_timeseries_t({}), dt);
-}
-
 
 /// @brief Накапливает результаты по выходной температуре
 class nonisothermal_qsm_batch_Tout_collector_t
@@ -445,35 +432,6 @@ public:
     /// @return Вектор расчётных значений давления на выходе ЛУ
     const vector<double>& get_temp_out_calculated() const {
         return pipe_temp_out;
-    }
-};
-
-
-/// @brief Пакетный изотермический квазистатический расчет с предподсчитанным временем
-/// делает статический расчет task.solve, а затем столько раз task.step, сколько временных меток в times
-/// @tparam Solver МХ или QUICKEST
-/// @tparam LayerType Точки под МХ или ячейки под QUICKEST
-template <typename Solver, typename LayerType>
-inline void nonisothermal_quasistatic_batch(
-    nonisothermal_quasistatic_PQ_task_t<Solver>& task,
-    const vector<double>& times,
-    const vector<vector<double>>& boundary_timeseries,
-    batch_processor_precalculated_times<LayerType>* data_processor
-)
-{
-    // Вычленение начальных условий
-    nonisothermal_quasistatic_PQ_task_boundaries_t initial_boundaries(boundary_timeseries[0]);
-    task.solve(initial_boundaries);
-    data_processor->process_data(0, task.get_buffer().current());
-
-    for (size_t step_index = 1; step_index < times.size(); step_index++)
-    {
-        double time_step = times[step_index] - times[step_index - 1];
-        nonisothermal_quasistatic_PQ_task_boundaries_t boundaries(boundary_timeseries[step_index]);
-
-        task.step(time_step, boundaries);
-
-        data_processor->process_data(step_index, task.get_buffer().current());
     }
 };
 
