@@ -5,7 +5,7 @@
 class IdentNonisothermalQSM : public ::testing::Test {
 protected:
     /// @brief Путь к реальным данным с Линейного участка трубопровода
-    const std::string data_path = "../research/2025-01-ident-quasistatic-nonisothermal/data/";
+    const std::string data_path = "../research_out/data/";
     
     
     // @brief Создание модели трубопровода по реальным данным 

@@ -16,9 +16,7 @@ struct density_viscosity_temp_p_quasi_layer {
     /// @brief Профиль вязкости
     std::vector<double> viscosity;
     /// @brief Профиль температуры
-    std::vector<double> temp;
-    /// @brief Профиль температуры  Шуховым
-    std::vector<double> temp_shukhov;
+    std::vector<double> temperature;
     /// @brief Профиль давления
     std::vector<double> pressure;
     /// @brief Дифференциальный профиль давления
@@ -34,8 +32,7 @@ struct density_viscosity_temp_p_quasi_layer {
     density_viscosity_temp_p_quasi_layer(size_t point_count)
         : density(point_count - static_cast<int>(CellFlag))
         , viscosity(point_count - static_cast<int>(CellFlag))
-        , temp(point_count - static_cast<int>(CellFlag))
-        , temp_shukhov(point_count)    
+        , temperature(point_count - static_cast<int>(CellFlag))
         , specific(point_count)
         , moc_specific(point_count)
         , pressure(point_count)
@@ -63,14 +60,14 @@ struct density_viscosity_temp_p_quasi_layer {
 /// @return Обертка над составным слоем
     static quickest_ultimate_fv_wrapper<1> get_temp_wrapper(density_viscosity_temp_p_quasi_layer& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.temp, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.temperature, layer.specific);
     }
 
     /// @brief Подготовка температуры для расчета по методу характеристик
 /// Оборачивает профиль температуры и вспомогательный расчет МХ в обертку для МХ
     static moc_layer_wrapper<1> get_temperature_moc_wrapper(density_viscosity_temp_p_quasi_layer& layer)
     {
-        return moc_layer_wrapper<1>(layer.temp, layer.moc_specific);
+        return moc_layer_wrapper<1>(layer.temperature, layer.moc_specific);
     }
 };
 
@@ -85,8 +82,6 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t_p {           ///как н
     double density;
     /// @brief Изначальная вязкость на входе
     double viscosity;
-    /// @brief Изначальная темп на входе
-    double temp_shukhov;
     /// @brief Изначальное давление на входе
     double pressure_in;
 
@@ -100,7 +95,6 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t_p {           ///как н
         temp = values[1];
         density = values[2];
         viscosity = values[3];
-        temp_shukhov = values[1];
         pressure_in = values[4];
     }
 
@@ -111,7 +105,6 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t_p {           ///как н
         result.temp = 300;
         result.density = 850;
         result.viscosity = 15e-6;
-        result.temp_shukhov = 300;
         result.pressure_in = 6e6;
         return result;
     }
@@ -176,11 +169,7 @@ public:
         // Инициализация начального профиля температуры (не важно, ячейки или точки)
         for (double& temp : current.temp) {
             temp = initial_conditions.temp;
-        }
-        // Инициализация начального профиля температуры (не важно, ячейки или точки)
-        for (double& temp_shukhov : current.temp_shukhov) {
-            temp_shukhov = initial_conditions.temp_shukhov;
-        }      
+        }  
         //// Начальный гидравлический расчет
         calc_pressure_layer(initial_conditions);
         buffer.previous().pressure_initial = current.pressure_initial = current.pressure; // Получаем изначальный профиль давлений       
@@ -357,7 +346,7 @@ inline void perform_noniso_quasistatic_simulation_p(
     // Печатаем профиль трубы и первый слой к нему
     write_profile(pipe.profile, path + "pipe_coord_heights");
     // Вывод начального расчёта
-    layer_printer.print_t_p_all(path, t, pipe, task.get_current_layer());
+    layer_printer.print_p_all(path, t, pipe, task.get_current_layer());
 
     do
     {
@@ -382,11 +371,11 @@ inline void perform_noniso_quasistatic_simulation_p(
         if (etalon_timeseries.data.empty())
         {
 
-            layer_printer.print_t_p_all(path, t, pipe, task.get_current_layer());
+            layer_printer.print_p_all(path, t, pipe, task.get_current_layer());
         }
         else {
 
-            layer_printer.print_t_p_all(path, t, pipe, task.get_current_layer(), etalon_timeseries(t));
+            layer_printer.print_p_all(path, t, pipe, task.get_current_layer(), etalon_timeseries(t));
         }
 
     } while (t <= boundary_timeseries.get_end_date());

@@ -26,11 +26,11 @@ struct density_viscosity_temp_quasi_layer {
     /// @brief Профиль вязкости
     std::vector<double> viscosity;
     /// @brief Профиль температуры
-    std::vector<double> temp;
+    std::vector<double> temperature;
     /// @brief Профиль температуры  Шуховым
-    std::vector<double> temp_shukhov;
+    std::vector<double> temperature_shukhov;
     /// @brief Профиль температуры  Шуховым
-    std::vector<double> temp_shukhov_bias;
+    std::vector<double> temperature_shukhov_bias;
     /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
     /// @brief Профиль вспомогательных расчетов для МХ (и для температуры)
@@ -40,9 +40,9 @@ struct density_viscosity_temp_quasi_layer {
     density_viscosity_temp_quasi_layer(size_t point_count)
         : density(point_count - static_cast<int>(CellFlag))
         , viscosity(point_count - static_cast<int>(CellFlag))
-        , temp(point_count - static_cast<int>(CellFlag))
-        , temp_shukhov(point_count)
-        , temp_shukhov_bias(point_count - static_cast<int>(CellFlag))
+        , temperature(point_count - static_cast<int>(CellFlag))
+        , temperature_shukhov(point_count)
+        , temperature_shukhov_bias(point_count - static_cast<int>(CellFlag))
         , specific(point_count)
         , moc_specific(point_count)
     {
@@ -69,7 +69,7 @@ struct density_viscosity_temp_quasi_layer {
 /// @return Обертка над составным слоем
     static quickest_ultimate_fv_wrapper<1> get_temp_wrapper(density_viscosity_temp_quasi_layer& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.temp, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.temperature, layer.specific);
     }
 
     /// @brief Подготовка температуры Шуховым для расчета методом конечных объемов
@@ -77,52 +77,31 @@ struct density_viscosity_temp_quasi_layer {
 /// @return Обертка над составным слоем
     static quickest_ultimate_fv_wrapper<1> get_temp_shukhov_bias_wrapper(density_viscosity_temp_quasi_layer& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.temp_shukhov_bias, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.temperature_shukhov_bias, layer.specific);
     }
 
     /// @brief Подготовка температуры для расчета по методу характеристик
 /// Оборачивает профиль температуры и вспомогательный расчет МХ в обертку для МХ
     static moc_layer_wrapper<1> get_temperature_moc_wrapper(density_viscosity_temp_quasi_layer& layer)
     {
-        return moc_layer_wrapper<1>(layer.temp, layer.moc_specific);
-    }
-};
-/*
-struct temperature_layer {
-    /// @brief Профиль температуры
-    vector<double> temperature;
-    /// @brief Профиль вспомогательных расчетов для МХ (и для температуры)
-    moc_solver<1>::specific_layer moc_specific;
-    /// @brief Конструктор на заданное количество точек
-    temperature_layer(size_t point_count)
-        : temperature(point_count)
-        , moc_specific(point_count)
-    {
-
-    }
-    /// @brief Подготовка температуры для расчета по методу характеристик
-    /// Оборачивает профиль температуры и вспомогательный расчет МХ в обертку для МХ
-    static moc_layer_wrapper<1> get_temperature_moc_wrapper(temperature_layer& layer)
-    {
         return moc_layer_wrapper<1>(layer.temperature, layer.moc_specific);
     }
 };
-*/
 
 /// @brief Структура, содержащая в себе краевые условия задачи T?
 struct nonisothermal_quasistatic_PQ_task_boundaries_t {           ///как называется уравнение? TQ?
     /// @brief Изначальный объемный расход
     double volumetric_flow;
     /// @brief Изначальное температура на входе
-    double temp;
+    double temperature;
     /// @brief Изначальная плотность на входе
     double density;
     /// @brief Изначальная вязкость на входе
     double viscosity;
     /// @brief Изначальная темп на входе
-    double temp_shukhov;
+    double temperature_shukhov;
     /// @brief Изначальная темп на входе
-    double temp_shukhov_bias;
+    double temperature_shukhov_bias;
 
     /// @brief Конструктор по умолчанию
     nonisothermal_quasistatic_PQ_task_boundaries_t() = default;
@@ -131,22 +110,22 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t {           ///как на
     /// @param values Значения краевых условий
     nonisothermal_quasistatic_PQ_task_boundaries_t(const vector<double>& values) {
         volumetric_flow = values[0];
-        temp = values[1];
+        temperature = values[1];
         density = values[2];
         viscosity = values[3];
-        temp_shukhov = values[1];
-        temp_shukhov_bias = values[1];
+        temperature_shukhov = values[1];
+        temperature_shukhov_bias = values[1];
     }
 
     /// @brief Создание структуры со значениями по умолчанию
     static nonisothermal_quasistatic_PQ_task_boundaries_t default_values() {
         nonisothermal_quasistatic_PQ_task_boundaries_t result;
         result.volumetric_flow = 0.2;
-        result.temp = 300;
+        result.temperature = 300;
         result.density = 850;
         result.viscosity = 15e-6;
-        result.temp_shukhov = 300;
-        result.temp_shukhov_bias = 300;
+        result.temperature_shukhov = 300;
+        result.temperature_shukhov_bias = 300;
         return result;
     }
 };
@@ -209,16 +188,16 @@ public:
             viscosity = initial_conditions.viscosity;
         }
         // Инициализация начального профиля температуры (не важно, ячейки или точки)
-        for (double& temp : current.temp) {
-            temp = initial_conditions.temp;
+        for (double& temperature : current.temperature) {
+            temperature = initial_conditions.temperature;
         }
         // Инициализация начального профиля температуры (не важно, ячейки или точки)
-        for (double& temp_shukhov : current.temp_shukhov) {
-            temp_shukhov = initial_conditions.temp_shukhov;
+        for (double& temperature_shukhov : current.temperature_shukhov) {
+            temperature_shukhov = initial_conditions.temperature_shukhov;
         }
         // Инициализация начального профиля температуры (не важно, ячейки или точки)
-        for (double& temp_shukhov_bias : current.temp_shukhov_bias) {
-            temp_shukhov_bias = initial_conditions.temp_shukhov_bias;
+        for (double& temperature_shukhov_bias : current.temperature_shukhov_bias) {
+            temperature_shukhov_bias = initial_conditions.temperature_shukhov_bias;
         }
     }
 public:
@@ -249,11 +228,11 @@ private:
         advance(); // Сдвигаем текущий и предыдущий слои
 
         /// Солвер для Шухова
-        solve_euler_corrector<1>(heatModel_sh, +1, { boundaries.temp }, &buffer.current().temp_shukhov);
+        solve_euler_corrector<1>(heatModel_sh, +1, { boundaries.temperature }, &buffer.current().temperature_shukhov);
         
         auto temp_shukhov_bias_wrapper = buffer.get_buffer_wrapper(&density_viscosity_temp_quasi_layer<1>::get_temp_shukhov_bias_wrapper);
         quickest_ultimate_fv_solver solver_tmshb(*heatModel_shq, temp_shukhov_bias_wrapper);
-        solver_tmshb.step(dt, buffer.current().temp_shukhov.back(), buffer.current().temp_shukhov.back());
+        solver_tmshb.step(dt, buffer.current().temperature_shukhov.back(), buffer.current().temperature_shukhov.back());
 
         if constexpr (std::is_same<Solver, advection_moc_solver>::value) {
             // считаем партии методом характеристик
@@ -263,10 +242,10 @@ private:
                 auto temperature_buffer = buffer.get_buffer_wrapper(&density_viscosity_temp_quasi_layer<0>::get_temperature_moc_wrapper);               
 
                 moc_solver<1> solver_tm(*heatModel, temperature_buffer);
-                solver_tm.step_optional_boundaries(dt, boundaries.temp, boundaries.temp);
+                solver_tm.step_optional_boundaries(dt, boundaries.temperature, boundaries.temperature);
             }
             else
-                buffer.current().temp = vector<double>(buffer.current().temp.size(), boundaries.temp);
+                buffer.current().temperature = vector<double>(buffer.current().temperature.size(), boundaries.temperature);
         }
         else {
             // считаем партии с помощью QUICKEST-ULTIMATE       
@@ -277,10 +256,10 @@ private:
 
                 // Шаг по вязкости
                 quickest_ultimate_fv_solver solver_tm(*heatModel, temp_wrapper);
-                solver_tm.step(dt, boundaries.temp, boundaries.temp);
+                solver_tm.step(dt, boundaries.temperature, boundaries.temperature);
             }
             else {
-                buffer.current().temp = vector<double>(buffer.current().temp.size(), boundaries.temp);
+                buffer.current().temperature = vector<double>(buffer.current().temperature.size(), boundaries.temperature);
             }
         }
     }
@@ -421,12 +400,12 @@ public:
     typedef density_viscosity_temp_quasi_layer<true> layer_type;
 protected:
     /// @brief Вектор расчётных значений давления на выходе ЛУ
-    vector<double> pipe_temp_out;
+    vector<double> pipe_temperature_out;
 public:
     /// @brief Конструктор обработчика
     /// @param times Предпосчитанная временная сетка моделирования работы ЛУ
     nonisothermal_qsm_batch_Tout_collector_t(const vector<double>& times)
-        : pipe_temp_out(times.size(), std::numeric_limits<double>::quiet_NaN())
+        : pipe_temperature_out(times.size(), std::numeric_limits<double>::quiet_NaN())
     {
 
     }
@@ -439,12 +418,12 @@ public:
     {
         // at() - проверяет выход за границы массива
         //pipe_pressure_out.at(step_index) = layer.pressure.back();
-        pipe_temp_out[step_index] = layer.temp.back();
+        pipe_temperature_out[step_index] = layer.temperature.back();
     }
     /// @brief Геттер для вектора собранных результатов расчёта давления в конце ЛУ
     /// @return Вектор расчётных значений давления на выходе ЛУ
     const vector<double>& get_temp_out_calculated() const {
-        return pipe_temp_out;
+        return pipe_temperature_out;
     }
 };
 

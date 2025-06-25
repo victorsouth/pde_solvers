@@ -4,7 +4,7 @@
 /// @brief Класс, содержащий функции для вывода
 /// профилей в файл в формате для плоттеров на Python
 template <typename Solver = advection_moc_solver>
-struct python_t_printer {
+struct python_temperature_printer {
     /// @brief Вывод профилей в файл
     /// @tparam OX Тип данных по оси ОX
     /// @param time_moment Время моделирования
@@ -38,7 +38,7 @@ struct python_t_printer {
         output_file.close();
     };
 
-    /// @brief Вывод профилей плотности, вязкости и темп
+    /// @brief Вывод профилей температур
     /// @param t Время моделирования
     /// @param pipe Модель трубы
     /// @param layer Слой, хранящий информацию о 
@@ -55,19 +55,19 @@ struct python_t_printer {
         print_t_profiles<double>(
             t,
             pipe.profile.coordinates,
-            { layer.density, layer.viscosity, layer.temp, layer.temp_shukhov_bias},
-            "time,coordinates,density,viscosity,temp,temp_shukhov_bias",
+            { layer.density, layer.viscosity, layer.temperature, layer.temp_shukhov_bias},
+            "time,coordinates,density,viscosity,temperature,temp_shukhov_bias",
             folder + "results.csv"
         );
 
         // Вывод временного ряда отклонения расчётного температуры от фактического
         if (!etalon_values.empty())
         {
-            double temp_delta = etalon_values[0] - layer.temp.back();
+            double temp_delta = etalon_values[0] - layer.temperature.back();
             double temp_delta_shukhov_bias = etalon_values[0] - layer.temp_shukhov_bias.back();
             double etalon = etalon_values[0];
-            double calculated = layer.temp.back();
-            double temp_in = boundaries.temp;
+            double calculated = layer.temperature.back();
+            double temp_in = boundaries.temperature;
             double volum = boundaries.volumetric_flow;
             double calculated_shukhov_bias = layer.temp_shukhov_bias.back();
             print_t_profiles<std::string>(static_cast<time_t>(0),
@@ -82,7 +82,7 @@ struct python_t_printer {
 /// @brief Класс, содержащий функции для вывода
 /// профилей в файл в формате для плоттеров на Python
 template <typename Solver = advection_moc_solver>
-struct python_t_p_printer {
+struct python_pressure_printer {
     /// @brief Вывод профилей в файл
     /// @tparam OX Тип данных по оси ОX
     /// @param time_moment Время моделирования
@@ -91,7 +91,7 @@ struct python_t_p_printer {
     /// @param params_name Названия параметров для вывода
     /// @param filename Название файла
     template <typename OX>
-    static void print_t_p_profiles(const time_t& time_moment, const vector<OX>& x, const vector<vector<double>>& params, const std::string& params_name, const std::string& filename) {
+    static void print_p_profiles(const time_t& time_moment, const vector<OX>& x, const vector<vector<double>>& params, const std::string& params_name, const std::string& filename) {
         std::ofstream output_file;
         size_t profCount = params.size();
         std::string time_str = UnixToString(time_moment);
@@ -116,24 +116,24 @@ struct python_t_p_printer {
         output_file.close();
     };
 
-    /// @brief Вывод профилей плотности, вязкости и темп
+    /// @brief Вывод профилей давления
     /// @param t Время моделирования
     /// @param pipe Модель трубы
     /// @param layer Слой, хранящий информацию о 
     /// профилях плотности, вязкости и давления
     /// @param folder Название папки с результатом
-    static void print_t_p_all(
+    static void print_p_all(
         std::string folder,
         const time_t& t,
         const pipe_noniso_properties_t& pipe,
         const density_viscosity_temp_p_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true >& layer,
         const vector<double>& etalon_values = {}
     ) {
-        print_t_p_profiles<double>(
+        print_p_profiles<double>(
             t,
             pipe.profile.coordinates,
-            { layer.density, layer.viscosity, layer.temp, layer.temp_shukhov, layer.pressure },
-            "time,coordinates,density,viscosity,temp,temp_shukhov,pressure",
+            { layer.density, layer.viscosity, layer.temperature, layer.temp_shukhov, layer.pressure },
+            "time,coordinates,density,viscosity,temperature,temp_shukhov,pressure",
             folder + "results.csv"
         );
 
@@ -141,11 +141,11 @@ struct python_t_p_printer {
         if (!etalon_values.empty())
         {
             double etalon = etalon_values[0];
-            double calculated = layer.temp.back();
+            double calculated = layer.temperature.back();
             double calculated_shukhov = layer.temp_shukhov.back();
             double calculated_p = layer.pressure.back();
             double pressure_delta = etalon_values[0] - layer.pressure.back();
-            print_t_p_profiles<std::string>(static_cast<time_t>(0),
+            print_p_profiles<std::string>(static_cast<time_t>(0),
                 vector<string>{ UnixToString(t) },
                 vector<vector<double>>{ { calculated }, { calculated_shukhov }, { etalon }, { calculated_p }, { pressure_delta } },
                 "time,time,calculated,calculated_shukhov,etalon,calculated_p,diff_press",
@@ -168,7 +168,7 @@ protected:
     /// @brief Временные ряды эталонных данных
     vector<pair<vector<time_t>, vector<double>>> etalon_tag_data;
     /// @brief Путь к реальным данным с трубопровода
-    std::string folder = "../research/2025-01-ident-quasistatic-nonisothermal/data/";
+    std::string folder = "../research_out/data/";
 
     /// @brief Подготовка к расчету для семейства тестов
     virtual void SetUp() override {
@@ -187,7 +187,7 @@ protected:
         oil = get_noniso_default_oil();
         oil.density.nominal_density = 860;
         // Посчитано по Филонову для температур 0, 20, 50
-        std::array<double, 3> visc{ 35.2166964842424e-6, 15.1959389818927e-6, 4.30720885400170e-6 };
+        std::array<double, 3> visc{ 27.028120732908523e-6, 10.937124971104140e-6, 2.815361458795777e-6 };
         oil.viscosity = oil_viscosity_parameters_t(visc);
 
         // Создаём папку с результатами и получаем путь к ней
@@ -230,7 +230,7 @@ protected:
     // Временные ряды эталонных данных давления
     vector<pair<vector<time_t>, vector<double>>> etalon_tag_data;
     // Путь к реальным данным с трубопровода
-    std::string folder = "../research/2025-01-ident-quasistatic-nonisothermal/data/";
+    std::string folder = "../research_out/data/";
 
     /// @brief Подготовка к расчету для семейства тестов
     virtual void SetUp() override {
@@ -290,7 +290,7 @@ TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology)
     // Помещаем временные ряды в вектор
     vector_timeseries_t etalon_params(etalon_tag_data);
 
-    perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_t_printer<quickest_ultimate_fv_solver>>(
+    perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_temperature_printer<quickest_ultimate_fv_solver>>(
         path, pipe, oil, params, noniso_qsm_model_type::FullQuasi, etalon_params
     );
 }
@@ -304,134 +304,7 @@ TEST_F(NonisothermalQuasistaticModelWithRealData_Pressure, QuasiStationaryFullRe
     // Помещаем временные ряды в вектор
     vector_timeseries_t etalon_params(etalon_tag_data);
 
-    perform_noniso_quasistatic_simulation_p<quickest_ultimate_fv_solver, python_t_p_printer<quickest_ultimate_fv_solver>>(
+    perform_noniso_quasistatic_simulation_p<quickest_ultimate_fv_solver, python_pressure_printer<quickest_ultimate_fv_solver>>(
         path, pipe, oil, params, noniso_qsm_model_type::FullQuasi, etalon_params
     );
 }
-
-
-/*
-/// @brief Стационарный расчёт с текущей реологией 
-TEST_F(IsothermalQuasistaticModelWithRealData, StationaryCurrentReology)
-{
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t params(tag_data);
-
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t etalon_params(etalon_tag_data);
-
-    // Производим расчёт и записываем результаты в файлы
-    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
-        path, pipe, params, QuasistaticModelType::Stationary, etalon_params
-    );
-}
-
-/// @brief Стационарный расчёт с реологией из начала периода
-TEST_F(IsothermalQuasistaticModelWithRealData, StationaryInitialReology)
-{
-    auto tag_data_initial = tag_data;
-
-    auto& density_time_series = tag_data_initial[2];
-    auto& density_values = density_time_series.second; // second - это значения (first - время, здесь не надо)
-
-    // ставим везде начальное значение плотности
-    double initial_density = density_values.front(); 
-    for (double& value : density_values) {
-        value = initial_density;
-    }
-
-    auto& viscosity_time_series = tag_data_initial[3];
-    auto& viscosity_values = viscosity_time_series.second; // second - это значения (first - время, здесь не надо)
-
-    // ставим везде начальное значение плотности
-    double initial_viscosity = viscosity_values.front();
-    for (double& value : viscosity_values) {
-        value = initial_viscosity;
-    }
-
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t params(tag_data_initial);
-
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t etalon_params(etalon_tag_data);
-
-    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
-        path, pipe, params, QuasistaticModelType::Stationary, etalon_params
-    );
-}
-
-/// @brief Стационарный расчёт со средней за период реологией 
-TEST_F(IsothermalQuasistaticModelWithRealData, StationaryMeanReology)
-{
-    auto tag_data_initial = tag_data;
-
-    auto& density_values = tag_data_initial[2].second; // second - это значения (first - время, здесь не надо)
-    double sum = std::accumulate(density_values.begin(), density_values.end(), 0.0);
-    double mean_density = sum / density_values.size();
-
-    for (double& value : density_values) {
-        value = mean_density;
-    }
-
-    auto& viscosity_values = tag_data_initial[3].second;
-    sum = std::accumulate(viscosity_values.begin(), viscosity_values.end(), 0.0);
-    double mean_viscosity = sum / viscosity_values.size();
-
-    for (double& value : viscosity_values) {
-        value = mean_viscosity;
-    }
-
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t params(tag_data_initial);
-
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t etalon_params(etalon_tag_data);
-
-    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
-        path, pipe, params, QuasistaticModelType::Stationary, etalon_params
-    );
-}
-
-/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
-TEST_F(IsothermalQuasistaticModelWithRealData, QuasiStationaryFullReology)
-{
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t params(tag_data);
-
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t etalon_params(etalon_tag_data);
-
-    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
-        path, pipe, params, QuasistaticModelType::FullQuasi, etalon_params
-    );
-}
-
-/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
-TEST_F(IsothermalQuasistaticModelWithRealData, QuasiStationaryDensityOnly)
-{
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t params(tag_data);
-
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t etalon_params(etalon_tag_data);
-
-    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
-        path, pipe, params, QuasistaticModelType::DensityQuasi, etalon_params
-    );
-}
-
-/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
-TEST_F(IsothermalQuasistaticModelWithRealData, QuasiStationaryViscosityOnly)
-{
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t params(tag_data);
-
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t etalon_params(etalon_tag_data);
-
-    perform_quasistatic_simulation<advection_moc_solver, python_printer<advection_moc_solver>>(
-        path, pipe, params, QuasistaticModelType::ViscosityQuasi, etalon_params
-    );
-}
-*/
-

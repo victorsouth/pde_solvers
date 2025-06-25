@@ -8,28 +8,27 @@ namespace pde_solvers {
 
 /// @brief Структура для хранения текущих значений параметров идентификации
 struct ident_parameters_nonisothermal_qsm {
-    /// @brief Параметр для идентификации по коэффициенту теплопроводности
-    double htc_adaptation{ 1 };
+    /// @brief Параметр для идентификации по коэффициенту теплообмена
+    double htc{ 1 };
 
     /// @brief Применение параметров идентификации в модели трубопровода
     /// @param nominal_pipe Номинальная (исходная) модель трубопровода
     /// @param pipe_to_ident Модель трубопровода, изменённая с учётом параметров идентификации
-    void set_adaptation(const pipe_noniso_properties_t& nominal_pipe, pipe_noniso_properties_t* pipe_to_ident) const
+    void set_parameter(const pipe_noniso_properties_t& nominal_pipe, pipe_noniso_properties_t* pipe_to_ident) const
     {
-        pipe_to_ident->heat.ambient_heat_transfer = htc_adaptation;
+        pipe_to_ident->heat.ambient_heat_transfer = htc;
     }
 
 };
 
 /// @brief Структура для выбора параметра идентификации
 struct ident_nonisothermal_qsm_pipe_settings {
-    /// @brief Флаг идентификации по коэффициенту теплопередачи
+    /// @brief Флаг идентификации по коэффициенту теплообмена
     bool ident_htc{ false };
 
-    /// @brief Проверка на то, чтобы был выбран только один параметр, 
-    /// так как проводить идентификацию сразу по двум этим параметрам не имеет смысла - они связаны между собой
+    /// @brief Проверка на то, чтобы параметр идентификации был задан
     void check_parameters() const {
-        // если ничего не задано, кидаем исключение
+        // если не задан, кидаем исключение
         if (!(ident_htc))
             throw std::runtime_error("Identification parameters are incorrectly selected");
     }
@@ -43,12 +42,14 @@ struct ident_nonisothermal_qsm_pipe_settings {
         // Распаковываем набор аргументов
         size_t index = 0;
         if (ident_htc) {
-            result.htc_adaptation = packed_ident_parameters(index++);
+            result.htc = packed_ident_parameters(index++);
         }
         return result;
     }
 };
 
+/// @brief Класс для идентификации неизотермической квазистационарной модели трубопровода
+/// на данных с реального ЛУ по коэффициенту теплообмена
 class ident_nonisothermal_qsm_pipe_parameters_t : public fixed_least_squares_function_t
 {
     /// @brief Настройка, определяющая по какому из параметров будет проводиться идентификация
@@ -58,7 +59,7 @@ class ident_nonisothermal_qsm_pipe_parameters_t : public fixed_least_squares_fun
     /// @brief Модель трубопровода с учётом текущего значения параметра идентификации
     pipe_noniso_properties_t pipe_to_ident;
     
-    /// @brief Предпосчитанная временная сетка для моделирования работы ЛУ
+    /// @brief Параметры нефти
     const oil_parameters_t oil;
     /// @brief Предпосчитанная временная сетка для моделирования работы ЛУ
     const vector<double>& times;
@@ -66,24 +67,24 @@ class ident_nonisothermal_qsm_pipe_parameters_t : public fixed_least_squares_fun
     /// (темп, расход, плотность и вязкость в начале ЛУ) - краевые условия
     const vector<vector<double>>& control_data;
     /// @brief Интерполированные значения временного рядка СДКУ (темп в конце ЛУ) - эталонные значения
-    const vector<double>& etalon_temp;
+    const vector<double>& etalon_temperature;
 public:
     /// @brief Конструктор класса для идентификации
     /// @param settings Настройка, определяющая выбор параметра идентификации
     /// @param pipe Исходная модель трубопровода
     /// @param times Предпосчитанная временная сетка
     /// @param control_data Предпосчитанные краевые условия
-    /// @param etalon_temp Предпосчитанные эталонные значения
+    /// @param etalon_temperature Предпосчитанные эталонные значения
     ident_nonisothermal_qsm_pipe_parameters_t(
         const ident_nonisothermal_qsm_pipe_settings& settings,
-        const pipe_noniso_properties_t& pipe, const oil_parameters_t& oil, const vector<double>& times, const vector<vector<double>>& control_data, const vector<double>& etalon_temp)
+        const pipe_noniso_properties_t& pipe, const oil_parameters_t& oil, const vector<double>& times, const vector<vector<double>>& control_data, const vector<double>& etalon_temperature)
         : settings(settings)
         , pipe_nominal{ pipe }
         , pipe_to_ident{ pipe }
         , oil{ oil }
         , times{ times }
         , control_data{ control_data }
-        , etalon_temp{ etalon_temp }
+        , etalon_temperature{ etalon_temperature }
     {
         // Проверяем коректность выбора параметра идентификации
         settings.check_parameters();
@@ -97,7 +98,7 @@ protected:
         // Сущность для сбора расчётных данных температуры в конце ЛУ
         nonisothermal_qsm_batch_Tout_collector_t collector(times);
         // Применяем текущие параметры идентификации на модели трубопровода
-        ident_parameters.set_adaptation(pipe_nominal, &pipe_to_ident);
+        ident_parameters.set_parameter(pipe_nominal, &pipe_to_ident);
 
         // Проводим гидравлический изотермический квазистационарный расчёт
         nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver> task(pipe_to_ident, oil);
@@ -111,7 +112,7 @@ protected:
         const vector<double>& calc_temp = collector.get_temp_out_calculated();
         vector<double> simulation_result(times.size());
         // Считаем расхождение расчёта и факта
-        std::transform(calc_temp.begin(), calc_temp.end(), etalon_temp.begin(), simulation_result.begin(),
+        std::transform(calc_temp.begin(), calc_temp.end(), etalon_temperature.begin(), simulation_result.begin(),
             [](double etalon, double calc) { return etalon - calc; });
 
 

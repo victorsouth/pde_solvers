@@ -430,19 +430,19 @@ public:
         double height_gradient; // dz/dx
         double density_gradient; // d(\rho)/dx
         const double* density_profile = &oil.nominal_density[grid_index];
-        const double* heightemperature_profile = &pipe.profile.heights[grid_index];
+        const double* height_profile = &pipe.profile.heights[grid_index];
         const double* grid = &(get_grid()[grid_index]);
         if (grid_index == 0) {
             density_gradient = (density_profile[+1] - density_profile[0]) / (grid[+1] - grid[0]);
-            height_gradient = (heightemperature_profile[+1] - heightemperature_profile[0]) / (grid[+1] - grid[0]);
+            height_gradient = (height_profile[+1] - height_profile[0]) / (grid[+1] - grid[0]);
         }
         else if (grid_index == pipe.profile.get_point_count() - 1) {
             density_gradient = (density_profile[0] - density_profile[-1]) / (grid[0] - grid[-1]);
-            height_gradient = (heightemperature_profile[0] - heightemperature_profile[-1]) / (grid[0] - grid[-1]);
+            height_gradient = (height_profile[0] - height_profile[-1]) / (grid[0] - grid[-1]);
         }
         else {
             density_gradient = (density_profile[+1] - density_profile[-1]) / (grid[+1] - grid[-1]);
-            height_gradient = (heightemperature_profile[+1] - heightemperature_profile[-1]) / (grid[+1] - grid[-1]);
+            height_gradient = (height_profile[+1] - height_profile[-1]) / (grid[+1] - grid[-1]);
         }
 
         double s1 =
@@ -521,27 +521,27 @@ public:
 
         /// Обработка индекса в случае расчетов на границах трубы
         /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
-        size_t reo_index = grid_index;
+        size_t rheo_index = grid_index;
 
         if (pipe.profile.get_point_count() == rho_profile.size())
         {
             // Случай расчета партий в точках (например для метода характеристик)
             if (solver_direction == +1)
-                reo_index += 1;
+                rheo_index += 1;
             else
-                reo_index -= 1;
+                rheo_index -= 1;
         }
         else
         {
             // Случай расчета партий в ячейках (например для quickest ultimate) 
-            reo_index = solver_direction == +1
+            rheo_index = solver_direction == +1
                 ? grid_index
                 : grid_index - 1;
         }
-        double rho = rho_profile[reo_index];
+        double rho = rho_profile[rheo_index];
         double S_0 = pipe.wall.getArea();
         double v = flow / (S_0);
-        double Re = v * pipe.wall.diameter / nu_profile[reo_index];
+        double Re = v * pipe.wall.diameter / nu_profile[rheo_index];
         double lambda = pipe.resistance_function(Re);
         double tau_w = lambda / 8 * rho * v * abs(v);
         double height_derivative = pipe.profile.get_height_derivative(grid_index, solver_direction);
@@ -550,8 +550,7 @@ public:
     }
 };
 
-/// @brief Уравнение трубы для задачи PQ с учетом движения партий
-/// Учитывается, что параметры партий могут задавать в точках, и в ячейках
+/// @brief Уравнение сохранение импульса с учетом беспартийной перекачки, но с учетом неизотермичности
 class nonisothermal_pipe_PQ_noparties_t : public ode_t<1>
 {
 public:
@@ -559,10 +558,15 @@ public:
     using ode_t<1>::right_party_type;
     using ode_t<1>::var_type;
 protected:
+    /// @brief Профиль температур
     const vector<double>& temperature_profile;
+    /// @brief Параметра нефти
     const oil_parameters_t& oil;
+    /// @brief Параметры трубы
     const pipe_properties_t& pipe;
+    /// @brief Объемный расход
     const double flow;
+    /// @brief Направление расчета
     const int solver_direction;
     size_t flag_for_points;
 public:
@@ -597,27 +601,27 @@ public:
 
         /// Обработка индекса в случае расчетов на границах трубы
         /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
-        size_t reo_index = grid_index;
+        size_t temp_index = grid_index;
 
         if (pipe.profile.get_point_count() == temperature_profile.size())
         {
             // Случай расчета партий в точках (например для метода характеристик)
             if (solver_direction == +1)
-                reo_index += 1;
+                temp_index += 1;
             else
-                reo_index -= 1;
+                temp_index -= 1;
         }
         else
         {
             // Случай расчета партий в ячейках (например для quickest ultimate) 
-            reo_index = solver_direction == +1
+            temp_index = solver_direction == +1
                 ? grid_index
                 : grid_index - 1;
         }
         double rho = oil.density.nominal_density;
         double S_0 = pipe.wall.getArea();
         double v = flow / (S_0);
-        double Re = v * pipe.wall.diameter / oil.viscosity(temperature_profile[reo_index]);
+        double Re = v * pipe.wall.diameter / oil.viscosity(temperature_profile[temp_index]);
         //double check = oil.viscosity(temperature_profile[reo_index]);
         double lambda = pipe.resistance_function(Re);
         double tau_w = lambda / 8 * rho * v * abs(v);
