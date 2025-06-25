@@ -102,12 +102,7 @@ protected:
 
         // Проводим гидравлический изотермический квазистационарный расчёт
         nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver> task(pipe_to_ident, oil);
-        nonisothermal_quasistatic_batch<quickest_ultimate_fv_solver, nonisothermal_qsm_batch_Tout_collector_t::layer_type>(
-            task,
-            times,
-            control_data,
-            &collector
-        );
+        quasistatic_batch(task, times, control_data, &collector);
         
         const vector<double>& calc_temp = collector.get_temp_out_calculated();
         vector<double> simulation_result(times.size());
