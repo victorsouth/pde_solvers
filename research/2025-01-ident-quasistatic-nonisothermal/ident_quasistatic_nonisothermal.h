@@ -128,8 +128,9 @@ TEST_F(IdentNonisothermalQSM, HTC)
     ident_nonisothermal_qsm_pipe_settings ident_settings;
     ident_settings.ident_htc = true;
 
+    auto step_mode = nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver>::step_mode_t::Advection;
     // Создаём класс для идентификации
-    ident_nonisothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, oil, times, control_data, etalon_temp);
+    ident_nonisothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, oil, times, control_data, etalon_temp, step_mode);
 
     // Создаём сущности для хранения результата и аналитики
     fixed_optimizer_result_t result;

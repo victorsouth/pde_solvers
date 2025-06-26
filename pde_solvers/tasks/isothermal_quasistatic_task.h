@@ -410,6 +410,8 @@ public:
     }
 };
 
+
+
 /// @brief Пакетный изотермический квазистатический расчет с предподсчитанным временем
 /// делает статический расчет task.solve, 
 /// а затем столько раз task.step, сколько временных меток в times
@@ -420,7 +422,7 @@ public:
 /// @param boundary_timeseries 
 /// @param data_processor 
 template <typename Task, typename DataProcessor>
-inline void quasistatic_batch(
+inline void quasistatic_batch_isothermal(
     Task& task,
     const std::vector<double>& times,
     const std::vector<std::vector<double>>& boundary_timeseries,

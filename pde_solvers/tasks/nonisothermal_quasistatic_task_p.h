@@ -77,7 +77,7 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t_p {           ///как н
     /// @brief Изначальный объемный расход
     double volumetric_flow;
     /// @brief Изначальное температура на входе
-    double temp;
+    double temperature;
     /// @brief Изначальная плотность на входе
     double density;
     /// @brief Изначальная вязкость на входе
@@ -92,7 +92,7 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t_p {           ///как н
     /// @param values Значения краевых условий
     nonisothermal_quasistatic_PQ_task_boundaries_t_p(const vector<double>& values) {
         volumetric_flow = values[0];
-        temp = values[1];
+        temperature = values[1];
         density = values[2];
         viscosity = values[3];
         pressure_in = values[4];
@@ -102,7 +102,7 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t_p {           ///как н
     static nonisothermal_quasistatic_PQ_task_boundaries_t_p default_values() {
         nonisothermal_quasistatic_PQ_task_boundaries_t_p result;
         result.volumetric_flow = 0.2;
-        result.temp = 300;
+        result.temperature = 300;
         result.density = 850;
         result.viscosity = 15e-6;
         result.pressure_in = 6e6;
@@ -169,8 +169,8 @@ public:
             viscosity = initial_conditions.viscosity;
         }
         // Инициализация начального профиля температуры (не важно, ячейки или точки)
-        for (double& temp : current.temp) {
-            temp = initial_conditions.temp;
+        for (double& temperature : current.temperature) {
+            temperature = initial_conditions.temperature;
         }  
         //// Начальный гидравлический расчет
         calc_pressure_layer(initial_conditions);
@@ -226,10 +226,10 @@ private:
                 // Шаг по temp
                 auto temperature_buffer = buffer.get_buffer_wrapper(&density_viscosity_temp_quasi_layer<0>::get_temperature_moc_wrapper);               
                 moc_solver<1> solver_tm(*heatModel, temperature_buffer);
-                solver_tm.step_optional_boundaries(dt, boundaries.temp, boundaries.temp);
+                solver_tm.step_optional_boundaries(dt, boundaries.temperature, boundaries.temperature);
             }
             else
-                buffer.current().temp = vector<double>(buffer.current().temp.size(), boundaries.temp);
+                buffer.current().temperature = vector<double>(buffer.current().temperature.size(), boundaries.temperature);
         }
         else {
             // считаем партии с помощью QUICKEST-ULTIMATE            
@@ -266,10 +266,10 @@ private:
 
                 // Шаг по вязкости
                 quickest_ultimate_fv_solver solver_tm(*heatModel, temp_wrapper);
-                solver_tm.step(dt, boundaries.temp, boundaries.temp);
+                solver_tm.step(dt, boundaries.temperature, boundaries.temperature);
             }
             else {
-                buffer.current().temp = vector<double>(buffer.current().temp.size(), boundaries.temp);
+                buffer.current().temperature = vector<double>(buffer.current().temperature.size(), boundaries.temperature);
             }
         }
     }
@@ -282,7 +282,7 @@ private:
         vector<double>& p_profile = current.pressure;
         int euler_direction = +1; // Задаем направление для Эйлера
 
-        nonisothermal_pipe_PQ_noparties_t pipeModel_PQ(pipe, oil, current.temp, boundaries.volumetric_flow, euler_direction);
+        nonisothermal_pipe_PQ_noparties_t pipeModel_PQ(pipe, oil, current.temperature, boundaries.volumetric_flow, euler_direction);
         solve_euler<1>(pipeModel_PQ, euler_direction, boundaries.pressure_in, &p_profile);
         // Получаем дифференциальный профиль давлений
         std::transform(current.pressure_initial.begin(), current.pressure_initial.end(), p_profile.begin(),

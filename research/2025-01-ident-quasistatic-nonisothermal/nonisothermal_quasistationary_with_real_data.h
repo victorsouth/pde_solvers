@@ -55,25 +55,27 @@ struct python_temperature_printer {
         print_t_profiles<double>(
             t,
             pipe.profile.coordinates,
-            { layer.density, layer.viscosity, layer.temperature, layer.temp_shukhov_bias},
-            "time,coordinates,density,viscosity,temperature,temp_shukhov_bias",
+            { layer.density, layer.viscosity, layer.temperature, layer.temperature_shukhov},
+            "time,coordinates,density,viscosity,temperature,temperature_shukhov",
             folder + "results.csv"
         );
 
         // Вывод временного ряда отклонения расчётного температуры от фактического
         if (!etalon_values.empty())
         {
-            double temp_delta = etalon_values[0] - layer.temperature.back();
-            double temp_delta_shukhov_bias = etalon_values[0] - layer.temp_shukhov_bias.back();
+            double temp_out_calc_advection = layer.temperature.back();
+            double temp_out_delta_advection = etalon_values[0] - layer.temperature.back();
+            double temp_out_calc_shukhov = layer.temperature_shukhov.back();
+            double temp_out_delta_shukhov = etalon_values[0] - layer.temperature_shukhov.back();
             double etalon = etalon_values[0];
-            double calculated = layer.temperature.back();
+            
             double temp_in = boundaries.temperature;
             double volum = boundaries.volumetric_flow;
-            double calculated_shukhov_bias = layer.temp_shukhov_bias.back();
+            
             print_t_profiles<std::string>(static_cast<time_t>(0),
                 vector<string>{ UnixToString(t) },
-                vector<vector<double>>{ { etalon }, { calculated }, { temp_delta }, { calculated_shukhov_bias }, { temp_delta_shukhov_bias }, { temp_in }, { volum }},
-                "time,time,etalon,calculated,diff_temp,calculated_shukhov_bias,temp_delta_shukhov_bias,temp_in,volum",
+                vector<vector<double>>{ { etalon }, { temp_out_calc_advection }, { temp_out_delta_advection }, { temp_out_calc_shukhov }, { temp_out_delta_shukhov }, { temp_in }, { volum }},
+                "time,time,etalon,temp_out_calc_advection,temp_out_delta_advection,temp_out_calc_shukhov,temp_out_delta_shukhov,temp_in,volum",
                 folder + "diff_temp.csv");
         }
     }
@@ -282,7 +284,7 @@ protected:
 };
 
 /// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
-TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology)
+TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology_Advection)
 {
     // Помещаем временные ряды в вектор
     vector_timeseries_t params(tag_data);
@@ -291,7 +293,35 @@ TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology)
     vector_timeseries_t etalon_params(etalon_tag_data);
 
     perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_temperature_printer<quickest_ultimate_fv_solver>>(
-        path, pipe, oil, params, noniso_qsm_model_type::FullQuasi, etalon_params
+        path, pipe, oil, params, noniso_qsm_model_type::FullQuasi, etalon_params, nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver>::step_mode_t::Advection
+    );
+}
+
+/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
+TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology_Shukhov)
+{
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t params(tag_data);
+
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t etalon_params(etalon_tag_data);
+
+    perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_temperature_printer<quickest_ultimate_fv_solver>>(
+        path, pipe, oil, params, noniso_qsm_model_type::FullQuasi, etalon_params, nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver>::step_mode_t::Shukhov
+    );
+}
+
+/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
+TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology_ShukhovWithAdvection)
+{
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t params(tag_data);
+
+    // Помещаем временные ряды в вектор
+    vector_timeseries_t etalon_params(etalon_tag_data);
+
+    perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_temperature_printer<quickest_ultimate_fv_solver>>(
+        path, pipe, oil, params, noniso_qsm_model_type::FullQuasi, etalon_params, nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver>::step_mode_t::ShukhovWithAdvection
     );
 }
 

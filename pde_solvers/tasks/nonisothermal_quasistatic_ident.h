@@ -68,6 +68,9 @@ class ident_nonisothermal_qsm_pipe_parameters_t : public fixed_least_squares_fun
     const vector<vector<double>>& control_data;
     /// @brief Интерполированные значения временного рядка СДКУ (темп в конце ЛУ) - эталонные значения
     const vector<double>& etalon_temperature;
+    /// @brief Режим разделения задачи на Адвекци, Шухова и Шухова с Адвекцией
+    nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver>::step_mode_t step_mode;
+
 public:
     /// @brief Конструктор класса для идентификации
     /// @param settings Настройка, определяющая выбор параметра идентификации
@@ -77,7 +80,8 @@ public:
     /// @param etalon_temperature Предпосчитанные эталонные значения
     ident_nonisothermal_qsm_pipe_parameters_t(
         const ident_nonisothermal_qsm_pipe_settings& settings,
-        const pipe_noniso_properties_t& pipe, const oil_parameters_t& oil, const vector<double>& times, const vector<vector<double>>& control_data, const vector<double>& etalon_temperature)
+        const pipe_noniso_properties_t& pipe, const oil_parameters_t& oil, const vector<double>& times, const vector<vector<double>>& control_data, 
+        const vector<double>& etalon_temperature, nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver>::step_mode_t step_mode)
         : settings(settings)
         , pipe_nominal{ pipe }
         , pipe_to_ident{ pipe }
@@ -85,6 +89,7 @@ public:
         , times{ times }
         , control_data{ control_data }
         , etalon_temperature{ etalon_temperature }
+        , step_mode(step_mode)
     {
         // Проверяем коректность выбора параметра идентификации
         settings.check_parameters();
@@ -93,7 +98,8 @@ protected:
     /// @brief Расчёт невязок - проводится моделирование работы ЛУ и считается отклонение расчётного и фактического давления в конце ЛУ 
     /// @param ident_parameters Текущие значения параметров адаптации
     /// @return Вектор невязок - расхождения расчётного и фактического давления на выхое ЛУ
-    vector<double> calc_vector_residuals(const ident_parameters_nonisothermal_qsm& ident_parameters)
+    vector<double> calc_vector_residuals(const ident_parameters_nonisothermal_qsm& ident_parameters, 
+        nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver>::step_mode_t step_mode)
     {
         // Сущность для сбора расчётных данных температуры в конце ЛУ
         nonisothermal_qsm_batch_Tout_collector_t collector(times);
@@ -102,7 +108,7 @@ protected:
 
         // Проводим гидравлический изотермический квазистационарный расчёт
         nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver> task(pipe_to_ident, oil);
-        quasistatic_batch(task, times, control_data, &collector);
+        quasistatic_batch(task, times, control_data, &collector, step_mode);
         
         const vector<double>& calc_temp = collector.get_temp_out_calculated();
         vector<double> simulation_result(times.size());
@@ -123,7 +129,7 @@ public:
         //ident_parameters.diameter_adaptation = parameters(0);
 
 
-        vector<double> simulation_result = calc_vector_residuals(ident_parameters);
+        vector<double> simulation_result = calc_vector_residuals(ident_parameters, step_mode);
 
         Eigen::Map<Eigen::VectorXd> result(simulation_result.data(), simulation_result.size());
 
@@ -157,7 +163,6 @@ public:
         }
     }
 };
-
 
 
 }

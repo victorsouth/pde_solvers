@@ -29,8 +29,6 @@ struct density_viscosity_temp_quasi_layer {
     std::vector<double> temperature;
     /// @brief Профиль температуры  Шуховым
     std::vector<double> temperature_shukhov;
-    /// @brief Профиль температуры  Шуховым
-    std::vector<double> temperature_shukhov_bias;
     /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
     /// @brief Профиль вспомогательных расчетов для МХ (и для температуры)
@@ -42,7 +40,6 @@ struct density_viscosity_temp_quasi_layer {
         , viscosity(point_count - static_cast<int>(CellFlag))
         , temperature(point_count - static_cast<int>(CellFlag))
         , temperature_shukhov(point_count)
-        , temperature_shukhov_bias(point_count - static_cast<int>(CellFlag))
         , specific(point_count)
         , moc_specific(point_count)
     {
@@ -65,23 +62,16 @@ struct density_viscosity_temp_quasi_layer {
     }
 
     /// @brief Подготовка температуры для расчета методом конечных объемов
-/// @param layer Слой
-/// @return Обертка над составным слоем
-    static quickest_ultimate_fv_wrapper<1> get_temp_wrapper(density_viscosity_temp_quasi_layer& layer)
+    /// @param layer Слой
+    /// @return Обертка над составным слоем
+    static quickest_ultimate_fv_wrapper<1> get_temperature_wrapper(density_viscosity_temp_quasi_layer& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.temperature, layer.specific);
     }
 
-    /// @brief Подготовка температуры Шуховым для расчета методом конечных объемов
-/// @param layer Слой
-/// @return Обертка над составным слоем
-    static quickest_ultimate_fv_wrapper<1> get_temp_shukhov_bias_wrapper(density_viscosity_temp_quasi_layer& layer)
-    {
-        return quickest_ultimate_fv_wrapper<1>(layer.temperature_shukhov_bias, layer.specific);
-    }
 
     /// @brief Подготовка температуры для расчета по методу характеристик
-/// Оборачивает профиль температуры и вспомогательный расчет МХ в обертку для МХ
+    /// Оборачивает профиль температуры и вспомогательный расчет МХ в обертку для МХ
     static moc_layer_wrapper<1> get_temperature_moc_wrapper(density_viscosity_temp_quasi_layer& layer)
     {
         return moc_layer_wrapper<1>(layer.temperature, layer.moc_specific);
@@ -89,7 +79,7 @@ struct density_viscosity_temp_quasi_layer {
 };
 
 /// @brief Структура, содержащая в себе краевые условия задачи T?
-struct nonisothermal_quasistatic_PQ_task_boundaries_t {           ///как называется уравнение? TQ?
+struct nonisothermal_quasistatic_PQ_task_boundaries_t { 
     /// @brief Изначальный объемный расход
     double volumetric_flow;
     /// @brief Изначальное температура на входе
@@ -100,8 +90,6 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t {           ///как на
     double viscosity;
     /// @brief Изначальная темп на входе
     double temperature_shukhov;
-    /// @brief Изначальная темп на входе
-    double temperature_shukhov_bias;
 
     /// @brief Конструктор по умолчанию
     nonisothermal_quasistatic_PQ_task_boundaries_t() = default;
@@ -114,7 +102,6 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t {           ///как на
         density = values[2];
         viscosity = values[3];
         temperature_shukhov = values[1];
-        temperature_shukhov_bias = values[1];
     }
 
     /// @brief Создание структуры со значениями по умолчанию
@@ -125,7 +112,6 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t {           ///как на
         result.density = 850;
         result.viscosity = 15e-6;
         result.temperature_shukhov = 300;
-        result.temperature_shukhov_bias = 300;
         return result;
     }
 };
@@ -170,6 +156,13 @@ public:
         return buffer.current();
     }
 
+    /// @brief Тип режима расчета на шаге
+    enum class step_mode_t {
+        Advection,            /// Метод адвеции
+        Shukhov,              /// Метод Шухова
+        ShukhovWithAdvection  /// Шухов c адвекцией
+    };
+
     /// @brief Начальный стационарный расчёт. 
     /// Ставим по всей трубе реологию из initial_conditions, делаем гидравлический расчет
     /// @param initial_conditions Начальные условия
@@ -197,10 +190,6 @@ public:
         for (double& temperature_shukhov : current.temperature_shukhov) {
             temperature_shukhov = initial_conditions.temperature_shukhov;
         }
-        // Инициализация начального профиля температуры (не важно, ячейки или точки)
-        for (double& temperature_shukhov_bias : current.temperature_shukhov_bias) {
-            temperature_shukhov_bias = initial_conditions.temperature_shukhov_bias;
-        }
     }
 public:
     /// @brief Рассчёт шага по времени для Cr = 1
@@ -215,26 +204,14 @@ private:
     /// @brief Проводится рассчёт шага движения партии
     /// @param dt Временной шаг моделирования
     /// @param boundaries Краевые условия
-    void make_rheology_step(double dt, const nonisothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
+    void make_rheology_step_advection(double dt, const nonisothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
         
         size_t n = pipe.profile.get_point_count();
         vector<double>Q_profile(n, boundaries.volumetric_flow); /// задаем по трубе новый расход из временного ряда
         vector<double> G(pipe.profile.get_point_count(), Q_profile[0] * oil.density.nominal_density);   /// массовый расход
-        pipe.heat.ambient_heat_transfer = 1.3786917741689342;   /// Идентицифрованный параметр
-        pipe_noniso_properties_t pipe_copy = pipe;
-        pipe_copy.heat.ambient_heat_transfer = 1.4917523388199689;
         auto heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);   
-        PipeHeatInflowConstArea heatModel_sh(pipe_copy, oil, G);         /// один хитмодел для квикеста, второй для Шухова
-        auto heatModel_shq = std::make_unique<PipeHeatInflowConstArea>(pipe_copy, oil, G);
 
         advance(); // Сдвигаем текущий и предыдущий слои
-
-        /// Солвер для Шухова
-        solve_euler_corrector<1>(heatModel_sh, +1, { boundaries.temperature }, &buffer.current().temperature_shukhov);
-        
-        auto temp_shukhov_bias_wrapper = buffer.get_buffer_wrapper(&density_viscosity_temp_quasi_layer<1>::get_temp_shukhov_bias_wrapper);
-        quickest_ultimate_fv_solver solver_tmshb(*heatModel_shq, temp_shukhov_bias_wrapper);
-        solver_tmshb.step(dt, buffer.current().temperature_shukhov.back(), buffer.current().temperature_shukhov.back());
 
         if constexpr (std::is_same<Solver, advection_moc_solver>::value) {
             // считаем партии методом характеристик
@@ -253,8 +230,7 @@ private:
             // считаем партии с помощью QUICKEST-ULTIMATE       
             // temp - квазистац или стац
             if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::TempQuasi) {
-                auto temp_wrapper = buffer.get_buffer_wrapper(
-                    &density_viscosity_temp_quasi_layer<1>::get_temp_wrapper);
+                auto temp_wrapper = buffer.get_buffer_wrapper(&density_viscosity_temp_quasi_layer<1>::get_temperature_wrapper);
 
                 // Шаг по вязкости
                 quickest_ultimate_fv_solver solver_tm(*heatModel, temp_wrapper);
@@ -266,13 +242,49 @@ private:
         }
     }
 
+    /// @brief 
+    /// @param dt 
+    /// @param boundaries 
+    void make_rheology_step_shukhov(double dt, const nonisothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
+
+        vector<double>Q_profile(pipe.profile.get_point_count(), boundaries.volumetric_flow); /// задаем по трубе новый расход из временного ряда
+        vector<double> G(pipe.profile.get_point_count(), Q_profile[0] * oil.density.nominal_density);   /// массовый расход
+        //pipe.heat.ambient_heat_transfer = 1.4917523388199689;
+        PipeHeatInflowConstArea heatModel(pipe, oil, G);         /// один хитмодел для квикеста, второй для Шухова
+
+        advance(); // Сдвигаем текущий и предыдущий слои
+
+        /// Солвер для Шухова
+        solve_euler_corrector<1>(heatModel, +1, { boundaries.temperature }, &buffer.current().temperature);
+    }
+
 public:
     /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
     /// Функция делат сдвиг буфера (advance) так, что buffer.current после вызова содержит свежерасчитанный слой
     /// @param dt временной шаг моделирования
     /// @param boundaries Краевые условие
-    void step(double dt, const nonisothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
-        make_rheology_step(dt, boundaries);
+    void step(double dt, nonisothermal_quasistatic_PQ_task_boundaries_t& boundaries, step_mode_t mode) {
+        
+        switch (mode) {
+        case step_mode_t::Advection:
+            pipe.heat.ambient_heat_transfer = 1.3786917741689342;
+            make_rheology_step_advection(dt, boundaries);
+            break;
+
+        case step_mode_t::Shukhov:
+            pipe.heat.ambient_heat_transfer = 1.4917523388199689;
+            make_rheology_step_shukhov(dt, boundaries);
+            break;
+
+        case step_mode_t::ShukhovWithAdvection:
+            pipe.heat.ambient_heat_transfer = 1.4917523388199689;
+            make_rheology_step_shukhov(dt, boundaries);
+            boundaries.temperature = buffer.current().temperature.back();
+            make_rheology_step_advection(dt, boundaries);
+            break;
+        }
+
+         //////////
     }
 
     /// @brief Сдвиг текущего слоя в буфере
@@ -311,6 +323,7 @@ inline void perform_noniso_quasistatic_simulation(
     const vector_timeseries_t& boundary_timeseries,
     const noniso_qsm_model_type& model_type,
     const vector_timeseries_t& etalon_timeseries,
+    typename nonisothermal_quasistatic_PQ_task_t<Solver>::step_mode_t step_mode,
     double dt
 )
 {
@@ -342,7 +355,7 @@ inline void perform_noniso_quasistatic_simulation(
         t += static_cast<time_t>(time_step);
 
         // Делаем шаг
-        task.step(time_step, boundaries);
+        task.step(time_step, boundaries, step_mode);
 
         // Вывод профилей и временного ряда сравнения с эталонными данными
         if (etalon_timeseries.data.empty())
@@ -369,12 +382,14 @@ inline void perform_noniso_quasistatic_simulation(
     const vector_timeseries_t& boundary_timeseries,
     const noniso_qsm_model_type& model_type,
     const vector_timeseries_t& etalon_timeseries,
-    double dt=std::numeric_limits<double>::quiet_NaN())
+    typename nonisothermal_quasistatic_PQ_task_t<Solver>::step_mode_t step_mode,
+    double dt=std::numeric_limits<double>::quiet_NaN()
+)
 {
     time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
     nonisothermal_quasistatic_PQ_task_boundaries_t initial_boundaries(boundary_timeseries(t));
 
-    perform_noniso_quasistatic_simulation<Solver, Printer>(path, pipe, oil, initial_boundaries, boundary_timeseries, model_type, etalon_timeseries, dt);
+    perform_noniso_quasistatic_simulation<Solver, Printer>(path, pipe, oil, initial_boundaries, boundary_timeseries, model_type, etalon_timeseries, step_mode, dt);
 }
 
 
@@ -414,5 +429,38 @@ public:
     }
 };
 
+/// @brief Пакетный изотермический квазистатический расчет с предподсчитанным временем
+/// делает статический расчет task.solve, 
+/// а затем столько раз task.step, сколько временных меток в times
+/// @tparam Task Тип расчетной задачи
+/// @tparam DataProcessor Обработчик данных каждого расчетного слоя
+/// @param task 
+/// @param times 
+/// @param boundary_timeseries 
+/// @param data_processor 
+template <typename Task, typename DataProcessor>
+inline void quasistatic_batch(
+    Task& task,
+    const std::vector<double>& times,
+    const std::vector<std::vector<double>>& boundary_timeseries,
+    DataProcessor* data_processor,
+    typename Task::step_mode_t step_mode
+)
+{
+    // Вычленение начальных условий
+    typename Task::boundaries_type initial_boundaries(boundary_timeseries[0]);
+    task.solve(initial_boundaries);
+    data_processor->process_data(0, task.get_buffer().current());
+
+    for (size_t step_index = 1; step_index < times.size(); step_index++)
+    {
+        double time_step = times[step_index] - times[step_index - 1];
+        typename Task::boundaries_type boundaries(boundary_timeseries[step_index]);
+
+        task.step(time_step, boundaries, step_mode);
+
+        data_processor->process_data(step_index, task.get_buffer().current());
+    }
+};
 
 }
