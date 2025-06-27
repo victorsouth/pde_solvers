@@ -1,10 +1,5 @@
 ﻿#pragma once
-#include <string>
-#include <vector>
-#include <Eigen/Sparse>
-#include "pipe/pipe_hydraulic_struct.h"
-#include <fixed/fixed_optimizer.h>
-//#include "../timeseries/timeseries_helpers.h"
+
 
 namespace pde_solvers {
 ;
@@ -112,15 +107,15 @@ protected:
 
         // Проводим гидравлический изотермический квазистационарный расчёт
         isothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver> task(pipe_to_ident);
-        quasistatic_batch_isothermal(
+        quasistatic_batch(
             task,
             times,
             control_data,
             &collector
         );
 
-        const vector<double>& calc_pressure = collector.get_pressure_out_calculated();
-        vector<double> simulation_result(times.size());
+        const std::vector<double>& calc_pressure = collector.get_pressure_out_calculated();
+        std::vector<double> simulation_result(times.size());
         // Считаем расхождение расчёта и факта
         std::transform(calc_pressure.begin(), calc_pressure.end(), etalon_pressure.begin(), simulation_result.begin(),
             [](double etalon, double calc) { return etalon - calc; });

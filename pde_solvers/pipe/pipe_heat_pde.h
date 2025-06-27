@@ -17,19 +17,19 @@ protected:
     const oil_parameters_t& oil;
 
     /// @brief массовый расход (в ячейках или точках??)
-    const vector<double>& mass_flow;
+    const std::vector<double>& mass_flow;
 
 public:
 
     PipeHeatInflowConstArea(const pipe_noniso_properties_t& pipe, const oil_parameters_t& oil,
-        const vector<double>& mass_flow)
+        const std::vector<double>& mass_flow)
         : pipe(pipe)
         , oil(oil)
         , mass_flow(mass_flow)
     {}
 
     /// @brief Возвращает известную уравнению сетку
-    virtual const vector<double>& get_grid() const override {
+    virtual const std::vector<double>& get_grid() const override {
         return pipe.profile.coordinates;
     }
 
@@ -53,14 +53,14 @@ public:
 
     /// @brief Получение собственных чисел и соответствующих им ЛЕВЫХ собственных векторов
     /// \return Список собственных чисел, список собственных векторов
-    virtual pair<var_type, equation_coeffs_type> GetLeftEigens(
+    virtual std::pair<var_type, equation_coeffs_type> GetLeftEigens(
         size_t grid_index, const var_type& point_vector) const override
     {
         double v = getEquationsCoeffs(grid_index, point_vector);
         return std::make_pair(v, v);
     }
 
-    virtual pair<var_type, equation_coeffs_type> GetRightEigens(
+    virtual std::pair<var_type, equation_coeffs_type> GetRightEigens(
         size_t grid_index, const var_type& point_vector) const override
     {
         double v = getEquationsCoeffs(grid_index, point_vector);
@@ -124,13 +124,13 @@ protected:
     /// @brief Нефть (считается одной и той же по всей трубе)
     const oil_parameters_t& oil;
     /// @brief Массовый расход (в ячейках или точках??)
-    const vector<double>& mass_flow;
+    const std::vector<double>& mass_flow;
     /// @brief Средняя температура грунта (если null, то используется ambient_temperature)
-    const vector<double>* temperature_soil{ nullptr };
+    const std::vector<double>* temperature_soil{ nullptr };
 public:
     /// @brief Конструктор для модель с тепловой динамикой грунта
     PipeSoilHeatInflowConstArea(const zoned_pipe_properties& pipe, const oil_parameters_t& oil,
-        const vector<double>& mass_flow, const vector<double>& temperature_soil)
+        const std::vector<double>& mass_flow, const std::vector<double>& temperature_soil)
         : pipe(pipe)
         , oil(oil)
         , mass_flow(mass_flow)
@@ -138,7 +138,7 @@ public:
     {}
     /// @brief Конструктор для модели Шухова
     PipeSoilHeatInflowConstArea(const zoned_pipe_properties& pipe, const oil_parameters_t& oil,
-        const vector<double>& mass_flow)
+        const std::vector<double>& mass_flow)
         : pipe(pipe)
         , oil(oil)
         , mass_flow(mass_flow)
@@ -146,7 +146,7 @@ public:
     {}
 
     /// @brief Возвращает известную уравнению сетку
-    virtual const vector<double>& get_grid() const override {
+    virtual const std::vector<double>& get_grid() const override {
         return pipe.profile.coordinates;
     }
 
@@ -170,14 +170,14 @@ public:
 
     /// @brief Получение собственных чисел и соответствующих им ЛЕВЫХ собственных векторов
     /// \return Список собственных чисел, список собственных векторов
-    virtual pair<var_type, equation_coeffs_type> GetLeftEigens(
+    virtual std::pair<var_type, equation_coeffs_type> GetLeftEigens(
         size_t grid_index, const var_type& point_vector) const override
     {
         double v = getEquationsCoeffs(grid_index, point_vector);
         return std::make_pair(v, v);
     }
 
-    virtual pair<var_type, equation_coeffs_type> GetRightEigens(
+    virtual std::pair<var_type, equation_coeffs_type> GetRightEigens(
         size_t grid_index, const var_type& point_vector) const override
     {
         double v = getEquationsCoeffs(grid_index, point_vector);
@@ -254,14 +254,14 @@ protected:
     /// @brief Труба
     const zoned_pipe_properties& pipe;
     /// @brief Объемный расход
-    const vector<double>& Q;
+    const std::vector<double>& Q;
     /// @brief Средняя температура грунта (если null, то используется ambient_temperature)
-    const vector<double>* temperature_soil{ nullptr };
+    const std::vector<double>* temperature_soil{ nullptr };
 public:
     /// @brief Конструктор для партийной модели с тепловой динамикой грунта
     PipeSoilHeatInflowSortedConstArea(const zoned_pipe_properties& pipe,
         const fluid_properties_profile_t& oil,
-        const vector<double>& vol_flow, const vector<double>& temperature_soil)
+        const std::vector<double>& vol_flow, const std::vector<double>& temperature_soil)
         : pipe(pipe)
         , oil(oil)
         , Q(vol_flow)
@@ -270,7 +270,7 @@ public:
     /// @brief Конструктор для модели Шухова
     PipeSoilHeatInflowSortedConstArea(const zoned_pipe_properties& pipe,
         const fluid_properties_profile_t& oil,
-        const vector<double>& vol_flow)
+        const std::vector<double>& vol_flow)
         : pipe(pipe)
         , oil(oil)
         , Q(vol_flow)
@@ -278,7 +278,7 @@ public:
     {}
 
     /// @brief Возвращает известную уравнению сетку
-    virtual const vector<double>& get_grid() const override {
+    virtual const std::vector<double>& get_grid() const override {
         return pipe.profile.coordinates;
     }
 
@@ -303,14 +303,14 @@ public:
 
     /// @brief Получение собственных чисел и соответствующих им ЛЕВЫХ собственных векторов
     /// \return Список собственных чисел, список собственных векторов
-    virtual pair<var_type, equation_coeffs_type> GetLeftEigens(
+    virtual std::pair<var_type, equation_coeffs_type> GetLeftEigens(
         size_t grid_index, const var_type& point_vector) const override
     {
         double v = getEquationsCoeffs(grid_index, point_vector);
         return std::make_pair(v, v);
     }
 
-    virtual pair<var_type, equation_coeffs_type> GetRightEigens(
+    virtual std::pair<var_type, equation_coeffs_type> GetRightEigens(
         size_t grid_index, const var_type& point_vector) const override
     {
         double v = getEquationsCoeffs(grid_index, point_vector);

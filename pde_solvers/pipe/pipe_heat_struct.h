@@ -25,7 +25,7 @@ inline thermophysical_properties_t soil_clay_dry = { 0.250606936,   	481.1626678
 inline thermophysical_properties_t soil_clay_saturated = { 1.579687861,   	1389.113408,   1998.416222 };
 inline thermophysical_properties_t soil_peat_dry = { 0.060491329,   	992.0339708,   305.3528885 };
 inline thermophysical_properties_t soil_peat_saturated = { 0.499485549,   	1519.215498,   1105.978757 };
-inline vector<pair<const char*, const thermophysical_properties_t*>> soil_list{
+inline std::vector<std::pair<const char*, const thermophysical_properties_t*>> soil_list{
     {"soil default", &soil_default},
     {"sandy fresh",    &soil_sandy_fresh},
     {"sandy saturated",    &soil_sandy_saturated},
@@ -35,7 +35,7 @@ inline vector<pair<const char*, const thermophysical_properties_t*>> soil_list{
     {"peat saturated", &soil_peat_saturated}
 };
 
-inline const std::map<string, const thermophysical_properties_t*> soils(soil_list.begin(), soil_list.end());
+inline const std::map<std::string, const thermophysical_properties_t*> soils(soil_list.begin(), soil_list.end());
 
 
 

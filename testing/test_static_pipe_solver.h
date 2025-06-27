@@ -12,7 +12,7 @@ TEST(Static_Hydraulic_Solver, UseCase)
 
     pipe_properties_t pipe;
     pipe.profile.coordinates = { 0, 1000, 2000 };
-    pipe.profile.heights = pipe.profile.capacity = vector<double>(pipe.profile.coordinates.size(), 0);
+    pipe.profile.heights = pipe.profile.capacity = std::vector<double>(pipe.profile.coordinates.size(), 0);
 
     oil_parameters_t oil;
     PipeModelPGConstArea pipeModel(pipe, oil);

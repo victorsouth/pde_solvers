@@ -52,13 +52,13 @@ struct moc_layer_wrapper<1> : layer_wrapper<1> {
     typedef typename moc_task_traits<1>::specific_layer specific_layer_data;
 
     /// @brief Значения рассчитываемых параметров
-    vector<double>& values;
+    std::vector<double>& values;
     /// @brief Собственные числа. 
-    vector<double>& eigenval;
+    std::vector<double>& eigenval;
 
     moc_layer_wrapper(
-        vector<double>& U,
-        vector<double>& eigenval
+        std::vector<double>& U,
+        std::vector<double>& eigenval
     )
         : values(U)
         , eigenval(eigenval)
@@ -89,9 +89,9 @@ struct moc_layer_wrapper : layer_wrapper<Dimension> {
         , eigenvec(eigenvec)
     {}
     moc_layer_wrapper(
-        std::array<vector<double>*, Dimension> U,
-        std::array<vector<double>*, Dimension> eigenval,
-        std::array<vector<std::array<double, Dimension>>*, Dimension> eigenvec
+        std::array<std::vector<double>*, Dimension> U,
+        std::array<std::vector<double>*, Dimension> eigenval,
+        std::array<std::vector<std::array<double, Dimension>>*, Dimension> eigenvec
     )
         : values(U)
         , eigenval(eigenval)
@@ -119,7 +119,7 @@ struct moc_layer_wrapper : layer_wrapper<Dimension> {
 
     }
     moc_layer_wrapper(
-        vector<double>& U,
+        std::vector<double>& U,
         specific_layer_data& specific
     )
         : values(U)
@@ -151,15 +151,15 @@ protected:
     /// @brief ДУЧП
     pde_t<1>& pde;
     /// @brief Сетка, полученная от ДУЧП
-    const vector<double>& grid;
+    const std::vector<double>& grid;
     /// @brief Количество точек сетки
     const size_t n;
     /// @brief Предыдущий слой (начальные условия)
-    vector<double>& prev;
+    std::vector<double>& prev;
     /// @brief Рассчитываемый слой (он же новый, следующий, текущий)
-    vector<double>& curr;
+    std::vector<double>& curr;
     /// @brief Вспомогательный буфер для расчета собственных чисел 
-    vector<double>& eigenvals;
+    std::vector<double>& eigenvals;
 
 public:
     /// @brief Базовый конструктор, наиболее детальный
@@ -168,9 +168,9 @@ public:
     /// @param curr Новый слой
     /// @param eigenvals Буфер для расчета собственных чисел (рекомендуется относить к прошлому слою)
     moc_solver(pde_t<1>& pde,
-        vector<double>& prev,
-        vector<double>& curr,
-        vector<double>& eigenvals
+        std::vector<double>& prev,
+        std::vector<double>& curr,
+        std::vector<double>& eigenvals
         )
         : pde(pde)
         , grid(pde.get_grid())
@@ -193,8 +193,8 @@ public:
     { }
     /// @brief Конструктор, заточенный для удобства выдергивания специфического слоя, если он один в буфере
     /// Очень специфический
-    moc_solver(pde_t<1>& pde, vector<double>& prev, vector<double>& curr,
-        std::tuple<vector<double>>& eigenvals)
+    moc_solver(pde_t<1>& pde, std::vector<double>& prev, std::vector<double>& curr,
+        std::tuple<std::vector<double>>& eigenvals)
         : moc_solver(pde, prev, curr, std::get<0>(eigenvals))
     { }
     /// @brief Еще один специфический конструктор, когда composite_layer_t содержит только одну задачу
@@ -389,7 +389,7 @@ public:
     /// @brief ДУЧП
     pde_t<Dimension>& pde;
     /// @brief Сетка, полученная от ДУЧП
-    const vector<double>& grid;
+    const std::vector<double>& grid;
     /// @brief Количество точек сетки
     const size_t n;
 
@@ -521,15 +521,15 @@ public:
     /// \param time_step
     /// \param left_boundary
     /// \param right_boundary
-    double step(const pair<vector_type, double>& left_boundary,
-        const pair<vector_type, double>& right_boundary,
+    double step(const std::pair<vector_type, double>& left_boundary,
+        const std::pair<vector_type, double>& right_boundary,
         double time_step = std::numeric_limits<double>::quiet_NaN())
     {
         time_step = step_inner(time_step); // если отдать в step_inner dt = nan, то он его пересчитает в шаг по Куранту!
 
-        pair<vector_type, double> eq_left =
+        std::pair<vector_type, double> eq_left =
             get_characteristic_equation(time_step, 0, 0);
-        pair<vector_type, double> eq_right =
+        std::pair<vector_type, double> eq_right =
             get_characteristic_equation(time_step, 1, grid.size() - 1);
 
         curr.values(0) =

@@ -14,7 +14,7 @@ public:
     /// @param prev Предыдущий слой
     /// @param next Новый слой
     advection_moc_solver(const pipe_properties_t& pipe, double vol_flow,
-        vector<double>& prev, vector<double>& next)
+        std::vector<double>& prev, std::vector<double>& next)
         : pipe{ pipe }
         , volumetric_flow{ vol_flow }
         , prev{ prev }
@@ -58,9 +58,9 @@ protected:
     /// @brief Объемный расход
     const double volumetric_flow;
     /// @brief Предыдущий слой
-    vector<double>& prev;
+    std::vector<double>& prev;
     /// @brief Новый слой
-    vector<double>& next;
+    std::vector<double>& next;
 
 
     /// @brief Расчёт собственного значения

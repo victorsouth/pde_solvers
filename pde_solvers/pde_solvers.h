@@ -44,6 +44,9 @@
 #include "tasks/pipe_heat_task_util.h"
 #include "tasks/isothermal_quasistatic_task.h"
 #include "tasks/isothermal_quasistatic_ident.h"
+#include "tasks/nonisothermal_quasistatic_task.h"
+#include "tasks/nonisothermal_quasistatic_task_p.h"
+#include "tasks/nonisothermal_quasistatic_ident.h"
 
 namespace pde_solvers
 {
@@ -120,5 +123,3 @@ struct pipe_endogenous_calc_layer_t : public pipe_endogenous_variable_layer_t
 }
 
 
-#include "tasks/nonisothermal_quasistatic_task.h"
-#include "tasks/nonisothermal_quasistatic_ident.h"

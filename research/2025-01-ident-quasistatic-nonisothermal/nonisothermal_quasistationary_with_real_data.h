@@ -1,9 +1,7 @@
 ﻿#pragma once
-#include "pde_solvers/tasks/nonisothermal_quasistatic_task_p.h"
 
 /// @brief Класс, содержащий функции для вывода
 /// профилей в файл в формате для плоттеров на Python
-template <typename Solver = advection_moc_solver>
 struct python_temperature_printer {
     /// @brief Вывод профилей в файл
     /// @tparam OX Тип данных по оси ОX
@@ -13,7 +11,9 @@ struct python_temperature_printer {
     /// @param params_name Названия параметров для вывода
     /// @param filename Название файла
     template <typename OX>
-    static void print_t_profiles(const time_t& time_moment, const vector<OX>& x, const vector<vector<double>>& params, const std::string& params_name, const std::string& filename) {
+    static void print_t_profiles(const time_t& time_moment, const std::vector<OX>& x, const std::vector<std::vector<double>>& params, 
+        const std::string& params_name, const std::string& filename) 
+    {
         std::ofstream output_file;
         size_t profCount = params.size();
         std::string time_str = UnixToString(time_moment);
@@ -48,15 +48,15 @@ struct python_temperature_printer {
         std::string folder,
         const time_t& t,
         const pipe_noniso_properties_t& pipe,
-        const density_viscosity_temp_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true >& layer,
-        const vector<double>& etalon_values = {},
-        const nonisothermal_quasistatic_PQ_task_boundaries_t& boundaries = nonisothermal_quasistatic_PQ_task_boundaries_t::default_values()
+        const qsm_noniso_T_layer& layer,
+        const std::vector<double>& etalon_values = {},
+        const qsm_noniso_T_task_boundaries_t& boundaries = qsm_noniso_T_task_boundaries_t::default_values()
     ) {
         print_t_profiles<double>(
             t,
             pipe.profile.coordinates,
-            { layer.density, layer.viscosity, layer.temperature, layer.temperature_shukhov},
-            "time,coordinates,density,viscosity,temperature,temperature_shukhov",
+            { layer.temperature, layer.temperature_shukhov},
+            "time,coordinates,temperature,temperature_shukhov",
             folder + "results.csv"
         );
 
@@ -73,8 +73,8 @@ struct python_temperature_printer {
             double volum = boundaries.volumetric_flow;
             
             print_t_profiles<std::string>(static_cast<time_t>(0),
-                vector<string>{ UnixToString(t) },
-                vector<vector<double>>{ { etalon }, { temp_out_calc_advection }, { temp_out_delta_advection }, { temp_out_calc_shukhov }, { temp_out_delta_shukhov }, { temp_in }, { volum }},
+                std::vector<std::string>{ UnixToString(t) },
+                std::vector<std::vector<double>>{ { etalon }, { temp_out_calc_advection }, { temp_out_delta_advection }, { temp_out_calc_shukhov }, { temp_out_delta_shukhov }, { temp_in }, { volum }},
                 "time,time,etalon,temp_out_calc_advection,temp_out_delta_advection,temp_out_calc_shukhov,temp_out_delta_shukhov,temp_in,volum",
                 folder + "diff_temp.csv");
         }
@@ -83,7 +83,6 @@ struct python_temperature_printer {
 
 /// @brief Класс, содержащий функции для вывода
 /// профилей в файл в формате для плоттеров на Python
-template <typename Solver = advection_moc_solver>
 struct python_pressure_printer {
     /// @brief Вывод профилей в файл
     /// @tparam OX Тип данных по оси ОX
@@ -93,7 +92,7 @@ struct python_pressure_printer {
     /// @param params_name Названия параметров для вывода
     /// @param filename Название файла
     template <typename OX>
-    static void print_p_profiles(const time_t& time_moment, const vector<OX>& x, const vector<vector<double>>& params, const std::string& params_name, const std::string& filename) {
+    static void print_p_profiles(const time_t& time_moment, const std::vector<OX>& x, const std::vector<std::vector<double>>& params, const std::string& params_name, const std::string& filename) {
         std::ofstream output_file;
         size_t profCount = params.size();
         std::string time_str = UnixToString(time_moment);
@@ -125,17 +124,17 @@ struct python_pressure_printer {
     /// профилях плотности, вязкости и давления
     /// @param folder Название папки с результатом
     static void print_p_all(
-        std::string folder,
+        const std::string& folder,
         const time_t& t,
         const pipe_noniso_properties_t& pipe,
-        const density_viscosity_temp_p_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true >& layer,
-        const vector<double>& etalon_values = {}
+        const qsm_noniso_TP_layer& layer,
+        const std::vector<double>& etalon_values = {}
     ) {
         print_p_profiles<double>(
             t,
             pipe.profile.coordinates,
-            { layer.density, layer.viscosity, layer.temperature, layer.temp_shukhov, layer.pressure },
-            "time,coordinates,density,viscosity,temperature,temp_shukhov,pressure",
+            { layer.temperature, layer.pressure },
+            "time,coordinates,temperature,pressure",
             folder + "results.csv"
         );
 
@@ -144,13 +143,13 @@ struct python_pressure_printer {
         {
             double etalon = etalon_values[0];
             double calculated = layer.temperature.back();
-            double calculated_shukhov = layer.temp_shukhov.back();
+            //double calculated_shukhov = layer.temp_shukhov.back();
             double calculated_p = layer.pressure.back();
             double pressure_delta = etalon_values[0] - layer.pressure.back();
             print_p_profiles<std::string>(static_cast<time_t>(0),
-                vector<string>{ UnixToString(t) },
-                vector<vector<double>>{ { calculated }, { calculated_shukhov }, { etalon }, { calculated_p }, { pressure_delta } },
-                "time,time,calculated,calculated_shukhov,etalon,calculated_p,diff_press",
+                std::vector<std::string>{ UnixToString(t) },
+                std::vector<std::vector<double>>{ { calculated }, /*{calculated_shukhov},*/ {etalon}, {calculated_p}, {pressure_delta} },
+                "time,time,calculated,etalon,calculated_p,diff_press",
                 folder + "diff_temp.csv");
         }
     }
@@ -159,63 +158,24 @@ struct python_pressure_printer {
 /// @brief Тесты для расчёта на реальных данных
 class NonisothermalQuasistaticModelWithRealData : public ::testing::Test {
 protected:
-    // Параметры трубы
-    pipe_noniso_properties_t pipe;
-    // Параметры нефти
-    oil_parameters_t oil;
-    // Путь к результатам ресёрча
-    string path;
-    // Временные ряды краевых условий
-    vector<pair<vector<time_t>, vector<double>>> tag_data;
-    /// @brief Временные ряды эталонных данных
-    vector<pair<vector<time_t>, vector<double>>> etalon_tag_data;
-    /// @brief Путь к реальным данным с трубопровода
-    std::string folder = "../research_out/data/";
-
-    /// @brief Подготовка к расчету для семейства тестов
-    virtual void SetUp() override {
+    static std::tuple<std::vector<double>, std::vector<std::vector<double>>, std::vector<double>>
+        prepare_real_data(const std::string& path_to_real_data)
+    {
         using namespace std;
-        // Указываем имя файла и желаемый шаг новой сетки
-        string file_name = folder + "coord_heights.csv";
-        //Желаемый шаг
-        double desired_dx = 200;
-
-        // Создаём новый профиль с постоянным шагом
-        pipe.profile = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, file_name);
-        pipe.wall.diameter = 1;
-        //Температура грунта по таблице
-        pipe.heat.ambientTemperature = 286.15;
-        // Настройки взякости
-        oil = get_noniso_default_oil();
-        oil.density.nominal_density = 860;
-        // Посчитано по Филонову для температур 0, 20, 50
-        std::array<double, 3> visc{ 27.028120732908523e-6, 10.937124971104140e-6, 2.815361458795777e-6 };
-        oil.viscosity = oil_viscosity_parameters_t(visc);
-
-        // Создаём папку с результатами и получаем путь к ней
-        path = prepare_research_folder_for_qsm_model();
-
-        vector<pair<string, string>>parameters =
+        std::vector<std::pair<std::string, std::string>>parameters =
         {
-            { folder + "Q_in", "m3/h-m3/s"s },
-            { folder + "t_in_nps", "C"s },
-            { folder + "rho_in", "kg/m3"s },
-            { folder + "visc_in", "mm^2/s-m^2/s"s },
-            { folder + "t_out_n", "C"s}
-
+            { path_to_real_data + "Q_in", "m3/h-m3/s"s },
+            { path_to_real_data + "t_in_nps", "C"s },
+            { path_to_real_data + "t_out_n", "C"s}
         };
 
         // Задаём период
-        string start_period = "01.08.2021 00:00:00";
-        string end_period = "01.09.2021 00:00:00";
+        std::string start_period = "01.08.2021 00:00:00";
+        std::string end_period = "01.09.2021 00:00:00";
 
-        // Считываем временные ряды параметров
-        csv_multiple_tag_reader tags(parameters);
-        tag_data = tags.read_csvs(start_period, end_period);
-        etalon_tag_data = { tag_data.back() };
-        tag_data.pop_back();
-
+        return prepare_timeseries_data(start_period, end_period, parameters);
     }
+
 };
 
 /// @brief Тесты для расчёта на реальных данных
@@ -226,11 +186,11 @@ protected:
     // Параметры нефти
     oil_parameters_t oil;
     // Путь к результатам ресёрча
-    string path;
+    std::string path;
     // Временные ряды краевых условий
-    vector<pair<vector<time_t>, vector<double>>> tag_data;
+    std::vector<std::pair<std::vector<time_t>, std::vector<double>>> tag_data;
     // Временные ряды эталонных данных давления
-    vector<pair<vector<time_t>, vector<double>>> etalon_tag_data;
+    std::vector<std::pair<std::vector<time_t>, std::vector<double>>> etalon_tag_data;
     // Путь к реальным данным с трубопровода
     std::string folder = "../research_out/data/";
 
@@ -239,7 +199,7 @@ protected:
         using namespace std;
 
         // Указываем имя файла и желаемый шаг новой сетки
-        string file_name = folder + "coord_heights.csv";
+        std::string file_name = folder + "coord_heights.csv";
         //Желаемый шаг
         double desired_dx = 200;
 
@@ -259,71 +219,81 @@ protected:
         // Создаём папку с результатами и получаем путь к ней
         path = prepare_research_folder_for_qsm_model();
 
-        vector<pair<string, string>>parameters =
+    }
+
+    static std::tuple<std::vector<double>, std::vector<std::vector<double>>, std::vector<double>>
+        prepare_real_data(const std::string& path_to_real_data)
+    {
+        using namespace std;
+        std::vector<std::pair<std::string, std::string>>parameters =
         {
-            { folder + "Q_in", "m3/h-m3/s"s },
-            { folder + "t_in_nps", "C"s },
-            { folder + "rho_in", "kg/m3"s },
-            { folder + "visc_in", "mm^2/s-m^2/s"s },
-            { folder + "p_in", "MPa"s },
-            { folder + "p_out", "MPa"s}
+            { path_to_real_data + "Q_in", "m3/h-m3/s"s },
+            { path_to_real_data + "t_in_nps", "C"s },
+            { path_to_real_data + "p_in", "MPa"s },
+            { path_to_real_data + "p_out", "MPa"s}
 
         };
 
         // Задаём период
-        string start_period = "01.08.2021 00:00:00";
-        string end_period = "01.09.2021 00:00:00";
+        std::string start_period = "01.08.2021 00:00:00";
+        std::string end_period = "01.09.2021 00:00:00";
 
-        // Считываем временные ряды параметров
-        csv_multiple_tag_reader tags(parameters);
-        tag_data = tags.read_csvs(start_period, end_period);
-        etalon_tag_data = { tag_data.back() };
-        tag_data.pop_back();
-
+        return prepare_timeseries_data(start_period, end_period, parameters);
     }
 };
 
-/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
-TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology_Advection)
+/// @brief Расчет с полноценной динамической моделью
+TEST_F(NonisothermalQuasistaticModelWithRealData, DynamicTemperature)
 {
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t params(tag_data);
+    /// @brief Путь к реальным данным с Линейного участка трубопровода
+    const std::string data_path = "../research_out/data/";
 
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t etalon_params(etalon_tag_data);
+    pipe_noniso_properties_t pipe = get_research_pipe_heatmodel(data_path);
+    pipe.heat.ambient_heat_transfer = 1.3786917741689342;
 
-    perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_temperature_printer<quickest_ultimate_fv_solver>>(
-        path, pipe, oil, params, noniso_qsm_model_type::FullQuasi, etalon_params, nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver>::step_mode_t::Advection
-    );
+
+    auto [times, control_data, etalon_temperature] = prepare_real_data(data_path);
+    oil_parameters_t oil = get_noniso_research_oil();
+    qsm_noniso_T_task_t task(pipe, oil, noniso_qsm_model_type::Dynamic);
+
+    // переписать python_temperature_printer по аналогии с nonisothermal_qsm_batch_Tout_collector_t
+    // Реализовать у него не статический метод process_data, где и делать всю работу
+    // Раскомментить строчки ниже
+    //python_temperature_printer collector(times);
+    //quasistatic_batch(task, times, control_data, &collector);
+
+    // Остальные расчеты написать в этой же манере. Вариации perform_noniso_quasistatic_simulation* не нужны
 }
-
-/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
-TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology_Shukhov)
-{
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t params(tag_data);
-
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t etalon_params(etalon_tag_data);
-
-    perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_temperature_printer<quickest_ultimate_fv_solver>>(
-        path, pipe, oil, params, noniso_qsm_model_type::FullQuasi, etalon_params, nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver>::step_mode_t::Shukhov
-    );
-}
-
-/// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
-TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology_ShukhovWithAdvection)
-{
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t params(tag_data);
-
-    // Помещаем временные ряды в вектор
-    vector_timeseries_t etalon_params(etalon_tag_data);
-
-    perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_temperature_printer<quickest_ultimate_fv_solver>>(
-        path, pipe, oil, params, noniso_qsm_model_type::FullQuasi, etalon_params, nonisothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver>::step_mode_t::ShukhovWithAdvection
-    );
-}
+//
+///// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
+//TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology_Shukhov)
+//{
+//    // Помещаем временные ряды в вектор
+//    vector_timeseries_t params(tag_data);
+//
+//    // Помещаем временные ряды в вектор
+//    vector_timeseries_t etalon_params(etalon_tag_data);
+//
+//    auto step_mode = noniso_quasistatic_PQ_model_t::Shukhov;
+//    perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_temperature_printer<quickest_ultimate_fv_solver>>(
+//        path, pipe, oil, params, noniso_qsm_model_type::FullQuasi, etalon_params, step_mode
+//    );
+//}
+//
+///// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
+//TEST_F(NonisothermalQuasistaticModelWithRealData, QuasiStationaryFullReology_ShukhovWithAdvection)
+//{
+//    // Помещаем временные ряды в вектор
+//    vector_timeseries_t params(tag_data);
+//
+//    // Помещаем временные ряды в вектор
+//    vector_timeseries_t etalon_params(etalon_tag_data);
+//
+//    perform_noniso_quasistatic_simulation<quickest_ultimate_fv_solver, python_temperature_printer<quickest_ultimate_fv_solver>>(
+//        path, pipe, oil, params, noniso_qsm_model_type::FullQuasi, etalon_params, 
+//        noniso_quasistatic_PQ_model_t::ShukhovWithAdvection
+//    );
+//}
 
 /// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
 TEST_F(NonisothermalQuasistaticModelWithRealData_Pressure, QuasiStationaryFullReology_Pressure)
@@ -334,7 +304,10 @@ TEST_F(NonisothermalQuasistaticModelWithRealData_Pressure, QuasiStationaryFullRe
     // Помещаем временные ряды в вектор
     vector_timeseries_t etalon_params(etalon_tag_data);
 
-    perform_noniso_quasistatic_simulation_p<quickest_ultimate_fv_solver, python_pressure_printer<quickest_ultimate_fv_solver>>(
-        path, pipe, oil, params, noniso_qsm_model_type::FullQuasi, etalon_params
-    );
+    //perform_noniso_quasistatic_simulation_p<
+    //    quickest_ultimate_fv_solver, 
+    //    python_pressure_printer<quickest_ultimate_fv_solver>>
+    //    (
+    //    path, pipe, oil, params, noniso_qsm_model_type::Dynamic, etalon_params
+    //);
 }

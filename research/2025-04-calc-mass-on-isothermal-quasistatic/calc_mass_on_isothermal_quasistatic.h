@@ -9,15 +9,15 @@ protected:
     /// @brief Модель трубы
     pipe_properties_t pipe;
     /// @brief Краевые условия по плотности
-    vector<double> density;
+    std::vector<double> density;
     /// @brief Краевые условия по давлению в начале ЛУ
-    vector<double> pressure_in;
+    std::vector<double> pressure_in;
     /// @brief Краевые условия по давлению в конце ЛУ
-    vector<double> pressure_out;
+    std::vector<double> pressure_out;
     /// @brief Краевые условия по объёмному расходу
-    vector<double> Q;
+    std::vector<double> Q;
     /// @brief Временная сетка моделирования
-    vector<double> times;
+    std::vector<double> times;
 
     /// @brief Подготовка к расчету
     virtual void SetUp() override {
@@ -96,7 +96,7 @@ protected:
 struct quasi_layer_for_mass_calculation : public density_viscosity_quasi_layer<true>
 {
     /// @brief Профиль массы в ячейках ЛУ
-    vector<double> mass;
+    std::vector<double> mass;
     /// @brief Инициализация профилей
     /// @param point_count Кол-во точек
     quasi_layer_for_mass_calculation(size_t point_count)
@@ -136,13 +136,13 @@ public:
     /// @param pressure_start Начальное давление
     /// @param pressure_end Конечное давление
     /// @return Профиль давления
-    vector<double> interpolate_pressure_profile(double pressure_start, double pressure_end) {
+    std::vector<double> interpolate_pressure_profile(double pressure_start, double pressure_end) {
         // Количество точек
         size_t n = pipe.profile.get_point_count();
         double min_coord = pipe.profile.coordinates.front();
         double length = pipe.profile.get_length();
 
-        vector<double> pressure_profile;
+        std::vector<double> pressure_profile;
         pressure_profile.reserve(n);
 
         for (size_t index = 0; index < n; index++) {
@@ -184,7 +184,7 @@ private:
     /// @param working_density Плотность партии на входе в трубопровод
     void make_rheology_step(double dt, double volumetric_flow, double density) {
         size_t n = pipe.profile.get_point_count();
-        vector<double>Q_profile(n, volumetric_flow); // задаем по трубе новый расход из временного ряда
+        std::vector<double>Q_profile(n, volumetric_flow); // задаем по трубе новый расход из временного ряда
 
         advance(); // Сдвигаем текущий и предыдущий слои
 
@@ -267,14 +267,14 @@ class mass_collector_from_calculation_on_qsm_t
 {
 protected:
     /// @brief Вектор расчётных профилей массы ЛУ
-    vector<vector<double>> mass_profile;
+    std::vector<std::vector<double>> mass_profile;
 public:
 
     /// @brief Конструктор обработчика
     /// @param steps_count Количество шагов моделирования
     /// @param point_count Кол-во точек в профиле
     mass_collector_from_calculation_on_qsm_t(size_t steps_count, size_t point_count)
-        : mass_profile(steps_count, vector<double>(point_count))
+        : mass_profile(steps_count, std::vector<double>(point_count))
     {
 
     }
@@ -291,7 +291,7 @@ public:
 
     /// @brief Геттер для вектора собранных результатов расчёта профилей массы ЛУ
     /// @return Вектор расчётных профилей массы ЛУ
-    const vector<vector<double>>& get_mass_profile_calculated() const {
+    const std::vector<std::vector<double>>& get_mass_profile_calculated() const {
         return mass_profile;
     }
 };
@@ -308,11 +308,11 @@ public:
 /// @param data_processor Обработчик результатов расчета
 void perform_mass_calculation_on_qsm(
     mass_calculation_on_qsm_task_t& task,
-    const vector<double>& times,
-    const vector<double>& density,
-    const vector<double>& p_in,
-    const vector<double>& p_out,
-    const vector<double>& volumetric_flow,
+    const std::vector<double>& times,
+    const std::vector<double>& density,
+    const std::vector<double>& p_in,
+    const std::vector<double>& p_out,
+    const std::vector<double>& volumetric_flow,
     mass_collector_from_calculation_on_qsm_t* data_processor
 ) {
     // Проводим начальный расчёт
@@ -347,7 +347,7 @@ TEST_F(CalcMassQSM, CalcMass)
         &collector
     );
 
-    vector<vector<double>> mass_profiles = collector.get_mass_profile_calculated();
+    std::vector<std::vector<double>> mass_profiles = collector.get_mass_profile_calculated();
 
 }
 

@@ -25,7 +25,7 @@ struct matlab_printer {
     /// @tparam Solver Класс солвера
     /// @param path Путь, в котором формируется файл
     /// @return Путь к файлу в заивисимости от указанного класса солвера
-    static std::string get_courant_research_filename_for_qsm(const string& path, const string& layer_name)
+    static std::string get_courant_research_filename_for_qsm(const std::string& path, const std::string& layer_name)
     {
         std::stringstream filename;
         filename << path << "output " << layer_name << ".csv";
@@ -67,7 +67,7 @@ struct matlab_printer {
         const time_t& t,
         const pipe_properties_t& pipe,
         const density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true >& layer,
-        const vector<double>& etalon_values = {}
+        const std::vector<double>& etalon_values = {}
     ) {
         print(layer.density, t, path, "density");
         print(layer.viscosity, t, path, "viscosity");
@@ -99,16 +99,16 @@ protected:
 public:
     /// @brief Создание профиля отличающегося от прямой линии
     /// Возрастает в первойи четвёртой четвертях, убывает во второй и в третьей
-    vector<double> create_honest_profile() const
+    std::vector<double> create_honest_profile() const
     {
         double z_min = 140;
         double z_max = 180;
         double z_start = (z_max + z_min) / 2;
         double dz = (z_max - z_start) / pipe.profile.get_point_count();
 
-        vector<double> heights(pipe.profile.get_point_count(), z_start);
+        std::vector<double> heights(pipe.profile.get_point_count(), z_start);
 
-        const vector<double>& coordinates = pipe.profile.coordinates;
+        const std::vector<double>& coordinates = pipe.profile.coordinates;
         for (size_t index = 1; index < heights.size(); index++)
         {
             size_t proc = 100 * index / heights.size();
@@ -129,9 +129,9 @@ public:
         return heights;
     }
 
-    vector_timeseries_t generate_timeseries(const vector<pair<string, double>>& timeseries_initial_values, 
+    vector_timeseries_t generate_timeseries(const std::vector<std::pair<std::string, double>>& timeseries_initial_values, 
         timeseries_generator_settings settings = timeseries_generator_settings::default_settings(), 
-        time_t jump_time = 0, double jump_value = 0, string name_parameter = "")
+        time_t jump_time = 0, double jump_value = 0, std::string name_parameter = "")
     {
         // Задаем время 04.08.2024  16:42:53
         settings.start_time = 1712583773;
@@ -153,7 +153,7 @@ public:
 TEST_F(IsothermalQuasistaticModel, QuickWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
-    string path = prepare_research_folder_for_qsm_model();
+    std::string path = prepare_research_folder_for_qsm_model();
 
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
@@ -161,7 +161,7 @@ TEST_F(IsothermalQuasistaticModel, QuickWithQuasiStationaryModel)
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3
-    vector<pair<string, double>> timeseries_initial_values = {
+    std::vector<std::pair<std::string, double>> timeseries_initial_values = {
         { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
         { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
         { "rho_in", 10 + density_initial }, // "rho_in" Плотность жидкости, (кг/м3)
@@ -177,7 +177,7 @@ TEST_F(IsothermalQuasistaticModel, QuickWithQuasiStationaryModel)
 TEST_F(IsothermalQuasistaticModel, IdealQuickWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
-    string path = prepare_research_folder_for_qsm_model();
+    std::string path = prepare_research_folder_for_qsm_model();
 
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
@@ -185,7 +185,7 @@ TEST_F(IsothermalQuasistaticModel, IdealQuickWithQuasiStationaryModel)
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3
-    vector<pair<string, double>> timeseries_initial_values = {
+    std::vector<std::pair<std::string, double>> timeseries_initial_values = {
         { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
         { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
         { "rho_in", 10 + density_initial }, // "rho_in" Плотность жидкости, (кг/м3)
@@ -207,14 +207,14 @@ TEST_F(IsothermalQuasistaticModel, IdealQuickWithQuasiStationaryModel)
 TEST_F(IsothermalQuasistaticModel, MocWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
-    string path = prepare_research_folder_for_qsm_model();
+    std::string path = prepare_research_folder_for_qsm_model();
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
     isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3
-    vector<pair<string, double>> timeseries_initial_values = {
+    std::vector<std::pair<std::string, double>> timeseries_initial_values = {
         { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
         { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
         { "rho_in", 10 + density_initial }, // "rho_in" Плотность жидкости, (кг/м3)
@@ -230,14 +230,14 @@ TEST_F(IsothermalQuasistaticModel, MocWithQuasiStationaryModel)
 TEST_F(IsothermalQuasistaticModel, OptionalStepMocWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
-    string path = prepare_research_folder_for_qsm_model();
+    std::string path = prepare_research_folder_for_qsm_model();
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
     isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3
-    vector<pair<string, double>> timeseries_initial_values = {
+    std::vector<std::pair<std::string, double>> timeseries_initial_values = {
         { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
         { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
         { "rho_in", 10 + density_initial }, // "rho_in" Плотность жидкости, (кг/м3)
@@ -253,14 +253,14 @@ TEST_F(IsothermalQuasistaticModel, OptionalStepMocWithQuasiStationaryModel)
 TEST_F(IsothermalQuasistaticModel, IdealMocWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
-    string path = prepare_research_folder_for_qsm_model();
+    std::string path = prepare_research_folder_for_qsm_model();
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
     isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3
-    vector<pair<string, double>> timeseries_initial_values = {
+    std::vector<std::pair<std::string, double>> timeseries_initial_values = {
         { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
         { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
         { "rho_in", 10 + density_initial }, // "rho_in" Плотность жидкости, (кг/м3)
@@ -283,14 +283,14 @@ TEST_F(IsothermalQuasistaticModel, IdealMocWithQuasiStationaryModel)
 TEST_F(IsothermalQuasistaticModel, IdealImpulsMocWithQuasiStationaryModel)
 {
     // Создаём папку с результатами и получаем путь к ней
-    string path = prepare_research_folder_for_qsm_model();
+    std::string path = prepare_research_folder_for_qsm_model();
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
     isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3
-    vector<pair<string, double>> timeseries_initial_values = {
+    std::vector<std::pair<std::string, double>> timeseries_initial_values = {
         { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
         { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
         { "rho_in", 10 + density_initial }, // "rho_in" Плотность жидкости, (кг/м3)
@@ -315,16 +315,16 @@ TEST_F(IsothermalQuasistaticModel, IdealImpulsMocWithQuasiStationaryModel)
 TEST_F(IsothermalQuasistaticModel, ShowProfileImpactInQuasiStationaryModel)
 {
     // Создаём папку с результатами для расчёта c профилем по первой и последней точкам трубопровода
-    string path_start_end_profile = prepare_research_folder_for_qsm_model("start_end_profile");
+    std::string path_start_end_profile = prepare_research_folder_for_qsm_model("start_end_profile");
     // Создаём папку с результатами для расчёта c полным профилем
-    string path_full_profile = prepare_research_folder_for_qsm_model("path_full_profile");
+    std::string path_full_profile = prepare_research_folder_for_qsm_model("path_full_profile");
     // Исходные данные для начального стационарного расчета
     constexpr double density_initial = 850;
     isothermal_quasistatic_PQ_task_boundaries_t initial_boundaries({ 0.2, 6e6, density_initial, 15e-6 });
 
     // Временные ряды краевых условий для квазистационарного расчета
     // Даем скачок по плотности на +10 кг/м^3
-    vector<pair<string, double>> timeseries_initial_values = {
+    std::vector<std::pair<std::string, double>> timeseries_initial_values = {
         { "Q", initial_boundaries.volumetric_flow }, // "Q" Расход по всей трубе (опционально), (м^3/с)
         { "p_in", initial_boundaries.pressure_in }, // "p_in" Давление на входе (опционально), (Па)
         { "rho_in", 10 + density_initial }, // "rho_in" Плотность жидкости, (кг/м3)
@@ -337,7 +337,7 @@ TEST_F(IsothermalQuasistaticModel, ShowProfileImpactInQuasiStationaryModel)
     settings.sample_time_max = 200;
     settings.sample_time_min = 200;
 
-    vector<double> profile = create_honest_profile();
+    std::vector<double> profile = create_honest_profile();
 
     pipe.profile.heights = profile;
 

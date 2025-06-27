@@ -232,7 +232,7 @@ struct oil_heat_parameters_t {
     /// @brief Теплоемкость, Дж*кг-1*К-1
     double HeatCapacity = 2000;
     /// @brief Температура застывания, градусы C (переделать на Кельвины!)
-    double pourPointTemperature{ 12 };
+    double pour_point_temperature{ 12 };
 };
 
 
@@ -255,7 +255,7 @@ struct oil_parameters_t {
 
 
 /// @brief Динамические (пересчитываемые в процессе расчета) параметры нефти
-/// @tparam DataBuffer Задается vector<double> для профилей, double для точечного случая
+/// @tparam DataBuffer Задается std::vector<double> для профилей, double для точечного случая
 template <typename BufferDensity, typename BufferViscosity>
 struct fluid_properties_dynamic {
     /// @brief Плотность при стандартных (нормальных, номинальных) условиях
@@ -306,14 +306,14 @@ struct fluid_properties_static {
 
 /// @brief Профиль свойств флюида
 struct fluid_properties_profile_t :
-    fluid_properties_dynamic<const vector<double>&, const vector<std::array<double, 3>>&>,
+    fluid_properties_dynamic<const std::vector<double>&, const std::vector<std::array<double, 3>>&>,
     fluid_properties_static
 {
     // здесь все функции зависят от координаты (индекса на профиле)
 
-    fluid_properties_profile_t(const vector<double>& nominal_density,
-        const vector<std::array<double, 3>>& viscosity_approximation)
-        : fluid_properties_dynamic<const vector<double>&, const vector<std::array<double, 3>>&>(nominal_density, viscosity_approximation)
+    fluid_properties_profile_t(const std::vector<double>& nominal_density,
+        const std::vector<std::array<double, 3>>& viscosity_approximation)
+        : fluid_properties_dynamic<const std::vector<double>&, const std::vector<std::array<double, 3>>&>(nominal_density, viscosity_approximation)
     {
 
     }

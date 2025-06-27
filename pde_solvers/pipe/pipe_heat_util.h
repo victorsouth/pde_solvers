@@ -19,9 +19,32 @@ inline oil_parameters_t get_default_oil_heatmodel()
     oil.heat.HeatCapacity = 2000;
     oil.heat.internalHeatTransferCoefficient = 257;
 
-    oil.heat.pourPointTemperature = KELVIN_OFFSET + 12;
+    oil.heat.pour_point_temperature = KELVIN_OFFSET + 12;
     return oil;
 }
+
+
+// @brief Создание модели трубопровода по реальным данным 
+/// @param path Путь к файлу с профилем реального ЛУ
+/// @return Модель трубы с профилем на основе профиля реального участка трубы 
+inline pipe_noniso_properties_t get_research_pipe_heatmodel(const std::string& path)
+{
+    // Указываем имя файла
+    std::string folder = path + "coord_heights.csv";
+    //Желаемый шаг
+    double desired_dx = 200;
+
+    pipe_noniso_properties_t pipe;
+
+    // Создаём новый профиль с постоянным шагом
+    pipe.profile = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, folder);
+    // Номинальный диаметр трубы
+    pipe.wall.diameter = 1;
+    //Температура грунта по таблице
+    pipe.heat.ambientTemperature = 286.15;
+
+    return pipe;
+};
 
 /// @brief Трубопровод по умолчанию для тепловых задач
 inline pipe_noniso_properties_t  get_default_pipe_heatmodel(double length = 12000, double dx = 1000)
@@ -54,7 +77,7 @@ inline pipe_noniso_properties_t  get_default_pipe_heatmodel(double length = 1200
 /// @brief Зонированный трубопровод для тепловых задач с равной длиной участков с разным грунтом
 inline zoned_pipe_properties get_zoned_pipe_heatmodel(
     const simple_pipe_properties& spipe,
-    const vector<thermophysical_properties_t>& soils,
+    const std::vector<thermophysical_properties_t>& soils,
     HeatModelVer model_version = HeatModelVer::V2)
 {
     zoned_pipe_properties pipe;
@@ -78,7 +101,7 @@ inline zoned_pipe_properties get_zoned_pipe_heatmodel(
     double sensor_step = 20e3; // датчики каждые 20 км
     int sensor_count = std::max(2, static_cast<int>(spipe.length / sensor_step + 0.5) + 1);
     sensor_count -= 2; // датчики на границах будут в любом случае
-    vector<double> sensor_coordinates(sensor_count);
+    std::vector<double> sensor_coordinates(sensor_count);
     for (size_t index = 0; index < sensor_coordinates.size(); ++index) {
         sensor_coordinates[index] = sensor_step * (index + 1);
     }
@@ -111,7 +134,7 @@ inline zoned_pipe_properties get_zoned_pipe_heatmodel(
 
 /// @brief Зонированный трубопровод для тепловых задач с равной длиной участков с разным грунтом
 inline zoned_pipe_properties get_zoned_pipe_heatmodel(
-    const vector<thermophysical_properties_t>& soils,
+    const std::vector<thermophysical_properties_t>& soils,
     HeatModelVer model_version = HeatModelVer::V2,
     double length = 12000, double dx = 1000, double diameter = 0.7)
 {

@@ -14,8 +14,8 @@ inline StreamType& send_stream(StreamType& o, const ContainerType& x)
 }
 
 template <typename StreamType>
-inline StreamType& operator<<(StreamType& o, const vector<double>& x) {
-    return send_stream<vector<double>>(o, x);
+inline StreamType& operator<<(StreamType& o, const std::vector<double>& x) {
+    return send_stream<std::vector<double>>(o, x);
 }
 
 
@@ -36,7 +36,7 @@ TEST(DiffusionSolver, UseCase)
     double dt = 60;   // Шаг временного подсчёта концентрации - такой же как в методе характеристик
     size_t N = static_cast<size_t>(1.2 * T / dt); //проверка алгоритма 
     N = static_cast<size_t>(3600 * 2 / dt); //проверка алгоритма 
-    vector<double> t(N);
+    std::vector<double> t(N);
     for (size_t i = 0; i < N; i++)
     {
         //t(i) = (i + 1 + 18480) * dt; //Конец трубы
@@ -50,11 +50,11 @@ TEST(DiffusionSolver, UseCase)
     double t_change = 60;
     size_t n_change = static_cast<size_t>(t_change / delta_t + 0.5) + 1;
     size_t input_size = static_cast<size_t>(t.back() / delta_t + 0.5);
-    vector<double> input = 
+    std::vector<double> input = 
         diffusion_transport_solver::create_boundary(850, 860, input_size, n_change, n_change);
 
     diffusion_transport_solver solver(pipe, oil);
-    vector<double> output = solver.solve(t, delta_t, input, v, true);
+    std::vector<double> output = solver.solve(t, delta_t, input, v, true);
 
     ////вывод в файлы
     std::ofstream fout;

@@ -12,7 +12,7 @@ struct python_printer {
     /// @param params_name Названия параметров для вывода
     /// @param filename Название файла
     template <typename OX>
-    static void print_profiles(const time_t& time_moment, const vector<OX>& x, const vector<vector<double>>& params, const std::string& params_name, const std::string& filename) {
+    static void print_profiles(const time_t& time_moment, const std::vector<OX>& x, const std::vector<std::vector<double>>& params, const std::string& params_name, const std::string& filename) {
         std::ofstream output_file;
         size_t profCount = params.size();
         std::string time_str = UnixToString(time_moment);
@@ -48,7 +48,7 @@ struct python_printer {
         const time_t& t,
         const pipe_properties_t& pipe,
         const density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true >& layer,
-        const vector<double>& etalon_values = {}
+        const std::vector<double>& etalon_values = {}
     ) {
         print_profiles<double>(
             t,
@@ -63,8 +63,8 @@ struct python_printer {
         {
             double pressure_delta = etalon_values[0] - layer.pressure.back();
             print_profiles<std::string>(static_cast<time_t>(0),
-                vector<string>{ UnixToString(t) },
-                vector<vector<double>>{ { pressure_delta  } },
+                std::vector<std::string>{ UnixToString(t) },
+                std::vector<std::vector<double>>{ { pressure_delta  } },
                 "time,time,diff_press",
                 folder + "diff_press.csv");
         }
@@ -77,18 +77,18 @@ protected:
     // Параметры трубы
     pipe_properties_t pipe;
     // Путь к результатам ресёрча
-    string path;
+    std::string path;
     // Временные ряды краевых условий
-    vector<pair<vector<time_t>, vector<double>>> tag_data;
+    std::vector<std::pair<std::vector<time_t>, std::vector<double>>> tag_data;
     // Временные ряды эталонных данных
-    vector<pair<vector<time_t>, vector<double>>> etalon_tag_data;
+    std::vector<std::pair<std::vector<time_t>, std::vector<double>>> etalon_tag_data;
     // Путь к реальным данным с трубопровода
     std::string folder = "../research/2024-08-quasistationary-with-real-data/data/";
 
     /// @brief Подготовка к расчету для семейства тестов
     virtual void SetUp() override {
         // Указываем имя файла и желаемый шаг новой сетки
-        string file_name = folder + "coord_heights.csv";
+        std::string file_name = folder + "coord_heights.csv";
         //Желаемый шаг
         double desired_dx = 200;
 
@@ -101,7 +101,7 @@ protected:
 
         using namespace std::string_literals;
 
-        vector<pair<string, string>>parameters =
+        std::vector<std::pair<std::string, std::string>>parameters =
         {
             { folder + "Q_in", "m3/h-m3/s"s },
             { folder + "p_in", "MPa"s },
@@ -112,8 +112,8 @@ protected:
         };
 
         // Задаём период
-        string start_period = "01.08.2021 00:00:00";
-        string end_period = "01.09.2021 00:00:00";
+        std::string start_period = "01.08.2021 00:00:00";
+        std::string end_period = "01.09.2021 00:00:00";
 
         // Считываем временные ряды параметров
         csv_multiple_tag_reader tags(parameters);

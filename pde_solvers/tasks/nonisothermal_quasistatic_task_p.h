@@ -1,20 +1,10 @@
 ﻿#pragma once
-#include <string>
-#include <vector>
 
 namespace pde_solvers {
 ;
 
-/// @brief Проблемно-ориентированный слой для PQ расчета
-/// @tparam CellFlag Флаг расчёта реологии 
-/// true - в ячейках для метода конечных объёмов (Quickest-Ultimate)
-/// false - в точках для метода характеристик (advection_moc_solver)
-template <bool CellFlag>
-struct density_viscosity_temp_p_quasi_layer {
-    /// @brief Профиль плотности
-    std::vector<double> density;
-    /// @brief Профиль вязкости
-    std::vector<double> viscosity;
+/// @brief Проблемно-ориентированный слой для PQ расчета. На ячейках
+struct qsm_noniso_TP_layer {
     /// @brief Профиль температуры
     std::vector<double> temperature;
     /// @brief Профиль давления
@@ -25,50 +15,25 @@ struct density_viscosity_temp_p_quasi_layer {
     std::vector<double> pressure_initial;
     /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
-    /// @brief Профиль вспомогательных расчетов для МХ (и для температуры)
-    moc_solver<1>::specific_layer moc_specific;
     /// @brief Инициализация профилей
     /// @param point_count Количество точек
-    density_viscosity_temp_p_quasi_layer(size_t point_count)
-        : density(point_count - static_cast<int>(CellFlag))
-        , viscosity(point_count - static_cast<int>(CellFlag))
-        , temperature(point_count - static_cast<int>(CellFlag))
+    qsm_noniso_TP_layer(size_t point_count)
+        : temperature(point_count - 1)
         , specific(point_count)
-        , moc_specific(point_count)
         , pressure(point_count)
         , pressure_delta(point_count)
     {}
 
-    /// @brief Подготовка плотности для расчета методом конечных объемов 
-    /// @param layer Слой
-    /// @return Обертка над составным слоем
-    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(density_viscosity_temp_p_quasi_layer& layer)
-    {
-        return quickest_ultimate_fv_wrapper<1>(layer.density, layer.specific);
-    }
-
-    /// @brief Подготовка вязкости для расчета методом конечных объемов
-    /// @param layer Слой
-    /// @return Обертка над составным слоем
-    static quickest_ultimate_fv_wrapper<1> get_viscosity_wrapper(density_viscosity_temp_p_quasi_layer& layer)
-    {
-        return quickest_ultimate_fv_wrapper<1>(layer.viscosity, layer.specific);
-    }
 
     /// @brief Подготовка температуры для расчета методом конечных объемов
-/// @param layer Слой
-/// @return Обертка над составным слоем
-    static quickest_ultimate_fv_wrapper<1> get_temp_wrapper(density_viscosity_temp_p_quasi_layer& layer)
+    /// @param layer Слой
+    /// @return Обертка над составным слоем
+    static quickest_ultimate_fv_wrapper<1> get_temperature_wrapper(qsm_noniso_TP_layer& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.temperature, layer.specific);
     }
 
-    /// @brief Подготовка температуры для расчета по методу характеристик
-/// Оборачивает профиль температуры и вспомогательный расчет МХ в обертку для МХ
-    static moc_layer_wrapper<1> get_temperature_moc_wrapper(density_viscosity_temp_p_quasi_layer& layer)
-    {
-        return moc_layer_wrapper<1>(layer.temperature, layer.moc_specific);
-    }
+
 };
 
 
@@ -78,10 +43,6 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t_p {           ///как н
     double volumetric_flow;
     /// @brief Изначальное температура на входе
     double temperature;
-    /// @brief Изначальная плотность на входе
-    double density;
-    /// @brief Изначальная вязкость на входе
-    double viscosity;
     /// @brief Изначальное давление на входе
     double pressure_in;
 
@@ -90,12 +51,10 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t_p {           ///как н
 
     /// @brief Конструктор краевых условий
     /// @param values Значения краевых условий
-    nonisothermal_quasistatic_PQ_task_boundaries_t_p(const vector<double>& values) {
+    nonisothermal_quasistatic_PQ_task_boundaries_t_p(const std::vector<double>& values) {
         volumetric_flow = values[0];
         temperature = values[1];
-        density = values[2];
-        viscosity = values[3];
-        pressure_in = values[4];
+        pressure_in = values[2];
     }
 
     /// @brief Создание структуры со значениями по умолчанию
@@ -103,8 +62,7 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t_p {           ///как н
         nonisothermal_quasistatic_PQ_task_boundaries_t_p result;
         result.volumetric_flow = 0.2;
         result.temperature = 300;
-        result.density = 850;
-        result.viscosity = 15e-6;
+
         result.pressure_in = 6e6;
         return result;
     }
@@ -114,11 +72,10 @@ struct nonisothermal_quasistatic_PQ_task_boundaries_t_p {           ///как н
 /// квазистационарного расчета в условиях движения партий с разной плотностью и вязкостью, температурой
 /// Расчет партий делается методом характеристик или Quickest-Ultimate
 /// @tparam Solver Тип солвера партий (advection_moc_solver или quickest_ultimate_fv_solver)
-template <typename Solver = advection_moc_solver>
-class nonisothermal_quasistatic_PQ_task_t_p {  
+class qsm_noniso_TP_task_boundaries_t {  
 public:
     /// @brief Тип слоя
-    using layer_type = density_viscosity_temp_p_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true> ;
+    using layer_type = qsm_noniso_TP_layer;
     /// @brief Тип буфера
     using buffer_type = ring_buffer_t<layer_type>;
     /// @brief Тип граничных условий
@@ -136,7 +93,8 @@ private:
 public:
     /// @brief Конструктор
     /// @param pipe Модель трубопровода
-    nonisothermal_quasistatic_PQ_task_t_p(const pipe_noniso_properties_t& pipe, const oil_parameters_t& oil, noniso_qsm_model_type model_type = noniso_qsm_model_type::FullQuasi)
+    qsm_noniso_TP_task_boundaries_t(const pipe_noniso_properties_t& pipe, const oil_parameters_t& oil, 
+        noniso_qsm_model_type model_type)
         : pipe(pipe)
         , oil(oil)
         , buffer(2, pipe.profile.get_point_count()) //2
@@ -145,7 +103,7 @@ public:
     }
 
     /// @brief Геттер для текущего слоя  
-    density_viscosity_temp_p_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true> get_current_layer() {
+    qsm_noniso_TP_layer& get_current_layer() {
         return buffer.current();
     }
 
@@ -160,14 +118,6 @@ public:
         // Инициализация реологии
         auto& current = buffer.current();
 
-        // Инициализация начального профиля плотности (не важно, ячейки или точки)
-        for (double& density : current.density) {
-            density = initial_conditions.density;
-        }
-        // Инициализация начального профиля вязкости (не важно, ячейки или точки)
-        for (double& viscosity : current.viscosity) {
-            viscosity = initial_conditions.viscosity;
-        }
         // Инициализация начального профиля температуры (не важно, ячейки или точки)
         for (double& temperature : current.temperature) {
             temperature = initial_conditions.temperature;
@@ -189,88 +139,30 @@ private:
     /// @brief Проводится рассчёт шага движения партии
     /// @param dt Временной шаг моделирования
     /// @param boundaries Краевые условия
-    void make_rheology_step(double dt, const nonisothermal_quasistatic_PQ_task_boundaries_t_p& boundaries) {
+    void make_rheology_step(double dt, const nonisothermal_quasistatic_PQ_task_boundaries_t_p& boundaries) 
+    {
         size_t n = pipe.profile.get_point_count();
-        vector<double>Q_profile(n, boundaries.volumetric_flow); // задаем по трубе новый расход из временного ряда
+        std::vector<double>Q_profile(n, boundaries.volumetric_flow); // задаем по трубе новый расход из временного ряда
         PipeQAdvection advection_model(pipe, Q_profile);
-        vector<double> G(pipe.profile.get_point_count(), Q_profile[0] * oil.density.nominal_density);   /// массовый расход
+        std::vector<double> G(pipe.profile.get_point_count(), Q_profile[0] * oil.density.nominal_density);   /// массовый расход
         
         pipe.heat.ambient_heat_transfer = 1.3786917741689342;   /// Идентицифрованный параметр
         auto heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);   
         
         advance(); // Сдвигаем текущий и предыдущий слои
 
-        if constexpr (std::is_same<Solver, advection_moc_solver>::value) {
-            // считаем партии методом характеристик
-            // грохнуть
-            // плотность - квазистац или стац
-            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::DensityQuasi) {
-                // Шаг по плотности
-                advection_moc_solver solver_rho(pipe, Q_profile[0], buffer.previous().density, buffer.current().density);
-                solver_rho.step(dt, boundaries.density, boundaries.density);
-            }
-            else
-                buffer.current().density = vector<double>(buffer.current().density.size(), boundaries.density);
 
-            // вязкость - квазистац или стац
-            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::ViscosityQuasi) {
-                // Шаг по вязкости
-                advection_moc_solver solver_nu(pipe, Q_profile[0], buffer.previous().viscosity, buffer.current().viscosity);
-                solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
-            }
-            else
-                buffer.current().viscosity = vector<double>(buffer.current().viscosity.size(), boundaries.viscosity);
-            
-            // температура - квазистац или стац
-            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::TempQuasi) {
-                // Шаг по temp
-                auto temperature_buffer = buffer.get_buffer_wrapper(&density_viscosity_temp_quasi_layer<0>::get_temperature_moc_wrapper);               
-                moc_solver<1> solver_tm(*heatModel, temperature_buffer);
-                solver_tm.step_optional_boundaries(dt, boundaries.temperature, boundaries.temperature);
-            }
-            else
-                buffer.current().temperature = vector<double>(buffer.current().temperature.size(), boundaries.temperature);
+        // temp - квазистац или стац
+        if (model_type == noniso_qsm_model_type::Dynamic) {
+            auto temp_wrapper = buffer.get_buffer_wrapper(
+                &qsm_noniso_TP_layer::get_temperature_wrapper);
+
+            // Шаг по вязкости
+            quickest_ultimate_fv_solver solver_tm(*heatModel, temp_wrapper);
+            solver_tm.step(dt, boundaries.temperature, boundaries.temperature);
         }
         else {
-            // считаем партии с помощью QUICKEST-ULTIMATE            
-            // плотность - квазистац или стац
-            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::DensityQuasi) {
-                auto density_wrapper = buffer.get_buffer_wrapper(
-                    &density_viscosity_temp_p_quasi_layer<1>::get_density_wrapper);
-
-                // Шаг по плотности
-                quickest_ultimate_fv_solver solver_rho(advection_model, density_wrapper);
-                solver_rho.step(dt, boundaries.density, boundaries.density);
-            }
-            else {
-                buffer.current().density = vector<double>(buffer.current().density.size(), boundaries.density);
-            }
-
-            // вязкость - квазистац или стац
-            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::ViscosityQuasi) {
-                auto viscosity_wrapper = buffer.get_buffer_wrapper(
-                    &density_viscosity_temp_p_quasi_layer<1>::get_viscosity_wrapper);
-
-                // Шаг по вязкости
-                quickest_ultimate_fv_solver solver_nu(advection_model, viscosity_wrapper);
-                solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
-            }
-            else {
-                buffer.current().viscosity = vector<double>(buffer.current().viscosity.size(), boundaries.viscosity);
-            }
-
-            // temp - квазистац или стац
-            if (model_type == noniso_qsm_model_type::FullQuasi || model_type == noniso_qsm_model_type::TempQuasi) {
-                auto temp_wrapper = buffer.get_buffer_wrapper(
-                    &density_viscosity_temp_p_quasi_layer<1>::get_temp_wrapper);
-
-                // Шаг по вязкости
-                quickest_ultimate_fv_solver solver_tm(*heatModel, temp_wrapper);
-                solver_tm.step(dt, boundaries.temperature, boundaries.temperature);
-            }
-            else {
-                buffer.current().temperature = vector<double>(buffer.current().temperature.size(), boundaries.temperature);
-            }
+            buffer.current().temperature = std::vector<double>(buffer.current().temperature.size(), boundaries.temperature);
         }
     }
     /// @brief Рассчёт профиля давления методом Эйлера (задача PQ) 
@@ -279,7 +171,7 @@ private:
 
         auto& current = buffer.current();
 
-        vector<double>& p_profile = current.pressure;
+        std::vector<double>& p_profile = current.pressure;
         int euler_direction = +1; // Задаем направление для Эйлера
 
         nonisothermal_pipe_PQ_noparties_t pipeModel_PQ(pipe, oil, current.temperature, boundaries.volumetric_flow, euler_direction);
@@ -329,7 +221,7 @@ public:
 /// либо рассчитывается на каждом шаге моделирования для Cr = 1 
 template <typename Solver, typename Printer>
 inline void perform_noniso_quasistatic_simulation_p(
-    const string& path,
+    const std::string& path,
     const pipe_noniso_properties_t& pipe,
     const oil_parameters_t& oil,
     const nonisothermal_quasistatic_PQ_task_boundaries_t_p& initial_boundaries,
@@ -342,7 +234,7 @@ inline void perform_noniso_quasistatic_simulation_p(
     time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
     Printer layer_printer;
 
-    nonisothermal_quasistatic_PQ_task_t_p<Solver> task(pipe, oil, model_type);
+    qsm_noniso_TP_task_boundaries_t<Solver> task(pipe, oil, model_type);
     task.solve(initial_boundaries);
 
     // Печатаем профиль трубы и первый слой к нему
@@ -353,7 +245,7 @@ inline void perform_noniso_quasistatic_simulation_p(
     do
     {
         // Интерполируем значения параметров в заданный момент времени
-        vector<double> values_in_time_model = boundary_timeseries(t);
+        std::vector<double> values_in_time_model = boundary_timeseries(t);
         nonisothermal_quasistatic_PQ_task_boundaries_t_p boundaries(values_in_time_model);
         
         double time_step = dt;
@@ -388,7 +280,7 @@ inline void perform_noniso_quasistatic_simulation_p(
 /// не передавать начальные условия
 template <typename Solver, typename Printer>
 inline void perform_noniso_quasistatic_simulation_p(
-    const string& path,
+    const std::string& path,
     const pipe_noniso_properties_t& pipe,
     const oil_parameters_t& oil,
     const vector_timeseries_t& boundary_timeseries,
@@ -406,7 +298,7 @@ inline void perform_noniso_quasistatic_simulation_p(
 /// шага по времени без эталонных данных
 template <typename Solver, typename Printer>
 inline void perform_noniso_quasistatic_simulation_p(
-    const string& path,
+    const std::string& path,
     const pipe_noniso_properties_t& pipe,
     const oil_parameters_t& oil,
     const nonisothermal_quasistatic_PQ_task_boundaries_t_p& initial_boundaries,
@@ -424,8 +316,8 @@ inline void perform_noniso_quasistatic_simulation_p(
 //template <typename Solver, typename LayerType>
 //inline void nonisothermal_quasistatic_batch_p(
 //    nonisothermal_quasistatic_PQ_task_t_p<Solver>& task,
-//    const vector<double>& times,
-//    const vector<vector<double>>& boundary_timeseries,
+//    const std::vector<double>& times,
+//    const std::vector<std::vector<double>>& boundary_timeseries,
 //    batch_processor_precalculated_times<LayerType>* data_processor
 //)
 //{

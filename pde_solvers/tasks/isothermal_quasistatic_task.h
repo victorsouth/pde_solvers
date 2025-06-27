@@ -1,7 +1,5 @@
 ﻿#pragma once
-#include <string>
-#include <vector>
-#include "../timeseries/timeseries_helpers.h"
+
 namespace pde_solvers {
 ;
 
@@ -75,7 +73,7 @@ struct isothermal_quasistatic_PQ_task_boundaries_t {
 
     /// @brief Конструктор краевых условий
     /// @param values Значения краевых условий
-    isothermal_quasistatic_PQ_task_boundaries_t(const vector<double>& values) {
+    isothermal_quasistatic_PQ_task_boundaries_t(const std::vector<double>& values) {
         volumetric_flow = values[0];
         pressure_in = values[1];
         density = values[2];
@@ -168,7 +166,7 @@ private:
     /// @param boundaries Краевые условия
     void make_rheology_step(double dt, const isothermal_quasistatic_PQ_task_boundaries_t& boundaries) {
         size_t n = pipe.profile.get_point_count();
-        vector<double>Q_profile(n, boundaries.volumetric_flow); // задаем по трубе новый расход из временного ряда
+        std::vector<double>Q_profile(n, boundaries.volumetric_flow); // задаем по трубе новый расход из временного ряда
 
         advance(); // Сдвигаем текущий и предыдущий слои
 
@@ -181,7 +179,7 @@ private:
                 advection_moc_solver solver_rho(pipe, Q_profile[0], buffer.previous().density, buffer.current().density);
                 solver_rho.step(dt, boundaries.density, boundaries.density);
             } else
-                buffer.current().density = vector<double>(buffer.current().density.size(), boundaries.density);
+                buffer.current().density = std::vector<double>(buffer.current().density.size(), boundaries.density);
 
             // вязкость - квазистац или стац
             if (model_type == QuasistaticModelType::FullQuasi || model_type == QuasistaticModelType::ViscosityQuasi) {
@@ -189,7 +187,7 @@ private:
                 advection_moc_solver solver_nu(pipe, Q_profile[0], buffer.previous().viscosity, buffer.current().viscosity);
                 solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
             } else
-                buffer.current().viscosity = vector<double>(buffer.current().viscosity.size(), boundaries.viscosity);
+                buffer.current().viscosity = std::vector<double>(buffer.current().viscosity.size(), boundaries.viscosity);
         }
         else {
             // считаем партии с помощью QUICKEST-ULTIMATE
@@ -204,7 +202,7 @@ private:
                 solver_rho.step(dt, boundaries.density, boundaries.density);
             }
             else {
-                buffer.current().density = vector<double>(buffer.current().density.size(), boundaries.density);
+                buffer.current().density = std::vector<double>(buffer.current().density.size(), boundaries.density);
             }
 
             // вязкость - квазистац или стац
@@ -216,7 +214,7 @@ private:
                 quickest_ultimate_fv_solver solver_nu(advection_model, viscosity_wrapper);
                 solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
             } else
-                buffer.current().viscosity = vector<double>(buffer.current().viscosity.size(), boundaries.viscosity);
+                buffer.current().viscosity = std::vector<double>(buffer.current().viscosity.size(), boundaries.viscosity);
         }
     }
 
@@ -226,7 +224,7 @@ private:
 
         auto& current = buffer.current();
 
-        vector<double>& p_profile = current.pressure;
+        std::vector<double>& p_profile = current.pressure;
         int euler_direction = +1; // Задаем направление для Эйлера
 
         isothermal_pipe_PQ_parties_t pipeModel(pipe, current.density, current.viscosity, boundaries.volumetric_flow, euler_direction);
@@ -276,7 +274,7 @@ public:
 /// либо рассчитывается на каждом шаге моделирования для Cr = 1 
 template <typename Solver, typename Printer>
 inline void perform_quasistatic_simulation(
-    const string& path,
+    const std::string& path,
     const pipe_properties_t& pipe,
     const isothermal_quasistatic_PQ_task_boundaries_t& initial_boundaries,
     const vector_timeseries_t& boundary_timeseries,
@@ -300,7 +298,7 @@ inline void perform_quasistatic_simulation(
     do
     {
         // Интерполируем значения параметров в заданный момент времени
-        vector<double> values_in_time_model = boundary_timeseries(t);
+        std::vector<double> values_in_time_model = boundary_timeseries(t);
         isothermal_quasistatic_PQ_task_boundaries_t boundaries(values_in_time_model);
 
         double time_step = dt;
@@ -332,7 +330,7 @@ inline void perform_quasistatic_simulation(
 /// не передавать начальные условия
 template <typename Solver, typename Printer>
 inline void perform_quasistatic_simulation(
-    const string& path,
+    const std::string& path,
     const pipe_properties_t& pipe,
     const vector_timeseries_t& boundary_timeseries,
     const QuasistaticModelType& model_type,
@@ -350,7 +348,7 @@ inline void perform_quasistatic_simulation(
 /// шага по времени без эталонных данных
 template <typename Solver, typename Printer>
 inline void perform_quasistatic_simulation(
-    const string& path,
+    const std::string& path,
     const pipe_properties_t& pipe,
     const isothermal_quasistatic_PQ_task_boundaries_t& initial_boundaries,
     const vector_timeseries_t& boundary_timeseries,
@@ -383,11 +381,11 @@ public:
     typedef density_viscosity_quasi_layer<true> layer_type;
 protected:
     /// @brief Вектор расчётных значений давления на выходе ЛУ
-    vector<double> pipe_pressure_out;
+    std::vector<double> pipe_pressure_out;
 public:
     /// @brief Конструктор обработчика
     /// @param times Предпосчитанная временная сетка моделирования работы ЛУ
-    isothermal_qsm_batch_Pout_collector_t(const vector<double>& times)
+    isothermal_qsm_batch_Pout_collector_t(const std::vector<double>& times)
         : pipe_pressure_out(times.size(), std::numeric_limits<double>::quiet_NaN())
     {
 
@@ -405,7 +403,7 @@ public:
     }
     /// @brief Геттер для вектора собранных результатов расчёта давления в конце ЛУ
     /// @return Вектор расчётных значений давления на выходе ЛУ
-    const vector<double>& get_pressure_out_calculated() const {
+    const std::vector<double>& get_pressure_out_calculated() const {
         return pipe_pressure_out;
     }
 };
@@ -422,7 +420,7 @@ public:
 /// @param boundary_timeseries 
 /// @param data_processor 
 template <typename Task, typename DataProcessor>
-inline void quasistatic_batch_isothermal(
+inline void quasistatic_batch(
     Task& task,
     const std::vector<double>& times,
     const std::vector<std::vector<double>>& boundary_timeseries,

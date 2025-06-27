@@ -47,7 +47,7 @@ private:
     /// @param N Количество точек краевых условий на входе, используемых в расчете
     /// @param input Краевые условия на входе
     /// @return Значение целевого параметра в точке (ts, xs)
-    static double get_C_x_t2(double ts, double xs, double Pe, double h, size_t N, const vector<double>& input)
+    static double get_C_x_t2(double ts, double xs, double Pe, double h, size_t N, const std::vector<double>& input)
     {
         double C = 0;
         if (N > input.size())
@@ -71,7 +71,7 @@ private:
     // TODO: Написать комментарий
     static double calc_diffusive_transport(double t, double x, double delta_t,
         double v, double L, double K,
-        const vector<double>& input)
+        const std::vector<double>& input)
     {
         double T = L / v;
         double Pe = v * L / K;
@@ -90,10 +90,10 @@ private:
 public:
 
     // TODO: Написать комментарий
-    static vector<double> create_boundary(double initial_value, double final_value,
+    static std::vector<double> create_boundary(double initial_value, double final_value,
         size_t length, size_t start_change, size_t end_change)
     {
-        vector<double> result(length);
+        std::vector<double> result(length);
         for (size_t index = 0; index < start_change; ++index) {
             result[index] = initial_value;
         }
@@ -135,9 +135,9 @@ public:
     /// @param use_offset_trick Использовать обход проблемы с нулевыми начальными условиями 
     /// (это корректно, т.к. модель линейна)
     /// @return Выходной временной ряд параметра для моментов времени t_output
-    vector<double> solve(
-        const vector<double>& t_output,
-        double delta_t, vector<double> input,
+    std::vector<double> solve(
+        const std::vector<double>& t_output,
+        double delta_t, std::vector<double> input,
         double v, bool use_offset_trick)
     {
         double pipe_length = pipe.profile.get_length();
@@ -153,7 +153,7 @@ public:
         }
 
 
-        vector<double> output(t_output.size());
+        std::vector<double> output(t_output.size());
 
 #pragma omp parallel for
         for (int i = 0; i < static_cast<int>(t_output.size()); i++)

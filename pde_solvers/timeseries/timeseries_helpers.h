@@ -1,12 +1,6 @@
 ﻿#pragma once
 
-#include <chrono>
-#include <ctime>
-#include <iomanip>
-#include <string>
-#include <sstream>
-#include <vector>
-#include <map>
+
 /// @brief Перевод UNIX времени в строку формата dd:mm:yyyy HH:MM:SS
 /// @param t время UNIX
 /// @return строку формата dd:mm:yyyy HH:MM:SS
@@ -129,3 +123,4 @@ private:
         {"mm^2/s-m^2/s", {1e+6, 0.0}},
     };
 };
+
