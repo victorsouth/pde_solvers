@@ -4,7 +4,7 @@
 
 
 /// @brief Эндогенный параметр и его код достоверности
-struct endogenious_confident_value_t {
+struct endogenous_confident_value_t {
     /// @brief Значение эндогенного свойства
     double value{ std::numeric_limits<double>::quiet_NaN() };
     /// @brief Код достоверности - по умолчанию значение НЕдостоверное
@@ -23,8 +23,8 @@ inline constexpr T default_endogenious_parameter() {
     else if constexpr (std::is_same<T, double>::value) {
         return std::numeric_limits<double>::quiet_NaN();
     }
-    else if constexpr (std::is_same<T, endogenious_confident_value_t>::value) {
-        return endogenious_confident_value_t();
+    else if constexpr (std::is_same<T, endogenous_confident_value_t>::value) {
+        return endogenous_confident_value_t();
     }
     else {
         throw std::runtime_error("Unknown endogenious parameter type");
@@ -66,13 +66,13 @@ using endogenous_selector_t = endogenous_parameters_template_t<bool>;
 /// 3. Из расчета получено численное значение
 using endogenous_double_values_t = endogenous_parameters_template_t<double>;
 /// @brief Эндогенные параметры и их достоверность
-using endogenous_values_t = endogenous_parameters_template_t<endogenious_confident_value_t>;
+using endogenous_values_t = endogenous_parameters_template_t<endogenous_confident_value_t>;
 
 
 /// @brief Сбрасывает код достоверности в "ложь"
 inline void reset_confidence(endogenous_values_t* values)
 {
-    auto invalidate = [](endogenious_confident_value_t& confidence_value) {
+    auto invalidate = [](endogenous_confident_value_t& confidence_value) {
         confidence_value.confidence = false;
         };
 
