@@ -9,6 +9,24 @@
 #define TECHNICAL_ATMOSPHERE 98097.0
 
 
+
+namespace oil_transport {
+;
+
+// TODO: Перенсти обратно в graph_solvers
+
+/// @brief Базовая структура параметров для транспортного расчета
+struct transport_object_parameters_t
+{
+    /// @brief Внешний идентификтор объекта (от внешнего пользователя библиотеки)
+    long long external_id{ -1 };
+    /// @brief Чтобы в наследниках были виртуальные деструктуры, а то память в unique_ptr течет
+    virtual ~transport_object_parameters_t() = default;
+};
+
+}
+
+
 #include <pde_solvers/timeseries.h>
 
 #include "core/ring_buffer.h"

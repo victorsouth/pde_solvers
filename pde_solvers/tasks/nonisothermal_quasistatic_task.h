@@ -248,7 +248,7 @@ public:
 
 
 
-struct qsm_noniso_T_properties_t {
+struct qsm_noniso_T_properties_t : public oil_transport::transport_object_parameters_t {
     // Модель трубы
     pipe_noniso_properties_t pipe;
     // Нефть
@@ -267,6 +267,8 @@ public:
     using buffer_type = ring_buffer_t<layer_type>;
     /// @brief Тип граничных условий
     using boundaries_type = qsm_noniso_T_task_boundaries_t;
+    /// @brief Тип параметров трубы
+    using pipe_parameters_type = qsm_noniso_T_properties_t;
 
 
 private:
@@ -389,6 +391,8 @@ private:
     }
 
 public:
+
+
     /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
     /// Функция делат сдвиг буфера (advance) так, что buffer.current после вызова содержит свежерасчитанный слой
     /// @param dt временной шаг моделирования
@@ -438,6 +442,15 @@ public:
     auto& get_buffer()
     {
         return buffer;
+    }
+
+    pde_solvers::endogenous_values_t get_endogenous_output(double volumetric_flow) const
+    {
+        throw std::runtime_error("Not impl");
+    }
+    void step(double dt, double volumetric_flow, const pde_solvers::endogenous_values_t& boundaries)
+    {
+        throw std::runtime_error("Not impl");
     }
 };
 
