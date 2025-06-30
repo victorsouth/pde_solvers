@@ -52,6 +52,91 @@ namespace pde_solvers
 {
 ;
 
+
+/// @brief Эндогенный параметр и его код достоверности
+struct endogenious_confident_value_t {
+    /// @brief Значение эндогенного свойства
+    double value{ std::numeric_limits<double>::quiet_NaN() };
+    /// @brief Код достоверности - по умолчанию значение НЕдостоверное
+    bool confidence{ false };
+};
+
+/// @brief Возвращает значения по умолчанию для эндогенных свойств или их метаданных
+/// T = bool - возвращает false (параметр по умолчанию не рассчитывается)
+/// T = double - возвращает NaN (значение еще не было расчитано)
+/// T = endogenious_confident_value_t - возвращает значения по умолчанию для расчетного знчания + код достоверности
+template <typename T>
+inline constexpr T default_endogenious_parameter() {
+    if constexpr (std::is_same<T, bool>::value) {
+        return false;
+    }
+    else if constexpr (std::is_same<T, double>::value) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    else if constexpr (std::is_same<T, endogenious_confident_value_t>::value) {
+        return endogenious_confident_value_t();
+    }
+    else {
+        throw std::runtime_error("Unknown endogenious parameter type");
+    }
+}
+
+/// @brief Шаблон структуры эндогенных параметров и их метаданных.
+/// Например, в зависимости от типа T возможны следующие сценарии использования:
+/// T = double - расчетное значение эндогенного свойства
+/// T = bool - настройка - выполнять ли расчет свойства
+/// T = endogenious_confident_value_t - расчетное значение свойства и его достоверность
+template <typename T>
+struct endogenous_parameters_template_t {
+    /// @brief Номинальная плотность
+    T density{ default_endogenious_parameter<T>() };
+    /// @brief Номинальная вязкость для изотермического случая
+    T viscosity{ default_endogenious_parameter<T>() };
+    /// @brief Серосодержанние
+    T sulfur{ default_endogenious_parameter<T>() };
+    /// @brief Концентрация ПТП
+    T improver{ default_endogenious_parameter<T>() };
+    /// @brief Температура
+    T temperature{ default_endogenious_parameter<T>() };
+    /// @brief Вязкость при 0С
+    T viscosity0{ default_endogenious_parameter<T>() };
+    /// @brief Вязкость при 20С
+    T viscosity20{ default_endogenious_parameter<T>() };
+    /// @brief Вязкость при 50С
+    T viscosity50{ default_endogenious_parameter<T>() };
+};
+
+/// @brief Селектор эндогенных параметров - используется в моделях и в смесителе как настройка расчета
+using endogenous_selector_t = endogenous_parameters_template_t<bool>;
+/// @brief Структура расчетных значений эндогенных свойств для распространения по объектам графа. 
+/// Значаения эндогенных свойств определяются либо из измерения, либо в результате расчета.
+/// Значения полей могут быть в следуюищх состояниях:
+/// 1. Не задано из измерения и еще не расчитано
+/// 2. Из расчета получено неадевтаное NaN значение
+/// 3. Из расчета получено численное значение
+using endogenous_double_values_t = endogenous_parameters_template_t<double>;
+/// @brief Эндогенные параметры и их достоверность
+using endogenous_values_t = endogenous_parameters_template_t<endogenious_confident_value_t>;
+
+
+/// @brief Сбрасывает код достоверности в "ложь"
+inline void reset_confidence(endogenous_values_t* values)
+{
+    auto invalidate = [](endogenious_confident_value_t& confidence_value) {
+        confidence_value.confidence = false;
+        };
+
+    invalidate(values->density);
+    invalidate(values->viscosity);
+    invalidate(values->sulfur);
+    invalidate(values->improver);
+    invalidate(values->temperature);
+    invalidate(values->viscosity0);
+    invalidate(values->viscosity20);
+    invalidate(values->viscosity50);
+}
+
+
 /// @brief Интерпретирует степень достоверность как булев флаг достоверности
 inline bool discriminate_confidence_level(double confidence_level)
 {
