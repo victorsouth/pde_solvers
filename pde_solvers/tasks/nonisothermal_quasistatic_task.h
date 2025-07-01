@@ -260,7 +260,13 @@ struct qsm_noniso_T_properties_t {
     qsm_noniso_T_properties_t(const pde_solvers::pipe_json_data& json_pipe) {
         throw std::runtime_error("Please, implement");
     }
-
+    /// @brief Преобразовывает профиль под равномерный шаг по координате
+    void make_uniform_profile(double desired_dx) {
+        throw std::runtime_error("Please, implement");
+    }
+    const std::vector<double>& get_coordinates() const {
+        return pipe.profile.coordinates;
+    }
 };
 
 
