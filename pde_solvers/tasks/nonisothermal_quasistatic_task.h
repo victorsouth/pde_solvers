@@ -248,13 +248,18 @@ public:
 
 
 
-struct qsm_noniso_T_properties_t : public oil_transport::transport_object_parameters_t {
+struct qsm_noniso_T_properties_t {
     // Модель трубы
     pipe_noniso_properties_t pipe;
     // Нефть
     oil_parameters_t oil;
     /// @brief Тепловая модель трубы
     noniso_qsm_model_type model_type;
+
+    qsm_noniso_T_properties_t() = default;
+    qsm_noniso_T_properties_t(const pde_solvers::pipe_json_data& json_pipe) {
+        throw std::runtime_error("Please, implement");
+    }
 
 };
 
