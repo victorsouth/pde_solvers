@@ -42,35 +42,31 @@ public:
         //);
         
         time_t t = (time_t)times[step_index];
-        double etalon_temperature = etalon_temperature_values[step_index];
+        double T_out_etalon = etalon_temperature_values[step_index];
 
         // Входные данные модели, которые выведутся в файл
         qsm_noniso_T_task_boundaries_t boundaries(control_data[step_index]);
-        double temp_in = boundaries.temperature;
-        double vol_flow = boundaries.volumetric_flow;
+        double T_in = boundaries.temperature;
+        double Q = boundaries.volumetric_flow;
 
         // Выходные (расчетные) данные модели, которые выведутся в файл
         // температуры по двум способа расчета и их отклонения от факта
-        double temp_out_calc = layer.temperature.back();
-        double temp_out_delta = etalon_temperature - layer.temperature.back();
-        double temp_out_calc_shukhov = layer.temperature_shukhov.back();
-        double temp_out_delta_shukhov = etalon_temperature - layer.temperature_shukhov.back();
+        double T_out_calc = layer.temperature.back();
+        double T_out_error = T_out_etalon - layer.temperature.back();
 
         std::vector<std::vector<double>>values_to_write{
-            { etalon_temperature },
-            { temp_out_calc },
-            { temp_out_delta },
-            { temp_out_calc_shukhov },
-            { temp_out_delta_shukhov },
-            { temp_in },
-            { vol_flow }
+            { Q },
+            { T_in },
+            { T_out_etalon },
+            { T_out_calc },
+            { T_out_error },
         };
 
         print_t_profiles<std::string>(boundary_temperatures_file,
             static_cast<time_t>(0),
             std::vector<std::string>{ UnixToString(t) },
             values_to_write,
-            "time,time,etalon,temp_out_calc_advection,temp_out_delta_advection,temp_out_calc_shukhov,temp_out_delta_shukhov,temp_in,volum");
+            "time,time,Q,T_in,T_out_etalon,T_out_calc,T_out_error");
 
 
     }
@@ -308,6 +304,52 @@ TEST_F(qsmNonisoNoParties, ColdLU_DynamicTemperature)
     double ambient_heat_transfer = 1.3786917741689342; // результат идентификации
     qsm_noniso_T_task_t task = prepare_task(pipe_data_path, 
         ambient_heat_transfer, noniso_qsm_model_type::Dynamic);
+
+    double dt = 60;
+    auto [times, control_data, etalon_temperature] = prepare_real_data(dt, pipe_data_path);
+
+    // Путь к результатам ресёрча
+    std::string result_file = prepare_research_folder_for_qsm_model2() + "temperature.csv";
+
+    // переписать python_temperature_printer по аналогии с nonisothermal_qsm_batch_Tout_collector_t
+    // Реализовать у него не статический метод process_data, где и делать всю работу
+    // Раскомментить строчки ниже
+    python_temperature_printer printer(result_file,
+        times, control_data, etalon_temperature, task.get_pipe());
+    quasistatic_batch(task, times, control_data, &printer);
+}
+
+TEST_F(qsmNonisoNoParties, ColdLU_ShukhovStatic)
+{
+    // Путь к реальным данным с Линейного участка трубопровода
+    const std::string pipe_data_path = get_pipe_data_path("cold_lu");
+
+    double ambient_heat_transfer = 1.3786917741689342; // результат идентификации
+    qsm_noniso_T_task_t task = prepare_task(pipe_data_path,
+        ambient_heat_transfer, noniso_qsm_model_type::Shukhov);
+
+    double dt = 60;
+    auto [times, control_data, etalon_temperature] = prepare_real_data(dt, pipe_data_path);
+
+    // Путь к результатам ресёрча
+    std::string result_file = prepare_research_folder_for_qsm_model2() + "temperature.csv";
+
+    // переписать python_temperature_printer по аналогии с nonisothermal_qsm_batch_Tout_collector_t
+    // Реализовать у него не статический метод process_data, где и делать всю работу
+    // Раскомментить строчки ниже
+    python_temperature_printer printer(result_file,
+        times, control_data, etalon_temperature, task.get_pipe());
+    quasistatic_batch(task, times, control_data, &printer);
+}
+
+TEST_F(qsmNonisoNoParties, ColdLU_ShukhovAdvection)
+{
+    // Путь к реальным данным с Линейного участка трубопровода
+    const std::string pipe_data_path = get_pipe_data_path("cold_lu");
+
+    double ambient_heat_transfer = 1.3786917741689342; // результат идентификации
+    qsm_noniso_T_task_t task = prepare_task(pipe_data_path,
+        ambient_heat_transfer, noniso_qsm_model_type::ShukhovWithAdvection);
 
     double dt = 60;
     auto [times, control_data, etalon_temperature] = prepare_real_data(dt, pipe_data_path);

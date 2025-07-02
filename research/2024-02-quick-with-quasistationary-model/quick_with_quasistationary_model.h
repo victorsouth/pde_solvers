@@ -24,7 +24,7 @@ inline std::string prepare_research_folder_for_qsm_model2()
     std::string research_name = std::string(test_info->test_case_name());
     std::string case_name = std::string(test_info->name());
 
-    std::string path = std::string("../research_out/") + research_name + "." + case_name + "/";
+    std::string path = std::string("../research_out/") + research_name + "/" + case_name + "/";
     std::filesystem::create_directories(path);
     for (const auto& entry : std::filesystem::directory_iterator(path)) {
         std::filesystem::remove_all(entry.path());

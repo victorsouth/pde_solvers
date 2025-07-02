@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, TextBox
 import os
 
-path = './'
+path = './ColdLU_DynamicTemperature/'
 
 # Ожидаем, что пользователь выберет файл из списка
 while True:
@@ -30,12 +30,10 @@ while True:
     # Названия столбцов
     columns = rawData.columns.tolist()
     [_, timeLabel] = columns[:2]  # Используем второй time
-    etalon_col = 'etalon'
-    calc_col = 'calculated'
-    diff_col = 'diff_temp'
-    calc_shukhov_col = 'calculated_shukhov'
-    diff_shukhov_col = 'temp_delta_shukhov'
-
+    etalon_col = 'T_out_etalon'
+    calc_col = 'T_out_calc'
+    diff_col = 'T_out_error'
+    
     # Один временной вектор (второй столбец)
     time = rawData[timeLabel]
 
@@ -43,16 +41,13 @@ while True:
     etalon = rawData[etalon_col]
     calculated = rawData[calc_col]
     diff_temp = rawData[diff_col]
-    calculated_shukhov = rawData[calc_shukhov_col]
-    diff_temp_shukhov = rawData[diff_shukhov_col]
-
+    
     # Построение графиков
     fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
 
     # Верхний график: Эталон и обе модели
     axs[0].plot(time, etalon, color='red', label='Эталонные значения')
     axs[0].plot(time, calculated, color='blue', label='Вычисленные значения (основная модель)')
-    axs[0].plot(time, calculated_shukhov, color='purple', label='Вычисленные значения (Шухов)')
     axs[0].set_ylabel('Температура')
     axs[0].legend()
     axs[0].grid(True)
@@ -60,7 +55,6 @@ while True:
 
     # Нижний график: Отклонения обеих моделей
     axs[1].plot(time, diff_temp, color='green', label='Отклонения (основная модель)')
-    axs[1].plot(time, diff_temp_shukhov, color='orange', label='Отклонения (Шухов)')
     axs[1].set_xlabel('Время')
     axs[1].set_ylabel('Δ Температура')
     axs[1].legend()
