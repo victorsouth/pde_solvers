@@ -205,7 +205,8 @@ public:
         return buffer;
     }
 };
-
+/*
+* 
 /// @brief Стационарный расчет (с помощью initial boundaries),
 /// а затем квазистационарный расчет по краевым условиям (boundary_timeseries)
 /// @tparam Solver Численный метод расчета движения партий
@@ -308,6 +309,8 @@ inline void perform_noniso_quasistatic_simulation_p(
 {
     perform_noniso_quasistatic_simulation_p<Solver, Printer>(path, pipe, oil, initial_boundaries, boundary_timeseries, model_type, vector_timeseries_t({}), dt);
 }
+
+*/
 
 /// @brief Пакетный изотермический квазистатический расчет с предподсчитанным временем
 /// делает статический расчет task.solve, а затем столько раз task.step, сколько временных меток в times

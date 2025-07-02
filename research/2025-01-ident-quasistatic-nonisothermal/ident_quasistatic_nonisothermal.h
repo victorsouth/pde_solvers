@@ -19,6 +19,8 @@ protected:
     {
         std::string start_period = "01.08.2021 00:00:00";
         std::string end_period = "01.09.2021 00:00:00";
+        // Задаём шаг для временной сетки - 1 минута
+        double dt = 60;
 
         using namespace std;
         // Прописываем названия файлов и единицы измерения параметров
@@ -29,7 +31,7 @@ protected:
             { path_to_real_data + "t_out_n", "C"s}
         };
 
-        return prepare_timeseries_data(start_period, end_period, parameters);
+        return prepare_timeseries_data(dt, start_period, end_period, parameters);
     }
 };
 

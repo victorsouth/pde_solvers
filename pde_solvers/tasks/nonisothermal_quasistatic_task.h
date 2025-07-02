@@ -20,9 +20,9 @@ enum class noniso_qsm_model_type {
 /// true - в ячейках для метода конечных объёмов (Quickest-Ultimate)
 /// false - в точках для метода характеристик (advection_moc_solver)
 struct qsm_noniso_T_layer {
-    /// @brief Профиль температуры
+    /// @brief Профиль температуры (ячейки)
     std::vector<double> temperature;
-    /// @brief Профиль температуры  Шуховым
+    /// @brief Профиль температуры  Шуховым (точки)
     std::vector<double> temperature_shukhov;
     /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
@@ -162,7 +162,8 @@ private:
     /// @brief Полноценный шаг по температуре. Выполняется в T_quasi_layer::temperature
     void step_dynamic_temperature(double dt, const qsm_noniso_T_task_boundaries_t& boundaries) {
         size_t n = pipe.profile.get_point_count();
-        std::vector<double> G(n-1, boundaries.volumetric_flow * oil.density.nominal_density);   /// массовый расход
+        //std::vector<double> G(n-1, boundaries.volumetric_flow * oil.density.nominal_density);   /// массовый расход
+        std::vector<double> G(n, boundaries.volumetric_flow * oil.density.nominal_density);   /// массовый расход
         PipeHeatInflowConstArea heatModel(pipe, oil, G);
         auto temperature_wrapper = buffer.get_buffer_wrapper(&qsm_noniso_T_layer::get_temperature_wrapper);
         quickest_ultimate_fv_solver solver_tm(heatModel, temperature_wrapper);
@@ -199,11 +200,6 @@ public:
     /// @param dt временной шаг моделирования
     /// @param boundaries Краевые условие
     void step(double dt, qsm_noniso_T_task_boundaries_t& boundaries) {
-        size_t n = pipe.profile.get_point_count();
-        //std::vector<double> Q_profile(n, boundaries.volumetric_flow); /// задаем по трубе новый расход из временного ряда
-        std::vector<double> G(pipe.profile.get_point_count(), boundaries.volumetric_flow * oil.density.nominal_density);   /// массовый расход
-        auto heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);
-
         advance(); // Сдвигаем текущий и предыдущий слои
 
 
