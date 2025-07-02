@@ -18,6 +18,32 @@ inline std::string prepare_research_folder_for_qsm_model(std::string dop_path = 
     return path;
 }
 
+inline std::string prepare_research_folder_for_qsm_model2()
+{
+    auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+    std::string research_name = std::string(test_info->test_case_name());
+    std::string case_name = std::string(test_info->name());
+
+    std::string path = std::string("../research_out/") + research_name + "." + case_name + "/";
+    std::filesystem::create_directories(path);
+    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+        std::filesystem::remove_all(entry.path());
+    }
+    return path;
+}
+
+/// @brief Возвращает путь к папке, где лежат данные по данной трубе
+/// В папке лежат как параметры самой трубы (профиль), так и временные ряды (.csv)
+/// @param pipe_name Стандартное название трубы (cold_lu, hot_lu, condensate_lu)
+inline std::string get_pipe_data_path(std::string pipe_name = "")
+{
+    std::string path =
+        std::string("../research_out/data/") +
+        pipe_name + "/";
+    return path;
+}
+
+
 
 template <typename Solver = advection_moc_solver>
 struct matlab_printer {

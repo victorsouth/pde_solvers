@@ -114,6 +114,10 @@ public:
     qsm_noniso_T_layer& get_current_layer() {
         return buffer.current();
     }
+    /// @brief Геттер параметров трубы
+    const pipe_noniso_properties_t& get_pipe() const {
+        return pipe;
+    }
 
     /// @brief Начальный стационарный расчёт. 
     /// Ставим по всей трубе реологию из initial_conditions, делаем гидравлический расчет

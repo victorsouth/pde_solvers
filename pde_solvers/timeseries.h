@@ -70,7 +70,7 @@ prepare_timeseries_data(
         times[i] = step * i;
         // Определяем момент времени
         time_t t = start_period_time + static_cast<time_t>(times[i] + 0.5);
-        times_vector[i] = t;  // Передача временных меток 
+        times_vector[i] = (double)t;  // Передача временных меток 
         // Получаем интерполированные значения краевых условий и эталонных значений
         control_data[i] = control_parameters_time_series(t);
         etalon_temp[i] = etalon_parameters_time_series(t).front();
