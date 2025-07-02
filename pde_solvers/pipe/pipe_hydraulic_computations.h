@@ -1,6 +1,12 @@
 ﻿#pragma once
 
 namespace pde_solvers {
+;
+
+/// @brief Площадь сечения трубы
+inline double circle_area(double diameter) {
+    return M_PI * diameter * diameter / 4;
+}
 
 /// @brief Гидравлическое сопротивление по Шифринсону
 /// \param reynolds_number

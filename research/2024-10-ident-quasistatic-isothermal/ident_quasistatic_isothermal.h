@@ -83,9 +83,9 @@ protected:
         // Считаем количество точек в сетке
         size_t dots_count = static_cast<size_t>(ceil(duration / step) + 0.00001);
 
-        std::vector<double>  times = std::vector<double>(dots_count);
-        std::vector<std::vector<double>> control_data = std::vector<std::vector<double>>(dots_count);
-        std::vector<double> etalon_pressure = std::vector<double>(dots_count);
+        std::vector<double>  times(dots_count);
+        std::vector<std::vector<double>> control_data(dots_count);
+        std::vector<double> etalon_pressure(dots_count);
 
         for (size_t i = 0; i < dots_count; i++)
         {

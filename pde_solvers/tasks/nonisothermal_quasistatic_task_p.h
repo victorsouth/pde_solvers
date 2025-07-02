@@ -235,7 +235,7 @@ inline void perform_noniso_quasistatic_simulation_p(
     time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
     Printer layer_printer;
 
-    qsm_noniso_TP_task_boundaries_t<Solver> task(pipe, oil, model_type);
+    qsm_noniso_TP_task_boundaries_t task(pipe, oil, model_type);
     task.solve(initial_boundaries);
 
     // Печатаем профиль трубы и первый слой к нему

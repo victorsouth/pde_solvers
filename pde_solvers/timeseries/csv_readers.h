@@ -1,11 +1,15 @@
 ﻿#pragma once
 
-
-
+/// @brief Информация о теге временного ряда (имя, размерность)
+struct tag_info_t {
+    /// @brief Имя тега
+    std::string name;
+    /// @brief Размерность тега
+    std::string dimension;
+};
 
 /// @brief Чтение исторических данных по одному тегу
-class csv_tag_reader
-{
+class csv_tag_reader {
 public:
     /// @brief Чтение исторических данных
     /// @param input_stream Входной поток
@@ -13,8 +17,7 @@ public:
     /// @param time_begin Начало периода
     /// @param time_end Конец периода
     /// @return Временной ряд в формате пары векторов: [Метки времени; Значения параметра]
-    static std::pair<std::vector<time_t>, std::vector<double>> read_from_stream(
-        std::istream& input_stream, const std::string& dimension, time_t time_begin = std::numeric_limits<time_t>::min(),
+    static std::pair<std::vector<time_t>, std::vector<double>> read_from_stream(std::istream& input_stream, const std::string& dimension, time_t time_begin = std::numeric_limits<time_t>::min(),
         time_t time_end = std::numeric_limits<time_t>::max())
     {
         std::vector<time_t> t;
@@ -54,8 +57,7 @@ private:
     /// @param time_begin Начало периода
     /// @param time_end Конец периода
     /// @return Временной ряд в формате пары векторов: [Метки времени; Значения параметра]
-    static std::pair<std::vector<time_t>, std::vector<double>> read_from_file(const std::string& filename, 
-        const std::string& dimension, time_t time_begin = std::numeric_limits<time_t>::min(),
+    static std::pair<std::vector<time_t>, std::vector<double>> read_from_file(const std::string& filename, const std::string& dimension, time_t time_begin = std::numeric_limits<time_t>::min(),
         time_t time_end = std::numeric_limits<time_t>::max())
     {
         std::ifstream infile(filename);
@@ -69,18 +71,17 @@ public:
     /// @param data Название тега и инструкция перевода единиц измерения
     csv_tag_reader(const std::pair<std::string, std::string>& data)
         : csv_tag_reader(data.first, data.second)
-    {
-
-    };
-
+    { }
     /// @brief Конструтор
     /// @param tag Имя тега
     /// @param dimension Инструкция для перевода единиц измерения
     csv_tag_reader(const std::string& tag, const std::string& dimension)
-        :tagname{ tag }, dim{ dimension }
-    {
-
-    }
+        : tagname{ tag }, dim{ dimension }
+    { }
+    /// @brief Конструктор
+    csv_tag_reader(const tag_info_t& tag)
+        : csv_tag_reader(tag.name, tag.dimension)
+    { }
 
     /// @brief Чтение параметра для заданного периода
     /// @param unixtime_from Начало периода задаётся строкой формата dd:mm:yyyy HH:MM:SS
@@ -122,17 +123,44 @@ private:
 /// @brief Чтение параметров из исторических данных для нескольких тегов
 class csv_multiple_tag_reader
 {
+private:
+    /// @brief Вектор пар, из которых первый элемент название тега,
+    /// а второй - инструкция для перевода единиц измерения
+    std::vector<tag_info_t> filename_dim;
+
 public:
 
     /// @brief Конструктор
     /// @param data Вектор пар, в которых первый элемент название тега, 
     /// а второй - инструкция для перевода единиц измерения
-    csv_multiple_tag_reader(const std::vector<std::pair<std::string, std::string>>& data)
-        :filename_dim{ data }
+    csv_multiple_tag_reader(const std::vector<std::pair<std::string, std::string>>& tag_list)
     {
+        for (const std::pair<std::string, std::string>& tag : tag_list)
+        {
+            tag_info_t tag_info;
+            tag_info.name = tag.first;
+            tag_info.dimension = tag.second;
+            filename_dim.push_back(tag_info);
+        }
+    }
 
-    };
+    /// @brief Конструктор по списку тегов
+    csv_multiple_tag_reader(const std::vector<tag_info_t>& tag_list)
+        : filename_dim(tag_list)
+    { }
 
+    /// @brief Конструктор по списку тегов
+    template <typename TagInfo>
+    csv_multiple_tag_reader(const std::vector<TagInfo>& tag_list, const std::string& path = "")
+    {
+        for (const TagInfo& tag : tag_list)
+        {
+            tag_info_t tag_info;
+            tag_info.name = path + "/" + tag.name;
+            tag_info.dimension = tag.dimension;
+            filename_dim.push_back(tag_info);
+        }
+    }
     /// @brief Чтение параметров для заданного периода
     /// @param unixtime_from Начало периода задаётся строкой формата dd:mm:yyyy HH:MM:SS
     /// @param unixtime_to Конец периода задаётся строкой формата dd:mm:yyyy HH:MM:SS
@@ -169,11 +197,4 @@ public:
         return data;
     };
 
-private:
-    /// @brief Вектор пар, из которых первый элемент название тега,
-    /// а второй - инструкция для перевода единиц измерения
-    const std::vector<std::pair<std::string, std::string>> filename_dim;
 };
-
-
-
