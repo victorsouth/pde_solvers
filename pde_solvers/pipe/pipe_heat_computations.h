@@ -33,9 +33,9 @@ inline void compute_shuhov_temperature_distribution(
     const oil_parameters_t& oil,
     double mass_flow,
     double Tstart,
-    const double& dx, vector<double>* _result)
+    const double& dx, std::vector<double>* _result)
 {
-    vector<double>& temperature = *_result;
+    std::vector<double>& temperature = *_result;
 
     double d = pipe.wall.diameter;
     double S_0 = pipe.wall.getArea();

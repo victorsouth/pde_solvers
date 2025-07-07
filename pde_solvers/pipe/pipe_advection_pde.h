@@ -17,17 +17,17 @@ protected:
     /// @brief Площадь сечения трубы
     const double pipe_area;
     /// @brief Расчетная сетка
-    const vector<double>& pipe_profile_coordinates;
+    const std::vector<double>& pipe_profile_coordinates;
 public:
     pipe_advection_pde_t(double pipe_area, double volumetric_flow,
-        const vector<double>& pipe_profile_coordinates)
+        const std::vector<double>& pipe_profile_coordinates)
         : volumetric_flow(volumetric_flow)
         , pipe_area(pipe_area)
         , pipe_profile_coordinates(pipe_profile_coordinates)
     {}
 
     /// @brief Возвращает известную уравнению сетку
-    virtual const vector<double>& get_grid() const override {
+    virtual const std::vector<double>& get_grid() const override {
         return pipe_profile_coordinates;
     }
 
@@ -51,14 +51,14 @@ public:
 
     /// @brief Получение собственных чисел и соответствующих им ЛЕВЫХ собственных векторов
     /// \return Список собственных чисел, список собственных векторов
-    virtual pair<var_type, equation_coeffs_type> GetLeftEigens(
+    virtual std::pair<var_type, equation_coeffs_type> GetLeftEigens(
         size_t grid_index, const var_type& point_vector) const override
     {
         double v = getEquationsCoeffs(grid_index, point_vector);
         return std::make_pair(v, v);
     }
 
-    virtual pair<var_type, equation_coeffs_type> GetRightEigens(
+    virtual std::pair<var_type, equation_coeffs_type> GetRightEigens(
         size_t grid_index, const var_type& point_vector) const override
     {
         double v = getEquationsCoeffs(grid_index, point_vector);
@@ -95,10 +95,10 @@ protected:
     /// @brief Труба
     const pipe_properties_t& pipe;
     /// @brief Объемный расход
-    const vector<double>& Q;
+    const std::vector<double>& Q;
 public:
     PipeQAdvection(const pipe_properties_t& pipe,
-        const vector<double>& vol_flow)
+        const std::vector<double>& vol_flow)
         : pipe(pipe)
         , Q(vol_flow)
     {}
@@ -109,7 +109,7 @@ public:
     }
 
     /// @brief Возвращает известную уравнению сетку
-    virtual const vector<double>& get_grid() const override {
+    virtual const std::vector<double>& get_grid() const override {
         return pipe.profile.coordinates;
     }
 
@@ -134,14 +134,14 @@ public:
 
     /// @brief Получение собственных чисел и соответствующих им ЛЕВЫХ собственных векторов
     /// \return Список собственных чисел, список собственных векторов
-    virtual pair<var_type, equation_coeffs_type> GetLeftEigens(
+    virtual std::pair<var_type, equation_coeffs_type> GetLeftEigens(
         size_t grid_index, const var_type& point_vector) const override
     {
         double v = getEquationsCoeffs(grid_index, point_vector);
         return std::make_pair(v, v);
     }
 
-    virtual pair<var_type, equation_coeffs_type> GetRightEigens(
+    virtual std::pair<var_type, equation_coeffs_type> GetRightEigens(
         size_t grid_index, const var_type& point_vector) const override
     {
         double v = getEquationsCoeffs(grid_index, point_vector);

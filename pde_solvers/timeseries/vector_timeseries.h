@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <chrono>
+
 using std::vector;
 using std::pair;
 
@@ -23,11 +23,11 @@ private:
     /// @brief Самое ранее конечное время среди временных рядов
     time_t end_date{ std::numeric_limits<time_t>::max() };
     /// @brief Начальные точки индексов временных рядов, создающие левую границу при поиске во времени
-    mutable vector<size_t> left_bound;
+    mutable std::vector<size_t> left_bound;
 
 public:
     /// @brief Исходные временные ряды
-    vector<pair<vector<time_t>, vector<double>>> data;
+    std::vector<std::pair<std::vector<time_t>, std::vector<double>>> data;
     /// @brief Получение количества значений определённого параметра
     /// @param numb Номер параметра 
     size_t get_elements_count(size_t numb) const
@@ -38,7 +38,7 @@ public:
     /// @param data Вектор временных рядов, каждый элемент которого
     /// представляет собой пару, в которой первый элемент это временная сетка,
     /// а второй - вектор значений параметров в соответствующие моменты времени
-    vector_timeseries_t(const vector<pair<vector<time_t>, vector<double>>>& data, InterplationMethod interpolation_method = InterplationMethod::Linear)
+    vector_timeseries_t(const std::vector<std::pair<std::vector<time_t>, std::vector<double>>>& data, InterplationMethod interpolation_method = InterplationMethod::Linear)
         : data(data)
         , interpolation_method(interpolation_method)
     {
@@ -47,7 +47,7 @@ public:
             
         std::tie(start_date, end_date) = get_timeseries_period(data);
 
-        left_bound = vector<size_t>(data.size(), 0);
+        left_bound = std::vector<size_t>(data.size(), 0);
 
     };
     /// @brief Получение времени начала периода 
@@ -71,7 +71,7 @@ public:
     /// временных рядов в момент времени t
     /// @param t Момент времени
     /// @return Интерполированные значения
-    vector<double> operator()(time_t t) const
+    std::vector<double> operator()(time_t t) const
     {
         for (size_t i = 0; i < data.size(); ++i) {
             const auto& times = data[i].first;
@@ -81,7 +81,7 @@ public:
             }
         }
 
-        vector<double> result(data.size());
+        std::vector<double> result(data.size());
         for (size_t i = 0; i < data.size(); ++i) {
             const auto& times = data[i].first;
             const auto& values = data[i].second;
@@ -134,7 +134,7 @@ private:
     /// @brief Определение начала и конца периода
     /// @param data Временные ряды параметров
     /// @return Начало и конец периода
-    static pair<time_t, time_t> get_timeseries_period(const vector<pair<vector<time_t>, vector<double>>>& data)
+    static std::pair<time_t, time_t> get_timeseries_period(const std::vector<std::pair<std::vector<time_t>, std::vector<double>>>& data)
     {
         time_t start_date = std::numeric_limits<time_t>::min();
         time_t end_date = std::numeric_limits<time_t>::max();;

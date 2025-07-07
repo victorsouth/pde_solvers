@@ -54,7 +54,7 @@ protected:
     /// @brief ДУЧП
     pde_t<1>& pde;
     /// @brief Сетка, полученная от ДУЧП
-    const vector<double>& grid;
+    const std::vector<double>& grid;
     /// @brief Количество точек сетки
     const size_t n;
     /// @brief Предыдущий слой переменных
@@ -202,7 +202,7 @@ protected:
     /// @brief ДУЧП
     pde_t<1>& pde;
     /// @brief Сетка, полученная от ДУЧП
-    const vector<double>& grid;
+    const std::vector<double>& grid;
     /// @brief Количество точек сетки
     const size_t n;
     /// @brief Предыдущий слой переменных
@@ -319,7 +319,7 @@ protected:
     /// @brief ДУЧП
     pde_t<1>& pde;
     /// @brief Сетка, полученная от ДУЧП
-    const vector<double>& grid;
+    const std::vector<double>& grid;
     /// @brief Количество точек сетки
     const size_t n;
     /// @brief Предыдущий слой переменных
@@ -438,7 +438,7 @@ struct quickest_ultimate_fv_wrapper<1> {
     specific_layer& specific;
 
     quickest_ultimate_fv_wrapper(
-        vector<double>& U,
+        std::vector<double>& U,
         specific_layer& specific
     )
         : vars(U)
@@ -458,13 +458,13 @@ protected:
     /// @brief ДУЧП
     pde_t<1>& pde;
     /// @brief Сетка, полученная от ДУЧП
-    const vector<double>& grid;
+    const std::vector<double>& grid;
     /// @brief Количество точек сетки
     const size_t n;
     /// @brief Предыдущий слой переменных
-    const vector<double>& prev_vars;
+    const std::vector<double>& prev_vars;
     /// @brief Новый (рассчитываемый) слой переменных
-    vector<double>& curr_vars;
+    std::vector<double>& curr_vars;
     /// @brief Предыдущий специфический слой (сейчас не нужен! нужен ли в будущем?)
     const specific_layer& prev_spec;
     /// @brief Текущий специфический слой
@@ -515,7 +515,7 @@ public:
     /// @brief Конструктор, заточенный для удобства выдергивания специфического слоя, если он один в буфере
     /// Очень специфический
     quickest_ultimate_fv_solver(pde_t<1>& pde,
-        const vector<double>& prev_vars, vector<double>& curr_vars,
+        const std::vector<double>& prev_vars, std::vector<double>& curr_vars,
         const specific_layer& prev_spec, specific_layer& curr_spec)
         : pde(pde)
         , grid(pde.get_grid())
@@ -591,7 +591,7 @@ public:
             if (Cr > 1) {
                 throw std::runtime_error("Quickest-ultimate is called with Cr > 1");
             }
-            U_new[cell] = U[cell] + dt / dx * ((F[cell] - F[cell + 1]));
+            U_new[cell] = U[cell] + dt / dx * ((F[cell] - F[cell + 1])) + (dt * pde.getSourceTerm(cell, U[cell]));
         }
 
     }

@@ -41,16 +41,16 @@ protected:
     static std::tuple<std::vector<double>, std::vector<std::vector<double>>, std::vector<double>> prepare_real_data(const std::string& path_to_real_data)
     {
         // Временные ряды краевых условий
-        std::vector<pair<std::vector<time_t>, std::vector<double>>> control_tag_data;
+        std::vector<std::pair<std::vector<time_t>, std::vector<double>>> control_tag_data;
         // Временные ряды эталонных данных
-        std::vector<pair<std::vector<time_t>, std::vector<double>>> etalon_tag_data;
+        std::vector<std::pair<std::vector<time_t>, std::vector<double>>> etalon_tag_data;
         // Задаём период
-        string start_period = "01.08.2021 00:00:00";
-        string end_period = "01.09.2021 00:00:00"; 
+        std::string start_period = "01.08.2021 00:00:00";
+        std::string end_period = "01.09.2021 00:00:00"; 
         using namespace std::string_literals;
 
         // Прописываем названия файлов и единицы измерения параметров
-        std::vector<pair<string, string>>parameters =
+        std::vector<std::pair<std::string, std::string>>parameters =
         {
             { path_to_real_data + "Q_in", "m3/h-m3/s"s },
             { path_to_real_data + "p_in", "MPa"s },
@@ -83,9 +83,9 @@ protected:
         // Считаем количество точек в сетке
         size_t dots_count = static_cast<size_t>(ceil(duration / step) + 0.00001);
 
-        std::vector<double>  times = std::vector<double>(dots_count);
-        std::vector<std::vector<double>> control_data = std::vector<std::vector<double>>(dots_count);
-        std::vector<double> etalon_pressure = std::vector<double>(dots_count);
+        std::vector<double>  times(dots_count);
+        std::vector<std::vector<double>> control_data(dots_count);
+        std::vector<double> etalon_pressure(dots_count);
 
         for (size_t i = 0; i < dots_count; i++)
         {
@@ -157,7 +157,7 @@ void print_identification_result(
     const std::vector<double>& times,
     ident_isothermal_qsm_pipe_parameters_t& test_ident,
     const fixed_optimizer_result_analysis_t& analysis,
-    const string& path_to_ident_results
+    const std::string& path_to_ident_results
 ) 
 {
     auto& target_function = analysis.target_function;
@@ -216,7 +216,7 @@ TEST_F(IdentIsothermalQSM, DiameterWithPrint)
     double result_d = test_ident.ident(&result, &analysis);
 
     // Создаём папку с результатами и получаем путь к ней
-    string path_to_ident_reults = prepare_research_folder_for_qsm_model();
+    std::string path_to_ident_reults = prepare_research_folder_for_qsm_model();
 
     // Записываем результаты в cs
     print_identification_result(times, test_ident, analysis, path_to_ident_reults);
@@ -243,7 +243,7 @@ TEST_F(IdentIsothermalQSM, FrictionWithPrinter)
     double result_d = test_ident.ident(&result, &analysis);
 
     // Создаём папку с результатами и получаем путь к ней
-    string path_to_ident_reults = prepare_research_folder_for_qsm_model();
+    std::string path_to_ident_reults = prepare_research_folder_for_qsm_model();
 
     // Записываем результаты в csv
     print_identification_result(times, test_ident, analysis, path_to_ident_reults);

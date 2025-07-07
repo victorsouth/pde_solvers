@@ -12,7 +12,7 @@ namespace pde_solvers {
 template <typename LayerType>
 class ring_buffer_t {
     /// @brief Буфер слоев
-    vector<LayerType> layers;
+    std::vector<LayerType> layers;
     /// @brief Индекс текущего слоя
     size_t current_layer{ 0 };
 protected:
@@ -26,7 +26,7 @@ protected:
         return (current_layer + layers.size() - 1) % layers.size();
     }
 public:
-    ring_buffer_t(const vector<LayerType>& layers, size_t current_layer)
+    ring_buffer_t(const std::vector<LayerType>& layers, size_t current_layer)
         : layers(layers)
         , current_layer(current_layer)
     {
@@ -50,13 +50,13 @@ public:
         }
     }
     /// @brief Возвращает внутренний буфер слоев 
-    const vector<LayerType>& get_layers() const {
+    const std::vector<LayerType>& get_layers() const {
         return layers;
     }
     /// @brief Частный геттер, возвращающий из слоев ячейки
     /// TODO: зачем он нужен, такой частный?
-    vector<vector<double>> get_layers_cell_values() const {
-        vector<vector<double>> result;
+    std::vector<std::vector<double>> get_layers_cell_values() const {
+        std::vector<std::vector<double>> result;
         transform(layers.begin(), layers.end(),
             back_inserter(result),
             [](const LayerType& layer) { return layer.cell.value; });

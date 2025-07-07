@@ -31,10 +31,10 @@ struct godunov_layer_wrapper : layer_wrapper<Dimension> {
     /// @brief —ила волны (альфа) справа от границ ¤чеек
     profile_wrapper<double, Dimension> strength_right;
 
-    vector<vector_type>& erp_left;
-    vector<vector_type>& erp_right;
-    vector<vector_type>& interface_values;
-    vector<vector_type>& interface_flux_values;
+    std::vector<vector_type>& erp_left;
+    std::vector<vector_type>& erp_right;
+    std::vector<vector_type>& interface_values;
+    std::vector<vector_type>& interface_flux_values;
 
     profile_wrapper<double, Dimension> beta;
 

@@ -343,3 +343,5 @@ BUILD*/
 
 # Исключаем csv с реальными данными трубопровода
 !research/2024-08-quasistationary-with-real-data/data/*.csv
+/research_out/QSM_models/IsothermalQuasistaticModelWithRealData/Example.py
+/research_out/QSM_models/NonisothermalQuasistaticModelWithRealData/*.jpg

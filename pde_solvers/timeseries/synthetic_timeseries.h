@@ -1,10 +1,6 @@
 ﻿#pragma once
 
-#include <iostream>
-#include <random>
-#include <algorithm>
-#include <iomanip>
-#include "timeseries_helpers.h" 
+
 
 using std::vector;
 using std::pair;
@@ -42,16 +38,16 @@ struct timeseries_generator_settings {
 /// применения скачков к данным и получения сгенерированных данных
 class synthetic_time_series_generator {
     // Типы синонимов для улучшения читаемости кода
-    using TimeVector = vector<time_t>;
-    using ParamVector = vector<double>;
-    using ParamPair = pair<TimeVector, ParamVector>;
+    using TimeVector = std::vector<time_t>;
+    using ParamVector = std::vector<double>;
+    using ParamPair = std::pair<TimeVector, ParamVector>;
     std::random_device rd; // Генератор случайных чисел
     std::mt19937 gen; // Генератор псевдослучайных чисел
 public:
     /// @brief Конструктор класса, в котором синтезируются врмененные ряды, похожие на реальные данные (в зависимости от того, какие настройки)
     /// @param initial_values Исходные данные для создания временных рядов
     /// @param settings Настройки генератора временных рядов
-    synthetic_time_series_generator(const vector<pair<string, double>> initial_values, const timeseries_generator_settings& settings)
+    synthetic_time_series_generator(const std::vector<std::pair<std::string, double>> initial_values, const timeseries_generator_settings& settings)
         : initial_values(initial_values),
         settings(settings) {
         std::uniform_real_distribution<double> timeDis(settings.sample_time_min, settings.sample_time_max);
@@ -78,7 +74,7 @@ public:
     /// @param jump_time Время, когда происходит скачок
     /// @param jump_value Значение скачка
     /// @param paramName Имя параметра, к которому применяется скачок
-    void apply_jump(time_t jump_time, double jump_value, const string& paramName) {
+    void apply_jump(time_t jump_time, double jump_value, const std::string& paramName) {
         for (size_t i = 0; i < initial_values.size(); ++i) {
             if (initial_values[i].first == paramName) {
                 auto it = std::lower_bound(data[i].first.begin(), data[i].first.end(), settings.start_time + jump_time);
@@ -91,15 +87,15 @@ public:
     }
     /// @brief Получение сгенерированных данных
     /// @return Вектор временных рядов
-    const vector<ParamPair>& get_data() const {
+    const std::vector<ParamPair>& get_data() const {
         return data;
     }
 
 private:
     /// @brief Исходные данные, обязательно должны присутствовать два опциональных параметра
-    const vector<pair<string, double>> initial_values;
+    const std::vector<std::pair<std::string, double>> initial_values;
     /// @brief Настройки генератора
     timeseries_generator_settings settings;
     /// @brief Данные временных рядов
-    vector<ParamPair> data;
+    std::vector<ParamPair> data;
 };

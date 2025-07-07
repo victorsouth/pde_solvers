@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include <vector>
 #include <stdexcept>
+
 namespace pde_solvers {
 
 /// @brief Упрощенные параметры трубы

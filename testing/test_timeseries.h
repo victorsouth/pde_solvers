@@ -131,8 +131,8 @@ TEST(Timeseries, UseCase)
     using namespace std::string_literals;
 
     // Записываем пути к историческим данным
-    string folder = "data/";
-    std::vector<pair<string, string>>parameters =
+    std::string folder = "data/";
+    std::vector<std::pair<std::string, std::string>>parameters =
     {
         { folder + "rho_in", "kg/m3"s },
         { folder + "visc_in", "mm^2/s-m^2/s"s },
@@ -143,8 +143,8 @@ TEST(Timeseries, UseCase)
     };
 
     // Задаём период
-    string start_period = "01.08.2021 00:00:00";
-    string end_period = "01.09.2021 00:00:00";
+    std::string start_period = "01.08.2021 00:00:00";
+    std::string end_period = "01.09.2021 00:00:00";
 
     // Считываем временные ряды параметров
     csv_multiple_tag_reader tags(parameters);

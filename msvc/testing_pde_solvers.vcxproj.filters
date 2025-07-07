@@ -13,6 +13,21 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\DiffusionOfAdvection">
+      <UniqueIdentifier>{696b10b9-e02f-48c9-9fe2-4ff58dae5ee8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\QuickWithQuasiStationaryModel">
+      <UniqueIdentifier>{91c7f9f9-cd52-4516-9dd1-7ca0f6eb03aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\QuasistationaryWithRealData">
+      <UniqueIdentifier>{ae122c85-f7d5-4f2b-9969-0f984bc75c9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\IdentQuasistaticIsothermal">
+      <UniqueIdentifier>{3e678324-82cf-443e-8ffe-127c448e2f6e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\IdentQuasistaticNonisothermal">
+      <UniqueIdentifier>{2502c7fd-69f4-4872-afbc-86e310558d14}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\testing\test_main.cpp">
@@ -42,6 +57,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\testing\test_create_pipe_profile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\research\2024-08-quasistationary-with-real-data\quasistationary_with_real_data.h">
+      <Filter>Header Files\QuasistationaryWithRealData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\research\2024-10-ident-quasistatic-isothermal\ident_quasistatic_isothermal.h">
+      <Filter>Header Files\IdentQuasistaticIsothermal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\ident_quasistatic_nonisothermal.h">
+      <Filter>Header Files\IdentQuasistaticNonisothermal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\nonisothermal_quasistationary_with_real_data.h">
+      <Filter>Header Files\IdentQuasistaticNonisothermal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\testing\test_viscosity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -43,8 +43,8 @@ TEST_F(AdvectionMocSolver, UseCaseDensity)
     size_t point_count = pipe.profile.get_point_count();
 
     // Буфер для хранения слоёв
-    ring_buffer_t<vector<double>> buffer(2, point_count);
-    buffer.previous() = vector<double>(point_count, rho_init);
+    ring_buffer_t<std::vector<double>> buffer(2, point_count);
+    buffer.previous() = std::vector<double>(point_count, rho_init);
 
     double modeling_time = 0;
 
@@ -72,8 +72,8 @@ TEST_F(AdvectionMocSolver, ConsiderFlowSwap)
     size_t point_count = pipe.profile.get_point_count();
 
     // Буфер для хранения слоёв
-    ring_buffer_t<vector<double>> buffer(2, point_count);
-    buffer.previous() = vector<double>(point_count, rho_init);
+    ring_buffer_t<std::vector<double>> buffer(2, point_count);
+    buffer.previous() = std::vector<double>(point_count, rho_init);
     
     advection_moc_solver solver(pipe, volumetric_flow, buffer.previous(), buffer.current());
     double time_step = solver.prepare_step();
@@ -96,8 +96,8 @@ TEST_F(AdvectionMocSolver, ConsiderCrLessOne)
     size_t point_count = pipe.profile.get_point_count();
 
     // Буфер для хранения слоёв
-    ring_buffer_t<vector<double>> buffer(2, point_count);
-    buffer.current() = vector<double>(point_count, rho_init);
+    ring_buffer_t<std::vector<double>> buffer(2, point_count);
+    buffer.current() = std::vector<double>(point_count, rho_init);
 
     // Проведём моделирование, в котором на первой итерации расход будет равен начальному
     // а на второй - расход станет вдвое меньше
@@ -125,8 +125,8 @@ TEST_F(AdvectionMocSolver, ConsiderCrLessOneInverseFlow)
     size_t point_count = pipe.profile.get_point_count();
 
     // Буфер для хранения слоёв
-    ring_buffer_t<vector<double>> buffer(2, point_count);
-    buffer.current() = vector<double>(point_count, rho_init);
+    ring_buffer_t<std::vector<double>> buffer(2, point_count);
+    buffer.current() = std::vector<double>(point_count, rho_init);
 
     // Проведём моделирование, в котором на первой итерации расход будет равен начальному
     // а на второй - расход станет вдвое меньше

@@ -20,7 +20,7 @@ inline void solve_euler(
     ResultBuffer& result = *_result;
 
     typedef typename fixed_system_types<Dimension>::var_type vector_type;
-    const vector<double>& grid = ode.get_grid();
+    const std::vector<double>& grid = ode.get_grid();
 
     if (result.size() != grid.size())
         throw std::runtime_error("Result buffer and grid size must be equal");
@@ -63,7 +63,7 @@ inline void solve_euler_corrector(
     ResultBuffer& result = *_result;
 
     typedef typename fixed_system_types<Dimension>::var_type vector_type;
-    const vector<double>& grid = ode.get_grid();
+    const std::vector<double>& grid = ode.get_grid();
 
     if (result.size() != grid.size())
         throw std::runtime_error("Result buffer and grid size must be equal");
