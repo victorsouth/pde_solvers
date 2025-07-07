@@ -22,6 +22,12 @@
     <ClCompile Include="..\testing\test_main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\research\2023-12-diffusion-of-advection\diffusion_of_advection.h" />
+    <ClInclude Include="..\research\2024-02-quick-with-quasistationary-model\quick_with_quasistationary_model.h" />
+    <ClInclude Include="..\research\2024-08-quasistationary-with-real-data\quasistationary_with_real_data.h" />
+    <ClInclude Include="..\research\2024-10-ident-quasistatic-isothermal\ident_quasistatic_isothermal.h" />
+    <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\ident_quasistatic_nonisothermal.h" />
+    <ClInclude Include="..\research\2025-01-ident-quasistatic-nonisothermal\nonisothermal_quasistationary_with_real_data.h" />
     <ClInclude Include="..\testing\test_advection_moc_solver.h" />
     <ClInclude Include="..\testing\test_create_pipe_profile.h" />
     <ClInclude Include="..\testing\test_diffusion.h" />
@@ -30,6 +36,7 @@
     <ClInclude Include="..\testing\test_static_pipe_solver.h" />
     <ClInclude Include="..\testing\test_synthetic_timeseries.h" />
     <ClInclude Include="..\testing\test_timeseries.h" />
+    <ClInclude Include="..\testing\test_viscosity.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D96B0787-48BD-4108-87D2-0AFAB045343A}</ProjectGuid>

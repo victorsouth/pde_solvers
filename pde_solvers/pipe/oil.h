@@ -1,126 +1,7 @@
 ﻿#pragma once
 
-/// @brief Точка вискограммы
-struct viscosity_data_point {
-    double temperature;
-    double kinematic_viscosity;
-};
-
-
-/// @brief Модель вязкости (с потенциалом на общую модель вязкости)
-struct oil_viscosity_parameters_t
-{
-    /// @brief Номинальная температура для вязкости
-    double nominal_temperature{ KELVIN_OFFSET + 20 }; // 20 градусов Цельсия
-    /// @brief Кинематическая вязкость при номинальной температуре перекачки
-    double nominal_viscosity{ 10e-6 };
-    /// @brief Коэффициент в формуле Филонова-Рейнольдса
-    double temperature_coefficient{ 0 };
-
-    /// @brief Формула вискограммы Филонова-Рейнольдса
-    static double viscosity_Filonov_Reynolds(double default_viscosity,
-        double default_temperature, double kinematic_viscosity_temperature_coefficient,
-        double temperature)
-    {
-        const double& k = kinematic_viscosity_temperature_coefficient;
-        double viscosity = default_viscosity * exp(-k * (temperature - default_temperature));
-        return viscosity;
-    }
-    /// @brief Рассчитывает температурный коэффициент и температуру при 20 град по двум точкам
-    /// (T_1, \nu_1), (T_2, \nu_2)
-    static double find_kinematic_viscosity_temperature_coefficient(
-        double viscosity1, double temperature1,
-        double viscosity2, double temperature2)
-    {
-        double k = -log(viscosity1 / viscosity2) / (temperature1 - temperature2);
-        return k;
-    }
-    double operator()(double temperature) const
-    {
-        return viscosity_Filonov_Reynolds(nominal_viscosity, nominal_temperature,
-            temperature_coefficient, temperature);
-    }
-    /// @brief Изотермическая вязкость - просто возвращаем при номинальном режиме
-    double operator()() const
-    {
-        return nominal_viscosity;
-    }
-
-    /// @brief Инициализация модели вязкости по вискограмме из двух точек
-    /// @param viscogramm 
-    oil_viscosity_parameters_t(const std::array<viscosity_data_point, 2>& viscogramm)
-    {
-        const auto& v = viscogramm;
-        temperature_coefficient = find_kinematic_viscosity_temperature_coefficient(
-            v[0].kinematic_viscosity, v[0].temperature,
-            v[1].kinematic_viscosity, v[1].temperature);
-
-        nominal_temperature = v[0].temperature;
-        nominal_viscosity = v[0].kinematic_viscosity;
-    }
-    /// @brief Дефолтная инициализация
-    oil_viscosity_parameters_t() = default;
-};
-
-struct oil_density_parameters_t {
-    /// @brief Плотность при номинальных условиях, кг/м3
-    double nominal_density{ 760 };
-    /// @brief Модуль упругости жидкости, Па
-    /// Значение по умолчанию приведено по [Лурье 2017], стр. 77
-    double fluid_elasticity_modulus{ 1.5e9 };
-    /// @brief Номинальное давление, при котором фиксировалась плотность, Па
-    double nominal_pressure{ ATMOSPHERIC_PRESSURE };
-
-    /// @brief Коэффициент сжимаемости для жидкости (1/Па)
-    /// Коэффициент, учитывающий изменение плотности жидкости при отклонении давления от номинального
-    /// В документах обозначает как \beta_\rho
-    double getCompressionRatio() const {
-        return 1 / fluid_elasticity_modulus;
-    }
-    /// @brief Плотность при рабочем давлении, с учетом коэффициента сжимаемости жидкости
-    double getDensity(double pressure) const {
-        return nominal_density * (1 + getCompressionRatio() * (pressure - nominal_pressure));
-    }
-
-    /// @brief Плотность без учета сжимаемости и температурного расширения
-    double operator()() const
-    {
-        return nominal_density;
-    }
-};
-
-/// @brief Теплофизические свойства нефти (переименовать во флюид)
-struct oil_heat_parameters_t {
-    /// @brief Коэффициент внутренней теплоотдачи, Вт*м-2*К-1
-    double internalHeatTransferCoefficient = 257;
-    /// @brief Теплоемкость, Дж*кг-1*К-1
-    double HeatCapacity = 2000;
-    /// @brief Температура застывания, градусы C (переделать на Кельвины!)
-    double pourPointTemperature{ 12 };
-};
-
-
-/// @brief Сущность нефти
-struct oil_parameters_t
-{
-    /// @brief Модель плотности
-    oil_density_parameters_t density;
-    /// @brief Модель вязкости
-    oil_viscosity_parameters_t viscosity;
-    /// @brief Тепловая модель
-    oil_heat_parameters_t heat;
-
-
-
-    /// @brief Теплоемкость по формуле Крэга
-    /// Формула из документа "Полный вывод НЕизотермических..."
-    double get_heat_capacity_kreg(double temperature) const {
-        double Cp = 31.56 / sqrt(density.nominal_density) * (762 + 3.39 * temperature);
-        return Cp;
-    }
-
-};
-
+namespace pde_solvers {
+;
 
 
 
@@ -235,8 +116,146 @@ struct viscosity_table_model_t {
 
 
 
+/// @brief Точка вискограммы
+struct viscosity_data_point {
+    double temperature;
+    double kinematic_viscosity;
+};
+
+
+/// @brief Модель вязкости (с потенциалом на общую модель вязкости)
+struct oil_viscosity_parameters_t
+{
+    /// @brief Номинальная температура для вязкости
+    double nominal_temperature{ KELVIN_OFFSET + 20 }; // 20 градусов Цельсия
+    /// @brief Кинематическая вязкость при номинальной температуре перекачки
+    double nominal_viscosity{ 10e-6 };
+    /// @brief Коэффициент в формуле Филонова-Рейнольдса
+    double temperature_coefficient{ 0 };
+
+    /// @brief Формула вискограммы Филонова-Рейнольдса
+    static double viscosity_Filonov_Reynolds(double default_viscosity,
+        double default_temperature, double kinematic_viscosity_temperature_coefficient,
+        double temperature)
+    {
+        const double& k = kinematic_viscosity_temperature_coefficient;
+        double viscosity = default_viscosity * exp(-k * (temperature - default_temperature));
+        return viscosity;
+    }
+    /// @brief Рассчитывает температурный коэффициент и температуру при 20 град по двум точкам
+    /// (T_1, \nu_1), (T_2, \nu_2)
+    static double find_kinematic_viscosity_temperature_coefficient(
+        double viscosity1, double temperature1,
+        double viscosity2, double temperature2)
+    {
+        double k = -log(viscosity1 / viscosity2) / (temperature1 - temperature2);
+        return k;
+    }
+    /// @brief Расчет вязкости по текущей температуре Филоновым-Рейнольдсом
+    double operator()(double temperature) const
+    {
+        return viscosity_Filonov_Reynolds(nominal_viscosity, nominal_temperature,
+            temperature_coefficient, temperature);
+    }
+    /// @brief Изотермическая вязкость - просто возвращаем при номинальном режиме
+    double operator()() const
+    {
+        return nominal_viscosity;
+    }
+
+    /// @brief Инициализация модели вязкости по вискограмме из двух точек
+    /// @param viscogramm 
+    oil_viscosity_parameters_t(const std::array<viscosity_data_point, 2>& viscogramm)
+    {
+        const auto& v = viscogramm;
+        temperature_coefficient = find_kinematic_viscosity_temperature_coefficient(
+            v[0].kinematic_viscosity, v[0].temperature,
+            v[1].kinematic_viscosity, v[1].temperature);
+
+        nominal_temperature = v[0].temperature;
+        nominal_viscosity = v[0].kinematic_viscosity;
+    }
+    /// @brief Инициализирует модель вязкости по Филонову-Рейнольдсу по стандартной таблице
+    /// @param viscosity_standard_table Таблица стандартных значений вязкости 0, 20, 50 гр. Цельсия
+    oil_viscosity_parameters_t(const std::array<double, 3>& viscosity_standard_table) 
+    {
+        std::array<double, 3> coeffs = viscosity_table_model_t::reconstruct(viscosity_standard_table);
+        bool check_model = std::isfinite(coeffs[0])
+                        && std::isfinite(coeffs[1])
+                        && !std::isfinite(coeffs[2]);
+        if (!check_model) {
+            // переданные данные не соответствуют модели Филонова-Рейнольдса
+            throw std::runtime_error("Filonov-Reynolds data is required");
+        }
+
+        nominal_viscosity = coeffs[0];
+        temperature_coefficient = coeffs[1];      /// заданная вискограмма
+        nominal_temperature = KELVIN_OFFSET + 20;
+
+    }
+
+    /// @brief Дефолтная инициализация
+    oil_viscosity_parameters_t() = default;
+};
+
+struct oil_density_parameters_t {
+    /// @brief Плотность при номинальных условиях, кг/м3
+    double nominal_density{ 760 };
+    /// @brief Модуль упругости жидкости, Па
+    /// Значение по умолчанию приведено по [Лурье 2017], стр. 77
+    double fluid_elasticity_modulus{ 1.5e9 };
+    /// @brief Номинальное давление, при котором фиксировалась плотность, Па
+    double nominal_pressure{ ATMOSPHERIC_PRESSURE };
+
+    /// @brief Коэффициент сжимаемости для жидкости (1/Па)
+    /// Коэффициент, учитывающий изменение плотности жидкости при отклонении давления от номинального
+    /// В документах обозначает как \beta_\rho
+    double getCompressionRatio() const {
+        return 1 / fluid_elasticity_modulus;
+    }
+    /// @brief Плотность при рабочем давлении, с учетом коэффициента сжимаемости жидкости
+    double getDensity(double pressure) const {
+        return nominal_density * (1 + getCompressionRatio() * (pressure - nominal_pressure));
+    }
+
+    /// @brief Плотность без учета сжимаемости и температурного расширения
+    double operator()() const
+    {
+        return nominal_density;
+    }
+};
+
+/// @brief Теплофизические свойства нефти (переименовать во флюид)
+struct oil_heat_parameters_t {
+    /// @brief Коэффициент внутренней теплоотдачи, Вт*м-2*К-1
+    double internalHeatTransferCoefficient = 257;
+    /// @brief Теплоемкость, Дж*кг-1*К-1
+    double HeatCapacity = 2000;
+    /// @brief Температура застывания, градусы C (переделать на Кельвины!)
+    double pour_point_temperature{ 12 };
+};
+
+
+/// @brief Сущность нефти
+struct oil_parameters_t {
+    /// @brief Модель плотности
+    oil_density_parameters_t density;
+    /// @brief Модель вязкости
+    oil_viscosity_parameters_t viscosity;
+    /// @brief Тепловая модель
+    oil_heat_parameters_t heat;
+    /// @brief Теплоемкость по формуле Крэга
+    /// Формула из документа "Полный вывод НЕизотермических..."
+    double get_heat_capacity_kreg(double temperature) const {
+        double Cp = 31.56 / sqrt(density.nominal_density) * (762 + 3.39 * temperature);
+        return Cp;
+    }
+
+};
+
+
 /// @brief Динамические (пересчитываемые в процессе расчета) параметры нефти
-/// @tparam DataBuffer Задается vector<double> для профилей, double для точечного случая
+/// @tparam DataBuffer Задается std::vector<double> для профилей, double для точечного случая
 template <typename BufferDensity, typename BufferViscosity>
 struct fluid_properties_dynamic {
     /// @brief Плотность при стандартных (нормальных, номинальных) условиях
@@ -287,14 +306,14 @@ struct fluid_properties_static {
 
 /// @brief Профиль свойств флюида
 struct fluid_properties_profile_t :
-    fluid_properties_dynamic<const vector<double>&, const vector<std::array<double, 3>>&>,
+    fluid_properties_dynamic<const std::vector<double>&, const std::vector<std::array<double, 3>>&>,
     fluid_properties_static
 {
     // здесь все функции зависят от координаты (индекса на профиле)
 
-    fluid_properties_profile_t(const vector<double>& nominal_density,
-        const vector<std::array<double, 3>>& viscosity_approximation)
-        : fluid_properties_dynamic<const vector<double>&, const vector<std::array<double, 3>>&>(nominal_density, viscosity_approximation)
+    fluid_properties_profile_t(const std::vector<double>& nominal_density,
+        const std::vector<std::array<double, 3>>& viscosity_approximation)
+        : fluid_properties_dynamic<const std::vector<double>&, const std::vector<std::array<double, 3>>&>(nominal_density, viscosity_approximation)
     {
 
     }
@@ -310,9 +329,6 @@ struct fluid_properties_profile_t :
     }
 
 };
-
-namespace pde_solvers { // по хорошему, все убрать в этот неймспейс
-;
 
 struct fluid_properties_t :
     fluid_properties_dynamic<double, double>,

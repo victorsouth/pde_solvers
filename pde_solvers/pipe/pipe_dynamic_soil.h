@@ -138,7 +138,7 @@ struct pipe_noniso_properties_t : public pipe_properties_t {
     /// @brief Расчет коэффициентов теплообмена эквивалентных слоев Kt1, Kt2
     /// @param fluid Параметры флюида
     /// @return 
-    pair<double, double> get_equivalent_heat_transfers(const oil_parameters_t& fluid) const
+    std::pair<double, double> get_equivalent_heat_transfers(const oil_parameters_t& fluid) const
     {
         // Коэффициент внутренней теплоотдачи
         double a1 = fluid.heat.internalHeatTransferCoefficient;
@@ -176,7 +176,7 @@ struct pipe_noniso_properties_t : public pipe_properties_t {
     /// По умолчанию не задается, а принимается равным теплопроводности реального слоя изоляции
     /// Если задан, то имеет смысл параметра идентификации
     /// @return 
-    pair<double, double> get_equivalent_radiuses(double Kt1, double Kt2) const
+    std::pair<double, double> get_equivalent_radiuses(double Kt1, double Kt2) const
     {
         // Коэффициенты экв. слоя изоляции, берем самый толстый слой
         double isolatonConductivity = heat.thermalConductivity[2];
@@ -257,12 +257,12 @@ struct pipe_noniso_properties_t : public pipe_properties_t {
 inline void compute_soil_mean_temperature_distribution(
     const pipe_noniso_properties_t& pipe,
     const oil_parameters_t& oil,
-    const vector<double>& temperature_oil,
-    vector<double>* _result,
+    const std::vector<double>& temperature_oil,
+    std::vector<double>* _result,
     const thermal_model_ident_parameters_t& ident = thermal_model_ident_parameters_t()
 )
 {
-    vector<double>& temperature = *_result;
+    std::vector<double>& temperature = *_result;
 
     double lambda = pipe.heat.thermalConductivity[2]; //Стоит разобраться, почему выбирают именно этот слой
 
@@ -293,12 +293,12 @@ inline void compute_new_fluid_temperature_distribution(
     double mass_flow,
     double Tin,
     double dt,
-    const vector<double>& _heat_flow,
-    const vector<double>& temperature_oil_old,
-    vector<double>* temperature_oil_new)
+    const std::vector<double>& _heat_flow,
+    const std::vector<double>& temperature_oil_old,
+    std::vector<double>* temperature_oil_new)
 {
-    const vector<double>& qT = _heat_flow;
-    vector<double>& T1 = *temperature_oil_new;
+    const std::vector<double>& qT = _heat_flow;
+    std::vector<double>& T1 = *temperature_oil_new;
 
     double d = pipe.wall.diameter;
     double S_0 = pipe.wall.getArea();
@@ -331,15 +331,15 @@ inline void compute_new_fluid_temperature_distribution2(
     double mass_flow,
     double Tin,
     double dt,
-    const vector<double>& _heat_flow,
-    const vector<double>& temperature_oil_old,
-    const vector<double>& Tsr,
-    vector<double>* temperature_oil_new,
+    const std::vector<double>& _heat_flow,
+    const std::vector<double>& temperature_oil_old,
+    const std::vector<double>& Tsr,
+    std::vector<double>* temperature_oil_new,
     const thermal_model_ident_parameters_t& ident
 )
 {
-    const vector<double>& qT = _heat_flow;
-    vector<double>& T1 = *temperature_oil_new;
+    const std::vector<double>& qT = _heat_flow;
+    std::vector<double>& T1 = *temperature_oil_new;
 
     double d = pipe.wall.diameter;
     double S_0 = pipe.wall.getArea();
@@ -387,16 +387,16 @@ inline void compute_new_soil_mean_temperature_distribution(
     const pipe_noniso_properties_t& pipe,
     const oil_parameters_t& oil,
     double dt,
-    const vector<double>& _temperature,
-    const vector<double>& _mean_dirt_temperature,
-    vector<double>* _result,
+    const std::vector<double>& _temperature,
+    const std::vector<double>& _mean_dirt_temperature,
+    std::vector<double>* _result,
     const thermal_model_ident_parameters_t& ident = thermal_model_ident_parameters_t()
 
 )
 {
-    const vector<double>& T1 = _temperature;
-    const vector<double>& Tsr_old = _mean_dirt_temperature;
-    vector<double>& Tsr = *_result;
+    const std::vector<double>& T1 = _temperature;
+    const std::vector<double>& Tsr_old = _mean_dirt_temperature;
+    std::vector<double>& Tsr = *_result;
 
     equivalent_thermal_model_t heat_dynamic_model = pipe.get_heat_eqivalent_model(oil, ident);
     double C = heat_dynamic_model.C;
@@ -415,15 +415,15 @@ inline void compute_new_soil_mean_temperature_distribution(
 inline void compute_heat_flow_distribution(
     const pipe_noniso_properties_t& pipe,
     const oil_parameters_t& oil,
-    const vector<double>& temperature,
-    const vector<double>& mean_amb_temperature,
-    vector<double>* _qT,
+    const std::vector<double>& temperature,
+    const std::vector<double>& mean_amb_temperature,
+    std::vector<double>* _qT,
     const thermal_model_ident_parameters_t& ident = thermal_model_ident_parameters_t()
 )
 {
-    const vector<double>& T1 = temperature;
-    const vector<double>& Tsr = mean_amb_temperature;
-    vector<double>& qT = *_qT;
+    const std::vector<double>& T1 = temperature;
+    const std::vector<double>& Tsr = mean_amb_temperature;
+    std::vector<double>& qT = *_qT;
 
     equivalent_thermal_model_t heat_dynamic_model = pipe.get_heat_eqivalent_model(oil, ident);
     double A = heat_dynamic_model.A;
@@ -450,15 +450,15 @@ inline void compute_heat_flow_distribution(
 inline void compute_isolation_boundary_temperature(
     const pipe_noniso_properties_t& pipe,
     const oil_parameters_t& oil,
-    const vector<double>& temperature,
-    const vector<double>& mean_amb_temperature,
-    vector<double>* _Tiso,
+    const std::vector<double>& temperature,
+    const std::vector<double>& mean_amb_temperature,
+    std::vector<double>* _Tiso,
     const thermal_model_ident_parameters_t& ident = thermal_model_ident_parameters_t()
 )
 {
-    const vector<double>& T1 = temperature;
-    const vector<double>& Tsr = mean_amb_temperature;
-    vector<double>& Tiso = *_Tiso;
+    const std::vector<double>& T1 = temperature;
+    const std::vector<double>& Tsr = mean_amb_temperature;
+    std::vector<double>& Tiso = *_Tiso;
 
     equivalent_thermal_model_t heat_dynamic_model = pipe.get_heat_eqivalent_model(oil, ident);
     double A3 = heat_dynamic_model.A3;

@@ -29,6 +29,7 @@ set(HEADERS_PIPE
     pde_solvers/pipe/pipe_heat_computations.h
     pde_solvers/pipe/pipe_heat_pde.h
     pde_solvers/pipe/pipe_heat_struct.h
+    pde_solvers/pipe/pipe_heat_util.h
     pde_solvers/pipe/pipe_dynamic_soil.h      
 )
 set(HEADERS_SOLVERS
@@ -117,6 +118,8 @@ if(PDE_SOLVERS_BUILD_TESTS)
         research/2024-02-quick-with-quasistationary-model/quick_with_quasistationary_model.h
         research/2024-08-quasistationary-with-real-data/quasistationary_with_real_data.h
         research/2024-10-ident-quasistatic-isothermal/ident_quasistatic_isothermal.h
+        research/2025-01-ident-quasistatic-nonisothermal/ident_quasistatic_nonisothermal.h
+        research/2025-01-ident-quasistatic-nonisothermal/nonisothermal_quasistationary_with_real_data.h
         research/2025-04-calc-mass-on-isothermal-quasistatic/calc_mass_on_isothermal_quasistatic.h
     )
     add_executable(pde_research research/research_main.cpp ${RESEARCH_HEADERS})

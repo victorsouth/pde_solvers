@@ -69,13 +69,13 @@ TEST(MOC_Solver, UseCase_Advection)
     ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.get_point_count());
 
     auto& rho_initial = buffer.previous().vars.point_double[0];
-    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
+    rho_initial = std::vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
 
     buffer.advance(+1);
     single_var_moc_t& prev = buffer.previous();
     single_var_moc_t& next = buffer.current();
 
-    vector<double> Q(pipe.profile.get_point_count(), 0.5); // задаем по трубе расход 0.5 м3/с
+    std::vector<double> Q(pipe.profile.get_point_count(), 0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);
 
     moc_solver<1> solver(advection_model, 
@@ -94,9 +94,9 @@ TEST(MOC_Solver, UseCase_Advection)
 struct density_viscosity_layer
 {
     /// @brief Профиль плотности
-    vector<double> density;
+    std::vector<double> density;
     /// @brief Профиль вязкости
-    vector<double> viscosity;
+    std::vector<double> viscosity;
     /// @brief Профиль вспомогательных расчетов для МХ (и для вязкости, и для плотности)
     moc_solver<1>::specific_layer moc_specific;
     /// @brief Конструктор на заданное количество точек
@@ -132,15 +132,15 @@ TEST(MOC_Solver, UseCase_Advection_Density_Viscosity)
     simple_pipe.dx = 1000;
 
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-    vector<double> Q(pipe.profile.get_point_count(), -0.5); // задаем по трубе расход 0.5 м3/с
+    std::vector<double> Q(pipe.profile.get_point_count(), -0.5); // задаем по трубе расход 0.5 м3/с
     PipeQAdvection advection_model(pipe, Q);
 
     ring_buffer_t<density_viscosity_layer> buffer(2, pipe.profile.get_point_count());
 
     auto& rho_initial = buffer[0].density;
     auto& viscosity_initial = buffer[0].viscosity;
-    rho_initial = vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
-    viscosity_initial = vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
+    rho_initial = std::vector<double>(rho_initial.size(), 850); // инициализация начальной плотности
+    viscosity_initial = std::vector<double>(viscosity_initial.size(), 1e-5); // инициализация начальной плотности
 
     buffer.advance(+1);
 
@@ -184,7 +184,7 @@ TEST(MOC_Solver, UseCase_Waterhammer)
 
     pipe_properties_t pipe;
     pipe.profile.coordinates = { 0, 1000, 2000 };
-    pipe.profile.heights = pipe.profile.capacity = vector<double>(pipe.profile.coordinates.size(), 0);
+    pipe.profile.heights = pipe.profile.capacity = std::vector<double>(pipe.profile.coordinates.size(), 0);
 
     oil_parameters_t oil;
     PipeModelPGConstArea pipeModel(pipe, oil);
@@ -199,7 +199,7 @@ TEST(MOC_Solver, UseCase_Waterhammer)
     auto left_boundary = pipeModel.const_mass_flow_equation(G);
     auto right_boundary = pipeModel.const_pressure_equation(Pout);
 
-    vector<vector<double>> Phist, Ghist;
+    std::vector<std::vector<double>> Phist, Ghist;
 
     for (size_t index = 0; index < 100; ++index) {
         Phist.emplace_back(buffer.current().vars.point_double[0]);

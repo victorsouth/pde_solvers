@@ -268,7 +268,7 @@ struct primary_heat_zone_parameters_t {
 
     /// @brief Расчет коэффициентов теплообмена эквивалентных слоев Kt1, Kt2
     /// Ошибка в расчете диаметров dsn, оставлено для совместимости
-    pair<double, double> get_equivalent_heat_transfers_legacy(double pipe_inner_diameter) const
+    std::pair<double, double> get_equivalent_heat_transfers_legacy(double pipe_inner_diameter) const
     {
         // Коэффициент внутренней теплоотдачи. Значение прибито, мало влияет
         double a1 = 257;
@@ -303,7 +303,7 @@ struct primary_heat_zone_parameters_t {
     /// По умолчанию не задается, а принимается равным теплопроводности реального слоя изоляции
     /// Если задан, то имеет смысл параметра идентификации
     /// @return 
-    pair<double, double> get_equivalent_radiuses_legacy(double Kt1, double Kt2,
+    std::pair<double, double> get_equivalent_radiuses_legacy(double Kt1, double Kt2,
         double pipe_inner_diameter) const
     {
         // Коэффициенты экв. слоя изоляции, берем самый толстый слой
@@ -379,20 +379,20 @@ struct primary_heat_zone_parameters_t {
 /// @brief Трубопровод с зонированными теплофизическими свойствами грунта
 struct zoned_pipe_properties : public pipe_properties_t {
     /// @brief Первичные параметры зон (задаются пользователем априорно)
-    vector<primary_heat_zone_parameters_t> heat_zones;
+    std::vector<primary_heat_zone_parameters_t> heat_zones;
     /// @brief Параметры идентификации (задаются пользователем из редактора или в процессе идентификации)
-    vector<heat_zone_adaptation_t> adaptation_zones;
+    std::vector<heat_zone_adaptation_t> adaptation_zones;
     /// @brief Параметры эквивалентных зон 
     /// Вычисляются по первичным параметрам, потом больше не меняются
     /// По сути, функция от первичных зон
-    vector<equivalent_heat_zone_parameters_t> eqheat_zones;
+    std::vector<equivalent_heat_zone_parameters_t> eqheat_zones;
     /// @brief Коэффициенты модели для эквивалнтных зон 
     /// (вычисляются по параметрам эквивалентных зон и параметрам идентификации)
-    vector<equivalent_heat_zone_coefficients_t> coeff_zones;
-    vector<size_t> pressure_sensor_indices;
+    std::vector<equivalent_heat_zone_coefficients_t> coeff_zones;
+    std::vector<size_t> pressure_sensor_indices;
     HeatModelVer model_version{ HeatModelVer::V2 };
 
-    void init_pressure_sensors(vector<double> coordinates) {
+    void init_pressure_sensors(std::vector<double> coordinates) {
         std::sort(coordinates.begin(), coordinates.end());
 
         double dx = profile.coordinates[1] - profile.coordinates[0];
@@ -441,10 +441,10 @@ struct zoned_pipe_properties : public pipe_properties_t {
     }
 
     /// @brief Возвращает параметры эквивалентных теплофизических моделей
-    vector<equivalent_heat_zone_coefficients_t> get_coeff_zones(
-        const vector<heat_zone_adaptation_t>& adapt_zones) const
+    std::vector<equivalent_heat_zone_coefficients_t> get_coeff_zones(
+        const std::vector<heat_zone_adaptation_t>& adapt_zones) const
     {
-        vector<equivalent_heat_zone_coefficients_t> result;
+        std::vector<equivalent_heat_zone_coefficients_t> result;
         for (size_t index = 0; index < eqheat_zones.size(); ++index) {
             if (adapt_zones.size() == eqheat_zones.size()) {
                 result.emplace_back(eqheat_zones[index].get_coefficients(adapt_zones[index]));
@@ -458,15 +458,15 @@ struct zoned_pipe_properties : public pipe_properties_t {
     }
 
     /// @brief Параметры по умолчанию - одни единицы
-    vector<heat_zone_adaptation_t> get_initial_ident_parameters() const {
-        vector<heat_zone_adaptation_t> result(eqheat_zones.size());
+    std::vector<heat_zone_adaptation_t> get_initial_ident_parameters() const {
+        std::vector<heat_zone_adaptation_t> result(eqheat_zones.size());
         return result;
     }
 
 
     /// @brief Возвращает параметры эквивалентных теплофизических моделей
-    vector<equivalent_heat_zone_parameters_t> get_equivalent_zones() const {
-        vector<equivalent_heat_zone_parameters_t> result;
+    std::vector<equivalent_heat_zone_parameters_t> get_equivalent_zones() const {
+        std::vector<equivalent_heat_zone_parameters_t> result;
 
         //for (const auto& zone : heat_zones) 
         for (size_t index = 0; index < heat_zones.size(); ++index)
