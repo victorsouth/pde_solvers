@@ -24,10 +24,14 @@ private:
     time_t end_date{ std::numeric_limits<time_t>::max() };
     /// @brief Начальные точки индексов временных рядов, создающие левую границу при поиске во времени
     mutable std::vector<size_t> left_bound;
-
-public:
     /// @brief Исходные временные ряды
     std::vector<std::pair<std::vector<time_t>, std::vector<double>>> data;
+
+public:
+    /// @brief Проверяет, что по какой-то причине никаких данных нет
+    bool empty() const {
+        return data.empty();
+    }
     /// @brief Получение количества значений определённого параметра
     /// @param numb Номер параметра 
     size_t get_elements_count(size_t numb) const
