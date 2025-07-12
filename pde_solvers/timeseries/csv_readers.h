@@ -198,3 +198,35 @@ public:
     };
 
 };
+
+
+/// @brief Записывает в формате, пригодном для csv_reader
+inline void write_csv_tag_file(const std::string& filename,
+    const std::vector<std::time_t>& astro_times,
+    const std::vector<double>& values)
+{
+    std::ofstream file(filename + ".csv");
+    for (std::size_t index = 0; index < astro_times.size(); ++index) {
+        file << UnixToString(astro_times[index]) << ";" << values[index] << std::endl;
+    }
+
+}
+
+/// @brief Записывает в формате, пригодном для csv_reader
+/// @param filename Имя файла
+/// @param astro_times Моменты времени
+/// @param getter Геттер для получения Значения 
+/// (передается индекс моментов времени и само значение времени)
+template <typename ValueGetter>
+inline void write_csv_tag_file(const std::string& filename,
+    const std::vector<std::time_t>& astro_times,
+    ValueGetter& getter)
+{
+    std::ofstream file(filename + ".csv");
+    for (std::size_t index = 0; index < astro_times.size(); ++index) {
+        double value = getter(index, astro_times[index]);
+
+        file << UnixToString(astro_times[index]) << ";" << value << std::endl;
+    }
+
+}
