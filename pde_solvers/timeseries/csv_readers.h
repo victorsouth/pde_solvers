@@ -1,5 +1,38 @@
 ﻿#pragma once
 
+
+
+/// @brief Статус величины, привязанной на расчетную схему
+enum class measurement_status_t {
+    measured,
+    inconfident_calculation,
+    confident_calculation,
+    unused
+};
+
+/// @brief Параметры измерения (без указания физической величины)
+struct measurement_untyped_data_t {
+    /// @brief Внешний идентификатор измерения на стороне БД
+    long long id{ -1 };
+    /// @brief Значение измерения
+    double value{ std::numeric_limits<double>::quiet_NaN() };
+    /// @brief Достоверность измерения (пока используется, если измерение берется из расчета)
+    measurement_status_t status{ measurement_status_t::measured };
+    /// @brief Проверка наличия измерения одного параметра
+    bool has_value() const
+    {
+        return std::isfinite(value);
+    }
+};
+
+/// @brief Типизированные значение временного ряда
+template <typename MeasurementEnumClass>
+struct measurement_data_t : public measurement_untyped_data_t {
+    /// @brief Тип измерения
+    MeasurementEnumClass type{ MeasurementEnumClass(0) };
+};
+
+
 /// @brief Информация о теге временного ряда (имя, размерность)
 struct tag_info_t {
     /// @brief Имя тега
@@ -211,6 +244,29 @@ inline void write_csv_tag_file(const std::string& filename,
     }
 
 }
+
+
+/// @brief Запись временного ряда со статусом в файл
+/// @param filename Имя .csv файла для записи
+/// @param astro_times Временные метки в астрономическом времени
+/// @param timeseries Вектор значений
+inline void write_csv_tag_file(const std::string& filename,
+    const std::vector<std::time_t>& astro_times,
+    const std::vector<measurement_untyped_data_t>& timeseries)
+{
+    std::ofstream file(filename + ".csv");
+    for (std::size_t index = 0; index < astro_times.size(); ++index) {
+        double value = timeseries[index].value;
+        int status = (int)timeseries[index].status;
+
+        file << UnixToString(
+            astro_times[index]) << ";" <<
+            value << ";" <<
+            status << std::endl;
+    }
+
+}
+
 
 /// @brief Записывает в формате, пригодном для csv_reader
 /// @param filename Имя файла
