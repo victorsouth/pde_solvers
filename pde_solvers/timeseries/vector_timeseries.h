@@ -28,6 +28,10 @@ private:
     std::vector<std::pair<std::vector<time_t>, std::vector<double>>> data;
 
 public:
+    /// @brief Геттер для хранящихся данных
+    const std::vector<std::pair<std::vector<time_t>, std::vector<double>>>& get_data() const {
+        return data;
+    }
     /// @brief Проверяет, что по какой-то причине никаких данных нет
     bool empty() const {
         return data.empty();
