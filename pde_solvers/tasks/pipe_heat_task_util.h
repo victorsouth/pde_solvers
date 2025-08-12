@@ -3,6 +3,23 @@
 namespace pde_solvers {
 ;
 
+/// @brief Параметры трубы, поддерживаемые в json-формате (в graph solvers)
+/// Есть идея скалярные параметры читать через рефлесию
+struct pipe_json_data {
+    /// @brief диаметр
+    double diameter;
+    /// @brief Координата начала трубы
+    double x_start;
+    /// @brief Координата конца трубы
+    double x_end;
+    /// @brief Параметры
+    static pipe_json_data default_values() {
+        pipe_json_data result;
+        result.diameter = 1;
+        return result;
+    }
+};
+
 /// @brief Нефть по умолчанию для тепловых задач
 inline oil_parameters_t get_noniso_default_oil()
 {
