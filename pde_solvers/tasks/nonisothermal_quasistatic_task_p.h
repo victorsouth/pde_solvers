@@ -205,6 +205,7 @@ public:
         return buffer;
     }
 };
+
 /*
 * 
 /// @brief Стационарный расчет (с помощью initial boundaries),

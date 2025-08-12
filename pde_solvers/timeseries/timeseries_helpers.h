@@ -111,7 +111,7 @@ private:
     const std::map<std::string, std::pair<double, double>> units{
         {"m3/s", {1.0, 0}},
         {"m3/h-m3/s", {3600, 0.0}},
-        {"m3/h", {1 / 3600, 0.0}},
+        {"m3/h", {3600, 0.0}},
         {"kg/m3", {1.0, 0.0}},
         {"K-C", {1.0, -KELVIN_OFFSET}},
         {"K", {1.0, 0.0}},

@@ -312,9 +312,8 @@ inline void perform_quasistatic_simulation(
         task.step(time_step, boundaries);
 
         // Вывод профилей и временного ряда сравнения с эталонными данными
-        if (etalon_timeseries.data.empty())
+        if (etalon_timeseries.empty())
         {
-
             layer_printer.print_all(path, t, pipe, task.get_current_layer());
         }
         else {
