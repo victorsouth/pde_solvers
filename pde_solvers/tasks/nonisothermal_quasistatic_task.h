@@ -20,9 +20,9 @@ enum class noniso_qsm_model_type {
 /// true - в ячейках для метода конечных объёмов (Quickest-Ultimate)
 /// false - в точках для метода характеристик (advection_moc_solver)
 struct qsm_noniso_T_layer {
-    /// @brief Профиль температуры
+    /// @brief Профиль температуры (ячейки)
     std::vector<double> temperature;
-    /// @brief Профиль температуры  Шуховым
+    /// @brief Профиль температуры  Шуховым (точки)
     std::vector<double> temperature_shukhov;
     /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
@@ -321,6 +321,9 @@ public:
     /// @brief Геттер для текущего слоя  
     qsm_noniso_T_layer& get_current_layer() {
         return buffer.current();
+    /// @brief Геттер параметров трубы
+    const pipe_noniso_properties_t& get_pipe() const {
+        return pipe;
     }
 
     /// @brief Начальный стационарный расчёт. 
@@ -437,7 +440,7 @@ public:
             //pipe.heat.ambient_heat_transfer = 1.4917523388199689;
             double T_out_shukhov = solve_shukhov_temperature(boundaries);
             // запускаем адвекцию, на вход которой даем температуру с выхода, посчитанную по Шухову
-            step_advection_temperature(dt, T_out_shukhov, boundaries.volumetric_flow);
+            step_advection_temperature(dt, T_out_shukhov, boundaries.volumetric_flow); 
             break;
         }
         }

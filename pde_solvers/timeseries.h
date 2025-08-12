@@ -26,6 +26,7 @@
 /// 3. Предпосчитанные эталонные значения
 inline  std::tuple<std::vector<double>, std::vector<std::vector<double>>, std::vector<double>>
 prepare_timeseries_data(
+    double step,
     const std::string& start_period,
     const std::string& end_period,
     const std::vector<std::pair<std::string, std::string>>& parameters)
@@ -47,8 +48,6 @@ prepare_timeseries_data(
     vector_timeseries_t control_parameters_time_series(control_tag_data);
     vector_timeseries_t etalon_parameters_time_series(etalon_tag_data);
 
-    // Задаём шаг для временной сетки - 1 минута
-    double step = 60;
 
     // Определяем начало периода
     time_t start_period_time = std::max(control_parameters_time_series.get_start_date(), etalon_parameters_time_series.get_start_date());
@@ -61,6 +60,7 @@ prepare_timeseries_data(
     size_t dots_count = static_cast<size_t>(ceil(duration / step) + 0.00001);
 
     std::vector<double>  times = std::vector<double>(dots_count);
+    std::vector<double>  times_vector = std::vector<double>(dots_count);
     std::vector<std::vector<double>> control_data = std::vector<std::vector<double>>(dots_count);
     std::vector<double> etalon_temp = std::vector<double>(dots_count);
 
@@ -70,13 +70,13 @@ prepare_timeseries_data(
         times[i] = step * i;
         // Определяем момент времени
         time_t t = start_period_time + static_cast<time_t>(times[i] + 0.5);
-
+        times_vector[i] = (double)t;  // Передача временных меток 
         // Получаем интерполированные значения краевых условий и эталонных значений
         control_data[i] = control_parameters_time_series(t);
         etalon_temp[i] = etalon_parameters_time_series(t).front();
 
     };
 
-    return std::make_tuple(std::move(times), std::move(control_data), std::move(etalon_temp));
+    return std::make_tuple(std::move(times_vector), std::move(control_data), std::move(etalon_temp));
 }
 

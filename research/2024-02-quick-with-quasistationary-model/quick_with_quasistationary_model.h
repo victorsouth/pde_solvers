@@ -19,6 +19,7 @@ inline std::string prepare_research_folder_for_qsm_model(std::string dop_path = 
 }
 
 
+
 template <typename Solver = advection_moc_solver>
 struct matlab_printer {
     /// @brief Формирует имя файл для результатов исследования разных численных метов
