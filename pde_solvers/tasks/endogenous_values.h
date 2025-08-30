@@ -140,17 +140,20 @@ struct pipe_endogenous_variable_layer_t
     /// @brief Вязкость при 50С (сортовая при неизотермическом расчете)
     confident_layer_t viscosity50;
     /// @brief Принимает количество точек, инициализирует количество ячеек
+    /// ВАЖНО!!! 
+    /// векторы mass_flow, velocity ничего не знают про точки ячейки
+    /// а confident_layer_t знает про это и ожидает в конструкторе ТОЧКИ!!!
     pipe_endogenous_variable_layer_t(size_t point_count)
         : mass_flow(point_count - 1, 0.0)
         , velocity(point_count - 1, 0.0)
-        , density(point_count - 1, 860)
-        , viscosity(point_count - 1, 1e-6)
-        , sulfur(point_count - 1, 1e-3)
-        , improver(point_count - 1, 0.0)
-        , temperature(point_count - 1, 300)
-        , viscosity0(point_count - 1, 0.0)
-        , viscosity20(point_count - 1, 0.20e-6)
-        , viscosity50(point_count - 1, 0.50e-6)
+        , density(point_count, 860)
+        , viscosity(point_count, 1e-6)
+        , sulfur(point_count, 1e-3)
+        , improver(point_count, 0.0)
+        , temperature(point_count, 300)
+        , viscosity0(point_count, 0.0)
+        , viscosity20(point_count, 0.20e-6)
+        , viscosity50(point_count, 0.50e-6)
     {
 
     }
