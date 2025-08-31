@@ -555,10 +555,10 @@ public:
                 double Vb = v_pipe; // предположили, что скорость на границе во всех точках трубы одна и та же
                 double Ub;
                 if (cell == 0) {
-                    Ub = quickest_ultimate_border_approximation(U[cell], U[cell], U[cell + 1], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // костыль U_L = U_C
+                    Ub = U[cell];
                 }
                 else if (cell == U.size() - 1) {
-                    Ub = quickest_ultimate_border_approximation(U[cell - 1], U[cell], U[cell], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // костыль U_R = U_C
+                    Ub = U[cell - 1];
                 }
                 else {
                     Ub = quickest_ultimate_border_approximation(U[cell - 1], U[cell], U[cell + 1], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // честный расчет
@@ -571,11 +571,11 @@ public:
                 size_t left_border = cell;
                 double Vb = v_pipe; // предположили, что скорость на границе во всех точках трубы одна и та же
                 double Ub;
-                if (cell == 0) {
-                    Ub = quickest_ultimate_border_approximation(U[cell + 1], U[cell], U[cell], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // костыль U_L = U_C
+                if (cell == U.size() - 1) { // Первый приоритет, так как в случае единственной ячейки (короткая труба) 
+                    Ub = U[cell];           // следующее условие также True, но cell + 1 не существует 
                 }
-                else if (cell == U.size() - 1) {
-                    Ub = quickest_ultimate_border_approximation(U[cell], U[cell], U[cell - 1], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // костыль U_R = U_C
+                else if (cell == 0) {
+                    Ub = U[cell + 1];
                 }
                 else {
                     Ub = quickest_ultimate_border_approximation(U[cell + 1], U[cell], U[cell - 1], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // честный расчет

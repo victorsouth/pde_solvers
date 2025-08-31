@@ -581,3 +581,80 @@ TEST_F(QUICKEST_ULTIMATE2, Quick_UseCase_Advection_Temperature)
         buffer->advance(+1);
     }
 }
+
+/// @brief Расчет шага на короткой трубе
+/// @return Значение параметра в единственной ячейки на предыдущем слое и на новом
+inline std::pair<double, double> short_pipe_step(double vol_flow, 
+    double rho_in, double rho_out, double rho_initial)
+{
+    simple_pipe_properties simple_pipe;
+    simple_pipe.length = 100.0;   // длина 100 м
+    simple_pipe.dx = 100.0;       // шаг сетки = длина (1 ячейка)
+    simple_pipe.diameter = 0.7;
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
+
+    std::vector<double> Q(pipe.profile.get_point_count(), 1.0);
+    PipeQAdvection advection_model(pipe, Q);
+
+    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
+    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
+    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
+
+    ring_buffer_t<layer_t> buffer(2, pipe.profile.get_point_count());
+    ring_buffer_t<layer_t> buffer_reverse(2, pipe.profile.get_point_count());
+
+    layer_t& prev = buffer.previous();
+    layer_t& next = buffer.current();
+
+    prev.vars.cell_double[0] = std::vector<double>(1, rho_initial);
+
+    double v = advection_model.getEquationsCoeffs(0, Q[0]);
+    double Cr = 1;
+    double dt = abs((Cr * simple_pipe.dx) / v);       // шаг по времени
+
+    // Запускаем шаг по QUICKEST-ULTIMATE
+    quickest_ultimate_fv_solver solver(advection_model, prev, next);
+    solver.step(dt, rho_in, rho_out);
+
+    double rho_prev = prev.vars.cell_double[0].front();
+    double rho_curr = next.vars.cell_double[0].front();
+
+    return std::make_pair(rho_prev, rho_curr);
+
+}
+
+/// @brief Проверка QUICKEST-ULTIMATE на короткой трубе (1 ячейка)
+/// Прямой поток
+TEST(QuickestUltimate, HandlesShortPipe_Straight)
+{
+    double vol_flow = +1.0;
+    double rho_in = 860;    // плотность на входе
+    double rho_out = 850; // плотность на выходе
+    double rho_initial = 840;
+    auto [rho_prev, rho_curr] = short_pipe_step(vol_flow, rho_in, rho_out, rho_initial);
+
+    // Проверка
+    ASSERT_NEAR(rho_curr, rho_in, 1e-6)
+        << "Плотность в текущей ячейке должна стремиться к граничному значению на входе";
+    ASSERT_NE(rho_curr, rho_prev)
+        << "Плотность не должна оставаться равной начальному значению";
+}
+
+
+/// @brief Проверка QUICKEST-ULTIMATE на короткой трубе (1 ячейка)
+/// Обратный поток
+TEST(QuickestUltimate, HandlesShortPipe_Reverse)
+{
+    double vol_flow = -1.0;
+    double rho_in = 860;    // плотность на входе
+    double rho_out = 850; // плотность на выходе
+    double rho_initial = 840;
+    auto [rho_prev, rho_curr] = short_pipe_step(vol_flow, rho_in, rho_out, rho_initial);
+
+    // Проверка
+    ASSERT_NEAR(rho_curr, rho_in, 1e-6)
+        << "Плотность в текущей ячейке должна стремиться к граничному значению на входе";
+    ASSERT_NE(rho_curr, rho_prev)
+        << "Плотность не должна оставаться равной начальному значению";
+
+}
