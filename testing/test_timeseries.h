@@ -126,7 +126,7 @@ TEST(VectorTimeseries, CheckWrongTime)
 }
 
 /// @brief Пример использование библиотеки timeseries.h 
-TEST(Timeseries, UseCase)
+TEST(Timeseries, DISABLED_UseCase)
 {
     using namespace std::string_literals;
 

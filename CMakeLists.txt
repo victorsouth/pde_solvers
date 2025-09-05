@@ -104,6 +104,7 @@ if(PDE_SOLVERS_BUILD_TESTS)
     set(TESTS_HEADERS
         testing/test_advection_moc_solver.h
         testing/test_diffusion.h
+        testing/test_create_pipe_profile.h
         testing/test_moc.h
         testing/test_quick.h
         testing/test_static_pipe_solver.h
@@ -111,6 +112,7 @@ if(PDE_SOLVERS_BUILD_TESTS)
     )
     add_executable(pde_tests testing/test_main.cpp ${TESTS_HEADERS})
     target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
+	install(TARGETS pde_tests DESTINATION bin)
 
 
     set(RESEARCH_HEADERS
