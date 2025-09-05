@@ -45,7 +45,7 @@ mkdir -p ${LOG_DIR}
 # ----------------------------------------------------------------------------------------------------------------------------------------------
 mkdir build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-w -Wno-#pragma-messages" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" > ${LOG_DIR}/${LOG_NAME} 2>&1
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-w -Wno-#pragma-messages" -DPDE_SOLVERS_BUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" > ${LOG_DIR}/${LOG_NAME} 2>&1
 cmake --build . -j$(nproc) >> ${LOG_DIR}/${LOG_NAME} 2>&1
 MAKE_RESULT=$?
 # Выводим ошибки из файла ${LOG_NAME}, содержащие 'error:' или 'fatal error:'
