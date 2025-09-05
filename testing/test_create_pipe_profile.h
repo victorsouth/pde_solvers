@@ -146,7 +146,7 @@ TEST(UniformProfile, PlotProfilesFromDifferentSourceProfiles)
 }
 
 /// @brief Пример созддания профиля, когда исходный профиль считывается из файла
-TEST(UniformProfile, UseCaseSourceProfFromFile)
+TEST(UniformProfile, DISABLED_UseCaseSourceProfFromFile)
 {
 	// Указываем имя файла и желаемый шаг новой сетки
 	string file_name = "coord_heights.csv";

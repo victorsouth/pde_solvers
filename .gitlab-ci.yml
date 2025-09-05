@@ -2,6 +2,7 @@ stages:
   - Static_test
   - Defining_branches
   - Build
+  - Unit_Testing
 
 #==================================================================================================
 # load branches (utils)
@@ -165,3 +166,22 @@ MinGW_build:
       - pipeline/pipeline_result
       - fixed_solvers/pipeline/pipeline_result
       - Libs/MinGW
+ 
+ # Запуск тестов с использованием GTest
+pde_tests:
+  stage: Unit_Testing
+  tags:
+    - docker
+  image: $DOCKER_REGISTRY/$DOCKER_REPO/gcc_cmake_boost_eigen_gtest:latest
+  script:
+    - bash pipeline/pipeline_scripts/tests_start.sh GCC pde_tests
+  needs: [GCC_build]
+  dependencies: [GCC_build]
+  allow_failure: false
+  artifacts:
+    expire_in: 1 week
+    when: always
+    paths:
+      - branches.txt
+      - pipeline/pipeline_result
+      - Libs
