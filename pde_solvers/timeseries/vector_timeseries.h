@@ -14,6 +14,7 @@ enum class InterplationMethod {
 
 
 /// @brief Векторный верменной ряд
+template <typename DataType = double>
 class vector_timeseries_t {
 private:
     /// @brief Метод интерполяции
@@ -25,11 +26,11 @@ private:
     /// @brief Начальные точки индексов временных рядов, создающие левую границу при поиске во времени
     mutable std::vector<size_t> left_bound;
     /// @brief Исходные временные ряды
-    std::vector<std::pair<std::vector<time_t>, std::vector<double>>> data;
+    std::vector<std::pair<std::vector<time_t>, std::vector<DataType>>> data;
 
 public:
     /// @brief Геттер для хранящихся данных
-    const std::vector<std::pair<std::vector<time_t>, std::vector<double>>>& get_data() const {
+    const std::vector<std::pair<std::vector<time_t>, std::vector<DataType>>>& get_data() const {
         return data;
     }
     /// @brief Проверяет, что по какой-то причине никаких данных нет
@@ -46,7 +47,7 @@ public:
     /// @param data Вектор временных рядов, каждый элемент которого
     /// представляет собой пару, в которой первый элемент это временная сетка,
     /// а второй - вектор значений параметров в соответствующие моменты времени
-    vector_timeseries_t(const std::vector<std::pair<std::vector<time_t>, std::vector<double>>>& data, InterplationMethod interpolation_method = InterplationMethod::Linear)
+    vector_timeseries_t(const std::vector<std::pair<std::vector<time_t>, std::vector<DataType>>>& data, InterplationMethod interpolation_method = InterplationMethod::Linear)
         : data(data)
         , interpolation_method(interpolation_method)
     {
@@ -79,7 +80,7 @@ public:
     /// временных рядов в момент времени t
     /// @param t Момент времени
     /// @return Интерполированные значения
-    std::vector<double> operator()(time_t t) const
+    std::vector<DataType> operator()(time_t t) const
     {
         for (size_t i = 0; i < data.size(); ++i) {
             const auto& times = data[i].first;
@@ -89,7 +90,7 @@ public:
             }
         }
 
-        std::vector<double> result(data.size());
+        std::vector<DataType> result(data.size());
         for (size_t i = 0; i < data.size(); ++i) {
             const auto& times = data[i].first;
             const auto& values = data[i].second;
@@ -106,7 +107,7 @@ public:
                 else {
                     // точное число лежит между values[k-1] и values[k]
                     if (k == 0) {
-                        result[i] = std::numeric_limits<double>::quiet_NaN();
+                        result[i] = std::numeric_limits<DataType>::quiet_NaN();
                     }
                     else if (interpolation_method == InterplationMethod::Linear){
                         time_t t_prev = times[k - 1];
@@ -115,8 +116,8 @@ public:
                         // Если t=t_prev, будет 0, если t=t_next, будет 1
                         double alpha = 1.0 * (t - t_prev) / (t_next - t_prev);
 
-                        double v_prev = values[k - 1];
-                        double v_next = values[k];
+                        DataType v_prev = values[k - 1];
+                        DataType v_next = values[k];
 
                         result[i] = (1 - alpha) * v_prev + alpha * v_next;
                     }
@@ -130,7 +131,7 @@ public:
 
             }
             else {
-                result[i] = std::numeric_limits<double>::quiet_NaN();
+                result[i] = std::numeric_limits<DataType>::quiet_NaN();
             }
         };
 
@@ -142,7 +143,7 @@ private:
     /// @brief Определение начала и конца периода
     /// @param data Временные ряды параметров
     /// @return Начало и конец периода
-    static std::pair<time_t, time_t> get_timeseries_period(const std::vector<std::pair<std::vector<time_t>, std::vector<double>>>& data)
+    static std::pair<time_t, time_t> get_timeseries_period(const std::vector<std::pair<std::vector<time_t>, std::vector<DataType>>>& data)
     {
         time_t start_date = std::numeric_limits<time_t>::min();
         time_t end_date = std::numeric_limits<time_t>::max();;

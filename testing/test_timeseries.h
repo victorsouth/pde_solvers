@@ -1,7 +1,41 @@
 ﻿#pragma once
 #include <pde_solvers/timeseries.h>
-/// @brief  Проверяет способность чтения данных из потока
-TEST(CsvRead, ReadStream)
+
+/// @brief Проверяет функционал конвертации значений временных рядов в csv формате 
+TEST(ConvertCsvValues, HandelsIntToIntConversion)
+{
+    // Исходные данные
+    const std::string test_timestamp = "10.08.2021 08:30:50";
+    const int original_value = 10;
+    const int original_mapped = 2;
+
+    // Формируем исходных csv файл
+    std::string test_folder = prepare_test_folder();
+    std::string original_filename = test_folder + "original";
+   
+    write_csv_tag_file<int>(original_filename,
+        { StringToUnix(test_timestamp) }, // временные метки
+        { original_value } // значения
+    ); 
+
+    // Формируем сопоставление
+    const std::unordered_map<int, int> conversion_map = {
+        {original_value, original_mapped}
+    };
+    
+    // Конвертация файла
+    std::string new_filename = convert_csv_values(original_filename, conversion_map);
+
+    // Зачитываем преобразованный файл
+    auto reader = csv_tag_reader(new_filename, "" /* Безразмерный параметр */);
+    auto [new_times, new_values] = reader.read_csv<int>();
+
+    ASSERT_EQ(UnixToString(new_times.front()), test_timestamp);
+    ASSERT_EQ(new_values.front(), conversion_map.at(original_value));
+}
+
+/// @brief  Проверяет способность чтения данных в формате с плавающей точкой из потока 
+TEST(CsvRead, ReadStreamDouble)
 {
     // Записываем в поток данные параметра
     std::stringstream ss;
@@ -17,8 +51,66 @@ TEST(CsvRead, ReadStream)
     ASSERT_NEAR(6200000.0, values[2], 1);
 }
 
-/// @brief Проверяет способность чтения данных из потока за заданный период
-TEST(CsvRead, ReadStreamWithPeriod)
+/// @brief  Проверяет способность чтения целочисленных данных из потока 
+TEST(CsvRead, ReadStreamInt)
+{
+    // Записываем в поток данные параметра
+    std::stringstream ss;
+    ss << "10.08.2021 08:30:50;1" << std::endl;
+    ss << "10.08.2021 08:40:50;-1" << std::endl;
+    ss << "10.08.2021 08:50:50;2" << std::endl;
+
+    // Читаем данных из потока
+    auto [time, values] = csv_tag_reader::read_from_stream<int>(ss, "");
+
+    // Проверяем корректность считанных данных
+    ASSERT_EQ(UnixToString(time[1]), "10.08.2021 08:40:50");
+    ASSERT_EQ(-1, values[1]);
+}
+
+/// @brief  Проверяет способность чтения данных в формате bool из потока 
+TEST(CsvRead, ReadStreamBool)
+{
+    // Записываем в поток данные параметра
+    std::stringstream ss;
+    ss << "10.08.2021 08:30:50;1" << std::endl;
+    ss << "10.08.2021 08:40:50;0" << std::endl;
+
+    // Читаем данных из потока
+    auto [time, values] = csv_tag_reader::read_from_stream<bool>(ss, "");
+
+    // Проверяем корректность считанных данных
+    ASSERT_EQ(UnixToString(time[1]), "10.08.2021 08:40:50");
+    ASSERT_TRUE(values[0]);
+    ASSERT_FALSE(values[1]);
+}
+
+
+/// @brief  Проверяет наличие сключения при попытке обработать как bool значение, отличное от 0 или 1 
+TEST(CsvRead, ReadStreamBoolThrowsExceptionIfNotZeroOrOne)
+{
+    // Записываем в поток данные параметра
+    std::stringstream ss;
+    ss << "10.08.2021 08:40:50;2" << std::endl;
+
+    EXPECT_ANY_THROW(csv_tag_reader::read_from_stream<bool>(ss, ""));
+}
+/// @brief  Проверяет наличие исключения при попытке чтения данных неподдерживаемого типа
+TEST(CsvRead, ReadStreamThrowsExceptionOnUnsupportedType)
+{
+    // Тип данных, неподдерживаемый в csv_tag_reader::read_from_stream
+    struct test_type {};
+    
+    // Записываем в поток любые данные
+    std::stringstream ss;
+    ss << "10.08.2021 08:40:50;abc" << std::endl;
+
+    // Проверяем наличие исключения при попытке обработать неизвестный тип данных
+    EXPECT_ANY_THROW(csv_tag_reader::read_from_stream<test_type>(ss, ""));
+}
+
+/// @brief Проверяет способность чтения данных в формате с плавающей точкой из потока за заданный период
+TEST(CsvRead, ReadStreamWithPeriodDouble)
 {
     // Записываем в поток данные параметра
     std::stringstream ss;
