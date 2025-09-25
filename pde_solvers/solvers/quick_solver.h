@@ -554,11 +554,9 @@ public:
                 size_t right_border = cell + 1;
                 double Vb = v_pipe; // предположили, что скорость на границе во всех точках трубы одна и та же
                 double Ub;
-                if (cell == 0) {
-                    Ub = quickest_ultimate_border_approximation(U[cell], U[cell], U[cell + 1], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // костыль U_L = U_C
-                }
-                else if (cell == U.size() - 1) {
-                    Ub = quickest_ultimate_border_approximation(U[cell - 1], U[cell], U[cell], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // костыль U_R = U_C
+                if (cell == 0 || cell == U.size() - 1) {
+                    // На границе считаем по донорской ячейке
+                    Ub = U[cell];
                 }
                 else {
                     Ub = quickest_ultimate_border_approximation(U[cell - 1], U[cell], U[cell + 1], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // честный расчет
@@ -571,11 +569,8 @@ public:
                 size_t left_border = cell;
                 double Vb = v_pipe; // предположили, что скорость на границе во всех точках трубы одна и та же
                 double Ub;
-                if (cell == 0) {
-                    Ub = quickest_ultimate_border_approximation(U[cell + 1], U[cell], U[cell], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // костыль U_L = U_C
-                }
-                else if (cell == U.size() - 1) {
-                    Ub = quickest_ultimate_border_approximation(U[cell], U[cell], U[cell - 1], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // костыль U_R = U_C
+                if (cell == 0 || cell == U.size() - 1) { // Первый приоритет, так как в случае единственной ячейки (короткая труба) 
+                    Ub = U[cell];           // следующее условие также True, но cell + 1 не существует 
                 }
                 else {
                     Ub = quickest_ultimate_border_approximation(U[cell + 1], U[cell], U[cell - 1], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // честный расчет
