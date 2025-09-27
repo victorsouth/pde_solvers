@@ -625,7 +625,7 @@ inline std::pair<double, double> short_pipe_step(double vol_flow,
 
 /// @brief Проверка QUICKEST-ULTIMATE на короткой трубе (1 ячейка)
 /// Прямой поток
-TEST(QuickestUltimate, HandlesShortPipe_Straight)
+TEST(QuickestUltimate, HandlesShortPipe_Direct)
 {
     double vol_flow = +1.0;
     double rho_in = 860;    // плотность на входе
