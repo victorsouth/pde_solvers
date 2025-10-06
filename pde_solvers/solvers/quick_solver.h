@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <limits>
 
 namespace pde_solvers {
 
@@ -584,7 +585,7 @@ public:
             double dx = grid[cell + 1] - grid[cell]; // ячейки обычно одинаковой длины, но мало ли..
             double v_cell = pde.getEquationsCoeffs(cell, U[cell]); // скорость в текущей ячейке
             double Cr = abs(v_cell * dt / dx);
-            if (Cr > 1.0 + 1e-10) {
+            if (Cr > 1.0 + std::numeric_limits<double>::epsilon()) {
                 throw std::runtime_error("Quickest-ultimate is called with Cr > 1");
             }
             U_new[cell] = U[cell] + dt / dx * ((F[cell] - F[cell + 1])) + (dt * pde.getSourceTerm(cell, U[cell]));
