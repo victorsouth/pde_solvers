@@ -493,7 +493,12 @@ TEST_F(QUICKEST_ULTIMATE, CanConsiderFlowSwap) {
 
     double rho_in = 860;
     double rho_out = 870;
-    double dt = 60; // 1 минута
+    
+    // Рассчитываем dt для Cr = 0.9, чтобы выполнялось условие Куранта
+    const auto& x = advection_model->get_grid();
+    double dx = x[1] - x[0];
+    double v = advection_model->getEquationsCoeffs(0, 0);
+    double dt = 0.9 * dx / abs(v);
 
     quickest_ultimate_fv_solver solver(*advection_model, prev, next);
     solver.step(dt, rho_in, rho_out);

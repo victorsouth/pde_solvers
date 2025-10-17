@@ -40,7 +40,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -53,7 +53,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -65,7 +65,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='ReleaseGPU|x64'">
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -88,12 +88,12 @@
     <TargetName>$(ProjectName)_$(AppxManifestMetadataClTargetArchDir)_$(Configuration)</TargetName>
     <OutDir>$(ProjectDir)..\bin\</OutDir>
     <IntDir>$(ProjectDir)..\build\$(Configuration)_$(ProjectName)\$(PlatformTarget)\</IntDir>
-    <IncludePath>$(SolutionDir)\CudaPdeSolver;C:\distrib\devel\eigen\eigen-eigen-bdd17ee3b1b3_MKL_Fixed;C:\devel\pdelib\trunk\src;D:\Distrib\devel\googletest\include;C:\devel\pdelib\trunk\CudaIntegrator;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..;$(SolutionDir)\CudaPdeSolver;C:\dev\vcpkg\installed\x64-windows\include;C:\devel\pdelib\trunk\src;C:\deps\googletest-src\googletest\include;C:\devel\pdelib\trunk\CudaIntegrator;C:\Git\Master's degree\Research\fixed_solvers;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>$(ProjectName)_$(PlatformTarget)_$(Configuration)</TargetName>
-    <IncludePath>$(SolutionDir)\CudaIntegrator;$(SolutionDir)\CudaPdeSolver;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..;$(SolutionDir)\CudaIntegrator;$(SolutionDir)\CudaPdeSolver;C:\dev\vcpkg\installed\x64-windows\include;C:\deps\googletest-src\googletest\include;C:\Git\Master's degree\Research\fixed_solvers;$(IncludePath)</IncludePath>
     <OutDir>$(ProjectDir)..\bin\</OutDir>
     <IntDir>$(ProjectDir)..\build\$(Configuration)_$(ProjectName)\$(PlatformTarget)\</IntDir>
   </PropertyGroup>
@@ -102,12 +102,12 @@
     <TargetName>$(ProjectName)_$(AppxManifestMetadataClTargetArchDir)_$(Configuration)</TargetName>
     <OutDir>$(ProjectDir)..\bin\</OutDir>
     <IntDir>$(ProjectDir)..\build\$(Configuration)_$(ProjectName)\$(PlatformTarget)\</IntDir>
-    <IncludePath>$(SolutionDir)\CudaPdeSolver;C:\distrib\devel\eigen\eigen-eigen-bdd17ee3b1b3_MKL_Fixed;C:\devel\pdelib\trunk\src;D:\Distrib\devel\googletest\include;C:\devel\pdelib\trunk\CudaIntegrator;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..;$(SolutionDir)\CudaPdeSolver;C:\dev\vcpkg\installed\x64-windows\include;C:\devel\pdelib\trunk\src;C:\deps\googletest-src\googletest\include;C:\devel\pdelib\trunk\CudaIntegrator;C:\Git\Master's degree\Research\fixed_solvers;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(ProjectName)_$(PlatformTarget)_$(Configuration)</TargetName>
-    <IncludePath>$(SolutionDir)\CudaIntegrator;$(SolutionDir)\CudaPdeSolver;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..;$(SolutionDir)\CudaIntegrator;$(SolutionDir)\CudaPdeSolver;C:\dev\vcpkg\installed\x64-windows\include;C:\deps\googletest-src\googletest\include;C:\Git\Master's degree\Research\fixed_solvers;$(IncludePath)</IncludePath>
     <OutDir>$(ProjectDir)..\bin\</OutDir>
     <IntDir>$(ProjectDir)..\build\$(Configuration)_$(ProjectName)\$(PlatformTarget)\</IntDir>
   </PropertyGroup>

@@ -574,7 +574,7 @@ public:
                     Ub = U[cell];           // следующее условие также True, но cell + 1 не существует 
                 }
                 else {
-                    Ub = quickest_ultimate_border_approximation(U[cell + 1], U[cell], U[cell - 1], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // честный расчет
+                    Ub = quickest_ultimate_border_approximation(U[cell + 1], U[cell], U[cell - 1], 0, grid[cell + 1] - grid[cell], dt, abs(v_pipe)); // честный расчет с abs для корректной работы с отрицательными скоростями
                 }
                 F[left_border] = Ub * Vb;
             }
