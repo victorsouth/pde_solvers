@@ -28,6 +28,7 @@ private:
     /// @brief Исходные временные ряды
     std::vector<std::pair<std::vector<time_t>, std::vector<DataType>>> data;
 
+
 public:
     /// @brief Геттер для хранящихся данных
     const std::vector<std::pair<std::vector<time_t>, std::vector<DataType>>>& get_data() const {
@@ -43,22 +44,32 @@ public:
     {
         return data[numb].first.size();
     }
+  
     /// @brief Конструктор
     /// @param data Вектор временных рядов, каждый элемент которого
     /// представляет собой пару, в которой первый элемент это временная сетка,
     /// а второй - вектор значений параметров в соответствующие моменты времени
-    vector_timeseries_t(const std::vector<std::pair<std::vector<time_t>, std::vector<DataType>>>& data, InterplationMethod interpolation_method = InterplationMethod::Linear)
+    vector_timeseries_t(const std::vector<std::pair<std::vector<time_t>, std::vector<DataType>>>& data,
+        InterplationMethod interpolation_method = InterplationMethod::Linear)
         : data(data)
         , interpolation_method(interpolation_method)
     {
+
+        if constexpr (std::is_same_v<DataType, bool>) {
+            if (interpolation_method != InterplationMethod::Step) {
+                throw std::runtime_error("Trying to interpolate boolean data");
+            }
+        }
+
         if (data.empty())
             return;
-            
+
         std::tie(start_date, end_date) = get_timeseries_period(data);
 
         left_bound = std::vector<size_t>(data.size(), 0);
 
     };
+
     /// @brief Получение времени начала периода 
     time_t get_start_date() const {
         return start_date;
@@ -139,7 +150,6 @@ public:
         return result;
     }
 
-private:
     /// @brief Определение начала и конца периода
     /// @param data Временные ряды параметров
     /// @return Начало и конец периода
@@ -159,4 +169,5 @@ private:
         }
         return std::make_pair(start_date, end_date);
     }
+
 };
