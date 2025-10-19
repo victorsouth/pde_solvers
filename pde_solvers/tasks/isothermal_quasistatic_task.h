@@ -277,9 +277,9 @@ inline void perform_quasistatic_simulation(
     const std::string& path,
     const pipe_properties_t& pipe,
     const isothermal_quasistatic_PQ_task_boundaries_t& initial_boundaries,
-    const vector_timeseries_t& boundary_timeseries,
+    const vector_timeseries_t<double>& boundary_timeseries,
     const QuasistaticModelType& model_type,
-    const vector_timeseries_t& etalon_timeseries,
+    const vector_timeseries_t<double>& etalon_timeseries,
     double dt
 )
 {
@@ -331,9 +331,9 @@ template <typename Solver, typename Printer>
 inline void perform_quasistatic_simulation(
     const std::string& path,
     const pipe_properties_t& pipe,
-    const vector_timeseries_t& boundary_timeseries,
+    const vector_timeseries_t<double>& boundary_timeseries,
     const QuasistaticModelType& model_type,
-    const vector_timeseries_t& etalon_timeseries,
+    const vector_timeseries_t<double>& etalon_timeseries,
     double dt=std::numeric_limits<double>::quiet_NaN())
 {
 
@@ -350,11 +350,11 @@ inline void perform_quasistatic_simulation(
     const std::string& path,
     const pipe_properties_t& pipe,
     const isothermal_quasistatic_PQ_task_boundaries_t& initial_boundaries,
-    const vector_timeseries_t& boundary_timeseries,
+    const vector_timeseries_t<double>& boundary_timeseries,
     const QuasistaticModelType& model_type,
     double dt=std::numeric_limits<double>::quiet_NaN())
 {
-    perform_quasistatic_simulation<Solver, Printer>(path, pipe, initial_boundaries, boundary_timeseries, model_type, vector_timeseries_t({}), dt);
+    perform_quasistatic_simulation<Solver, Printer>(path, pipe, initial_boundaries, boundary_timeseries, model_type, vector_timeseries_t<double>({}), dt);
 }
 
 

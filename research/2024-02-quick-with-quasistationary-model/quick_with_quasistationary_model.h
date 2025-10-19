@@ -130,7 +130,7 @@ public:
         return heights;
     }
 
-    vector_timeseries_t generate_timeseries(const std::vector<std::pair<std::string, double>>& timeseries_initial_values, 
+    vector_timeseries_t<double> generate_timeseries(const std::vector<std::pair<std::string, double>>& timeseries_initial_values, 
         timeseries_generator_settings settings = timeseries_generator_settings::default_settings(), 
         time_t jump_time = 0, double jump_value = 0, std::string name_parameter = "")
     {
@@ -169,7 +169,7 @@ TEST_F(IsothermalQuasistaticModel, QuickWithQuasiStationaryModel)
         { "visc_in", initial_boundaries.viscosity }, // "visc_in" Вязкость жидкости, (м2/сек)
     };
     // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
-    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
+    vector_timeseries_t<double> time_series = generate_timeseries(timeseries_initial_values);
     double dt = 75;
     perform_quasistatic_simulation<quickest_ultimate_fv_solver, matlab_printer<quickest_ultimate_fv_solver>>(
         path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi, dt);
@@ -199,7 +199,7 @@ TEST_F(IsothermalQuasistaticModel, IdealQuickWithQuasiStationaryModel)
     settings.value_relative_increment = 0;
     settings.sample_time_max = 200;
     settings.sample_time_min = 200;
-    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
+    vector_timeseries_t<double> time_series = generate_timeseries(timeseries_initial_values, settings);
     // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
     perform_quasistatic_simulation<quickest_ultimate_fv_solver, matlab_printer<quickest_ultimate_fv_solver>>(
         path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi);
@@ -222,7 +222,7 @@ TEST_F(IsothermalQuasistaticModel, MocWithQuasiStationaryModel)
         { "visc_in", initial_boundaries.viscosity }, // "visc_in" Вязкость жидкости, (м2/сек)
     };
     // Вызываем метод расчета квазистационарной модели с помощью МХ
-    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
+    vector_timeseries_t<double> time_series = generate_timeseries(timeseries_initial_values);
     double dt = 75;
     perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
         path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi, dt);
@@ -245,7 +245,7 @@ TEST_F(IsothermalQuasistaticModel, OptionalStepMocWithQuasiStationaryModel)
         { "visc_in", initial_boundaries.viscosity }, // "visc_in" Вязкость жидкости, (м2/сек)
     };
     // Вызываем метод расчета квазистационарной модели с помощью МХ
-    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values);
+    vector_timeseries_t<double> time_series = generate_timeseries(timeseries_initial_values);
     perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
         path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi);
 }
@@ -274,7 +274,7 @@ TEST_F(IsothermalQuasistaticModel, IdealMocWithQuasiStationaryModel)
     settings.sample_time_max = 200;
     settings.sample_time_min = 200;
     // Вызываем метод расчета квазистационарной модели с помощью МХ
-    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
+    vector_timeseries_t<double> time_series = generate_timeseries(timeseries_initial_values, settings);
     perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
         path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi);
 }
@@ -306,7 +306,7 @@ TEST_F(IsothermalQuasistaticModel, IdealImpulsMocWithQuasiStationaryModel)
     time_t jump_time = 5000;
     double jump_value = -10;
     // Вызываем метод расчета квазистационарной модели с помощью МХ
-    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings, jump_time, jump_value, "rho_in");
+    vector_timeseries_t<double> time_series = generate_timeseries(timeseries_initial_values, settings, jump_time, jump_value, "rho_in");
     perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
         path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi);
 }
@@ -343,7 +343,7 @@ TEST_F(IsothermalQuasistaticModel, ShowProfileImpactInQuasiStationaryModel)
     pipe.profile.heights = profile;
 
     // Вызываем метод расчета квазистационарной модели с помощью МХ для полного профиля 
-    vector_timeseries_t time_series = generate_timeseries(timeseries_initial_values, settings);
+    vector_timeseries_t<double> time_series = generate_timeseries(timeseries_initial_values, settings);
     perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
         path_full_profile, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi);
 
@@ -356,7 +356,7 @@ TEST_F(IsothermalQuasistaticModel, ShowProfileImpactInQuasiStationaryModel)
         10e6
     );
     // Вызываем метод расчета квазистационарной модели с помощью МХ для профиля по первой и последней точкам
-    vector_timeseries_t time_series_2 = generate_timeseries(timeseries_initial_values, settings);
+    vector_timeseries_t<double> time_series_2 = generate_timeseries(timeseries_initial_values, settings);
     perform_quasistatic_simulation<advection_moc_solver, matlab_printer<advection_moc_solver>>(
         path_start_end_profile, pipe, initial_boundaries, time_series_2, QuasistaticModelType::FullQuasi);
 }
