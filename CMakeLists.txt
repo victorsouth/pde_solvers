@@ -42,8 +42,11 @@ set(HEADERS_SOLVERS
 file(GLOB HEADERS_TASKS pde_solvers/tasks/* )
 
 set(HEADERS_TIME
-pde_solvers/timeseries/csv_readers.h  pde_solvers/timeseries/timeseries_helpers.h  pde_solvers/timeseries/vector_timeseries.h
-pde_solvers/timeseries/synthetic_timeseries.h
+    pde_solvers/timeseries/csv_readers.h
+    pde_solvers/timeseries/csv_helpers.h
+    pde_solvers/timeseries/timeseries_helpers.h
+    pde_solvers/timeseries/vector_timeseries.h
+    pde_solvers/timeseries/synthetic_timeseries.h
 )
 
 
