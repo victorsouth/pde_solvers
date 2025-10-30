@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <limits>
 
 namespace pde_solvers {
 
@@ -573,7 +574,8 @@ public:
                     Ub = U[cell];           // следующее условие также True, но cell + 1 не существует 
                 }
                 else {
-                    Ub = quickest_ultimate_border_approximation(U[cell + 1], U[cell], U[cell - 1], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // честный расчет
+
+                    Ub = quickest_ultimate_border_approximation(U[cell + 1], U[cell], U[cell - 1], 0, grid[cell + 1] - grid[cell], dt, abs(v_pipe)); // честный расчет с abs для корректной работы с отрицательными скоростями
                 }
                 F[left_border] = Ub * Vb;
             }
@@ -582,8 +584,10 @@ public:
 
         for (size_t cell = 0; cell < U.size(); ++cell) {
             double dx = grid[cell + 1] - grid[cell]; // ячейки обычно одинаковой длины, но мало ли..
-            double Cr = v_in * dt / dx;
-            if (Cr > 1) {
+
+            double v_cell = pde.getEquationsCoeffs(cell, U[cell]); // скорость в текущей ячейке
+            double Cr = abs(v_cell * dt / dx);
+            if (Cr > 1.0 + std::numeric_limits<double>::epsilon()) {
                 throw std::runtime_error("Quickest-ultimate is called with Cr > 1");
             }
             U_new[cell] = U[cell] + dt / dx * ((F[cell] - F[cell + 1])) + (dt * pde.getSourceTerm(cell, U[cell]));
