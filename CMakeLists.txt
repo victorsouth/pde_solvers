@@ -113,7 +113,12 @@ if(PDE_SOLVERS_BUILD_TESTS)
         testing/test_static_pipe_solver.h
         testing/test_timeseries.h
     )
-    add_executable(pde_tests testing/test_main.cpp ${TESTS_HEADERS})
+    set(TESTS_SOURCES
+        testing/test_main.cpp
+        testing/test_condensate_pipe.cpp
+    )
+
+    add_executable(pde_tests  ${TESTS_SOURCES} ${TESTS_HEADERS})
     target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
 	install(TARGETS pde_tests DESTINATION bin)
 
