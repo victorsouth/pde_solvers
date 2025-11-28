@@ -243,7 +243,133 @@ public:
 // TODO: Тест на расчет гидравлики
 // TODO: Тест на расчет 
 
+/// @brief Пример тестирования неизотермического расчета (Удалить !!!)
+/// @param  
+/// @param  
+TEST(nonisothermal, example)
+{
+    pde_solvers::pipe_noniso_properties_t pipe;
+    double x0 = 0;
+    double xl = 1e5;
+    double d = 1;
+    size_t n = 100;
 
-TEST(CondensatePipe, Develop) {
+    pipe.profile = pde_solvers::pipe_profile_t::create(n, x0, xl, 0, 0, 10e6);
+    pipe.wall.diameter = d;
+
+    pde_solvers::oil_parameters_t oil;
+    oil.viscosity.nominal_viscosity = 6e-7;
+
+    pde_solvers::noniso_qsm_model_type model_type =
+        pde_solvers::noniso_qsm_model_type::Isothemal;
+
+    pde_solvers::qsm_noniso_TP_task_boundaries_t model(
+        pipe,       // передаём как const ref
+        oil,        // передаём как const ref
+        model_type  // передаём значение
+    );
+
+    pde_solvers::nonisothermal_quasistatic_PQ_task_boundaries_t_p initial_conditions =
+        pde_solvers::nonisothermal_quasistatic_PQ_task_boundaries_t_p::default_values();
+
+    double dt = 10;
+    model.solve(initial_conditions);
+    model.step(dt, initial_conditions);
 
 }
+
+TEST(Lurie, qp)
+{
+    pde_solvers::pipe_properties_t model;
+    double x0 = 0;
+    double xl = 80000; // 80 км
+    size_t n = 1;
+    double z0 = 100;
+    double zn = 50;
+    model.profile = pde_solvers::pipe_profile_t::create(n, x0, xl, z0, zn, 10e6);
+
+    model.wall.diameter = 0.7;
+    model.wall.wallThickness = 10e-3; // 10 мм
+    model.wall.equivalent_roughness = 0.015 * 1e-3;
+
+
+    pde_solvers::isothermal_quasistatic_PQ_task_t Solver (model, pde_solvers::QuasistaticModelType::Stationary);
+    pde_solvers::isothermal_quasistatic_PQ_task_boundaries_t initial_conditions;
+    initial_conditions.pressure_in = 5.65 * 1e6;
+    initial_conditions.density = 870;
+    initial_conditions.volumetric_flow = 3500.0 / 3600.0;
+    initial_conditions.viscosity = 15 * 1e-6; //15 сСт
+    Solver.solve(initial_conditions);
+    double relation = ((600000 - Solver.get_buffer().get_layers()[0].pressure[n]) / 600000.0);
+    EXPECT_TRUE(relation < 0.011);
+
+
+}
+
+TEST(Lurie, pp)
+{
+    pde_solvers::pipe_properties_t model;
+    double x0 = 0;
+    double xl = 80000; // 80 км
+    size_t n = 1;
+    double z0 = 100;
+    double zn = 50;
+    model.profile = pde_solvers::pipe_profile_t::create(n, x0, xl, z0, zn, 10e6);
+
+    model.wall.diameter = 0.7;
+    model.wall.wallThickness = 10e-3; // 10 мм
+    model.wall.equivalent_roughness = 0.015 * 1e-3;
+
+
+    pde_solvers::isothermal_quasistatic_PP_task_t Solver(model, pde_solvers::QuasistaticModelType::Stationary);
+    pde_solvers::isothermal_quasistatic_PP_task_boundaries_t initial_conditions;
+    initial_conditions.pressure_in = 5.65 * 1e6;
+    initial_conditions.density = 870;
+    initial_conditions.pressure_out = 0.6 * 1e6;
+    initial_conditions.viscosity = 15 * 1e-6; //15 сСт
+    Solver.solve(initial_conditions);
+    double relation = ((0.9722 - Solver.get_buffer().get_layers()[0].volume) / 0.9722);
+    EXPECT_TRUE(relation < 0.01);
+
+    Solver.step(10, initial_conditions);
+
+
+}
+
+TEST(Lurie, Newton)
+{
+    class sample_system : public fixed_system_t<2>
+    {
+        using fixed_system_t<2>::var_type;
+
+    public:
+        // Задание функции невязок
+        var_type residuals(const var_type& x) {
+            return
+            {
+                pow(x[0] - 2, 3) - 8.0,
+                pow(x[1] - 1, 3) - 27.0
+            };
+        }
+    };
+
+    double eps = 1e-6;
+    const size_t razmernost = 2;
+    // Создание экземпляра класса, который и будет решаемой системой
+    sample_system test;
+    // Задание настроек решателя по умолчанию
+    fixed_solver_parameters_t<razmernost, 0> parameters; // <2, 0> <размерность, >
+    parameters.argument_increment_norm = eps;
+    // Создание структуры для записи результатов расчета
+    fixed_solver_result_t<razmernost> result;
+    // Решение системы нелинейныйх уравнений <2> с помощью решателя Ньютона - Рафсона
+    // { 0, 0 } - Начальное приближение
+    fixed_newton_raphson<razmernost>::solve_dense(test, { 0, 0 }, parameters, &result);
+	// Проверка результатов
+    EXPECT_NEAR(result.argument[0], 4.0, 1e-6);
+	EXPECT_NEAR(result.argument[1], 4.0, 1e-6);
+}
+
+//TEST(CondensatePipe, Develop) {
+//
+//}
