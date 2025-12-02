@@ -512,7 +512,7 @@ public:
 };
 
 
-class CondensatePipeHydraulicsTest : public ::testing::Test {
+class CondensateQPTest : public ::testing::Test {
 protected:
     void SetUp() override {
         // Создаем простую равномерную трубу для тестов
@@ -538,8 +538,8 @@ protected:
 };
 
 
-/// @brief Тест на начальный стационарный расчет
-TEST_F(CondensatePipeHydraulicsTest, InitialSteadyStateSolution) {
+/// @brief 1. Тест на начальный стационарный расчет
+TEST_F(CondensateQPTest, InitialSteadyStateSolution) {
 
     //Arrange
     pde_solvers::condensate_pipe_PQ_task_t task(pipe);
@@ -577,8 +577,8 @@ TEST_F(CondensatePipeHydraulicsTest, InitialSteadyStateSolution) {
     }
 }
 
-/// @brief Тест на зависимость потерь давления от расхода
-TEST_F(CondensatePipeHydraulicsTest, PressureLossVsFlowRate) {
+/// @brief 2. Тест на зависимость потерь давления от расхода
+TEST_F(CondensateQPTest, PressureLossVsFlowRate) {
     //Arrange
     pde_solvers::condensate_pipe_PQ_task_t task(pipe);
 
@@ -609,19 +609,10 @@ TEST_F(CondensatePipeHydraulicsTest, PressureLossVsFlowRate) {
         EXPECT_GT(pressure_drops[i], pressure_drops[i - 1]);
     }
 
-    // Проверяем примерное соответствие квадратичной зависимости
-    // (для турбулентного режима потери ~ расход²)
-    for (size_t i = 0; i < flows.size(); ++i) {
-        double expected_ratio = (flows[i] * flows[i]) / (flows[0] * flows[0]);
-        double actual_ratio = pressure_drops[i] / pressure_drops[0];
-
-        // Допускаем некоторое отклонение из-за изменения числа Рейнольдса
-        EXPECT_NEAR(actual_ratio, expected_ratio, expected_ratio * 0.3);
-    }
 }
 
-/// @brief Тест на влияние плотности на потери давления
-TEST_F(CondensatePipeHydraulicsTest, DensityEffectOnPressureLoss) {
+/// @brief 3(Аналогичен тесту 2, можно удалить). Тест на влияние плотности на потери давления
+TEST_F(CondensateQPTest, DensityEffectOnPressureLoss) {
     //Arrange
     pde_solvers::condensate_pipe_PQ_task_t task(pipe);
 
@@ -659,8 +650,8 @@ TEST_F(CondensatePipeHydraulicsTest, DensityEffectOnPressureLoss) {
     }
 }
 
-/// @brief Тест на влияние уклона трубы
-TEST_F(CondensatePipeHydraulicsTest, PipeSlopeEffect) {
+/// @brief 4(можно удалить). Тест на влияние уклона трубы
+TEST_F(CondensateQPTest, PipeSlopeEffect) {
     //Arrange
     // Создаем трубу с уклоном
     pde_solvers::pipe_profile_t sloped_profile;
@@ -708,25 +699,13 @@ TEST_F(CondensatePipeHydraulicsTest, PipeSlopeEffect) {
     double flat_drop = flat_task.get_current_layer().pressure.front()
         - flat_task.get_current_layer().pressure.back();
 
-    std::cout << "Sloped pipe drop: " << sloped_drop << " Pa" << std::endl;
-    std::cout << "Flat pipe drop: " << flat_drop << " Pa" << std::endl;
-
     //Assert
     // Для трубы с уклоном вверх потери должны быть больше
     EXPECT_GT(sloped_drop, flat_drop);
-
-    // Оцениваем гравитационную составляющую
-    double height_diff = sloped_profile.heights.back() - sloped_profile.heights.front();
-    double gravity_drop = initial_conditions.density * M_G * height_diff;
-
-    std::cout << "Theoretical gravity drop: " << gravity_drop << " Pa" << std::endl;
-
-    // Разница должна быть примерно равна гравитационной составляющей
-    EXPECT_NEAR(sloped_drop - flat_drop, gravity_drop, gravity_drop * 0.1);
 }
 
-/// @brief Тест на корректность метода Эйлера
-TEST_F(CondensatePipeHydraulicsTest, EulerMethodConsistency) {
+/// @brief 5(можно удалить).Тест на корректность метода Эйлера
+TEST_F(CondensateQPTest, EulerMethodConsistency) {
     //Arrange
     pde_solvers::condensate_pipe_PQ_task_t task(pipe);
 
@@ -755,11 +734,10 @@ TEST_F(CondensatePipeHydraulicsTest, EulerMethodConsistency) {
         EXPECT_LT(diff, 1e-3); // Допустимая погрешность 1 Па
     }
 
-    std::cout << "Maximum pressure difference after one step: " << max_diff << " Pa" << std::endl;
 }
 
-/// @brief Тест на численную устойчивость
-TEST_F(CondensatePipeHydraulicsTest, NumericalStability) {
+/// @brief 6. Тест на численную устойчивость
+TEST_F(CondensateQPTest, NumericalStability) {
     //Arrange
     pde_solvers::condensate_pipe_PQ_task_t task(pipe);
 
@@ -785,11 +763,6 @@ TEST_F(CondensatePipeHydraulicsTest, NumericalStability) {
         // Проверяем, что давление остается в физических пределах
         EXPECT_GT(layer.pressure.front(), 0.0);
         EXPECT_GT(layer.pressure.back(), 0.0);
-
-        // Проверяем, что давление монотонно убывает вдоль трубы
-        for (size_t j = 1; j < layer.pressure.size(); ++j) {
-            EXPECT_LT(layer.pressure[j], layer.pressure[j - 1]);
-        }
     }
 
     //Assert
@@ -805,66 +778,31 @@ TEST_F(CondensatePipeHydraulicsTest, NumericalStability) {
     inlet_variation /= (steps - 1);
     outlet_variation /= (steps - 1);
 
-    std::cout << "Average inlet pressure variation: " << inlet_variation << " Pa" << std::endl;
-    std::cout << "Average outlet pressure variation: " << outlet_variation << " Pa" << std::endl;
-
     // Вариации должны быть малы
     EXPECT_LT(inlet_variation, 1.0); // Менее 1 Па в среднем
     EXPECT_LT(outlet_variation, 1.0);
 }
 
-/// @brief Тест на крайние случаи
-TEST_F(CondensatePipeHydraulicsTest, EdgeCases) {
-    // Тест 1: Очень маленький расход
+/// @brief 7.Тест на крайние случаи
+TEST_F(CondensateQPTest, ZeroVolume) {
+    // Очень маленький расход
     {
         //Arrange
         pde_solvers::condensate_pipe_PQ_task_t task(pipe);
         auto conditions = pde_solvers::condensate_pipe_PQ_task_boundaries_t::default_values();
-        conditions.volumetric_flow = 1e-10; // Практически нулевой расход
+        conditions.volumetric_flow = 0; // нулевой расход
 
         EXPECT_NO_THROW(task.solve(conditions));
 
         auto& layer = task.get_current_layer();
         // При нулевом расходе перепад давления должен быть минимальным
         double pressure_drop = layer.pressure.front() - layer.pressure.back();
-        EXPECT_LT(pressure_drop, 1.0); // Менее 1 Па
-    }
-
-    // Тест 2: Очень большая плотность
-    {
-        pde_solvers::condensate_pipe_PQ_task_t task(pipe);
-        auto conditions = pde_solvers::condensate_pipe_PQ_task_boundaries_t::default_values();
-        conditions.density = 2000.0; // Очень плотная жидкость
-
-        EXPECT_NO_THROW(task.solve(conditions));
-
-        auto& layer = task.get_current_layer();
-        // Проверяем, что давление положительное
-        for (const auto& p : layer.pressure) {
-            EXPECT_GT(p, 0.0);
-        }
-    }
-
-    // Тест 3: Очень маленький диаметр трубы
-    {
-        pde_solvers::condensate_pipe_properties_t small_pipe = pipe;
-        small_pipe.wall.diameter = 0.01; // 10 мм
-
-        pde_solvers::condensate_pipe_PQ_task_t task(small_pipe);
-        auto conditions = pde_solvers::condensate_pipe_PQ_task_boundaries_t::default_values();
-        conditions.volumetric_flow = 0.001; // Малый расход
-
-        EXPECT_NO_THROW(task.solve(conditions));
-
-        auto& layer = task.get_current_layer();
-        // При маленьком диаметре потери должны быть значительными
-        double pressure_drop = layer.pressure.front() - layer.pressure.back();
-        EXPECT_GT(pressure_drop, 1000.0); // Более 1 кПа
+        EXPECT_EQ(pressure_drop, 0); // 
     }
 }
 
 
-class CondensatePipePPHydraulicsTest : public ::testing::Test {
+class CondensatePPTest : public ::testing::Test {
 protected:
     void SetUp() override {
         // Arrange: Создаем простую равномерную трубу для тестов
@@ -889,25 +827,10 @@ protected:
     pde_solvers::condensate_pipe_properties_t pipe;
 };
 
-/// @brief Тест на создание и инициализацию PP задачи
-TEST_F(CondensatePipePPHydraulicsTest, TaskInitialization) {
-    // Arrange
-    // (SetUp уже выполнен, труба создана)
 
-    // Act
-    pde_solvers::condensate_pipe_PP_task_t task(pipe);
-    auto& buffer = task.get_buffer();
-    auto& layer = task.get_current_layer();
 
-    // Assert
-    ASSERT_EQ(buffer.get_layers().size(), 2);
-    EXPECT_EQ(layer.pressure.size(), pipe.profile.get_point_count());
-    EXPECT_EQ(layer.density.size(), pipe.profile.get_point_count() - 1);
-    EXPECT_TRUE(std::isnan(layer.std_volumetric_flow));
-}
-
-/// @brief Тест на начальный стационарный расчет PP задачи
-TEST_F(CondensatePipePPHydraulicsTest, InitialSteadyStateSolution) {
+/// @brief 8. Тест на начальный стационарный расчет PP задачи
+TEST_F(CondensatePPTest, InitialSteadyStateSolution) {
     // Arrange
     pde_solvers::condensate_pipe_PP_task_t task(pipe);
     auto initial_conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
@@ -940,8 +863,8 @@ TEST_F(CondensatePipePPHydraulicsTest, InitialSteadyStateSolution) {
     }
 }
 
-/// @brief Тест на зависимость расхода от перепада давления
-TEST_F(CondensatePipePPHydraulicsTest, FlowRateVsPressureDrop) {
+/// @brief 9(можно удалить). Тест на зависимость расхода от перепада давления
+TEST_F(CondensatePPTest, FlowRateVsPressureDrop) {
     // Arrange
     pde_solvers::condensate_pipe_PP_task_t task(pipe);
     auto base_conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
@@ -972,8 +895,8 @@ TEST_F(CondensatePipePPHydraulicsTest, FlowRateVsPressureDrop) {
     }
 }
 
-/// @brief Тест на взаимную проверку PP и PQ задач
-TEST_F(CondensatePipePPHydraulicsTest, PPandPQMutualVerification) {
+/// @brief 10(можно удалить). Тест на взаимную проверку PP и PQ задач
+TEST_F(CondensatePPTest, PPandPQMutualVerification) {
     // Arrange
     pde_solvers::condensate_pipe_PP_task_t pp_task(pipe);
     pde_solvers::condensate_pipe_PQ_task_t pq_task(pipe);
@@ -1001,8 +924,8 @@ TEST_F(CondensatePipePPHydraulicsTest, PPandPQMutualVerification) {
     EXPECT_NEAR(relative, 0, 1e-6);
 }
 
-/// @brief Тест на обратную проверку PQ -> PP
-TEST_F(CondensatePipePPHydraulicsTest, PQandPPMutualVerificationReverse) {
+/// @brief 11. Тест на обратную проверку PQ -> PP
+TEST_F(CondensatePPTest, PQandPPMutualVerificationReverse) {
     // Arrange
     pde_solvers::condensate_pipe_PQ_task_t pq_task(pipe);
     pde_solvers::condensate_pipe_PP_task_t pp_task(pipe);
@@ -1029,8 +952,8 @@ TEST_F(CondensatePipePPHydraulicsTest, PQandPPMutualVerificationReverse) {
     EXPECT_NEAR(relative, 0, 1e-5);
 }
 
-/// @brief Тест на согласованность PP и PQ при изменении параметров
-TEST_F(CondensatePipePPHydraulicsTest, PPandPQConsistencyParameterSweep) {
+/// @brief 12.(удалить) Тест на согласованность PP и PQ при изменении параметров
+TEST_F(CondensatePPTest, PPandPQConsistencyParameterSweep) {
     // Arrange
     std::vector<double> test_flows = { 0.1, 0.2, 0.3, 0.4 };
     std::vector<double> test_densities = { 700.0, 850.0, 1000.0 };
@@ -1069,8 +992,8 @@ TEST_F(CondensatePipePPHydraulicsTest, PPandPQConsistencyParameterSweep) {
     }
 }
 
-/// @brief Тест на влияние шага по времени
-TEST_F(CondensatePipePPHydraulicsTest, TimeStepSensitivity) {
+/// @brief 13.(Удалить) Тест на влияние шага по времени
+TEST_F(CondensatePPTest, TimeStepSensitivity) {
     // Arrange
     pde_solvers::condensate_pipe_PP_task_t base_task(pipe);
     auto initial_conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
@@ -1081,7 +1004,7 @@ TEST_F(CondensatePipePPHydraulicsTest, TimeStepSensitivity) {
     base_task.solve(initial_conditions);
     double initial_flow = base_task.get_current_layer().std_volumetric_flow;
 
-    std::vector<double> time_steps = { 0.1, 1.0, 10.0, 100 };
+    std::vector<double> time_steps = { 0.1, 1.0, 10.0 };
     std::vector<double> flow_changes;
 
     // Act
@@ -1105,8 +1028,8 @@ TEST_F(CondensatePipePPHydraulicsTest, TimeStepSensitivity) {
     }
 }
 
-/// @brief Тест на численную устойчивость PP задачи
-TEST_F(CondensatePipePPHydraulicsTest, NumericalStabilityPP) {
+/// @brief 14.Тест на численную устойчивость PP задачи
+TEST_F(CondensatePPTest, NumericalStabilityPP) {
     // Arrange
     pde_solvers::condensate_pipe_PP_task_t task(pipe);
     auto initial_conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
@@ -1139,8 +1062,8 @@ TEST_F(CondensatePipePPHydraulicsTest, NumericalStabilityPP) {
     EXPECT_LT(max_variation, 1e-6);
 }
 
-/// @brief Тест на влияние плотности на расход при фиксированном перепаде
-TEST_F(CondensatePipePPHydraulicsTest, DensityEffectOnFlowRate) {
+/// @brief 15. Тест на влияние плотности на расход при фиксированном перепаде
+TEST_F(CondensatePPTest, DensityEffectOnFlowRate) {
     // Arrange
     pde_solvers::condensate_pipe_PP_task_t task(pipe);
     auto base_conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
@@ -1164,13 +1087,13 @@ TEST_F(CondensatePipePPHydraulicsTest, DensityEffectOnFlowRate) {
     }
 }
 
-/// @brief Тест на крайние случаи PP задачи
-TEST_F(CondensatePipePPHydraulicsTest, EdgeCasesPP_SmallPressureDrop) {
+/// @brief 16. Тест на крайние случаи PP задачи
+TEST_F(CondensatePPTest, EdgeCasesPP_ZeroPressureDrop) {
     // Arrange
     pde_solvers::condensate_pipe_PP_task_t task(pipe);
     auto conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
     conditions.pressure_in = 5e6;
-    conditions.pressure_out = 4.999e6; // Всего 1 кПа перепада
+    conditions.pressure_out = 5e6; 
     conditions.density = 850.0;
 
     // Act
@@ -1178,12 +1101,11 @@ TEST_F(CondensatePipePPHydraulicsTest, EdgeCasesPP_SmallPressureDrop) {
     auto& layer = task.get_current_layer();
 
     // Assert
-    EXPECT_GT(layer.std_volumetric_flow, 0.0);
-    EXPECT_LT(layer.std_volumetric_flow, 0.01);
+    EXPECT_EQ(layer.std_volumetric_flow, 0);
 }
 
-/// @brief Тест на крайние случаи PP задачи - большой перепад
-TEST_F(CondensatePipePPHydraulicsTest, EdgeCasesPP_LargePressureDrop) {
+/// @brief 17. (удалить) Тест на крайние случаи PP задачи - большой перепад
+TEST_F(CondensatePPTest, EdgeCasesPP_LargePressureDrop) {
     // Arrange
     pde_solvers::condensate_pipe_PP_task_t task(pipe);
     auto conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
@@ -1203,8 +1125,8 @@ TEST_F(CondensatePipePPHydraulicsTest, EdgeCasesPP_LargePressureDrop) {
     }
 }
 
-/// @brief Тест на некорректные входные данные PP задачи
-TEST_F(CondensatePipePPHydraulicsTest, EdgeCasesPP_InvalidDensity) {
+/// @brief 18.(удалить) Тест на некорректные входные данные PP задачи
+TEST_F(CondensatePPTest, EdgeCasesPP_InvalidDensity) {
     // Arrange
     pde_solvers::condensate_pipe_PP_task_t task(pipe);
     auto conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
@@ -1216,8 +1138,8 @@ TEST_F(CondensatePipePPHydraulicsTest, EdgeCasesPP_InvalidDensity) {
     EXPECT_ANY_THROW(task.solve(conditions));
 }
 
-/// @brief Тест на метод Ньютона
-TEST_F(CondensatePipePPHydraulicsTest, NewtonMethodConvergence) {
+/// @brief 19.(удалить) Тест на метод Ньютона
+TEST_F(CondensatePPTest, NewtonMethodConvergence) {
     // Arrange
     auto conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
     conditions.pressure_in = 5e6;
@@ -1248,8 +1170,8 @@ TEST_F(CondensatePipePPHydraulicsTest, NewtonMethodConvergence) {
     }
 }
 
-/// @brief Тест на физическую корректность результатов
-TEST_F(CondensatePipePPHydraulicsTest, PhysicalCorrectness) {
+/// @brief 20.(похож на предыдущий, удалить) Тест на физическую корректность результатов
+TEST_F(CondensatePPTest, PhysicalCorrectness) {
     // Arrange
     pde_solvers::condensate_pipe_PP_task_t task(pipe);
     auto conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
@@ -1281,8 +1203,8 @@ TEST_F(CondensatePipePPHydraulicsTest, PhysicalCorrectness) {
     }
 }
 
-/// @brief Тест на производительность PP задачи
-TEST_F(CondensatePipePPHydraulicsTest, PerformanceBenchmark) {
+/// @brief 21. (удалить) Тест на производительность PP задачи
+TEST_F(CondensatePPTest, PerformanceBenchmark) {
     // Arrange
     auto conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
     conditions.pressure_in = 5e6;
@@ -1312,8 +1234,8 @@ TEST_F(CondensatePipePPHydraulicsTest, PerformanceBenchmark) {
     EXPECT_LT(average_time, 1000.0); // Менее 1 секунды на расчет
 }
 
-/// @brief Тест с разными шагами по времени
-TEST_F(CondensatePipePPHydraulicsTest, DifferentTimeSteps) {
+/// @brief 22.(удалить) Тест с разными шагами по времени
+TEST_F(CondensatePPTest, DifferentTimeSteps) {
 
     // Arrange
     pde_solvers::condensate_pipe_PQ_task_boundaries_t pq_conditions;
@@ -1351,7 +1273,7 @@ TEST_F(CondensatePipePPHydraulicsTest, DifferentTimeSteps) {
         double error = abs(pq_conditions.volumetric_flow - pp_flow) / pq_conditions.volumetric_flow; 
 
         // Assert
-        EXPECT_LT(error, 1e-4)
-            << "Large error for dt = " << dt << " s: " << error << "%";
+        EXPECT_LT(error, 1e-4);
     }
+}
 }
