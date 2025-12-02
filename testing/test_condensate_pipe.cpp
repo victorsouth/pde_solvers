@@ -58,85 +58,6 @@ struct condensate_pipe_PQ_task_boundaries_t {
 };
 
 
-struct condensate_pipe_properties_t : public pipe_properties_t {
-    double kinematic_viscosity{1e-7};
-};
-
-
-/// @brief Уравнение сохранения импульса для трубы с учетом движения партий
-class condensate_pipe_PQ_parties_t : public ode_t<1>
-{
-public:
-    using ode_t<1>::equation_coeffs_type;
-    using ode_t<1>::right_party_type;
-    using ode_t<1>::var_type;
-protected:
-    const std::vector<double>& rho_profile;
-    const condensate_pipe_properties_t& pipe;
-    const double flow;
-    const int solver_direction;
-public:
-    /// @brief Констуктор уравнения трубы
-    /// @param pipe Ссылка на сущность трубы
-    /// @param oil Ссылка на сущность нефти
-    /// @param flow Объемный расход
-    /// @param solver_direction Направление расчета по Эйлеру, должно обязательно совпадать с параметром солвера Эйлера
-    condensate_pipe_PQ_parties_t(const condensate_pipe_properties_t& pipe,
-        const std::vector<double>& rho_profile, 
-        double flow,
-        int solver_direction)
-        : pipe(pipe)
-        , rho_profile(rho_profile)
-        , flow(flow)
-        , solver_direction(solver_direction)
-    {
-    }
-
-    /// @brief Возвращает известную уравнению сетку
-    virtual const std::vector<double>& get_grid() const override {
-        return pipe.profile.coordinates;
-    }
-
-    /// @brief Возвращает значение правой части ДУ
-    /// @param grid_index Обсчитываемый индекс расчетной сетки
-    /// @param point_vector Начальные условия
-    /// @return Значение правой части ДУ в точке point_vector
-    virtual right_party_type ode_right_party(
-        size_t grid_index, const var_type& point_vector) const override
-    {
-
-        /// Обработка индекса в случае расчетов на границах трубы
-        /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
-        size_t rheo_index = grid_index;
-
-        if (pipe.profile.get_point_count() == rho_profile.size())
-        {
-            // Случай расчета партий в точках (например для метода характеристик)
-            if (solver_direction == +1)
-                rheo_index += 1;
-            else
-                rheo_index -= 1;
-        }
-        else
-        {
-            // Случай расчета партий в ячейках (например для quickest ultimate) 
-            rheo_index = solver_direction == +1
-                ? grid_index
-                : grid_index - 1;
-        }
-        double rho = rho_profile[rheo_index];
-        double S_0 = pipe.wall.getArea();
-        double v = flow / (S_0);
-        double Re = v * pipe.wall.diameter / pipe.kinematic_viscosity;
-        double lambda = pipe.resistance_function(Re);
-        double tau_w = lambda / 8 * rho * v * abs(v);
-        double height_derivative = pipe.profile.get_height_derivative(grid_index, solver_direction);
-        double result = -4 * tau_w / pipe.wall.diameter - rho * M_G * height_derivative;
-        return result;
-    }
-};
-
-
 class condensate_pipe_PQ_task_t {
 public:
     /// @brief Тип слоя
@@ -280,79 +201,6 @@ struct condensate_pipe_PP_task_boundaries_t {
 };
 
 
-/// @brief Уравнение сохранения импульса для трубы с учетом движения партий
-class condensate_pipe_PP_parties_t : public ode_t<1>
-{
-public:
-    using ode_t<1>::equation_coeffs_type;
-    using ode_t<1>::right_party_type;
-    using ode_t<1>::var_type;
-protected:
-    const std::vector<double>& rho_profile;
-    const condensate_pipe_properties_t& pipe;
-    const double flow;
-    const int solver_direction;
-public:
-    /// @brief Констуктор уравнения трубы
-    /// @param pipe Ссылка на сущность трубы
-    /// @param oil Ссылка на сущность нефти
-    /// @param flow Объемный расход
-    /// @param solver_direction Направление расчета по Эйлеру, должно обязательно совпадать с параметром солвера Эйлера
-    condensate_pipe_PP_parties_t(const condensate_pipe_properties_t& pipe,
-        const std::vector<double>& rho_profile,
-        double flow,
-        int solver_direction)
-        : pipe(pipe)
-        , rho_profile(rho_profile)
-        , flow(flow)
-        , solver_direction(solver_direction)
-    {
-    }
-
-    /// @brief Возвращает известную уравнению сетку
-    virtual const std::vector<double>& get_grid() const override {
-        return pipe.profile.coordinates;
-    }
-
-    /// @brief Возвращает значение правой части ДУ
-    /// @param grid_index Обсчитываемый индекс расчетной сетки
-    /// @param point_vector Начальные условия
-    /// @return Значение правой части ДУ в точке point_vector
-    virtual right_party_type ode_right_party(
-        size_t grid_index, const var_type& point_vector) const override
-    {
-
-        /// Обработка индекса в случае расчетов на границах трубы
-        /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
-        size_t rheo_index = grid_index;
-
-        if (pipe.profile.get_point_count() == rho_profile.size())
-        {
-            // Случай расчета партий в точках (например для метода характеристик)
-            if (solver_direction == +1)
-                rheo_index += 1;
-            else
-                rheo_index -= 1;
-        }
-        else
-        {
-            // Случай расчета партий в ячейках (например для quickest ultimate) 
-            rheo_index = solver_direction == +1
-                ? grid_index
-                : grid_index - 1;
-        }
-        double rho = rho_profile[rheo_index];
-        double S_0 = pipe.wall.getArea();
-        double v = flow / (S_0);
-        double Re = v * pipe.wall.diameter / pipe.kinematic_viscosity;
-        double lambda = pipe.resistance_function(Re);
-        double tau_w = lambda / 8 * rho * v * abs(v);
-        double height_derivative = pipe.profile.get_height_derivative(grid_index, solver_direction);
-        double result = -4 * tau_w / pipe.wall.diameter - rho * M_G * height_derivative;
-        return result;
-    }
-};
-
 /// @brief класс для нахождения расхода Q для задачи PP с помощью метода Ньютона
 /// @tparam boundaries_type класс граничных условий
 /// @tparam layer_type класс уровней в buffer
@@ -382,7 +230,7 @@ public:
 
         std::vector<double>& p_profile = current.pressure;
         int euler_direction = +1; // Задаем направление для Эйлера
-        condensate_pipe_PP_parties_t pipeModel(pipe, current.density, x, euler_direction);
+        condensate_pipe_PQ_parties_t pipeModel(pipe, current.density, x, euler_direction);
         solve_euler<1>(pipeModel, euler_direction, bound.pressure_in, &p_profile);
 
         return
