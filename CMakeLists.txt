@@ -107,7 +107,8 @@ if(PDE_SOLVERS_BUILD_TESTS)
     find_package(GTest REQUIRED)
     set(TESTS_HEADERS
         testing/test_advection_moc_solver.h
-        testing/test_condensate_pipe.h
+        testing/test_condensate_pipe_PQ.h
+        testing/test_condensate_pipe_PP.h
         testing/test_create_pipe_profile.h
         testing/test_diffusion.h
         testing/test_moc.h
