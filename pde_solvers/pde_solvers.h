@@ -51,6 +51,7 @@
 #include "tasks/nonisothermal_quasistatic_task.h"
 #include "tasks/nonisothermal_quasistatic_task_p.h"
 #include "tasks/nonisothermal_quasistatic_ident.h"
+#include "tasks/condensate_pipe_task.h"
 
 namespace pde_solvers
 {
