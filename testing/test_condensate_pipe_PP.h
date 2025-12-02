@@ -3,34 +3,33 @@
 
 namespace pde_solvers {
 
-class CondensatePipePP : public ::testing::Test {
-protected:
-    void SetUp() override {
-        // Arrange: Создаем простую равномерную трубу для тестов
-        pde_solvers::pipe_profile_t profile;
-        const size_t points_count = 10;
-        const double length = 1000.0; // 1 км
+/// @brief Создает простую равномерную трубу для тестовых расчетов
+inline pde_solvers::condensate_pipe_properties_t create_test_pipe_for_PP() {
+    pde_solvers::condensate_pipe_properties_t pipe;
+    pde_solvers::pipe_profile_t profile;
+    const size_t points_count = 10;
+    const double length = 1000.0; // 1 км
 
-        // Создаем равномерную сетку
-        for (size_t i = 0; i < points_count; ++i) {
-            double x = i * length / (points_count - 1);
-            double h = 0.0; // Нулевой уклон для упрощения
-            profile.coordinates.push_back(x);
-            profile.heights.push_back(h);
-        }
-
-        pipe.profile = profile;
-        pipe.wall.diameter = 0.5; // 500 мм
-        pipe.wall.wallThickness = 0.0001; // 0.1 мм
-        pipe.kinematic_viscosity = 1e-6; // 1 сСт
+    // Создаем равномерную сетку
+    for (size_t i = 0; i < points_count; ++i) {
+        double x = i * length / (points_count - 1);
+        double h = 0.0; // Нулевой уклон для упрощения
+        profile.coordinates.push_back(x);
+        profile.heights.push_back(h);
     }
 
-    pde_solvers::condensate_pipe_properties_t pipe;
-};
+    pipe.profile = profile;
+    pipe.wall.diameter = 0.5; // 500 мм
+    pipe.wall.wallThickness = 0.0001; // 0.1 мм
+    pipe.kinematic_viscosity = 1e-6; // 1 сСт
+
+    return pipe;
+}
 
 /// @brief Проверяет способность системы PP задачи рассчитывать валидный расход для заданных граничных условий по давлению
-TEST_F(CondensatePipePP, CalculatesValidFlowRate_ForGivenPressureBoundaries) {
+TEST(CondensatePipePP, CalculatesValidFlowRate_ForGivenPressureBoundaries) {
     // Arrange
+    auto pipe = create_test_pipe_for_PP();
     pde_solvers::condensate_pipe_PP_task_t task(pipe);
     auto initial_conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
     initial_conditions.pressure_in = 5e6;
@@ -63,8 +62,9 @@ TEST_F(CondensatePipePP, CalculatesValidFlowRate_ForGivenPressureBoundaries) {
 }
 
 /// @brief Проверяет способность системы восстанавливать исходный расход при использовании давления из PQ задачи в PP задаче
-TEST_F(CondensatePipePP, RecoversOriginalFlowRate_WhenPQPressureUsedInPP) {
+TEST(CondensatePipePP, RecoversOriginalFlowRate_WhenPQPressureUsedInPP) {
     // Arrange
+    auto pipe = create_test_pipe_for_PP();
     pde_solvers::condensate_pipe_PQ_task_t pq_task(pipe);
     pde_solvers::condensate_pipe_PP_task_t pp_task(pipe);
 
@@ -91,8 +91,9 @@ TEST_F(CondensatePipePP, RecoversOriginalFlowRate_WhenPQPressureUsedInPP) {
 }
 
 /// @brief Проверяет способность системы PP задачи поддерживать стабильность расхода при множественных шагах по времени
-TEST_F(CondensatePipePP, MaintainsFlowRateStability_OverMultipleTimeSteps) {
+TEST(CondensatePipePP, MaintainsFlowRateStability_OverMultipleTimeSteps) {
     // Arrange
+    auto pipe = create_test_pipe_for_PP();
     pde_solvers::condensate_pipe_PP_task_t task(pipe);
     auto initial_conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
     initial_conditions.pressure_in = 5e6;
@@ -125,8 +126,9 @@ TEST_F(CondensatePipePP, MaintainsFlowRateStability_OverMultipleTimeSteps) {
 }
 
 /// @brief Проверяет способность системы уменьшать расход с увеличением плотности при фиксированном перепаде давления
-TEST_F(CondensatePipePP, DecreasesFlowRate_WithIncreasingDensity_AtFixedPressureDrop) {
+TEST(CondensatePipePP, DecreasesFlowRate_WithIncreasingDensity_AtFixedPressureDrop) {
     // Arrange
+    auto pipe = create_test_pipe_for_PP();
     pde_solvers::condensate_pipe_PP_task_t task(pipe);
     auto base_conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
     base_conditions.pressure_in = 5e6;
@@ -150,8 +152,9 @@ TEST_F(CondensatePipePP, DecreasesFlowRate_WithIncreasingDensity_AtFixedPressure
 }
 
 /// @brief Проверяет способность системы производить нулевой расход при нулевом перепаде давления
-TEST_F(CondensatePipePP, ProducesZeroFlowRate_WhenPressureDropIsZero) {
+TEST(CondensatePipePP, ProducesZeroFlowRate_WhenPressureDropIsZero) {
     // Arrange
+    auto pipe = create_test_pipe_for_PP();
     pde_solvers::condensate_pipe_PP_task_t task(pipe);
     auto conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
     conditions.pressure_in = 5e6;

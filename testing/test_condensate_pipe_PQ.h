@@ -3,31 +3,28 @@
 
 namespace pde_solvers {
 
-class CondensatePipeQP : public ::testing::Test {
-protected:
-    void SetUp() override {
-        // Создаем простую равномерную трубу для тестов
-        pde_solvers::pipe_profile_t profile;
-        const size_t points_count = 10;
-        const double length = 1000.0; // 1 км
+/// @brief Создает простую равномерную трубу для тестовых расчетов
+inline pde_solvers::condensate_pipe_properties_t create_test_pipe_for_PQ() {
+    pde_solvers::condensate_pipe_properties_t pipe;
+    pde_solvers::pipe_profile_t profile;
+    const size_t points_count = 10;
+    const double length = 1000.0; // 1 км
 
-        // Создаем равномерную сетку
-        for (size_t i = 0; i < points_count; ++i) {
-            double x = i * length / (points_count - 1);
-            double h = 0.0; // Нулевой уклон для упрощения
-            profile.coordinates.push_back(x);
-            profile.heights.push_back(h);
-        }
-
-        pipe.profile = profile;
-        pipe.wall.diameter = 0.5; // 500 мм
-        pipe.wall.wallThickness = 10e-3; // 0.1 мм
-        pipe.kinematic_viscosity = 1e-6; // 1 сСт
+    // Создаем равномерную сетку
+    for (size_t i = 0; i < points_count; ++i) {
+        double x = i * length / (points_count - 1);
+        double h = 0.0; // Нулевой уклон для упрощения
+        profile.coordinates.push_back(x);
+        profile.heights.push_back(h);
     }
 
-    pde_solvers::condensate_pipe_properties_t pipe;
-};
+    pipe.profile = profile;
+    pipe.wall.diameter = 0.5; // 500 мм
+    pipe.wall.wallThickness = 10e-3; // 10 мм
+    pipe.kinematic_viscosity = 1e-6; // 1 сСт
 
+    return pipe;
+}
 
 /// @brief Проверяет способность системы PQ задачи поддерживать корректный профиль давления при заданных начальных условиях.
 /// Тест выполняет следующие проверки:
@@ -36,9 +33,10 @@ protected:
 /// 3. Сохранение граничного условия на входе - давление на входе должно точно совпадать с заданным значением (5 МПа) с точностью 1e-6
 /// 4. Монотонное убывание давления вдоль трубы - давление должно строго уменьшаться от входа к выходу из-за гидравлических потерь
 /// 5. Физическая корректность значений - все значения давления в профиле должны быть положительными
-TEST_F(CondensatePipeQP, MaintainsCorrectPressureProfile_WhenGivenInitialConditions) {
+TEST(CondensatePipeQP, MaintainsCorrectPressureProfile_WhenGivenInitialConditions) {
 
     //Arrange
+    auto pipe = create_test_pipe_for_PQ();
     pde_solvers::condensate_pipe_PQ_task_t task(pipe);
 
     auto initial_conditions = pde_solvers::condensate_pipe_PQ_task_boundaries_t::default_values();
@@ -75,8 +73,9 @@ TEST_F(CondensatePipeQP, MaintainsCorrectPressureProfile_WhenGivenInitialConditi
 }
 
 /// @brief Проверяет способность системы увеличивать потери давления с ростом расхода
-TEST_F(CondensatePipeQP, IncreasesPressureLoss_WithIncreasingFlowRate) {
+TEST(CondensatePipeQP, IncreasesPressureLoss_WithIncreasingFlowRate) {
     //Arrange
+    auto pipe = create_test_pipe_for_PQ();
     pde_solvers::condensate_pipe_PQ_task_t task(pipe);
 
     std::vector<double> flows = { 0.1, 0.3, 0.5, 0.7 }; // м³/с
@@ -109,8 +108,9 @@ TEST_F(CondensatePipeQP, IncreasesPressureLoss_WithIncreasingFlowRate) {
 }
 
 /// @brief Проверяет способность системы поддерживать стабильность давления при множественных шагах по времени
-TEST_F(CondensatePipeQP, MaintainsPressureStability_OverMultipleTimeSteps) {
+TEST(CondensatePipeQP, MaintainsPressureStability_OverMultipleTimeSteps) {
     //Arrange
+    auto pipe = create_test_pipe_for_PQ();
     pde_solvers::condensate_pipe_PQ_task_t task(pipe);
 
     auto initial_conditions = pde_solvers::condensate_pipe_PQ_task_boundaries_t::default_values();
@@ -156,10 +156,11 @@ TEST_F(CondensatePipeQP, MaintainsPressureStability_OverMultipleTimeSteps) {
 }
 
 /// @brief Проверяет способность системы производить нулевой перепад давления при нулевом расходе
-TEST_F(CondensatePipeQP, ProducesZeroPressureDrop_WhenFlowRateIsZero) {
+TEST(CondensatePipeQP, ProducesZeroPressureDrop_WhenFlowRateIsZero) {
     // Очень маленький расход
     {
         //Arrange
+        auto pipe = create_test_pipe_for_PQ();
         pde_solvers::condensate_pipe_PQ_task_t task(pipe);
         auto conditions = pde_solvers::condensate_pipe_PQ_task_boundaries_t::default_values();
         conditions.volumetric_flow = 0; // нулевой расход
