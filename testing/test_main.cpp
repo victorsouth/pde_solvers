@@ -45,6 +45,7 @@ using namespace pde_solvers;
 #include "test_advection_moc_solver.h"
 #include "test_synthetic_timeseries.h"
 #include "test_create_pipe_profile.h"
+#include "test_condensate_pipe.h"
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

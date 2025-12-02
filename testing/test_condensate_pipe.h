@@ -1,14 +1,6 @@
-﻿#define GTEST_BREAK_ON_FAILURE 1
-#define GTEST_CATCH_EXCEPTIONS 0
-#define GTEST_HAS_SEH 0
-#define _VARIADIC_MAX 10 /* for gtest */
-#include "gtest/gtest.h"
-
-#include <fixed/fixed.h>
-#include <pde_solvers/pde_solvers.h>
+#pragma once
 
 namespace pde_solvers {
-;
 
 /// @brief Профиль параметров для конденсатопровода (без температуры и ПТП)
 struct condensate_pipe_layer {
@@ -157,30 +149,6 @@ public:
         return buffer.current();
     }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /// @brief Структура, содержащая в себе краевые условия задачи PP
 struct condensate_pipe_PP_task_boundaries_t {
@@ -465,9 +433,6 @@ TEST_F(CondensatePipeQP, IncreasesPressureLoss_WithIncreasingFlowRate) {
 
 }
 
-
-
-
 /// @brief Проверяет способность системы поддерживать стабильность давления при множественных шагах по времени
 TEST_F(CondensatePipeQP, MaintainsPressureStability_OverMultipleTimeSteps) {
     //Arrange
@@ -558,8 +523,6 @@ protected:
 
     pde_solvers::condensate_pipe_properties_t pipe;
 };
-
-
 
 /// @brief Проверяет способность системы PP задачи рассчитывать валидный расход для заданных граничных условий по давлению
 TEST_F(CondensatePPTest, CalculatesValidFlowRate_ForGivenPressureBoundaries) {
