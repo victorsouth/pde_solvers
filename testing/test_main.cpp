@@ -36,7 +36,6 @@ inline std::string prepare_test_folder()
 using namespace pde_solvers;
 
 
-
 #include "test_viscosity.h"
 #include "test_diffusion.h"
 #include "test_moc.h"
@@ -46,7 +45,6 @@ using namespace pde_solvers;
 #include "test_advection_moc_solver.h"
 #include "test_synthetic_timeseries.h"
 #include "test_create_pipe_profile.h"
-
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

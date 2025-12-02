@@ -15,5 +15,12 @@
                 "CMAKE_PREFIX_PATH": "C:/Program Files (x86)/googletest-distribution"
             }
         }
+    ],
+    "buildPresets": [
+        {
+            "name": "GCC 15.2.0 x86_64-w64-mingw32",
+            "configurePreset": "GCC 15.2.0 x86_64-w64-mingw32",
+            "jobs": 8
+        }
     ]
 }
