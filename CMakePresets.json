@@ -8,7 +8,7 @@
             "generator": "MinGW Makefiles",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_INSTALL_PREFIX": "C:/Program Files (x86)/pde_solvers",
                 "CMAKE_C_COMPILER": "C:/mingw64/bin/gcc.exe",
                 "CMAKE_CXX_COMPILER": "C:/mingw64/bin/g++.exe",
                 "CMAKE_BUILD_TYPE": "Debug",
@@ -22,7 +22,7 @@
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_INSTALL_PREFIX": "C:/Program Files (x86)/pde_solvers",
                 "CMAKE_C_COMPILER": "C:/msys64/ucrt64/bin/clang.exe",
                 "CMAKE_CXX_COMPILER": "C:/msys64/ucrt64/bin/clang++.exe",
                 "CMAKE_BUILD_TYPE": "Debug",
