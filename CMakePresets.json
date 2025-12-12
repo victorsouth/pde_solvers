@@ -14,12 +14,32 @@
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_PREFIX_PATH": "C:/Program Files (x86)/googletest-distribution"
             }
+        },
+        {
+            "name": "Clang 21.1.7 x86_64-w64-windows-gnu (ucrt64)",
+            "displayName": "Clang 21.1.7 x86_64-w64-windows-gnu (ucrt64)",
+            "description": "Using compilers: C = C:\\msys64\\ucrt64\\bin\\clang.exe, CXX = C:\\msys64\\ucrt64\\bin\\clang++.exe",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_C_COMPILER": "C:/msys64/ucrt64/bin/clang.exe",
+                "CMAKE_CXX_COMPILER": "C:/msys64/ucrt64/bin/clang++.exe",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_PREFIX_PATH": "C:/Program Files (x86)/googletest-distribution",
+                "PDE_SOLVERS_BUILD_TESTS": "ON"
+            }
         }
     ],
     "buildPresets": [
         {
             "name": "GCC 15.2.0 x86_64-w64-mingw32",
             "configurePreset": "GCC 15.2.0 x86_64-w64-mingw32",
+            "jobs": 8
+        },
+        {
+            "name": "Clang 21.1.7 x86_64-w64-windows-gnu (ucrt64)",
+            "configurePreset": "Clang 21.1.7 x86_64-w64-windows-gnu (ucrt64)",
             "jobs": 8
         }
     ]
