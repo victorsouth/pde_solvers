@@ -1,6 +1,42 @@
 ﻿#pragma once
 
 
+// Настройка кодировки для Windows
+#ifdef _WIN32
+#include <windows.h>
+
+class WindowsConsoleSetup {
+public:
+    WindowsConsoleSetup() {
+        // Сохраняем текущие настройки
+        oldOutputCP = GetConsoleOutputCP();
+        oldInputCP = GetConsoleCP();
+
+        // Устанавливаем UTF-8
+        SetConsoleOutputCP(CP_UTF8);
+        SetConsoleCP(CP_UTF8);
+
+        std::cout << "Консоль настроена на UTF-8" << std::endl;
+    }
+
+    ~WindowsConsoleSetup() {
+        // Восстанавливаем настройки (опционально)
+        SetConsoleOutputCP(oldOutputCP);
+        SetConsoleCP(oldInputCP);
+    }
+
+private:
+    UINT oldOutputCP;
+    UINT oldInputCP;
+};
+
+// Глобальный объект для настройки консоли
+static WindowsConsoleSetup consoleSetup;
+#endif
+
+
+
+
 
 /// @brief Тесты для солвера upstream_fv_solver
 class UpstreamDifferencing : public ::testing::Test {
@@ -663,3 +699,408 @@ TEST(QuickestUltimate, HandlesShortPipe_Reverse)
         << "Плотность не должна оставаться равной начальному значению";
 
 }
+
+
+
+TEST(QuickestUltimate, SinglePipeConservativityTest)
+{
+    std::cout << "\n=== ТЕСТ КОНСЕРВАТИВНОСТИ ДЛЯ ОДНОЙ ТРУБЫ ===\n" << std::endl;
+
+    // Параметры теста
+    const double pipe_length = 50e3;      // 50 км
+    const double dx = 200.0;              // шаг 200 м
+    const double diameter = 0.7;          // диаметр трубы
+    const double total_time = 24 * 3600;  // 24 часа в секундах
+
+    // Плотности партий (исправлены по формуле)
+    const double rho_first = 850.0;       // первая партия (начальная)
+    const double rho_second = 870.0;      // вторая партия (вход)
+    const double rho_outlet = 850.0;      // на выходе
+
+    // Расход
+    const double flow_rate = 0.5;         // 0.5 м³/с
+
+    // Расчет количества ячеек
+    const int n_cells_int = static_cast<int>(pipe_length / dx);
+    ASSERT_GT(n_cells_int, 0) << "Неверный шаг сетки";
+    const size_t n_cells = static_cast<size_t>(n_cells_int);
+
+    std::cout << "Параметры расчета:" << std::endl;
+    std::cout << "  Длина трубы: " << pipe_length << " м" << std::endl;
+    std::cout << "  Шаг сетки: " << dx << " м" << std::endl;
+    std::cout << "  Количество ячеек: " << n_cells_int << std::endl;
+    std::cout << "  Диаметр: " << diameter << " м" << std::endl;
+    std::cout << "  Площадь сечения: " << 3.141592653589793 * diameter * diameter / 4.0 << " м²" << std::endl;
+    std::cout << "  Расход: " << flow_rate << " м³/с" << std::endl;
+    std::cout << "  Общее время: " << total_time << " с (" << total_time / 3600 << " ч)" << std::endl;
+    std::cout << "  Плотность первой партии: " << rho_first << " кг/м³" << std::endl;
+    std::cout << "  Плотность второй партии: " << rho_second << " кг/м³" << std::endl;
+    std::cout << "  Плотность на выходе: " << rho_outlet << " кг/м³" << std::endl;
+
+    // Создание модели трубы
+    simple_pipe_properties simple_pipe;
+    simple_pipe.length = pipe_length;
+    simple_pipe.dx = dx;
+    simple_pipe.diameter = diameter;
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
+
+    //// Проверка количества ячеек
+    //ASSERT_EQ(static_cast<int>(pipe.profile.get_point_count()), n_cells_int)
+    //    << "Количество точек в профиле не совпадает с расчетным";
+
+    // Вектор расходов (постоянный по трубе)
+    std::vector<double> Q(n_cells_int, flow_rate);
+    PipeQAdvection advection_model(pipe, Q);
+
+    // Типы данных для солвера
+    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
+    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
+    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
+
+    // Буфер для хранения слоев
+    ring_buffer_t<layer_t> buffer(2, n_cells_int);
+
+    // Начальное состояние: вся труба заполнена первой партией
+    layer_t& prev = buffer.previous();
+    prev.vars.cell_double[0] = std::vector<double>(n_cells_int, rho_first);
+
+    // Расчет скорости потока
+    double v = 0.0;
+    if (!Q.empty()) {
+        v = advection_model.getEquationsCoeffs(0, Q[0]);
+    }
+    ASSERT_NE(v, 0) << "Скорость потока не должна быть нулевой";
+
+    std::cout << "\nСкорость потока: " << v << " м/с" << std::endl;
+
+    // Расчет времени прохода фронта по трубе
+    const double transit_time = pipe_length / std::abs(v);
+    std::cout << "Время прохода фронта по трубе: " << transit_time << " с ("
+        << transit_time / 3600 << " ч)" << std::endl;
+
+    // Определение времени подачи второй партии
+    const double switch_time = 6 * 3600;  // через 6 часов
+    std::cout << "Время подачи второй партии: " << switch_time << " с ("
+        << switch_time / 3600 << " ч)" << std::endl;
+
+    // Подбор шага по времени по условию Куранта
+    const double Cr = 0.9;  // Число Куранта (менее 1 для устойчивости)
+    double dt = Cr * dx / std::abs(v);
+
+    // Убедимся, что шаг разумный
+    int n_steps = static_cast<int>(total_time / dt);
+    if (n_steps > 100000) {
+        // Если шагов слишком много, увеличим шаг
+        dt = total_time / 10000;
+        n_steps = 10000;
+        std::cout << "Шаг по времени скорректирован для разумного количества итераций" << std::endl;
+    }
+
+    std::cout << "\nПараметры расчета по времени:" << std::endl;
+    std::cout << "  Число Куранта: " << Cr << std::endl;
+    std::cout << "  Шаг по времени: " << dt << " с" << std::endl;
+    std::cout << "  Количество шагов: " << n_steps << std::endl;
+    std::cout << "  Шаг переключения партий: " << static_cast<int>(switch_time / dt) << std::endl;
+
+    // Параметры для отслеживания массы
+    const double area = 3.141592653589793 * diameter * diameter / 4.0;
+    const double cell_volume = area * dx;
+
+    // Начальная масса в трубе (Σ m_i в начальный момент)
+    double initial_mass_in_pipe = 0.0;
+    const auto& initial_densities = prev.vars.cell_double[0];
+    for (int i = 0; i < n_cells_int; ++i) {
+        if (static_cast<size_t>(i) < initial_densities.size()) {
+            initial_mass_in_pipe += initial_densities[i] * cell_volume;
+        }
+    }
+
+    // Переменные для отслеживания баланса массы (по формуле)
+    double cumulative_mass_in = 0.0;     // Σ (Δt * G_вход,i)
+    double cumulative_mass_out = 0.0;    // Σ (Δt * G_выход,i)
+    double current_mass_in_pipe = initial_mass_in_pipe;  // Σ m_i в текущий момент
+
+    // Векторы для хранения истории
+    std::vector<double> mass_in_pipe_history;      // M_расчетная(t)
+    std::vector<double> mass_balance_history;      // M_балансная(t) по формуле
+    std::vector<double> time_history;
+    std::vector<double> balance_error_history;     // Разница M_расчетная - M_балансная
+
+    mass_in_pipe_history.push_back(current_mass_in_pipe);
+    mass_balance_history.push_back(initial_mass_in_pipe);  // В начальный момент они равны
+    time_history.push_back(0.0);
+    balance_error_history.push_back(0.0);
+
+    // Основной цикл расчета
+    double current_time = 0.0;
+    int switch_step = static_cast<int>(switch_time / dt);
+
+    std::cout << "\nНачальные параметры массы:" << std::endl;
+    std::cout << "  Площадь сечения: " << area << " м²" << std::endl;
+    std::cout << "  Объем ячейки: " << cell_volume << " м³" << std::endl;
+    std::cout << "  Объем трубы: " << cell_volume * n_cells_int << " м³" << std::endl;
+    std::cout << "  Начальная масса в трубе (Σ m_i): " << initial_mass_in_pipe << " кг" << std::endl;
+
+    std::cout << "\nЗапуск расчета..." << std::endl;
+
+    for (int step = 1; step <= n_steps; ++step) {
+        current_time += dt;
+
+        // Определение граничных условий
+        double rho_in = (step <= switch_step) ? rho_first : rho_second;
+
+        // Расчет потоков массы через границы за шаг dt (по формуле)
+        double mass_flow_in = rho_in * flow_rate * dt;      // Δt * G_вход
+        double mass_flow_out = rho_outlet * flow_rate * dt; // Δt * G_выход
+
+        cumulative_mass_in += mass_flow_in;
+        cumulative_mass_out += mass_flow_out;
+
+        // Расчет массы по балансу (по формуле из картинки)
+        double mass_by_balance = initial_mass_in_pipe + cumulative_mass_in - cumulative_mass_out;
+
+        // Выполнение шага расчета
+        try {
+            layer_t& next = buffer.current();
+            quickest_ultimate_fv_solver solver(advection_model, prev, next);
+            solver.step(dt, rho_in, rho_outlet);
+
+            // Расчет текущей массы в трубе по схеме (Σ m_i)
+            current_mass_in_pipe = 0.0;
+            const auto& densities = next.vars.cell_double[0];
+            for (int i = 0; i < n_cells_int; ++i) {
+                if (static_cast<size_t>(i) < densities.size()) {
+                    current_mass_in_pipe += densities[i] * cell_volume;
+                }
+            }
+
+            // Расчет ошибки баланса (по формуле из картинки)
+            // Ошибка = M_расчетная - M_балансная
+            double balance_error = current_mass_in_pipe - mass_by_balance;
+
+            // Сохранение истории
+            mass_in_pipe_history.push_back(current_mass_in_pipe);
+            mass_balance_history.push_back(mass_by_balance);
+            time_history.push_back(current_time);
+            balance_error_history.push_back(balance_error);
+
+            // Переход к следующему шагу
+            buffer.advance(+1);
+            prev = buffer.previous();
+
+        }
+        catch (const std::exception& e) {
+            FAIL() << "Ошибка на шаге " << step << ": " << e.what();
+        }
+
+        // Вывод прогресса
+        if (n_steps >= 10 && step % (n_steps / 10) == 0) {
+            std::cout << "  Шаг " << step << "/" << n_steps
+                << " (время: " << current_time / 3600 << " ч, "
+                << "M_расчетная: " << current_mass_in_pipe << " кг, "
+                << "M_балансная: " << mass_by_balance << " кг)" << std::endl;
+        }
+    }
+
+    std::cout << "\nРасчет завершен." << std::endl;
+
+    // Финальная проверка консервативности по формуле
+    double final_mass_by_scheme = current_mass_in_pipe;                 // M_расчетная(t)
+    double final_mass_by_balance = initial_mass_in_pipe +
+        cumulative_mass_in -
+        cumulative_mass_out;  // M_балансная(t)
+
+    double absolute_error = final_mass_by_scheme - final_mass_by_balance;
+
+    // Расчет относительной ошибки
+    double ref1 = std::abs(initial_mass_in_pipe);
+    double ref2 = std::abs(final_mass_by_scheme);
+    double ref3 = std::abs(cumulative_mass_in);
+    double ref4 = std::abs(cumulative_mass_out);
+
+    double max_mass = ref1;
+    if (ref2 > max_mass) max_mass = ref2;
+    if (ref3 > max_mass) max_mass = ref3;
+    if (ref4 > max_mass) max_mass = ref4;
+
+    if (max_mass < 1.0) max_mass = 1.0;  // защита от деления на ноль
+
+    double relative_error = std::abs(absolute_error) / max_mass;
+
+    // Вывод результатов по формуле
+    std::cout << "\n=== ПРОВЕРКА КОНСЕРВАТИВНОСТИ ПО ФОРМУЛЕ ===" << std::endl;
+    std::cout << "Формула: M_балансная(t) = Σ m_i(0) + Σ(Δt * G_вход) - Σ(Δt * G_выход)" << std::endl;
+    std::cout << "Σ m_i(0)  (начальная масса): " << initial_mass_in_pipe << " кг" << std::endl;
+    std::cout << "Σ(Δt * G_вход) (масса на входе): " << cumulative_mass_in << " кг" << std::endl;
+    std::cout << "Σ(Δt * G_выход) (масса на выходе): " << cumulative_mass_out << " кг" << std::endl;
+    std::cout << "M_балансная(t) по формуле: " << final_mass_by_balance << " кг" << std::endl;
+    std::cout << "M_расчетная(t) по схеме: " << final_mass_by_scheme << " кг" << std::endl;
+    std::cout << "\nАбсолютная ошибка (M_расчетная - M_балансная): " << absolute_error << " кг" << std::endl;
+    std::cout << "Относительная ошибка: " << relative_error << std::endl;
+
+    //// Проверка физической реализуемости (исправлены пределы)
+    //EXPECT_GE(min_density, 800.0) << "Плотность ниже физически возможного предела";
+    //EXPECT_LE(max_density, 900.0) << "Плотность выше физически возможного предела";
+
+    // Критерии проверки консервативности
+    const double absolute_tolerance = 1e-6;  // 1 миллиграмм - строгий допуск
+    const double relative_tolerance = 1e-10; // 0.00000001% - очень строгий
+
+    // Вычисляем tolerance
+    double tolerance1 = absolute_tolerance;
+    double tolerance2 = relative_tolerance * max_mass;
+    double tolerance = (tolerance1 > tolerance2) ? tolerance1 : tolerance2;
+
+    std::cout << "\nКритерии проверки консервативности:" << std::endl;
+    std::cout << "  Абсолютный допуск: " << absolute_tolerance << " кг" << std::endl;
+    std::cout << "  Относительный допуск: " << relative_tolerance * 100 << " %" << std::endl;
+    std::cout << "  Итоговый допуск: " << tolerance << " кг" << std::endl;
+
+    // Проверка консервативности
+    if (std::abs(absolute_error) <= tolerance) {
+        std::cout << "\n✓ СХЕМА КОНСЕРВАТИВНА: M_расчетная ≈ M_балансная" << std::endl;
+        std::cout << "  Ошибка (" << absolute_error << " кг) в пределах допуска (" << tolerance << " кг)" << std::endl;
+        SUCCEED();
+    }
+    else {
+        std::cout << "\n✗ СХЕМА НЕ КОНСЕРВАТИВНА: M_расчетная ≠ M_балансная" << std::endl;
+        std::cout << "  Ошибка (" << absolute_error << " кг) превышает допуск (" << tolerance << " кг)" << std::endl;
+
+        // Анализ максимальной ошибки в истории
+        double max_abs_error = 0.0;
+        size_t max_error_step = 0;
+
+        for (size_t i = 0; i < balance_error_history.size(); ++i) {
+            double abs_error = std::abs(balance_error_history[i]);
+            if (abs_error > max_abs_error) {
+                max_abs_error = abs_error;
+                max_error_step = i;
+            }
+        }
+
+        std::cout << "  Максимальная ошибка в истории: " << max_abs_error << " кг" << std::endl;
+        std::cout << "  На шаге: " << max_error_step
+            << " (время: " << time_history[max_error_step] / 3600 << " ч)" << std::endl;
+
+        // Анализ накопленной ошибки
+        double cumulative_error = 0.0;
+        for (double error : balance_error_history) {
+            cumulative_error += error;
+        }
+        std::cout << "  Накопленная ошибка за все шаги: " << cumulative_error << " кг" << std::endl;
+    }
+
+    // Строгая проверка ASSERT-ом
+    EXPECT_NEAR(final_mass_by_scheme, final_mass_by_balance, tolerance)
+        << "Схема QUICKEST-ULTIMATE не консервативна. "
+        << "M_расчетная = " << final_mass_by_scheme << " кг, "
+        << "M_балансная = " << final_mass_by_balance << " кг, "
+        << "разница = " << absolute_error << " кг";
+
+    // Дополнительная проверка: на каждом шаге ошибка должна быть малой
+    bool all_steps_conservative = true;
+    for (size_t i = 0; i < balance_error_history.size(); ++i) {
+        if (std::abs(balance_error_history[i]) > tolerance * 10) { // Более мягкий допуск для промежуточных шагов
+            std::cout << "  Предупреждение: большая ошибка на шаге " << i
+                << " (время " << time_history[i] / 3600 << " ч): "
+                << balance_error_history[i] << " кг" << std::endl;
+            all_steps_conservative = false;
+        }
+    }
+
+    if (all_steps_conservative) {
+        std::cout << "\n✓ Схема консервативна на всех шагах расчета" << std::endl;
+    }
+
+    // Сохранение подробных результатов
+    std::ofstream results("conservativity_detailed_results.csv");
+    if (results.is_open()) {
+        results << "time_h,mass_by_scheme_kg,mass_by_balance_kg,balance_error_kg\n";
+        for (size_t i = 0; i < time_history.size(); ++i) {
+            results << time_history[i] / 3600 << ","
+                << mass_in_pipe_history[i] << ","
+                << mass_balance_history[i] << ","
+                << balance_error_history[i] << "\n";
+        }
+        results.close();
+        std::cout << "\nПодробные результаты сохранены в файл: conservativity_detailed_results.csv" << std::endl;
+    }
+
+    std::cout << "\n=== ТЕСТ ЗАВЕРШЕН ===" << std::endl;
+}
+
+//TEST(QuickestUltimate, HasConservativity)
+//{
+//    double vol_flow = -1.0;
+//    double rho_in = 860;    // плотность на входе
+//    double rho_out = 850; // плотность на выходе
+//    double rho_initial = 840;
+//
+//    simple_pipe_properties simple_pipe;
+//    simple_pipe.length = 100.0;   // длина 100 м
+//    simple_pipe.dx = 100.0;       // шаг сетки = длина (1 ячейка)
+//    simple_pipe.diameter = 0.7;
+//    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
+//
+//    std::vector<double> Q(pipe.profile.get_point_count(), 1.0);
+//    PipeQAdvection advection_model(pipe, Q);
+//
+//    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
+//    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
+//    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
+//
+//    ring_buffer_t<layer_t> buffer(2, pipe.profile.get_point_count());
+//    ring_buffer_t<layer_t> buffer_reverse(2, pipe.profile.get_point_count());
+//
+//    layer_t& prev = buffer.previous();
+//    layer_t& next = buffer.current();
+//
+//    prev.vars.cell_double[0] = std::vector<double>(1, rho_initial);
+//
+//    double v = advection_model.getEquationsCoeffs(0, Q[0]);
+//    double Cr = 1;
+//    double dt = abs((Cr * simple_pipe.dx) / v);       // шаг по времени
+//
+//    // Запускаем шаг по QUICKEST-ULTIMATE
+//    quickest_ultimate_fv_solver solver(advection_model, prev, next);
+//    solver.step(dt, rho_in, rho_out);
+//
+//    double rho_prev = prev.vars.cell_double[0].front();
+//    double rho_curr = next.vars.cell_double[0].front();
+//
+//   
+//
+//}
+
+
+
+
+TEST(QuickestUltimate, FormulaCheck) {
+    // Тест проверяет логику формулы, а не реализацию схемы
+    std::vector<double> cell_masses = { 10.0, 20.0, 30.0 }; // массы в ячейках
+    std::vector<double> inflow_flux = { 5.0, 3.0, 2.0 };    // G_gx за шаги
+    std::vector<double> outflow_flux = { 1.0, 2.0, 1.0 };   // G_вых за шаги
+    double dt = 1.0;
+
+    // Σm_i (сумма масс в ячейках)
+    double sum_mass = 0.0;
+    for (double m : cell_masses) sum_mass += m;
+
+    // Σ(G_gx - G_вых) * Δt
+    double sum_flux = 0.0;
+    for (size_t i = 0; i < inflow_flux.size(); i++) {
+        sum_flux += (inflow_flux[i] - outflow_flux[i]) * dt;
+    }
+
+    // M_баланс(t) = Σm_i + Δt * Σ(G_gx - G_вых)
+    double balance_mass = sum_mass + sum_flux;
+
+    // Проверяем на простом примере
+    double expected = 60.0 + (10.0 - 4.0); // 10+20+30 + (5+3+2 - 1+2+1)
+
+    EXPECT_NEAR(balance_mass, expected, 1e-12);
+}
+
+
+
+
