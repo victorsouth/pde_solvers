@@ -198,7 +198,7 @@ namespace pde_solvers {
         /// @brief функция невязки для решения методом Ньютона
         /// @param x - неизвестное (для задачи PP является расходом)
         /// @return 
-        virtual var_type residuals(const var_type& x) {
+        virtual double residuals(const double& x) {
             auto& current = current_layer;
 
             std::vector<double>& p_profile = current.pressure;
@@ -206,10 +206,7 @@ namespace pde_solvers {
             condensate_pipe_PQ_parties_t pipeModel(pipe, current.density, x, euler_direction);
             solve_euler<1>(pipeModel, euler_direction, bound.pressure_in, &p_profile);
 
-            return
-            {
-                p_profile.back() - bound.pressure_out
-            };
+            return p_profile.back() - bound.pressure_out;
         }
 
         /// @brief переопределяем целевую функцию, чтобы был модуль невязок
