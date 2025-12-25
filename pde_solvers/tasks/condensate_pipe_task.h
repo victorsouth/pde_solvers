@@ -176,19 +176,19 @@ namespace pde_solvers {
     /// @brief класс для нахождения расхода Q для задачи PP с помощью метода Ньютона
     /// @tparam boundaries_type класс граничных условий
     /// @tparam layer_type класс уровней в buffer
-    template <typename Boundaries_type, typename Layer_type>
+    template <typename BoundariesType, typename LayerType>
     class solve_condensate_PP : public fixed_system_t<1> {
         using fixed_system_t<1>::var_type;
     private:
         /// @brief слой расчета
-        Layer_type& current_layer;
+        LayerType& current_layer;
         /// @brief ГУ
-        const Boundaries_type& bound;
+        const BoundariesType& bound;
         /// @brief свойства трубы
         const condensate_pipe_properties_t& pipe;
 
     public:
-        solve_condensate_PP(const condensate_pipe_properties_t& pipe, const Boundaries_type& bound, Layer_type& current_layer)
+        solve_condensate_PP(const condensate_pipe_properties_t& pipe, const BoundariesType& bound, LayerType& current_layer)
             : pipe(pipe)
             , bound(bound)
             , current_layer(current_layer)

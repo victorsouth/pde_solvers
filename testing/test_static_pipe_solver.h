@@ -1,8 +1,6 @@
 ﻿#pragma once
 
-// для использования функции генерации трубы create_test_pipe_for_PQ(), create_test_pipe_for_PP()
-#include "test_condensate_pipe_PP.h"
-#include "test_condensate_pipe_PQ.h"
+
 TEST(Static_Hydraulic_Solver, UseCase)
 {
     typedef profile_collection_t<2> layer_variables_type;
@@ -27,29 +25,76 @@ TEST(Static_Hydraulic_Solver, UseCase)
     double G = solve_pipe_PP(pipeModel, Pin, Pout, &start_layer);
 }
 
+/// @brief расчет разницы давления между началом и концом трубы в QP задаче
+/// @param pipe 
+/// @param conditions 
+/// @return разница давления между началом и концом
+inline double deltaP_for_solve_qP(
+    const pde_solvers::condensate_pipe_properties_t& pipe,
+    const pde_solvers::condensate_pipe_PQ_task_boundaries_t& conditions)
+{
 
+    condensate_pipe_layer layer(pipe.profile.get_point_count());
+    for (double& density : layer.density) {
+        density = conditions.density;
+    }
+    layer.std_volumetric_flow = conditions.volumetric_flow;
+    std::vector<double>& p_profile = layer.pressure;
+    int euler_direction = +1; // Задаем направление для Эйлера
 
-    /// @brief Проверяет способность системы производить нулевой перепад давления при нулевом расходе
-TEST(CondensatePipeQP, ProducesZeroPressureDrop_WhenFlowRateIsZero) {
+    condensate_pipe_PQ_parties_t pipeModel(pipe, layer.density, conditions.volumetric_flow, euler_direction);
+
+    solve_euler<1>(pipeModel, euler_direction, conditions.pressure_in, &p_profile);
+    double pressure_drop = layer.pressure.front() - layer.pressure.back();
+
+    return pressure_drop;
+}
+
+/// @brief расчет расхода в PP задаче
+/// @param pipe 
+/// @param conditions 
+/// @param initial_Q_for_Newton начальное значение расхода при решении методом Ньютона
+/// @return расход в PP задаче
+inline double Q_for_solve_PP(
+    const pde_solvers::condensate_pipe_properties_t& pipe,
+    const pde_solvers::condensate_pipe_PP_task_boundaries_t& conditions,
+    double initial_Q_for_Newton = 0.2)
+{
+    condensate_pipe_layer layer(pipe.profile.get_point_count());
+    for (double& density : layer.density) {
+        density = conditions.density;
+    }
+
+    solve_condensate_PP<condensate_pipe_PP_task_boundaries_t, condensate_pipe_layer> test = solve_condensate_PP(pipe, conditions, layer);
+    fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
+    parameters.residuals_norm = 0.1; // погрешность 0.1 Па
+    parameters.argument_increment_norm = 0;
+    parameters.residuals_norm_allow_early_exit = true;
+    // Создание структуры для записи результатов расчета
+    fixed_solver_result_t<1> result;
+    fixed_newton_raphson<1>::solve_dense(test, { initial_Q_for_Newton }, parameters, &result);
+    return result.argument;
+}
+
+/// @brief Проверяет способность системы производить нулевой перепад давления при нулевом расходе
+TEST(CondensatePipeQPPde, ProducesZeroPressureDrop_WhenFlowRateIsZero) {
 
     //Arrange
     auto pipe = create_test_pipe_for_PQ();
-    pde_solvers::condensate_pipe_PQ_task_t task(pipe);
     auto conditions = pde_solvers::condensate_pipe_PQ_task_boundaries_t::default_values();
     conditions.volumetric_flow = 0; // нулевой расход
 
     // Act 
-    task.solve(conditions);
+    double pressure_drop = deltaP_for_solve_qP(pipe, conditions);
 
-    // Assert
-    auto& layer = task.get_current_layer();
-    double pressure_drop = layer.pressure.front() - layer.pressure.back();
+    //// Assert
     ASSERT_NEAR(pressure_drop, 0, 1e-6);
+
 
 }
 
 /// @brief Проверяет способность системы увеличивать потери давления с ростом расхода
-TEST(CondensatePipeQP, IncreasesPressureLoss_WithIncreasingFlowRate) {
+TEST(CondensatePipeQPPde, IncreasesPressureLoss_WithIncreasingFlowRate) {
     //Arrange
     auto pipe = create_test_pipe_for_PQ();
     pde_solvers::condensate_pipe_PQ_task_t task(pipe);
@@ -65,10 +110,7 @@ TEST(CondensatePipeQP, IncreasesPressureLoss_WithIncreasingFlowRate) {
     std::vector<double> pressure_drops;
     for (double flow : flows) {
         initial_conditions.volumetric_flow = flow;
-        task.solve(initial_conditions);
-
-        auto& layer = task.get_current_layer();
-        double pressure_drop = layer.pressure.front() - layer.pressure.back();
+        double pressure_drop = deltaP_for_solve_qP(pipe, initial_conditions);
         pressure_drops.push_back(pressure_drop);
     }
 
@@ -81,30 +123,27 @@ TEST(CondensatePipeQP, IncreasesPressureLoss_WithIncreasingFlowRate) {
 }
 
 /// @brief Проверяет способность системы производить нулевой расход при нулевом перепаде давления
-TEST(CondensatePipePP, ProducesZeroFlowRate_WhenPressureDropIsZero) {
+TEST(CondensatePipePPPde, ProducesZeroFlowRate_WhenPressureDropIsZero) {
     // Arrange
-    auto pipe = pde_solvers::create_test_pipe_for_PP();
-    pde_solvers::condensate_pipe_PP_task_t task(pipe);
+    auto pipe = create_test_pipe_for_PP();
     auto conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
     conditions.pressure_in = 5e6;
     conditions.pressure_out = 5e6;
     conditions.density = 850.0;
 
     // Act
-    task.solve(conditions);
-    auto& layer = task.get_current_layer();
+    double Q = Q_for_solve_PP(pipe, conditions);
 
     // Assert
-    EXPECT_NEAR(layer.std_volumetric_flow, 0, 1e-6);
+    EXPECT_NEAR(Q, 0, 1e-6);
 
 }
 
 
 /// @brief Проверяет способность системы уменьшать расход с увеличением плотности при фиксированном перепаде давления
-TEST(CondensatePipePP, DecreasesFlowRate_WithIncreasingDensity_AtFixedPressureDrop) {
+TEST(CondensatePipePPPde, DecreasesFlowRate_WithIncreasingDensity_AtFixedPressureDrop) {
     // Arrange
     auto pipe = create_test_pipe_for_PP();
-    pde_solvers::condensate_pipe_PP_task_t task(pipe);
     auto base_conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
     base_conditions.pressure_in = 5e6;
     base_conditions.pressure_out = 4e6;
@@ -115,8 +154,8 @@ TEST(CondensatePipePP, DecreasesFlowRate_WithIncreasingDensity_AtFixedPressureDr
     // Act
     for (double density : densities) {
         base_conditions.density = density;
-        task.solve(base_conditions);
-        calculated_flows.push_back(task.get_current_layer().std_volumetric_flow);
+        double Q = Q_for_solve_PP(pipe, base_conditions);
+        calculated_flows.push_back(Q);
     }
 
     // Assert
@@ -126,38 +165,3 @@ TEST(CondensatePipePP, DecreasesFlowRate_WithIncreasingDensity_AtFixedPressureDr
     }
 }
 
-
-/// @brief Проверяет способность системы PP задачи рассчитывать валидный расход для заданных граничных условий по давлению
-TEST(CondensatePipePP, CalculatesValidFlowRate_ForGivenPressureBoundaries) {
-    // Arrange
-    auto pipe = create_test_pipe_for_PP();
-    pde_solvers::condensate_pipe_PP_task_t task(pipe);
-    auto initial_conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
-    initial_conditions.pressure_in = 5e6;
-    initial_conditions.pressure_out = 4e6;
-    initial_conditions.density = 850.0;
-
-    // Act
-    task.solve(initial_conditions);
-    auto& layer = task.get_current_layer();
-
-    // Assert
-    // Проверяем инициализацию плотности
-    for (const auto& density : layer.density) {
-        EXPECT_NEAR(density, 850.0, 1e-6);
-    }
-
-    // Проверяем, что расход был рассчитан
-    EXPECT_FALSE(std::isnan(layer.std_volumetric_flow));
-    EXPECT_GT(layer.std_volumetric_flow, 0.0);
-
-    // Проверяем расчет давления
-    ASSERT_FALSE(layer.pressure.empty());
-    EXPECT_NEAR(layer.pressure.front(), 5e6, 0.1);
-    EXPECT_NEAR(layer.pressure.back(), 4e6, 0.1);
-
-    // Давление должно уменьшаться вдоль трубы
-    for (size_t i = 1; i < layer.pressure.size(); ++i) {
-        EXPECT_LT(layer.pressure[i], layer.pressure[i - 1]);
-    }
-}

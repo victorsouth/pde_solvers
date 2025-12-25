@@ -40,13 +40,13 @@ using namespace pde_solvers;
 #include "test_diffusion.h"
 #include "test_moc.h"
 #include "test_quick.h"
+#include "test_condensate_pipe_PQ.h"
+#include "test_condensate_pipe_PP.h"
 #include "test_static_pipe_solver.h"
 #include "test_timeseries.h"
 #include "test_advection_moc_solver.h"
 #include "test_synthetic_timeseries.h"
 #include "test_create_pipe_profile.h"
-#include "test_condensate_pipe_PQ.h"
-#include "test_condensate_pipe_PP.h"
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

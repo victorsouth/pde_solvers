@@ -1,8 +1,5 @@
 #pragma once
 
-
-namespace pde_solvers {
-
     /// @brief Создает простую равномерную трубу для тестовых расчетов
     inline pde_solvers::condensate_pipe_properties_t create_test_pipe_for_PQ() {
         pde_solvers::condensate_pipe_properties_t pipe;
@@ -33,7 +30,7 @@ namespace pde_solvers {
     /// 3. Сохранение граничного условия на входе - давление на входе должно точно совпадать с заданным значением (5 МПа) с точностью 1e-6
     /// 4. Монотонное убывание давления вдоль трубы - давление должно строго уменьшаться от входа к выходу из-за гидравлических потерь
     /// 5. Физическая корректность значений - все значения давления в профиле должны быть положительными
-    TEST(CondensatePipeQP, MaintainsCorrectPressureProfile_WhenGivenInitialConditions) {
+    TEST(CondensatePipeQPTask, MaintainsCorrectPressureProfile_WhenGivenInitialConditions) {
 
         //Arrange
         auto pipe = create_test_pipe_for_PQ();
@@ -77,7 +74,7 @@ namespace pde_solvers {
     
 
     /// @brief Проверяет способность системы поддерживать стабильность давления при множественных шагах по времени
-    TEST(CondensatePipeQP, MaintainsPressureStability_OverMultipleTimeSteps) {
+    TEST(CondensatePipeQPTask, MaintainsPressureStability_OverMultipleTimeSteps) {
         //Arrange
         auto pipe = create_test_pipe_for_PQ();
         pde_solvers::condensate_pipe_PQ_task_t task(pipe);
@@ -121,8 +118,4 @@ namespace pde_solvers {
 
     }
 
-
-
-
-}
 
