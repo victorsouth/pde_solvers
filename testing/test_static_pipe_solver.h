@@ -35,14 +35,14 @@ inline double deltaP_for_solve_qP(
 {
 
     condensate_pipe_layer layer(pipe.profile.get_point_count());
-    for (double& density : layer.density) {
+    for (double& density : layer.density.value) {
         density = conditions.density;
     }
     layer.std_volumetric_flow = conditions.volumetric_flow;
     std::vector<double>& p_profile = layer.pressure;
     int euler_direction = +1; // Задаем направление для Эйлера
 
-    condensate_pipe_PQ_parties_t pipeModel(pipe, layer.density, conditions.volumetric_flow, euler_direction);
+    condensate_pipe_PQ_parties_t pipeModel(pipe, layer.density.value, conditions.volumetric_flow, euler_direction);
 
     solve_euler<1>(pipeModel, euler_direction, conditions.pressure_in, &p_profile);
     double pressure_drop = layer.pressure.front() - layer.pressure.back();
@@ -61,7 +61,7 @@ inline double Q_for_solve_PP(
     double initial_Q_for_Newton = 0.2)
 {
     condensate_pipe_layer layer(pipe.profile.get_point_count());
-    for (double& density : layer.density) {
+    for (double& density : layer.density.value) {
         density = conditions.density;
     }
 

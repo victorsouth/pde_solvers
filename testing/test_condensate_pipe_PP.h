@@ -40,7 +40,7 @@
 
         // Assert
         // Проверяем инициализацию плотности
-        for (const auto& density : layer.density) {
+        for (const auto& density : layer.density.value) {
             EXPECT_NEAR(density, initial_conditions.density, 1e-6);
         }
 
