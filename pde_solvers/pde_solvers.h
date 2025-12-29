@@ -26,6 +26,7 @@
 #include "pipe/pipe_hydraulic_computations.h"
 #include "pipe/pipe_hydraulic_struct.h"
 #include "pipe/pipe_hydraulic_pde.h"
+#include "pipe/pipe_condensate_pde.h"
 #include "pipe/pipe_profile_utils.h"
 #include "pipe/pipe_advection_pde.h"
 #include "pipe/pipe_advection_solver.h"
@@ -50,6 +51,7 @@
 #include "tasks/nonisothermal_quasistatic_task.h"
 #include "tasks/nonisothermal_quasistatic_task_p.h"
 #include "tasks/nonisothermal_quasistatic_ident.h"
+#include "tasks/condensate_pipe_task.h"
 
 namespace pde_solvers
 {
