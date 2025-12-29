@@ -20,6 +20,7 @@ set(HEADERS_PIPE
     pde_solvers/pipe/oil.h
     pde_solvers/pipe/pipe_advection_solver.h
     pde_solvers/pipe/pipe_hydraulic_pde.h
+    pde_solvers/pipe/pipe_condensate_pde.h
     pde_solvers/pipe/pipe_advection_pde.h
     pde_solvers/pipe/pipe_hydraulic_computations.h
     pde_solvers/pipe/pipe_hydraulic_struct.h
@@ -106,14 +107,20 @@ if(PDE_SOLVERS_BUILD_TESTS)
     find_package(GTest REQUIRED)
     set(TESTS_HEADERS
         testing/test_advection_moc_solver.h
-        testing/test_diffusion.h
+        testing/test_condensate_pipe_PQ.h
+        testing/test_condensate_pipe_PP.h
         testing/test_create_pipe_profile.h
+        testing/test_diffusion.h
         testing/test_moc.h
         testing/test_quick.h
         testing/test_static_pipe_solver.h
         testing/test_timeseries.h
     )
-    add_executable(pde_tests testing/test_main.cpp ${TESTS_HEADERS})
+    set(TESTS_SOURCES
+        testing/test_main.cpp
+    )
+
+    add_executable(pde_tests  ${TESTS_SOURCES} ${TESTS_HEADERS})
     target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
 	install(TARGETS pde_tests DESTINATION bin)
 

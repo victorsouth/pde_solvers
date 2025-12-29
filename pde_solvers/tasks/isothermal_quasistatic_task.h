@@ -235,6 +235,7 @@ private:
             [](double initial, double current) {return initial - current;  });
 
     }
+
 public:
     /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
     /// Функция делат сдвиг буфера (advance) так, что buffer.current после вызова содержит свежерасчитанный слой
@@ -440,7 +441,6 @@ inline void quasistatic_batch(
 
         data_processor->process_data(step_index, task.get_buffer().current());
     }
+
 };
-
-
 }
