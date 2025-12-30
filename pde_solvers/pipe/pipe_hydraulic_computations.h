@@ -61,7 +61,7 @@ inline double hydraulic_resistance_isaev(double reynolds_number, double relative
     else if (Re < 560 / Ke)
     {
         // Исаев по [Морозова, Коршак], ф-ла (1)
-        lam = 1.0 / sqr(-1.8 * log10(6.8 / Re + pow(Ke / 3.7, 1.1)));
+        lam = 1.0 / fixed_solvers::sqr(-1.8 * log10(6.8 / Re + pow(Ke / 3.7, 1.1)));
     }
     else
     {
