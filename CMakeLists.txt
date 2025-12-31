@@ -11,7 +11,7 @@ find_package(fixed_solvers)
 endif()
 
 set(HEADERS
-    pde_solvers/pde_solvers.h  pde_solvers/pipe.h pde_solvers/timeseries.h
+    pde_solvers/pde_solvers.h  pde_solvers/pipe.h pde_solvers/timeseries.h pde_solvers/physical_constants.h
     )
 set(HEADERS_CORE
     pde_solvers/core/differential_equation.h  pde_solvers/core/profile_structures.h  pde_solvers/core/ring_buffer.h
