@@ -3,34 +3,61 @@
 namespace pde_solvers {
 ;
 
-/// @brief Профиль параметров для конденсатопровода (без температуры и ПТП)
-struct condensate_pipe_layer {
+/// @brief Базовый слой для гидравлического расчета
+/// @tparam BaseEndogenousProfile Слой эндогенных параметром, характерных для решаемой задачи
+template <typename BaseEndogenousLayer>
+struct hydraulic_pipe_layer : BaseEndogenousLayer {
     /// @brief Номинальный объемный расход
     double std_volumetric_flow{ std::numeric_limits<double>::quiet_NaN() };
     /// @brief Профиль давления
     std::vector<double> pressure;
+
+    /// @brief Инициализация профилей
+    /// @param point_count Количество точек
+    hydraulic_pipe_layer(size_t point_count)
+        : BaseEndogenousLayer(point_count)
+        , pressure(point_count)
+        
+    {
+    }
+};
+
+/// @brief Профиль эндогенных параметров для конденсатопровода (без температуры и ПТП)
+struct condensate_pipe_layer_base {
     /// @brief Профиль плотности с достоверностью
     confident_layer_t density;
     /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
     /// @brief Инициализация профилей
     /// @param point_count Количество точек
-    condensate_pipe_layer(size_t point_count)
+    condensate_pipe_layer_base(size_t point_count)
         : density(point_count, 850.0)
         , specific(point_count)
-        , pressure(point_count)
     {
     }
 
     /// @brief Подготовка плотности для расчета методом конечных объемов 
     /// @param layer Слой
     /// @return Обертка над составным слоем
-    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(condensate_pipe_layer& layer)
+    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(condensate_pipe_layer_base& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.density.value, layer.specific);
     }
 
+    /// @brief Подготовка достоверности плотности для расчета методом конечных объемов 
+    /// @param layer Слой
+    /// @return Обертка над составным слоем
+    static quickest_ultimate_fv_wrapper<1> get_density_confidence_wrapper(condensate_pipe_layer_base& layer)
+    {
+        return quickest_ultimate_fv_wrapper<1>(layer.density.confidence, layer.specific);
+    }
+
 };
+
+/// @brief Расчетный слой для квазистационарного расчета при переменной плотности
+using condensate_pipe_layer = hydraulic_pipe_layer<condensate_pipe_layer_base>;
+
+
 
 /// @brief Структура, содержащая в себе краевые условия задачи PQ
 struct condensate_pipe_PQ_task_boundaries_t {
@@ -348,6 +375,15 @@ private:
     buffer_type& buffer;
 
 public:
+    /// @brief Фиктивный констуктор для совместмости с селектором рассчитываемых свойств
+    iso_nonbarotropic_pipe_solver_t(
+        const condensate_pipe_properties_t& pipe,
+        buffer_type& buffer,
+        const pde_solvers::endogenous_selector_t& endogenous_selector)
+        : iso_nonbarotropic_pipe_solver_t(pipe, buffer)
+    {
+    }
+
     /// @brief Конструктор
     /// @param pipe Ссылка на свойства конденсатопровода
     /// @param buffer Ссылка на буфер слоев
@@ -374,11 +410,8 @@ public:
         boundaries.pressure_out = pressure_output;
         boundaries.density = current.density.value[0];
 
-        // Используем начальное значение расхода из текущего слоя, если оно есть
-        if (std::isnan(current.std_volumetric_flow)) {
-            throw std::runtime_error("std_volumetric_flow is not initialized");
-        }
-        double volumetric_flow_initial = current.std_volumetric_flow;
+        // TODO: задавать начальное приближение расхода
+        double volumetric_flow_initial = 0.2;
 
         // Создаем объект класса для расчета невязки при решении PP задачи методом Ньютона
         solve_condensate_PP<condensate_pipe_PP_task_boundaries_t, layer_type> solver_pp(
@@ -476,34 +509,68 @@ public:
 
     /// @brief Выполнение транспортного шага (расчет движения партий)
     virtual void transport_step(double dt, double volumetric_flow, const pde_solvers::endogenous_values_t& boundaries) override {
-        size_t n = pipe.profile.get_point_count();
-        std::vector<double> Q_profile(n, volumetric_flow); // задаем по трубе расход
+        buffer.current().std_volumetric_flow = volumetric_flow;
 
-        buffer.advance(+1); // Сдвигаем текущий и предыдущий слои
+        if (std::isinf(dt)) {
+            auto value_buffer_wrapper = buffer.get_buffer_wrapper(
+                &condensate_pipe_layer_base::get_density_wrapper);
+            std::vector<double>& val = value_buffer_wrapper.current().vars;
+            std::fill(val.begin(), val.end(), boundaries.density.value);
 
-        auto& current = buffer.current();
-        current.std_volumetric_flow = volumetric_flow;
-
-        // Считаем партии с помощью QUICKEST-ULTIMATE
-        PipeQAdvection advection_model(pipe, Q_profile);
-
-        // Шаг по плотности
-        auto density_wrapper = buffer.get_buffer_wrapper(
-            &condensate_pipe_layer::get_density_wrapper);
-        quickest_ultimate_fv_solver solver_rho(advection_model, density_wrapper);
-            
-        // Используем плотность из граничных условий, если она задана и достоверна
-        double density_in;
-        if (boundaries.density.confidence) {
-            density_in = boundaries.density.value;
-        } else if (!current.density.value.empty()) {
-            density_in = current.density.value[0];
-        } else {
-            throw std::runtime_error("density is not available in boundaries and density profile is empty");
+            auto confidence_buffer_wrapper = buffer.get_buffer_wrapper(
+                &condensate_pipe_layer_base::get_density_confidence_wrapper);
+            std::vector<double>& conf = confidence_buffer_wrapper.current().vars;
+            std::fill(conf.begin(), conf.end(), boundaries.density.confidence);
         }
-        double density_out = density_in; // Для простоты используем то же значение на выходе
-            
-        solver_rho.step(dt, density_in, density_out);
+        else {
+            // считаем партии с помощью QUICKEST-ULTIMATE
+            pde_solvers::pipe_advection_pde_t advection_model(pde_solvers::circle_area(pipe.wall.diameter),
+                volumetric_flow, pipe.profile.coordinates);
+            {
+                auto buffer_wrapper = buffer.get_buffer_wrapper(
+                    &condensate_pipe_layer_base::get_density_wrapper);
+                pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
+                solver.step(dt, boundaries.density.value, boundaries.density.value);
+            }
+            {
+                auto buffer_wrapper = buffer.get_buffer_wrapper(
+                    &condensate_pipe_layer_base::get_density_confidence_wrapper);
+                pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
+                solver.step(dt, boundaries.density.confidence, boundaries.density.confidence);
+            }
+        }
+    }
+
+    ///// @brief Получает эндогенные значения на выходе трубы
+    ///// @param volumetric_flow Объемный расход
+    ///// @return Эндогенные значения на выходе
+    pde_solvers::endogenous_values_t get_endogenous_output(double volumetric_flow) const override
+    {
+        auto get_boundary_value =
+            [&](const pde_solvers::confident_layer_t& layer)
+            {
+                pde_solvers::endogenous_confident_value_t boundary_parameter;
+                if (volumetric_flow >= 0) {
+                    boundary_parameter.value = layer.value.back();
+                    boundary_parameter.confidence =
+                        pde_solvers::discriminate_confidence_level(layer.confidence.back());
+                }
+                else {
+                    boundary_parameter.value = layer.value.front();
+                    boundary_parameter.confidence =
+                        pde_solvers::discriminate_confidence_level(layer.confidence.front());
+                }
+                return boundary_parameter;
+            };
+
+        pde_solvers::endogenous_values_t result;
+
+        // Текущий расчетный слой
+        layer_type& current_layer = buffer.current();
+
+        result.density = get_boundary_value(current_layer.density);
+
+        return result;
     }
 
     /// @brief Геттер для текущего слоя

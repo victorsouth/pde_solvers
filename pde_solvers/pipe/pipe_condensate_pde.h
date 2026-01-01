@@ -8,6 +8,36 @@ namespace pde_solvers {
 struct condensate_pipe_properties_t : public pipe_properties_t {
     /// @brief Кинематическая вязкость, м²/с
     double kinematic_viscosity{1e-7};
+
+    condensate_pipe_properties_t() = default;
+
+    /// @brief Объект со значениями по умолчанию
+    static condensate_pipe_properties_t default_values() {
+        condensate_pipe_properties_t result;
+        double length = 5000;
+        double dx = 200;
+        result.profile.coordinates =
+            pde_solvers::pipe_profile_uniform::generate_uniform_grid(0.0, length, dx);
+        result.wall.diameter = 1;       
+        return result;
+    }
+
+    condensate_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
+    {
+        *this = condensate_pipe_properties_t::default_values();
+        profile.coordinates = { json_data.x_start, json_data.x_end };
+        wall.diameter = json_data.diameter;
+    }
+
+    // TODO: Метод одинаков для всех профилей. Убрать дублирование
+    void make_uniform_profile(double desired_dx) {
+        profile.coordinates = pde_solvers::pipe_profile_uniform::generate_uniform_grid(
+            profile.coordinates.front(), profile.get_length(), desired_dx
+        );
+
+        // TODO: заменить на фактический профиль
+        profile.heights = std::vector<double>(profile.get_point_count());
+    }
 };
 
 /// @brief Уравнение сохранения импульса для конденсатопровода с учетом движения партий
