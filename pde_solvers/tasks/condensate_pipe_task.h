@@ -36,150 +36,18 @@ struct condensate_pipe_layer_base {
     {
     }
 
-    /// @brief Подготовка плотности для расчета методом конечных объемов 
-    /// @param layer Слой
-    /// @return Обертка над составным слоем
+    /// @brief Подготовка обертки над слоем плотности для расчета методом конечных объемов 
     static quickest_ultimate_fv_wrapper<1> get_density_wrapper(condensate_pipe_layer_base& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.density.value, layer.specific);
     }
 
-    /// @brief Подготовка достоверности плотности для расчета методом конечных объемов 
-    /// @param layer Слой
-    /// @return Обертка над составным слоем
+    /// @brief Подготовка обертки над слоем достоверности плотности для расчета методом конечных объемов 
     static quickest_ultimate_fv_wrapper<1> get_density_confidence_wrapper(condensate_pipe_layer_base& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.density.confidence, layer.specific);
     }
 
-};
-
-/// @brief Расчетный слой для квазистационарного расчета при переменной плотности
-using condensate_pipe_layer = hydraulic_pipe_layer<condensate_pipe_layer_base>;
-
-
-
-/// @brief Структура, содержащая в себе краевые условия задачи PQ
-struct condensate_pipe_PQ_task_boundaries_t {
-    /// @brief Изначальный объемный расход
-    double volumetric_flow;
-    /// @brief Изначальное давление на входе
-    double pressure_in;
-    /// @brief Изначальная плотность на входе
-    double density;
-    /// @brief Создание структуры со значениями по умолчанию
-    static condensate_pipe_PQ_task_boundaries_t default_values() {
-        condensate_pipe_PQ_task_boundaries_t result;
-        result.volumetric_flow = 0.2;
-        result.pressure_in = 6e6;
-        result.density = 850;
-        return result;
-    }
-};
-
-
-class condensate_pipe_PQ_task_t {
-public:
-    /// @brief Тип слоя
-    using layer_type = condensate_pipe_layer;
-    /// @brief Тип буфера
-    using buffer_type = ring_buffer_t<layer_type>;
-    /// @brief Тип граничных условий
-    using boundaries_type = condensate_pipe_PQ_task_boundaries_t;
-private:
-    // Модель трубы
-    condensate_pipe_properties_t pipe;
-    // Создаётся буфер, тип слоя которого определяется в зависимости от типа солвера
-    buffer_type buffer;
-public:
-    /// @brief Конструктор
-    /// @param pipe Модель трубопровода
-    condensate_pipe_PQ_task_t(const condensate_pipe_properties_t& pipe)
-        : pipe(pipe)
-        , buffer(2, pipe.profile.get_point_count())
-    {
-    }
-
-
-    /// @brief Начальный стационарный расчёт. 
-    /// Ставим по всей трубе реологию из initial_conditions, делаем гидравлический расчет
-    /// @param initial_conditions Начальные условия
-    void solve(const boundaries_type& initial_conditions)
-    {
-        // Количество точек
-        size_t n = pipe.profile.get_point_count();
-
-        // Инициализация реологии
-        auto& current = buffer.current();
-
-        // Инициализация начального профиля плотности (не важно, ячейки или точки)
-        for (double& density : current.density.value) {
-            density = initial_conditions.density;
-        }
-
-        current.std_volumetric_flow = initial_conditions.volumetric_flow;
-
-        //// Начальный гидравлический расчет
-        calc_pressure_layer(initial_conditions);
-    }
-private:
-    /// @brief Проводится расчёт шага движения партии
-    /// @param dt Временной шаг моделирования
-    /// @param boundaries Краевые условия
-    void make_rheology_step(double dt, const boundaries_type& boundaries) {
-        size_t n = pipe.profile.get_point_count();
-        std::vector<double>Q_profile(n, boundaries.volumetric_flow); // задаем по трубе новый расход из временного ряда
-
-        advance(); // Сдвигаем текущий и предыдущий слои
-
-        buffer.current().std_volumetric_flow = boundaries.volumetric_flow; 
-
-        // считаем партии с помощью QUICKEST-ULTIMATE
-        PipeQAdvection advection_model(pipe, Q_profile);
-
-        // Шаг по плотности
-        auto density_wrapper = buffer.get_buffer_wrapper(
-            &condensate_pipe_layer::get_density_wrapper);
-        quickest_ultimate_fv_solver solver_rho(advection_model, density_wrapper);
-        solver_rho.step(dt, boundaries.density, boundaries.density);
-    }
-
-    /// @brief Рассчёт профиля давления методом Эйлера (задача PQ)
-    /// @param boundaries Краевые условия
-    void calc_pressure_layer(const boundaries_type& boundaries) {
-
-        auto& current = buffer.current();
-
-        std::vector<double>& p_profile = current.pressure;
-        int euler_direction = +1; // Задаем направление для Эйлера
-
-        condensate_pipe_PQ_parties_t pipeModel(pipe, current.density.value, boundaries.volumetric_flow, euler_direction);
-        solve_euler<1>(pipeModel, euler_direction, boundaries.pressure_in, &p_profile);
-    }
-public:
-    /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
-    /// Функция делат сдвиг буфера (advance) так, что buffer.current после вызова содержит свежерасчитанный слой
-    /// @param dt временной шаг моделирования
-    /// @param boundaries Краевые условие
-    void step(double dt, const boundaries_type& boundaries) {
-        make_rheology_step(dt, boundaries);
-        calc_pressure_layer(boundaries);
-    }
-
-    /// @brief Сдвиг текущего слоя в буфере
-    void advance()
-    {
-        buffer.advance(+1);
-    }
-    /// @brief Возвращает ссылку на буфер
-    auto& get_buffer()
-    {
-        return buffer;
-    }
-    /// @brief Геттер для текущего слоя  
-    condensate_pipe_layer& get_current_layer() {
-        return buffer.current();
-    }
 };
 
 /// @brief Структура, содержащая в себе краевые условия задачи PP
@@ -201,11 +69,15 @@ struct condensate_pipe_PP_task_boundaries_t {
 };
 
 
+/// @brief Расчетный слой для квазистационарного расчета при переменной плотности
+using condensate_pipe_layer = hydraulic_pipe_layer<condensate_pipe_layer_base>;
+
 /// @brief класс для нахождения расхода Q для задачи PP с помощью метода Ньютона
 /// @tparam boundaries_type класс граничных условий
 /// @tparam layer_type класс уровней в buffer
 template <typename BoundariesType, typename LayerType>
 class solve_condensate_PP : public fixed_system_t<1> {
+    /// @brief Тип переменной для системы уравнений
     using fixed_system_t<1>::var_type;
 private:
     /// @brief слой расчета
@@ -216,6 +88,10 @@ private:
     const condensate_pipe_properties_t& pipe;
 
 public:
+    /// @brief Конструктор класса для решения задачи PP методом Ньютона
+    /// @param pipe Свойства конденсатопровода
+    /// @param bound Граничные условия задачи PP
+    /// @param current_layer Текущий расчетный слой
     solve_condensate_PP(const condensate_pipe_properties_t& pipe, const BoundariesType& bound, LayerType& current_layer)
         : pipe(pipe)
         , bound(bound)
@@ -247,116 +123,6 @@ public:
 };
 
 
-class condensate_pipe_PP_task_t {
-public:
-    /// @brief Тип слоя
-    using layer_type = condensate_pipe_layer;
-    /// @brief Тип буфера
-    using buffer_type = ring_buffer_t<layer_type>;
-    /// @brief Тип граничных условий
-    using boundaries_type = condensate_pipe_PP_task_boundaries_t;
-private:
-    // Модель трубы
-    condensate_pipe_properties_t pipe;
-    // Создаётся буфер, тип слоя которого определяется в зависимости от типа солвера
-    buffer_type buffer;
-
-
-public:
-    /// @brief Конструктор
-    /// @param pipe Модель трубопровода
-    condensate_pipe_PP_task_t(const condensate_pipe_properties_t& pipe)
-        : pipe(pipe)
-        , buffer(2, pipe.profile.get_point_count())
-    {
-    }
-
-
-    /// @brief Начальный стационарный расчёт. 
-    /// Ставим по всей трубе реологию из initial_conditions, делаем гидравлический расчет
-    /// @param initial_conditions Начальные условия
-    /// @param pressure_initial Начальное значение давления для метода Ньютона
-    void solve(const boundaries_type& initial_conditions, double volumetric_flow_initial = 0.2)
-    {
-        // Количество точек
-        size_t n = pipe.profile.get_point_count();
-
-        // Инициализация реологии
-        auto& current = buffer.current();
-
-        // Инициализация начального профиля плотности (не важно, ячейки или точки)
-        for (double& density : current.density.value) {
-            density = initial_conditions.density;
-        }
-
-        //// Начальный гидравлический расчет
-        calc_pressure_layer(initial_conditions, volumetric_flow_initial);
-    }
-private:
-    /// @brief Проводится расчёт шага движения партии
-    /// @param dt Временной шаг моделирования
-    /// @param boundaries Краевые условия
-    void make_rheology_step(double dt, const boundaries_type& boundaries) {
-        size_t n = pipe.profile.get_point_count();
-        std::vector<double>Q_profile(n, buffer.current().std_volumetric_flow); // задаем по трубе новый расход из временного ряда
-
-        advance(); // Сдвигаем текущий и предыдущий слои
-
-        // считаем партии с помощью QUICKEST-ULTIMATE
-        PipeQAdvection advection_model(pipe, Q_profile);
-
-        // Шаг по плотности
-        auto density_wrapper = buffer.get_buffer_wrapper(
-            &condensate_pipe_layer::get_density_wrapper);
-        quickest_ultimate_fv_solver solver_rho(advection_model, density_wrapper);
-        solver_rho.step(dt, boundaries.density, boundaries.density);
-    }
-
-    /// @brief Рассчёт профиля давления методом Ньютона над Эйлером (задача PP)
-    /// @param boundaries Краевые условия
-    /// @param pressure_initial Начальное значение расхода для метода Ньютона
-    void calc_pressure_layer(const boundaries_type& boundaries, double volumetric_flow_initial) {
-
-        auto& current = buffer.current();
-
-        // создаем объект класса для расчета невязки при решении PP задачи методом Ньютона
-        solve_condensate_PP<boundaries_type, layer_type> test = solve_condensate_PP(pipe, boundaries, current);
-        fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
-        parameters.residuals_norm = 0.1; // погрешность 0.1 Па
-        parameters.argument_increment_norm = 0;
-        parameters.residuals_norm_allow_early_exit = true;
-        // Создание структуры для записи результатов расчета
-        fixed_solver_result_t<1> result;
-        fixed_newton_raphson<1>::solve_dense(test, { volumetric_flow_initial }, parameters, &result);
-        current.std_volumetric_flow = result.argument;
-    }
-public:
-    /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
-    /// Функция делат сдвиг буфера (advance) так, что buffer.current после вызова содержит свежерасчитанный слой
-    /// @param dt временной шаг моделирования
-    /// @param boundaries Краевые условие
-    void step(double dt, const boundaries_type& boundaries) {
-        make_rheology_step(dt, boundaries);
-        // берем давление на выходе из предыдущего слоя как начальное для нового расчета
-        double volumetric_flow_initial = buffer.previous().std_volumetric_flow;
-        calc_pressure_layer(boundaries, volumetric_flow_initial);
-    }
-
-    /// @brief Сдвиг текущего слоя в буфере
-    void advance()
-    {
-        buffer.advance(+1);
-    }
-    /// @brief Возвращает ссылку на буфер
-    auto& get_buffer()
-    {
-        return buffer;
-    }
-    /// @brief Геттер для текущего слоя  
-    condensate_pipe_layer& get_current_layer() {
-        return buffer.current();
-    }
-};
 
 /// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода
 class iso_nonbarotropic_pipe_solver_t : public pipe_solver_interface_t {
@@ -410,29 +176,29 @@ public:
         boundaries.pressure_out = pressure_output;
         boundaries.density = current.density.value[0];
 
-        // TODO: задавать начальное приближение расхода
+        // TODO: задавать начальное приближение расхода (брать из настроек солвера?)
         double volumetric_flow_initial = 0.2;
 
         // Создаем объект класса для расчета невязки при решении PP задачи методом Ньютона
         solve_condensate_PP<condensate_pipe_PP_task_boundaries_t, layer_type> solver_pp(
             pipe, boundaries, current);
-            
+
         fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
         parameters.residuals_norm = 0.1; // погрешность 0.1 Па
         parameters.argument_increment_norm = 0;
         parameters.residuals_norm_allow_early_exit = true;
-            
+
         // Создание структуры для записи результатов расчета
         fixed_solver_result_t<1> result;
         fixed_newton_raphson<1>::solve_dense(solver_pp, { volumetric_flow_initial }, parameters, &result);
-            
+
         // Обновляем расход в текущем слое
         current.std_volumetric_flow = result.argument;
-            
+
         return result.argument;
     }
 
-    /// @brief Решение гидравлической задачи QP (заданы расход и давление на выходе, найти давление на входе)
+    /// @brief Решение гидравлической задачи QP
     virtual double hydro_solve_QP(double volumetric_flow, double pressure_output) override {
         auto& current = buffer.current();
 
@@ -443,7 +209,7 @@ public:
 
         // Рассчитываем профиль давления методом Эйлера в обратном направлении (от выхода ко входу)
         std::vector<double>& p_profile = current.pressure;
-        int euler_direction = -1; // Задаем обратное направление для Эйлера (от выхода ко входу)
+        int euler_direction = -1;
         condensate_pipe_PQ_parties_t pipeModel(pipe, current.density.value, volumetric_flow, euler_direction);
         solve_euler<1>(pipeModel, euler_direction, pressure_output, &p_profile);
 
@@ -454,7 +220,7 @@ public:
         return p_profile.front();
     }
 
-    /// @brief Решение гидравлической задачи PQ (заданы расход и давление на входе, найти давление на выходе)
+    /// @brief Решение гидравлической задачи PQ
     /// @return Давление на выходе, Па
     virtual double hydro_solve_PQ(double volumetric_flow, double pressure_in) override {
         auto& current = buffer.current();
@@ -478,32 +244,29 @@ public:
     }
 
     /// @brief Вычисление якобиана для задачи PP
-    /// Использует формулу переворота производной: dQ/dP = 1/(dP/dQ)
-    /// @param pressure_input Давление на входе, Па
-    /// @param pressure_output Давление на выходе, Па
     /// @return Массив из двух элементов: [dQ/dP_in, dQ/dP_out]
     virtual std::array<double, 2> hydro_solve_PP_jacobian(double pressure_input, double pressure_output) override {
         // Вычисляем базовое решение - расход при заданных давлениях
         double Q_base = hydro_solve_PP(pressure_input, pressure_output);
-            
+
         // Малое приращение для численного дифференцирования (0.1% от расхода)
         const double eps = std::max(1e-6, std::abs(Q_base) * 1e-3);
-            
+
         // Вычисляем производную перепада давления по расходу dP/dQ
         // Вычисляем давление на выходе при базовом и увеличенном расходе
         double P_out_base = hydro_solve_PQ(Q_base, pressure_input);
         double P_out_plus = hydro_solve_PQ(Q_base + eps, pressure_input);
-            
+
         // Производная давления на выходе по расходу: dP_out/dQ
         double dP_out_dQ = (P_out_plus - P_out_base) / eps;
-            
+
         // Производная перепада давления по расходу: dP/dQ = -dP_out/dQ
         double dP_dQ = -dP_out_dQ;
-            
+
         // Используем формулу переворота производной:
         double dQ_dP_in = 1.0 / dP_dQ;
         double dQ_dP_out = -1.0 / dP_dQ;
-            
+
         return { dQ_dP_in, dQ_dP_out };
     }
 
@@ -578,6 +341,215 @@ public:
         return buffer.current();
     }
 };
+
+
+/// @brief Структура, содержащая в себе краевые условия задачи PQ
+struct condensate_pipe_PQ_task_boundaries_t {
+    /// @brief Изначальный объемный расход
+    double volumetric_flow;
+    /// @brief Изначальное давление на входе
+    double pressure_in;
+    /// @brief Изначальная плотность на входе
+    double density;
+    /// @brief Создание структуры со значениями по умолчанию
+    static condensate_pipe_PQ_task_boundaries_t default_values() {
+        condensate_pipe_PQ_task_boundaries_t result;
+        result.volumetric_flow = 0.2;
+        result.pressure_in = 6e6;
+        result.density = 850;
+        return result;
+    }
+};
+
+/// @brief Квазистационарная задача PQ в условиях переменной плотности
+class condensate_pipe_PQ_task_t {
+public:
+    /// @brief Тип слоя
+    using layer_type = condensate_pipe_layer;
+    /// @brief Тип буфера
+    using buffer_type = ring_buffer_t<layer_type>;
+    /// @brief Тип граничных условий
+    using boundaries_type = condensate_pipe_PQ_task_boundaries_t;
+private:
+    // Модель трубы
+    condensate_pipe_properties_t pipe;
+    // Создаётся буфер, тип слоя которого определяется в зависимости от типа солвера
+    buffer_type buffer;
+public:
+    /// @brief Конструктор
+    /// @param pipe Модель трубопровода
+    condensate_pipe_PQ_task_t(const condensate_pipe_properties_t& pipe)
+        : pipe(pipe)
+        , buffer(2, pipe.profile.get_point_count())
+    {
+    }
+
+
+    /// @brief Начальный стационарный расчёт. 
+    /// Ставим по всей трубе реологию из initial_conditions, делаем гидравлический расчет
+    /// @param initial_conditions Начальные условия
+    void solve(const boundaries_type& initial_conditions)
+    {
+        // Количество точек
+        size_t n = pipe.profile.get_point_count();
+
+        // Инициализация реологии
+        auto& current = buffer.current();
+
+        // Инициализация начального профиля плотности (не важно, ячейки или точки)
+        for (double& density : current.density.value) {
+            density = initial_conditions.density;
+        }
+
+        current.std_volumetric_flow = initial_conditions.volumetric_flow;
+
+        //// Начальный гидравлический расчет
+        calc_pressure_layer(initial_conditions);
+    }
+private:
+    /// @brief Проводится расчёт шага движения партии
+    /// @param dt Временной шаг моделирования
+    /// @param boundaries Краевые условия
+    void make_rheology_step(double dt, const boundaries_type& boundaries) {
+        advance(); // Сдвигаем текущий и предыдущий слои
+
+        // Преобразуем граничные условия в формат endogenous_values_t
+        pde_solvers::endogenous_values_t endogenous_boundaries;
+        endogenous_boundaries.density.value = boundaries.density;
+        endogenous_boundaries.density.confidence = true;
+
+        iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
+        solver.transport_step(dt, boundaries.volumetric_flow, endogenous_boundaries);
+    }
+
+    /// @brief Рассчёт профиля давления методом Эйлера (задача PQ)
+    /// @param boundaries Краевые условия
+    void calc_pressure_layer(const boundaries_type& boundaries) {
+        iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
+        solver.hydro_solve_PQ(boundaries.volumetric_flow, boundaries.pressure_in);
+    }
+public:
+    /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
+    /// buffer.current после вызова содержит свежерасчитанный слой
+    /// @param dt временной шаг моделирования
+    /// @param boundaries Краевые условие
+    void step(double dt, const boundaries_type& boundaries) {
+        make_rheology_step(dt, boundaries);
+        calc_pressure_layer(boundaries);
+    }
+
+    /// @brief Сдвиг текущего слоя в буфере
+    void advance()
+    {
+        buffer.advance(+1);
+    }
+    /// @brief Возвращает ссылку на буфер
+    auto& get_buffer()
+    {
+        return buffer;
+    }
+    /// @brief Геттер для текущего слоя  
+    condensate_pipe_layer& get_current_layer() {
+        return buffer.current();
+    }
+};
+
+/// @brief Квазистационарная задача PP в условиях переменной плотности
+class condensate_pipe_PP_task_t {
+public:
+    /// @brief Тип слоя
+    using layer_type = condensate_pipe_layer;
+    /// @brief Тип буфера
+    using buffer_type = ring_buffer_t<layer_type>;
+    /// @brief Тип граничных условий
+    using boundaries_type = condensate_pipe_PP_task_boundaries_t;
+private:
+    // Модель трубы
+    condensate_pipe_properties_t pipe;
+    // Создаётся буфер, тип слоя которого определяется в зависимости от типа солвера
+    buffer_type buffer;
+
+public:
+    /// @brief Конструктор
+    /// @param pipe Модель трубопровода
+    condensate_pipe_PP_task_t(const condensate_pipe_properties_t& pipe)
+        : pipe(pipe)
+        , buffer(2, pipe.profile.get_point_count())
+    {
+    }
+
+
+    /// @brief Начальный стационарный расчёт. 
+    /// Ставим по всей трубе реологию из initial_conditions, делаем гидравлический расчет
+    /// @param initial_conditions Начальные условия
+    /// @param pressure_initial Начальное значение давления для метода Ньютона
+    void solve(const boundaries_type& initial_conditions, double volumetric_flow_initial = 0.2)
+    {
+        // Количество точек
+        size_t n = pipe.profile.get_point_count();
+
+        // Инициализация реологии
+        auto& current = buffer.current();
+        for (double& density : current.density.value) {
+            density = initial_conditions.density;
+        }
+
+        //// Начальный гидравлический расчет
+        calc_pressure_layer(initial_conditions, volumetric_flow_initial);
+    }
+private:
+    /// @brief Проводится расчёт шага движения партии
+    /// @param dt Временной шаг моделирования
+    /// @param boundaries Краевые условия
+    void make_rheology_step(double dt, const boundaries_type& boundaries) {
+        // Сохраняем расход из текущего слоя до advance()
+        double volumetric_flow = buffer.current().std_volumetric_flow;
+        
+        advance(); // Сдвигаем текущий и предыдущий слои
+
+        // Преобразуем граничные условия в формат endogenous_values_t
+        pde_solvers::endogenous_values_t endogenous_boundaries;
+        endogenous_boundaries.density.value = boundaries.density;
+        endogenous_boundaries.density.confidence = true;
+
+        iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
+        solver.transport_step(dt, volumetric_flow, endogenous_boundaries);
+    }
+
+    /// @brief Рассчёт профиля давления методом Ньютона над Эйлером (задача PP)
+    /// @param boundaries Краевые условия
+    /// @param volumetric_flow_initial Начальное значение расхода для метода Ньютона
+    void calc_pressure_layer(const boundaries_type& boundaries, double volumetric_flow_initial) {
+        iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
+        solver.hydro_solve_PP(boundaries.pressure_in, boundaries.pressure_out);
+    }
+public:
+    /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
+    /// buffer.current после вызова содержит свежерасчитанный слой
+    /// @param dt временной шаг моделирования
+    /// @param boundaries Краевые условие
+    void step(double dt, const boundaries_type& boundaries) {
+        make_rheology_step(dt, boundaries);
+        double volumetric_flow_initial = buffer.previous().std_volumetric_flow;
+        calc_pressure_layer(boundaries, volumetric_flow_initial);
+    }
+
+    /// @brief Сдвиг текущего слоя в буфере
+    void advance()
+    {
+        buffer.advance(+1);
+    }
+    /// @brief Возвращает ссылку на буфер
+    auto& get_buffer()
+    {
+        return buffer;
+    }
+    /// @brief Геттер для текущего слоя  
+    condensate_pipe_layer& get_current_layer() {
+        return buffer.current();
+    }
+};
+
 
 }
 

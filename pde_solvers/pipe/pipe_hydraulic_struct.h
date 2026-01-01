@@ -250,6 +250,7 @@ struct pipe_properties
 
 };
 
+/// @brief Тип свойств трубы с параметрами адаптации
 typedef pipe_properties<adaptation_parameters> pipe_properties_t;
 
 }

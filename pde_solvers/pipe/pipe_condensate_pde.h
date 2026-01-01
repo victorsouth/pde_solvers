@@ -9,6 +9,7 @@ struct condensate_pipe_properties_t : public pipe_properties_t {
     /// @brief Кинематическая вязкость, м²/с
     double kinematic_viscosity{1e-7};
 
+    /// @brief Конструктор по умолчанию
     condensate_pipe_properties_t() = default;
 
     /// @brief Объект со значениями по умолчанию
@@ -22,6 +23,8 @@ struct condensate_pipe_properties_t : public pipe_properties_t {
         return result;
     }
 
+    /// @brief Конструктор из JSON данных
+    /// @param json_data Данные о трубе в формате JSON
     condensate_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
     {
         *this = condensate_pipe_properties_t::default_values();
@@ -29,7 +32,9 @@ struct condensate_pipe_properties_t : public pipe_properties_t {
         wall.diameter = json_data.diameter;
     }
 
-    // TODO: Метод одинаков для всех профилей. Убрать дублирование
+    /// @brief Создает равномерный профиль трубы с заданным шагом
+    /// TODO: Метод одинаков для всех профилей. Убрать дублирование
+    /// @param desired_dx Желаемый шаг сетки, м
     void make_uniform_profile(double desired_dx) {
         profile.coordinates = pde_solvers::pipe_profile_uniform::generate_uniform_grid(
             profile.coordinates.front(), profile.get_length(), desired_dx
@@ -46,8 +51,11 @@ struct condensate_pipe_properties_t : public pipe_properties_t {
 class condensate_pipe_PQ_parties_t : public ode_t<1>
 {
 public:
+    /// @brief Тип коэффициентов уравнения
     using ode_t<1>::equation_coeffs_type;
+    /// @brief Тип правой части дифференциального уравнения
     using ode_t<1>::right_party_type;
+    /// @brief Тип переменной дифференциального уравнения
     using ode_t<1>::var_type;
 protected:
     /// @brief Профиль плотности вдоль трубы, кг/м³
