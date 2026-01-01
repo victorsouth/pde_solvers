@@ -338,7 +338,7 @@ public:
             }
             else {
                 // интерполяция правой части
-                size_t grida = static_cast<size_t>(grid_index + sgn(p));
+                size_t grida = static_cast<size_t>(grid_index + fixed_solvers::sgn(p));
                 size_t gridb = grid_index;
                 double rp1a = pde.getSourceTerm(grida, prev_values[grida]);
                 double rp1b = pde.getSourceTerm(gridb, prev_values[gridb]);
