@@ -70,6 +70,10 @@ struct pipe_profile_t {
     {
         return coordinates.size();
     }
+    /// @brief Возвращает координаты расчетной сетки трубы
+    const std::vector<double>& get_coordinates() const {
+        return coordinates;
+    }
     /// @brief Создает профиль с линейным уклоном по параметрам в начале и в конце
     /// @param segment_count 
     /// @param x_begin 
@@ -246,6 +250,7 @@ struct pipe_properties
 
 };
 
+/// @brief Тип свойств трубы с параметрами адаптации
 typedef pipe_properties<adaptation_parameters> pipe_properties_t;
 
 }
