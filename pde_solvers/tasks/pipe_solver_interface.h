@@ -29,7 +29,7 @@ public:
 };
 
 /// @brief Объединенный интерфейс для совмещенных солвером (умеют выполнять транспортный и гидравлический расчеты)
-class pipe_solver_interface_t
+class pipe_solver_hydrotransport_interface_t
     : public pipe_solver_hydro_interface_t
     , public pipe_solver_transport_interface_t
 {

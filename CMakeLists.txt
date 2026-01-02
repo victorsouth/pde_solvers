@@ -20,7 +20,7 @@ set(HEADERS_PIPE
     pde_solvers/pipe/oil.h
     pde_solvers/pipe/pipe_advection_solver.h
     pde_solvers/pipe/pipe_hydraulic_pde.h
-    pde_solvers/pipe/pipe_condensate_pde.h
+    pde_solvers/pipe/iso_nonbaro_impulse_pde.h
     pde_solvers/pipe/pipe_advection_pde.h
     pde_solvers/pipe/pipe_hydraulic_computations.h
     pde_solvers/pipe/pipe_hydraulic_struct.h

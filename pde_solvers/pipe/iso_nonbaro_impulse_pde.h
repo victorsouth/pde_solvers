@@ -5,16 +5,16 @@ namespace pde_solvers {
 
 /// @brief Свойства конденсатопровода
 /// Расширяет базовые свойства трубы добавлением кинематической вязкости
-struct condensate_pipe_properties_t : public pipe_properties_t {
+struct iso_nonbarotropic_pipe_properties_t : public pipe_properties_t {
     /// @brief Кинематическая вязкость, м²/с
     double kinematic_viscosity{1e-7};
 
     /// @brief Конструктор по умолчанию
-    condensate_pipe_properties_t() = default;
+    iso_nonbarotropic_pipe_properties_t() = default;
 
     /// @brief Объект со значениями по умолчанию
-    static condensate_pipe_properties_t default_values() {
-        condensate_pipe_properties_t result;
+    static iso_nonbarotropic_pipe_properties_t default_values() {
+        iso_nonbarotropic_pipe_properties_t result;
         double length = 5000;
         double dx = 200;
         result.profile.coordinates =
@@ -25,9 +25,9 @@ struct condensate_pipe_properties_t : public pipe_properties_t {
 
     /// @brief Конструктор из JSON данных
     /// @param json_data Данные о трубе в формате JSON
-    condensate_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
+    iso_nonbarotropic_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
     {
-        *this = condensate_pipe_properties_t::default_values();
+        *this = iso_nonbarotropic_pipe_properties_t::default_values();
         profile.coordinates = { json_data.x_start, json_data.x_end };
         wall.diameter = json_data.diameter;
     }
@@ -48,7 +48,7 @@ struct condensate_pipe_properties_t : public pipe_properties_t {
 /// @brief Уравнение сохранения импульса для конденсатопровода с учетом движения партий
 /// Используется для задач PQ (задан расход, найти профиль давления) и PP (заданы давления, найти расход методом Ньютона)
 /// Учитывает гидравлические потери на трение и влияние гравитации
-class condensate_pipe_PQ_parties_t : public ode_t<1>
+class iso_nonbaro_impulse_equation_t : public ode_t<1>
 {
 public:
     /// @brief Тип коэффициентов уравнения
@@ -61,7 +61,7 @@ protected:
     /// @brief Профиль плотности вдоль трубы, кг/м³
     const std::vector<double>& rho_profile;
     /// @brief Свойства конденсатопровода
-    const condensate_pipe_properties_t& pipe;
+    const iso_nonbarotropic_pipe_properties_t& pipe;
     /// @brief Объемный расход, м³/с
     const double flow;
     /// @brief Направление расчета по Эйлеру (+1 - от входа к выходу, -1 - от выхода ко входу)
@@ -72,7 +72,7 @@ public:
     /// @param rho_profile Профиль плотности
     /// @param flow Объемный расход
     /// @param solver_direction Направление расчета по Эйлеру, должно обязательно совпадать с параметром солвера Эйлера
-    condensate_pipe_PQ_parties_t(const condensate_pipe_properties_t& pipe,
+    iso_nonbaro_impulse_equation_t(const iso_nonbarotropic_pipe_properties_t& pipe,
         const std::vector<double>& rho_profile, 
         double flow,
         int solver_direction)

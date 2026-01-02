@@ -1,8 +1,8 @@
 #pragma once
 
 /// @brief Создает простую равномерную трубу для тестовых расчетов
-inline pde_solvers::condensate_pipe_properties_t create_test_pipe_for_PQ() {
-    pde_solvers::condensate_pipe_properties_t pipe;
+inline pde_solvers::iso_nonbarotropic_pipe_properties_t create_test_pipe_for_PQ() {
+    pde_solvers::iso_nonbarotropic_pipe_properties_t pipe;
     pde_solvers::pipe_profile_t profile;
     const size_t points_count = 10;
     const double length = 1000.0; // 1 км
@@ -34,9 +34,9 @@ TEST(CondensatePipeQPTask, MaintainsCorrectPressureProfile_WhenGivenInitialCondi
 
     //Arrange
     auto pipe = create_test_pipe_for_PQ();
-    pde_solvers::condensate_pipe_PQ_task_t task(pipe);
+    pde_solvers::iso_nonbarotropic_pipe_PQ_task_t task(pipe);
 
-    auto initial_conditions = pde_solvers::condensate_pipe_PQ_task_boundaries_t::default_values();
+    auto initial_conditions = pde_solvers::iso_nonbarotropic_pipe_PQ_task_boundaries_t::default_values();
     initial_conditions.volumetric_flow = 0.3; // м³/с
     initial_conditions.pressure_in = 5e6; // 5 МПа
     initial_conditions.density = 800.0; // кг/м³
@@ -77,9 +77,9 @@ TEST(CondensatePipeQPTask, MaintainsCorrectPressureProfile_WhenGivenInitialCondi
 TEST(CondensatePipeQPTask, MaintainsPressureStability_OverMultipleTimeSteps) {
     //Arrange
     auto pipe = create_test_pipe_for_PQ();
-    pde_solvers::condensate_pipe_PQ_task_t task(pipe);
+    pde_solvers::iso_nonbarotropic_pipe_PQ_task_t task(pipe);
 
-    auto initial_conditions = pde_solvers::condensate_pipe_PQ_task_boundaries_t::default_values();
+    auto initial_conditions = pde_solvers::iso_nonbarotropic_pipe_PQ_task_boundaries_t::default_values();
     task.solve(initial_conditions);
 
     // Выполняем много шагов и проверяем стабильность

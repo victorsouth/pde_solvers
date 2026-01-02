@@ -23,35 +23,39 @@ struct hydraulic_pipe_layer : BaseEndogenousLayer {
 };
 
 /// @brief Профиль эндогенных параметров для конденсатопровода (без температуры и ПТП)
-struct condensate_pipe_layer_base {
+struct iso_nonbarotropic_pipe_endogenious_layer_t {
     /// @brief Профиль плотности с достоверностью
     confident_layer_t density;
     /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
     /// @brief Инициализация профилей
     /// @param point_count Количество точек
-    condensate_pipe_layer_base(size_t point_count)
+    iso_nonbarotropic_pipe_endogenious_layer_t(size_t point_count)
         : density(point_count, 850.0)
         , specific(point_count)
     {
     }
 
     /// @brief Подготовка обертки над слоем плотности для расчета методом конечных объемов 
-    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(condensate_pipe_layer_base& layer)
+    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(iso_nonbarotropic_pipe_endogenious_layer_t& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.density.value, layer.specific);
     }
 
     /// @brief Подготовка обертки над слоем достоверности плотности для расчета методом конечных объемов 
-    static quickest_ultimate_fv_wrapper<1> get_density_confidence_wrapper(condensate_pipe_layer_base& layer)
+    static quickest_ultimate_fv_wrapper<1> get_density_confidence_wrapper(iso_nonbarotropic_pipe_endogenious_layer_t& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.density.confidence, layer.specific);
     }
 
 };
 
+/// @brief Расчетный слой для квазистационарного расчета при переменной плотности
+using iso_nonbarotropic_pipe_layer_t = hydraulic_pipe_layer<iso_nonbarotropic_pipe_endogenious_layer_t>;
+
+
 /// @brief Структура, содержащая в себе краевые условия задачи PP
-struct condensate_pipe_PP_task_boundaries_t {
+struct iso_nonbarotropic_pipe_PP_task_boundaries_t {
     /// @brief Изначальное давление на входе
     double pressure_in;
     /// @brief Изначальное давление на выходе
@@ -59,8 +63,8 @@ struct condensate_pipe_PP_task_boundaries_t {
     /// @brief Изначальная плотность на входе
     double density;
     /// @brief Создание структуры со значениями по умолчанию
-    static condensate_pipe_PP_task_boundaries_t default_values() {
-        condensate_pipe_PP_task_boundaries_t result;
+    static iso_nonbarotropic_pipe_PP_task_boundaries_t default_values() {
+        iso_nonbarotropic_pipe_PP_task_boundaries_t result;
         result.pressure_out = 0.6e6;
         result.pressure_in = 6e6;
         result.density = 850;
@@ -69,8 +73,6 @@ struct condensate_pipe_PP_task_boundaries_t {
 };
 
 
-/// @brief Расчетный слой для квазистационарного расчета при переменной плотности
-using condensate_pipe_layer = hydraulic_pipe_layer<condensate_pipe_layer_base>;
 
 /// @brief класс для нахождения расхода Q для задачи PP с помощью метода Ньютона
 /// @tparam boundaries_type класс граничных условий
@@ -85,14 +87,14 @@ private:
     /// @brief ГУ
     const BoundariesType& bound;
     /// @brief свойства трубы
-    const condensate_pipe_properties_t& pipe;
+    const iso_nonbarotropic_pipe_properties_t& pipe;
 
 public:
     /// @brief Конструктор класса для решения задачи PP методом Ньютона
     /// @param pipe Свойства конденсатопровода
     /// @param bound Граничные условия задачи PP
     /// @param current_layer Текущий расчетный слой
-    solve_condensate_PP(const condensate_pipe_properties_t& pipe, const BoundariesType& bound, LayerType& current_layer)
+    solve_condensate_PP(const iso_nonbarotropic_pipe_properties_t& pipe, const BoundariesType& bound, LayerType& current_layer)
         : pipe(pipe)
         , bound(bound)
         , current_layer(current_layer)
@@ -107,7 +109,7 @@ public:
 
         std::vector<double>& p_profile = current.pressure;
         int euler_direction = +1; // Задаем направление для Эйлера
-        condensate_pipe_PQ_parties_t pipeModel(pipe, current.density.value, x, euler_direction);
+        iso_nonbaro_impulse_equation_t pipeModel(pipe, current.density.value, x, euler_direction);
         solve_euler<1>(pipeModel, euler_direction, bound.pressure_in, &p_profile);
 
         return p_profile.back() - bound.pressure_out;
@@ -125,25 +127,25 @@ public:
 
 
 /// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода
-class iso_nonbarotropic_pipe_solver_t : public pipe_solver_interface_t {
+class iso_nonbarotropic_pipe_solver_t : public pipe_solver_hydrotransport_interface_t {
 public:
     /// @brief Тип слоя
-    using layer_type = condensate_pipe_layer;
+    using layer_type = iso_nonbarotropic_pipe_layer_t;
     /// @brief Тип буфера
     using buffer_type = ring_buffer_t<layer_type>;
     /// @brief Тип параметров трубы
-    using pipe_parameters_type = condensate_pipe_properties_t;
+    using pipe_parameters_type = iso_nonbarotropic_pipe_properties_t;
 
 private:
     /// @brief Ссылка на свойства конденсатопровода
-    const condensate_pipe_properties_t& pipe;
+    const iso_nonbarotropic_pipe_properties_t& pipe;
     /// @brief Ссылка на буфер слоев
     buffer_type& buffer;
 
 public:
     /// @brief Фиктивный констуктор для совместмости с селектором рассчитываемых свойств
     iso_nonbarotropic_pipe_solver_t(
-        const condensate_pipe_properties_t& pipe,
+        const iso_nonbarotropic_pipe_properties_t& pipe,
         buffer_type& buffer,
         const pde_solvers::endogenous_selector_t& endogenous_selector)
         : iso_nonbarotropic_pipe_solver_t(pipe, buffer)
@@ -154,7 +156,7 @@ public:
     /// @param pipe Ссылка на свойства конденсатопровода
     /// @param buffer Ссылка на буфер слоев
     iso_nonbarotropic_pipe_solver_t(
-        const condensate_pipe_properties_t& pipe,
+        const iso_nonbarotropic_pipe_properties_t& pipe,
         buffer_type& buffer)
         : pipe(pipe)
         , buffer(buffer)
@@ -171,7 +173,7 @@ public:
         }
 
         // Создаем граничные условия для задачи PP
-        condensate_pipe_PP_task_boundaries_t boundaries;
+        iso_nonbarotropic_pipe_PP_task_boundaries_t boundaries;
         boundaries.pressure_in = pressure_input;
         boundaries.pressure_out = pressure_output;
         boundaries.density = current.density.value[0];
@@ -180,7 +182,7 @@ public:
         double volumetric_flow_initial = 0.2;
 
         // Создаем объект класса для расчета невязки при решении PP задачи методом Ньютона
-        solve_condensate_PP<condensate_pipe_PP_task_boundaries_t, layer_type> solver_pp(
+        solve_condensate_PP<iso_nonbarotropic_pipe_PP_task_boundaries_t, layer_type> solver_pp(
             pipe, boundaries, current);
 
         fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
@@ -210,7 +212,7 @@ public:
         // Рассчитываем профиль давления методом Эйлера в обратном направлении (от выхода ко входу)
         std::vector<double>& p_profile = current.pressure;
         int euler_direction = -1;
-        condensate_pipe_PQ_parties_t pipeModel(pipe, current.density.value, volumetric_flow, euler_direction);
+        iso_nonbaro_impulse_equation_t pipeModel(pipe, current.density.value, volumetric_flow, euler_direction);
         solve_euler<1>(pipeModel, euler_direction, pressure_output, &p_profile);
 
         // Обновляем расход в текущем слое
@@ -233,7 +235,7 @@ public:
         // Рассчитываем профиль давления методом Эйлера
         std::vector<double>& p_profile = current.pressure;
         int euler_direction = +1; // Задаем направление для Эйлера
-        condensate_pipe_PQ_parties_t pipeModel(pipe, current.density.value, volumetric_flow, euler_direction);
+        iso_nonbaro_impulse_equation_t pipeModel(pipe, current.density.value, volumetric_flow, euler_direction);
         solve_euler<1>(pipeModel, euler_direction, pressure_in, &p_profile);
 
         // Обновляем расход в текущем слое
@@ -276,12 +278,12 @@ public:
 
         if (std::isinf(dt)) {
             auto value_buffer_wrapper = buffer.get_buffer_wrapper(
-                &condensate_pipe_layer_base::get_density_wrapper);
+                &iso_nonbarotropic_pipe_endogenious_layer_t::get_density_wrapper);
             std::vector<double>& val = value_buffer_wrapper.current().vars;
             std::fill(val.begin(), val.end(), boundaries.density.value);
 
             auto confidence_buffer_wrapper = buffer.get_buffer_wrapper(
-                &condensate_pipe_layer_base::get_density_confidence_wrapper);
+                &iso_nonbarotropic_pipe_endogenious_layer_t::get_density_confidence_wrapper);
             std::vector<double>& conf = confidence_buffer_wrapper.current().vars;
             std::fill(conf.begin(), conf.end(), boundaries.density.confidence);
         }
@@ -291,13 +293,13 @@ public:
                 volumetric_flow, pipe.profile.coordinates);
             {
                 auto buffer_wrapper = buffer.get_buffer_wrapper(
-                    &condensate_pipe_layer_base::get_density_wrapper);
+                    &iso_nonbarotropic_pipe_endogenious_layer_t::get_density_wrapper);
                 pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
                 solver.step(dt, boundaries.density.value, boundaries.density.value);
             }
             {
                 auto buffer_wrapper = buffer.get_buffer_wrapper(
-                    &condensate_pipe_layer_base::get_density_confidence_wrapper);
+                    &iso_nonbarotropic_pipe_endogenious_layer_t::get_density_confidence_wrapper);
                 pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
                 solver.step(dt, boundaries.density.confidence, boundaries.density.confidence);
             }
@@ -337,14 +339,14 @@ public:
     }
 
     /// @brief Геттер для текущего слоя
-    condensate_pipe_layer& get_current_layer() {
+    iso_nonbarotropic_pipe_layer_t& get_current_layer() {
         return buffer.current();
     }
 };
 
 
 /// @brief Структура, содержащая в себе краевые условия задачи PQ
-struct condensate_pipe_PQ_task_boundaries_t {
+struct iso_nonbarotropic_pipe_PQ_task_boundaries_t {
     /// @brief Изначальный объемный расход
     double volumetric_flow;
     /// @brief Изначальное давление на входе
@@ -352,8 +354,8 @@ struct condensate_pipe_PQ_task_boundaries_t {
     /// @brief Изначальная плотность на входе
     double density;
     /// @brief Создание структуры со значениями по умолчанию
-    static condensate_pipe_PQ_task_boundaries_t default_values() {
-        condensate_pipe_PQ_task_boundaries_t result;
+    static iso_nonbarotropic_pipe_PQ_task_boundaries_t default_values() {
+        iso_nonbarotropic_pipe_PQ_task_boundaries_t result;
         result.volumetric_flow = 0.2;
         result.pressure_in = 6e6;
         result.density = 850;
@@ -362,23 +364,23 @@ struct condensate_pipe_PQ_task_boundaries_t {
 };
 
 /// @brief Квазистационарная задача PQ в условиях переменной плотности
-class condensate_pipe_PQ_task_t {
+class iso_nonbarotropic_pipe_PQ_task_t {
 public:
     /// @brief Тип слоя
-    using layer_type = condensate_pipe_layer;
+    using layer_type = iso_nonbarotropic_pipe_layer_t;
     /// @brief Тип буфера
     using buffer_type = ring_buffer_t<layer_type>;
     /// @brief Тип граничных условий
-    using boundaries_type = condensate_pipe_PQ_task_boundaries_t;
+    using boundaries_type = iso_nonbarotropic_pipe_PQ_task_boundaries_t;
 private:
     // Модель трубы
-    condensate_pipe_properties_t pipe;
+    iso_nonbarotropic_pipe_properties_t pipe;
     // Создаётся буфер, тип слоя которого определяется в зависимости от типа солвера
     buffer_type buffer;
 public:
     /// @brief Конструктор
     /// @param pipe Модель трубопровода
-    condensate_pipe_PQ_task_t(const condensate_pipe_properties_t& pipe)
+    iso_nonbarotropic_pipe_PQ_task_t(const iso_nonbarotropic_pipe_properties_t& pipe)
         : pipe(pipe)
         , buffer(2, pipe.profile.get_point_count())
     {
@@ -449,30 +451,30 @@ public:
         return buffer;
     }
     /// @brief Геттер для текущего слоя  
-    condensate_pipe_layer& get_current_layer() {
+    iso_nonbarotropic_pipe_layer_t& get_current_layer() {
         return buffer.current();
     }
 };
 
 /// @brief Квазистационарная задача PP в условиях переменной плотности
-class condensate_pipe_PP_task_t {
+class iso_nonbarotropic_pipe_PP_task_t {
 public:
     /// @brief Тип слоя
-    using layer_type = condensate_pipe_layer;
+    using layer_type = iso_nonbarotropic_pipe_layer_t;
     /// @brief Тип буфера
     using buffer_type = ring_buffer_t<layer_type>;
     /// @brief Тип граничных условий
-    using boundaries_type = condensate_pipe_PP_task_boundaries_t;
+    using boundaries_type = iso_nonbarotropic_pipe_PP_task_boundaries_t;
 private:
     // Модель трубы
-    condensate_pipe_properties_t pipe;
+    iso_nonbarotropic_pipe_properties_t pipe;
     // Создаётся буфер, тип слоя которого определяется в зависимости от типа солвера
     buffer_type buffer;
 
 public:
     /// @brief Конструктор
     /// @param pipe Модель трубопровода
-    condensate_pipe_PP_task_t(const condensate_pipe_properties_t& pipe)
+    iso_nonbarotropic_pipe_PP_task_t(const iso_nonbarotropic_pipe_properties_t& pipe)
         : pipe(pipe)
         , buffer(2, pipe.profile.get_point_count())
     {
@@ -545,7 +547,7 @@ public:
         return buffer;
     }
     /// @brief Геттер для текущего слоя  
-    condensate_pipe_layer& get_current_layer() {
+    iso_nonbarotropic_pipe_layer_t& get_current_layer() {
         return buffer.current();
     }
 };
