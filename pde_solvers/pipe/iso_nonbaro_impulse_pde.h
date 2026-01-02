@@ -5,25 +5,63 @@ namespace pde_solvers {
 
 /// @brief Свойства конденсатопровода
 /// Расширяет базовые свойства трубы добавлением кинематической вязкости
-struct condensate_pipe_properties_t : public pipe_properties_t {
+struct iso_nonbarotropic_pipe_properties_t : public pipe_properties_t {
     /// @brief Кинематическая вязкость, м²/с
     double kinematic_viscosity{1e-7};
+
+    /// @brief Конструктор по умолчанию
+    iso_nonbarotropic_pipe_properties_t() = default;
+
+    /// @brief Объект со значениями по умолчанию
+    static iso_nonbarotropic_pipe_properties_t default_values() {
+        iso_nonbarotropic_pipe_properties_t result;
+        double length = 5000;
+        double dx = 200;
+        result.profile.coordinates =
+            pde_solvers::pipe_profile_uniform::generate_uniform_grid(0.0, length, dx);
+        result.wall.diameter = 1;       
+        return result;
+    }
+
+    /// @brief Конструктор из JSON данных
+    /// @param json_data Данные о трубе в формате JSON
+    iso_nonbarotropic_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
+    {
+        *this = iso_nonbarotropic_pipe_properties_t::default_values();
+        profile.coordinates = { json_data.x_start, json_data.x_end };
+        wall.diameter = json_data.diameter;
+    }
+
+    /// @brief Создает равномерный профиль трубы с заданным шагом
+    /// TODO: Метод одинаков для всех профилей. Убрать дублирование
+    /// @param desired_dx Желаемый шаг сетки, м
+    void make_uniform_profile(double desired_dx) {
+        profile.coordinates = pde_solvers::pipe_profile_uniform::generate_uniform_grid(
+            profile.coordinates.front(), profile.get_length(), desired_dx
+        );
+
+        // TODO: заменить на фактический профиль
+        profile.heights = std::vector<double>(profile.get_point_count());
+    }
 };
 
 /// @brief Уравнение сохранения импульса для конденсатопровода с учетом движения партий
 /// Используется для задач PQ (задан расход, найти профиль давления) и PP (заданы давления, найти расход методом Ньютона)
 /// Учитывает гидравлические потери на трение и влияние гравитации
-class condensate_pipe_PQ_parties_t : public ode_t<1>
+class iso_nonbaro_impulse_equation_t : public ode_t<1>
 {
 public:
+    /// @brief Тип коэффициентов уравнения
     using ode_t<1>::equation_coeffs_type;
+    /// @brief Тип правой части дифференциального уравнения
     using ode_t<1>::right_party_type;
+    /// @brief Тип переменной дифференциального уравнения
     using ode_t<1>::var_type;
 protected:
     /// @brief Профиль плотности вдоль трубы, кг/м³
     const std::vector<double>& rho_profile;
     /// @brief Свойства конденсатопровода
-    const condensate_pipe_properties_t& pipe;
+    const iso_nonbarotropic_pipe_properties_t& pipe;
     /// @brief Объемный расход, м³/с
     const double flow;
     /// @brief Направление расчета по Эйлеру (+1 - от входа к выходу, -1 - от выхода ко входу)
@@ -34,7 +72,7 @@ public:
     /// @param rho_profile Профиль плотности
     /// @param flow Объемный расход
     /// @param solver_direction Направление расчета по Эйлеру, должно обязательно совпадать с параметром солвера Эйлера
-    condensate_pipe_PQ_parties_t(const condensate_pipe_properties_t& pipe,
+    iso_nonbaro_impulse_equation_t(const iso_nonbarotropic_pipe_properties_t& pipe,
         const std::vector<double>& rho_profile, 
         double flow,
         int solver_direction)

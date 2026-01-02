@@ -1,8 +1,8 @@
 #pragma once
 
     /// @brief Создает простую равномерную трубу для тестовых расчетов
-    inline pde_solvers::condensate_pipe_properties_t create_test_pipe_for_PP() {
-        pde_solvers::condensate_pipe_properties_t pipe;
+    inline pde_solvers::iso_nonbarotropic_pipe_properties_t create_test_pipe_for_PP() {
+        pde_solvers::iso_nonbarotropic_pipe_properties_t pipe;
         pde_solvers::pipe_profile_t profile;
         const size_t points_count = 10;
         const double length = 1000.0; // 1 км
@@ -28,8 +28,8 @@
     TEST(CondensatePipePPTask, CalculatesValidFlowRate_ForGivenPressureBoundaries) {
         // Arrange
         auto pipe = create_test_pipe_for_PP();
-        pde_solvers::condensate_pipe_PP_task_t task(pipe);
-        auto initial_conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
+        pde_solvers::iso_nonbarotropic_pipe_PP_task_t task(pipe);
+        auto initial_conditions = pde_solvers::iso_nonbarotropic_pipe_PP_task_boundaries_t::default_values();
         initial_conditions.pressure_in = 5e6;
         initial_conditions.pressure_out = 4e6;
         initial_conditions.density = 850.0;
@@ -40,7 +40,7 @@
 
         // Assert
         // Проверяем инициализацию плотности
-        for (const auto& density : layer.density) {
+        for (const auto& density : layer.density.value) {
             EXPECT_NEAR(density, initial_conditions.density, 1e-6);
         }
 
@@ -64,10 +64,10 @@
     TEST(CondensatePipePPTask, RecoversOriginalFlowRate_WhenPQPressureUsedInPP) {
         // Arrange
         auto pipe = create_test_pipe_for_PP();
-        pde_solvers::condensate_pipe_PQ_task_t pq_task(pipe);
-        pde_solvers::condensate_pipe_PP_task_t pp_task(pipe);
+        pde_solvers::iso_nonbarotropic_pipe_PQ_task_t pq_task(pipe);
+        pde_solvers::iso_nonbarotropic_pipe_PP_task_t pp_task(pipe);
 
-        auto pq_conditions = pde_solvers::condensate_pipe_PQ_task_boundaries_t::default_values();
+        auto pq_conditions = pde_solvers::iso_nonbarotropic_pipe_PQ_task_boundaries_t::default_values();
         pq_conditions.pressure_in = 5e6;
         pq_conditions.volumetric_flow = 0.3;
         pq_conditions.density = 850.0;
@@ -78,7 +78,7 @@
         double calculated_pressure_out = pq_task.get_current_layer().pressure.back();
 
         // Используем найденное давление в PP задаче
-        auto pp_conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
+        auto pp_conditions = pde_solvers::iso_nonbarotropic_pipe_PP_task_boundaries_t::default_values();
         pp_conditions.pressure_in = pq_conditions.pressure_in;
         pp_conditions.pressure_out = calculated_pressure_out;
         pp_conditions.density = pq_conditions.density;
@@ -95,8 +95,8 @@
     TEST(CondensatePipePPTask, MaintainsFlowRateStability_OverMultipleTimeSteps) {
         // Arrange
         auto pipe = create_test_pipe_for_PP();
-        pde_solvers::condensate_pipe_PP_task_t task(pipe);
-        auto initial_conditions = pde_solvers::condensate_pipe_PP_task_boundaries_t::default_values();
+        pde_solvers::iso_nonbarotropic_pipe_PP_task_t task(pipe);
+        auto initial_conditions = pde_solvers::iso_nonbarotropic_pipe_PP_task_boundaries_t::default_values();
         initial_conditions.pressure_in = 5e6;
         initial_conditions.pressure_out = 4.5e6;
         initial_conditions.density = 850.0;
