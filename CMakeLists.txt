@@ -51,6 +51,15 @@ set(HEADERS_TIME
 )
 
 
+# Организация папок с исходниками в сгенерированном проекте VS
+source_group("Header Files" FILES ${HEADERS})
+source_group("Header Files/Core" FILES ${HEADERS_CORE})
+source_group("Header Files/Pipe" FILES ${HEADERS_PIPE})
+source_group("Header Files/Solvers" FILES ${HEADERS_SOLVERS})
+source_group("Header Files/Tasks" FILES ${HEADERS_TASKS})
+source_group("Header Files/Timeseries" FILES ${HEADERS_TIME})
+
+
 if("3.19.0" VERSION_LESS ${CMAKE_VERSION})
     add_library(${PROJECT_NAME} INTERFACE ${HEADERS} ${HEADERS_CORE} ${HEADERS_PIPE} ${HEADERS_SOLVERS} ${HEADERS_TIME} ${HEADERS_TASKS})
 else()
@@ -120,6 +129,9 @@ if(PDE_SOLVERS_BUILD_TESTS)
         testing/test_main.cpp
     )
 
+    source_group("Header Files/Testing" FILES ${TESTS_HEADERS})
+    source_group("Source Files/Testing" FILES ${TESTS_SOURCES})
+
     add_executable(pde_tests  ${TESTS_SOURCES} ${TESTS_HEADERS})
     target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
 	install(TARGETS pde_tests DESTINATION bin)
@@ -134,7 +146,14 @@ if(PDE_SOLVERS_BUILD_TESTS)
         research/2025-01-ident-quasistatic-nonisothermal/nonisothermal_quasistationary_with_real_data.h
         research/2025-04-calc-mass-on-isothermal-quasistatic/calc_mass_on_isothermal_quasistatic.h
     )
-    add_executable(pde_research research/research_main.cpp ${RESEARCH_HEADERS})
+    set(RESEARCH_SOURCES
+        research/research_main.cpp
+    )
+
+    source_group("Header Files/Research" FILES ${RESEARCH_HEADERS})
+    source_group("Source Files/Research" FILES ${RESEARCH_SOURCES})
+
+    add_executable(pde_research ${RESEARCH_SOURCES} ${RESEARCH_HEADERS})
     target_link_libraries(pde_research pde_solvers::pde_solvers GTest::gtest)
 
 
