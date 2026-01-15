@@ -25,13 +25,13 @@ struct hydraulic_pipe_layer : BaseEndogenousLayer {
 /// @brief Профиль эндогенных параметров для конденсатопровода (без температуры и ПТП)
 struct iso_nonbarotropic_pipe_endogenious_layer_t {
     /// @brief Профиль плотности с достоверностью
-    confident_layer_t density;
+    confident_layer_t density_std;
     /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
     /// @brief Инициализация профилей
     /// @param point_count Количество точек
     iso_nonbarotropic_pipe_endogenious_layer_t(size_t point_count)
-        : density(point_count, 850.0)
+        : density_std(point_count, 850.0)
         , specific(point_count)
     {
     }
@@ -39,13 +39,13 @@ struct iso_nonbarotropic_pipe_endogenious_layer_t {
     /// @brief Подготовка обертки над слоем плотности для расчета методом конечных объемов 
     static quickest_ultimate_fv_wrapper<1> get_density_wrapper(iso_nonbarotropic_pipe_endogenious_layer_t& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.density.value, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.density_std.value, layer.specific);
     }
 
     /// @brief Подготовка обертки над слоем достоверности плотности для расчета методом конечных объемов 
     static quickest_ultimate_fv_wrapper<1> get_density_confidence_wrapper(iso_nonbarotropic_pipe_endogenious_layer_t& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.density.confidence, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.density_std.confidence, layer.specific);
     }
 
 };
@@ -109,7 +109,7 @@ public:
 
         std::vector<double>& p_profile = current.pressure;
         int euler_direction = +1; // Задаем направление для Эйлера
-        iso_nonbaro_impulse_equation_t pipeModel(pipe, current.density.value, x, euler_direction);
+        iso_nonbaro_impulse_equation_t pipeModel(pipe, current.density_std.value, x, euler_direction);
         solve_euler<1>(pipeModel, euler_direction, bound.pressure_in, &p_profile);
 
         return p_profile.back() - bound.pressure_out;
@@ -168,7 +168,7 @@ public:
         auto& current = buffer.current();
 
         // Проверяем наличие данных о плотности
-        if (current.density.value.empty()) {
+        if (current.density_std.value.empty()) {
             throw std::runtime_error("density profile is empty");
         }
 
@@ -176,7 +176,7 @@ public:
         iso_nonbarotropic_pipe_PP_task_boundaries_t boundaries;
         boundaries.pressure_in = pressure_input;
         boundaries.pressure_out = pressure_output;
-        boundaries.density = current.density.value[0];
+        boundaries.density = current.density_std.value[0];
 
         // TODO: задавать начальное приближение расхода (брать из настроек солвера?)
         double volumetric_flow_initial = 0.2;
@@ -205,14 +205,14 @@ public:
         auto& current = buffer.current();
 
         // Проверяем наличие данных о плотности
-        if (current.density.value.empty()) {
+        if (current.density_std.value.empty()) {
             throw std::runtime_error("iso_nonbarotropic_pipe_solver_t::hydro_solve_QP: density profile is empty");
         }
 
         // Рассчитываем профиль давления методом Эйлера в обратном направлении (от выхода ко входу)
         std::vector<double>& p_profile = current.pressure;
         int euler_direction = -1;
-        iso_nonbaro_impulse_equation_t pipeModel(pipe, current.density.value, volumetric_flow, euler_direction);
+        iso_nonbaro_impulse_equation_t pipeModel(pipe, current.density_std.value, volumetric_flow, euler_direction);
         solve_euler<1>(pipeModel, euler_direction, pressure_output, &p_profile);
 
         // Обновляем расход в текущем слое
@@ -228,14 +228,14 @@ public:
         auto& current = buffer.current();
 
         // Проверяем наличие данных о плотности
-        if (current.density.value.empty()) {
+        if (current.density_std.value.empty()) {
             throw std::runtime_error("iso_nonbarotropic_pipe_solver_t::hydro_solve_PQ: density profile is empty");
         }
 
         // Рассчитываем профиль давления методом Эйлера
         std::vector<double>& p_profile = current.pressure;
         int euler_direction = +1; // Задаем направление для Эйлера
-        iso_nonbaro_impulse_equation_t pipeModel(pipe, current.density.value, volumetric_flow, euler_direction);
+        iso_nonbaro_impulse_equation_t pipeModel(pipe, current.density_std.value, volumetric_flow, euler_direction);
         solve_euler<1>(pipeModel, euler_direction, pressure_in, &p_profile);
 
         // Обновляем расход в текущем слое
@@ -280,12 +280,12 @@ public:
             auto value_buffer_wrapper = buffer.get_buffer_wrapper(
                 &iso_nonbarotropic_pipe_endogenious_layer_t::get_density_wrapper);
             std::vector<double>& val = value_buffer_wrapper.current().vars;
-            std::fill(val.begin(), val.end(), boundaries.density.value);
+            std::fill(val.begin(), val.end(), boundaries.density_std.value);
 
             auto confidence_buffer_wrapper = buffer.get_buffer_wrapper(
                 &iso_nonbarotropic_pipe_endogenious_layer_t::get_density_confidence_wrapper);
             std::vector<double>& conf = confidence_buffer_wrapper.current().vars;
-            std::fill(conf.begin(), conf.end(), boundaries.density.confidence);
+            std::fill(conf.begin(), conf.end(), boundaries.density_std.confidence);
         }
         else {
             // считаем партии с помощью QUICKEST-ULTIMATE
@@ -295,13 +295,13 @@ public:
                 auto buffer_wrapper = buffer.get_buffer_wrapper(
                     &iso_nonbarotropic_pipe_endogenious_layer_t::get_density_wrapper);
                 pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-                solver.step(dt, boundaries.density.value, boundaries.density.value);
+                solver.step(dt, boundaries.density_std.value, boundaries.density_std.value);
             }
             {
                 auto buffer_wrapper = buffer.get_buffer_wrapper(
                     &iso_nonbarotropic_pipe_endogenious_layer_t::get_density_confidence_wrapper);
                 pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-                solver.step(dt, boundaries.density.confidence, boundaries.density.confidence);
+                solver.step(dt, boundaries.density_std.confidence, boundaries.density_std.confidence);
             }
         }
     }
@@ -333,7 +333,7 @@ public:
         // Текущий расчетный слой
         layer_type& current_layer = buffer.current();
 
-        result.density = get_boundary_value(current_layer.density);
+        result.density_std = get_boundary_value(current_layer.density_std);
 
         return result;
     }
@@ -399,7 +399,7 @@ public:
         auto& current = buffer.current();
 
         // Инициализация начального профиля плотности (не важно, ячейки или точки)
-        for (double& density : current.density.value) {
+        for (double& density : current.density_std.value) {
             density = initial_conditions.density;
         }
 
@@ -417,8 +417,8 @@ private:
 
         // Преобразуем граничные условия в формат endogenous_values_t
         pde_solvers::endogenous_values_t endogenous_boundaries;
-        endogenous_boundaries.density.value = boundaries.density;
-        endogenous_boundaries.density.confidence = true;
+        endogenous_boundaries.density_std.value = boundaries.density;
+        endogenous_boundaries.density_std.confidence = true;
 
         iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
         solver.transport_step(dt, boundaries.volumetric_flow, endogenous_boundaries);
@@ -492,7 +492,7 @@ public:
 
         // Инициализация реологии
         auto& current = buffer.current();
-        for (double& density : current.density.value) {
+        for (double& density : current.density_std.value) {
             density = initial_conditions.density;
         }
 
@@ -511,8 +511,8 @@ private:
 
         // Преобразуем граничные условия в формат endogenous_values_t
         pde_solvers::endogenous_values_t endogenous_boundaries;
-        endogenous_boundaries.density.value = boundaries.density;
-        endogenous_boundaries.density.confidence = true;
+        endogenous_boundaries.density_std.value = boundaries.density;
+        endogenous_boundaries.density_std.confidence = true;
 
         iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
         solver.transport_step(dt, volumetric_flow, endogenous_boundaries);
