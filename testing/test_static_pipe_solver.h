@@ -35,14 +35,14 @@ inline double deltaP_for_solve_qP(
 {
 
     iso_nonbarotropic_pipe_layer_t layer(pipe.profile.get_point_count());
-    for (double& density : layer.density.value) {
+    for (double& density : layer.density_std.value) {
         density = conditions.density;
     }
     layer.std_volumetric_flow = conditions.volumetric_flow;
     std::vector<double>& p_profile = layer.pressure;
     int euler_direction = +1; // Задаем направление для Эйлера
 
-    iso_nonbaro_impulse_equation_t pipeModel(pipe, layer.density.value, conditions.volumetric_flow, euler_direction);
+    iso_nonbaro_impulse_equation_t pipeModel(pipe, layer.density_std.value, conditions.volumetric_flow, euler_direction);
 
     solve_euler<1>(pipeModel, euler_direction, conditions.pressure_in, &p_profile);
     double pressure_drop = layer.pressure.front() - layer.pressure.back();
@@ -61,7 +61,7 @@ inline double Q_for_solve_PP(
     double initial_Q_for_Newton = 0.2)
 {
     iso_nonbarotropic_pipe_layer_t layer(pipe.profile.get_point_count());
-    for (double& density : layer.density.value) {
+    for (double& density : layer.density_std.value) {
         density = conditions.density;
     }
 
