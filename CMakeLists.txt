@@ -11,7 +11,7 @@ find_package(fixed_solvers)
 endif()
 
 set(HEADERS
-    pde_solvers/pde_solvers.h  pde_solvers/pipe.h pde_solvers/timeseries.h
+    pde_solvers/pde_solvers.h  pde_solvers/pipe.h pde_solvers/timeseries.h pde_solvers/physical_constants.h
     )
 set(HEADERS_CORE
     pde_solvers/core/differential_equation.h  pde_solvers/core/profile_structures.h  pde_solvers/core/ring_buffer.h
@@ -20,6 +20,7 @@ set(HEADERS_PIPE
     pde_solvers/pipe/oil.h
     pde_solvers/pipe/pipe_advection_solver.h
     pde_solvers/pipe/pipe_hydraulic_pde.h
+    pde_solvers/pipe/iso_nonbaro_impulse_pde.h
     pde_solvers/pipe/pipe_advection_pde.h
     pde_solvers/pipe/pipe_hydraulic_computations.h
     pde_solvers/pipe/pipe_hydraulic_struct.h
@@ -48,6 +49,15 @@ set(HEADERS_TIME
     pde_solvers/timeseries/vector_timeseries.h
     pde_solvers/timeseries/synthetic_timeseries.h
 )
+
+
+# Организация папок с исходниками в сгенерированном проекте VS
+source_group("Header Files" FILES ${HEADERS})
+source_group("Header Files/Core" FILES ${HEADERS_CORE})
+source_group("Header Files/Pipe" FILES ${HEADERS_PIPE})
+source_group("Header Files/Solvers" FILES ${HEADERS_SOLVERS})
+source_group("Header Files/Tasks" FILES ${HEADERS_TASKS})
+source_group("Header Files/Timeseries" FILES ${HEADERS_TIME})
 
 
 if("3.19.0" VERSION_LESS ${CMAKE_VERSION})
@@ -106,14 +116,23 @@ if(PDE_SOLVERS_BUILD_TESTS)
     find_package(GTest REQUIRED)
     set(TESTS_HEADERS
         testing/test_advection_moc_solver.h
-        testing/test_diffusion.h
+        testing/test_condensate_pipe_PQ.h
+        testing/test_condensate_pipe_PP.h
         testing/test_create_pipe_profile.h
+        testing/test_diffusion.h
         testing/test_moc.h
         testing/test_quick.h
         testing/test_static_pipe_solver.h
         testing/test_timeseries.h
     )
-    add_executable(pde_tests testing/test_main.cpp ${TESTS_HEADERS})
+    set(TESTS_SOURCES
+        testing/test_main.cpp
+    )
+
+    source_group("Header Files/Testing" FILES ${TESTS_HEADERS})
+    source_group("Source Files/Testing" FILES ${TESTS_SOURCES})
+
+    add_executable(pde_tests  ${TESTS_SOURCES} ${TESTS_HEADERS})
     target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
 	install(TARGETS pde_tests DESTINATION bin)
 
@@ -127,7 +146,14 @@ if(PDE_SOLVERS_BUILD_TESTS)
         research/2025-01-ident-quasistatic-nonisothermal/nonisothermal_quasistationary_with_real_data.h
         research/2025-04-calc-mass-on-isothermal-quasistatic/calc_mass_on_isothermal_quasistatic.h
     )
-    add_executable(pde_research research/research_main.cpp ${RESEARCH_HEADERS})
+    set(RESEARCH_SOURCES
+        research/research_main.cpp
+    )
+
+    source_group("Header Files/Research" FILES ${RESEARCH_HEADERS})
+    source_group("Source Files/Research" FILES ${RESEARCH_SOURCES})
+
+    add_executable(pde_research ${RESEARCH_SOURCES} ${RESEARCH_HEADERS})
     target_link_libraries(pde_research pde_solvers::pde_solvers GTest::gtest)
 
 

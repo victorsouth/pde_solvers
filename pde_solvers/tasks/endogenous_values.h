@@ -39,9 +39,10 @@ inline constexpr T default_endogenious_parameter() {
 template <typename T>
 struct endogenous_parameters_template_t {
     /// @brief Номинальная плотность
-    T density{ default_endogenious_parameter<T>() };
+    T density_std{ default_endogenious_parameter<T>() };
     /// @brief Номинальная вязкость для изотермического случая
-    T viscosity{ default_endogenious_parameter<T>() };
+    // TODO: не ли здесь дублирования с visc20?
+    T viscosity_std{ default_endogenious_parameter<T>() };
     /// @brief Серосодержанние
     T sulfur{ default_endogenious_parameter<T>() };
     /// @brief Концентрация ПТП
@@ -76,8 +77,8 @@ inline void reset_confidence(endogenous_values_t* values)
         confidence_value.confidence = false;
         };
 
-    invalidate(values->density);
-    invalidate(values->viscosity);
+    invalidate(values->density_std);
+    invalidate(values->viscosity_std);
     invalidate(values->sulfur);
     invalidate(values->improver);
     invalidate(values->temperature);
@@ -124,9 +125,9 @@ struct pipe_endogenous_variable_layer_t
     /// @brief Скорость потока
     std::vector<double> velocity;
     /// @brief Профиль плотности
-    confident_layer_t density;
+    confident_layer_t density_std;
     /// @brief Профиль вязкости (рабочая при изотермическом расчете)
-    confident_layer_t viscosity;
+    confident_layer_t viscosity_std;
     /// @brief Серосодержанние
     confident_layer_t sulfur;
     /// @brief Концентрация ПТП
@@ -146,8 +147,8 @@ struct pipe_endogenous_variable_layer_t
     pipe_endogenous_variable_layer_t(size_t point_count)
         : mass_flow(point_count - 1, 0.0)
         , velocity(point_count - 1, 0.0)
-        , density(point_count, 860)
-        , viscosity(point_count, 1e-6)
+        , density_std(point_count, 860)
+        , viscosity_std(point_count, 1e-6)
         , sulfur(point_count, 1e-3)
         , improver(point_count, 0.0)
         , temperature(point_count, 300)
@@ -165,8 +166,8 @@ inline void reset_confidence(pipe_endogenous_variable_layer_t* layer) {
         std::fill(parameter_layer.confidence.begin(), parameter_layer.confidence.end(), false);
         };
 
-    invalidate(layer->density);
-    invalidate(layer->viscosity);
+    invalidate(layer->density_std);
+    invalidate(layer->viscosity_std);
     invalidate(layer->sulfur);
     invalidate(layer->improver);
     invalidate(layer->temperature);
@@ -189,26 +190,26 @@ struct pipe_endogenous_calc_layer_t : public pipe_endogenous_variable_layer_t
     }
 
     /// @brief Подготовка плотности для расчета методом конечных объемов   
-    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(
+    static quickest_ultimate_fv_wrapper<1> get_density_std_wrapper(
         pipe_endogenous_calc_layer_t& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.density.value, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.density_std.value, layer.specific);
     }
-    static quickest_ultimate_fv_wrapper<1> get_density_confidence_wrapper(
+    static quickest_ultimate_fv_wrapper<1> get_density_std_confidence_wrapper(
         pipe_endogenous_calc_layer_t& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.density.confidence, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.density_std.confidence, layer.specific);
     }
     /// @brief Подготовка вязкости для расчета методом конечных объемов 
-    static quickest_ultimate_fv_wrapper<1> get_viscosity_wrapper(
+    static quickest_ultimate_fv_wrapper<1> get_viscosity_std_wrapper(
         pipe_endogenous_calc_layer_t& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.viscosity.value, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.viscosity_std.value, layer.specific);
     }
-    static quickest_ultimate_fv_wrapper<1> get_viscosity_confidence_wrapper(
+    static quickest_ultimate_fv_wrapper<1> get_viscosity_std_confidence_wrapper(
         pipe_endogenous_calc_layer_t& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.viscosity.confidence, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.viscosity_std.confidence, layer.specific);
     }
 };
 
