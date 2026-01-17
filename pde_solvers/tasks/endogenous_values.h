@@ -1,20 +1,20 @@
-п»їnamespace pde_solvers
+namespace pde_solvers
 {
 ;
 
 
-/// @brief Р­РЅРґРѕРіРµРЅРЅС‹Р№ РїР°СЂР°РјРµС‚СЂ Рё РµРіРѕ РєРѕРґ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚Рё
+/// @brief Эндогенный параметр и его код достоверности
 struct endogenous_confident_value_t {
-    /// @brief Р—РЅР°С‡РµРЅРёРµ СЌРЅРґРѕРіРµРЅРЅРѕРіРѕ СЃРІРѕР№СЃС‚РІР°
+    /// @brief Значение эндогенного свойства
     double value{ std::numeric_limits<double>::quiet_NaN() };
-    /// @brief РљРѕРґ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚Рё - РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ Р·РЅР°С‡РµРЅРёРµ РќР•РґРѕСЃС‚РѕРІРµСЂРЅРѕРµ
+    /// @brief Код достоверности - по умолчанию значение НЕдостоверное
     bool confidence{ false };
 };
 
-/// @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ Р·РЅР°С‡РµРЅРёСЏ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РґР»СЏ СЌРЅРґРѕРіРµРЅРЅС‹С… СЃРІРѕР№СЃС‚РІ РёР»Рё РёС… РјРµС‚Р°РґР°РЅРЅС‹С…
-/// T = bool - РІРѕР·РІСЂР°С‰Р°РµС‚ false (РїР°СЂР°РјРµС‚СЂ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РЅРµ СЂР°СЃСЃС‡РёС‚С‹РІР°РµС‚СЃСЏ)
-/// T = double - РІРѕР·РІСЂР°С‰Р°РµС‚ NaN (Р·РЅР°С‡РµРЅРёРµ РµС‰Рµ РЅРµ Р±С‹Р»Рѕ СЂР°СЃС‡РёС‚Р°РЅРѕ)
-/// T = endogenious_confident_value_t - РІРѕР·РІСЂР°С‰Р°РµС‚ Р·РЅР°С‡РµРЅРёСЏ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РґР»СЏ СЂР°СЃС‡РµС‚РЅРѕРіРѕ Р·РЅС‡Р°РЅРёСЏ + РєРѕРґ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚Рё
+/// @brief Возвращает значения по умолчанию для эндогенных свойств или их метаданных
+/// T = bool - возвращает false (параметр по умолчанию не рассчитывается)
+/// T = double - возвращает NaN (значение еще не было расчитано)
+/// T = endogenious_confident_value_t - возвращает значения по умолчанию для расчетного знчания + код достоверности
 template <typename T>
 inline constexpr T default_endogenious_parameter() {
     if constexpr (std::is_same<T, bool>::value) {
@@ -31,46 +31,46 @@ inline constexpr T default_endogenious_parameter() {
     }
 }
 
-/// @brief РЁР°Р±Р»РѕРЅ СЃС‚СЂСѓРєС‚СѓСЂС‹ СЌРЅРґРѕРіРµРЅРЅС‹С… РїР°СЂР°РјРµС‚СЂРѕРІ Рё РёС… РјРµС‚Р°РґР°РЅРЅС‹С….
-/// РќР°РїСЂРёРјРµСЂ, РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РёРїР° T РІРѕР·РјРѕР¶РЅС‹ СЃР»РµРґСѓСЋС‰РёРµ СЃС†РµРЅР°СЂРёРё РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ:
-/// T = double - СЂР°СЃС‡РµС‚РЅРѕРµ Р·РЅР°С‡РµРЅРёРµ СЌРЅРґРѕРіРµРЅРЅРѕРіРѕ СЃРІРѕР№СЃС‚РІР°
-/// T = bool - РЅР°СЃС‚СЂРѕР№РєР° - РІС‹РїРѕР»РЅСЏС‚СЊ Р»Рё СЂР°СЃС‡РµС‚ СЃРІРѕР№СЃС‚РІР°
-/// T = endogenious_confident_value_t - СЂР°СЃС‡РµС‚РЅРѕРµ Р·РЅР°С‡РµРЅРёРµ СЃРІРѕР№СЃС‚РІР° Рё РµРіРѕ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚СЊ
+/// @brief Шаблон структуры эндогенных параметров и их метаданных.
+/// Например, в зависимости от типа T возможны следующие сценарии использования:
+/// T = double - расчетное значение эндогенного свойства
+/// T = bool - настройка - выполнять ли расчет свойства
+/// T = endogenious_confident_value_t - расчетное значение свойства и его достоверность
 template <typename T>
 struct endogenous_parameters_template_t {
-    /// @brief РќРѕРјРёРЅР°Р»СЊРЅР°СЏ РїР»РѕС‚РЅРѕСЃС‚СЊ
+    /// @brief Номинальная плотность
     T density_std{ default_endogenious_parameter<T>() };
-    /// @brief РќРѕРјРёРЅР°Р»СЊРЅР°СЏ РІСЏР·РєРѕСЃС‚СЊ РґР»СЏ РёР·РѕС‚РµСЂРјРёС‡РµСЃРєРѕРіРѕ СЃР»СѓС‡Р°СЏ
-    // TODO: РЅРµ Р»Рё Р·РґРµСЃСЊ РґСѓР±Р»РёСЂРѕРІР°РЅРёСЏ СЃ visc20?
-    T viscosity_std{ default_endogenious_parameter<T>() };
-    /// @brief РЎРµСЂРѕСЃРѕРґРµСЂР¶Р°РЅРЅРёРµ
+    /// @brief Номинальная вязкость для изотермического случая
+    // TODO: не ли здесь дублирования с visc20?
+    T viscosity_working{ default_endogenious_parameter<T>() };
+    /// @brief Серосодержанние
     T sulfur{ default_endogenious_parameter<T>() };
-    /// @brief РљРѕРЅС†РµРЅС‚СЂР°С†РёСЏ РџРўРџ
+    /// @brief Концентрация ПТП
     T improver{ default_endogenious_parameter<T>() };
-    /// @brief РўРµРјРїРµСЂР°С‚СѓСЂР°
+    /// @brief Температура
     T temperature{ default_endogenious_parameter<T>() };
-    /// @brief Р’СЏР·РєРѕСЃС‚СЊ РїСЂРё 0РЎ
+    /// @brief Вязкость при 0С
     T viscosity0{ default_endogenious_parameter<T>() };
-    /// @brief Р’СЏР·РєРѕСЃС‚СЊ РїСЂРё 20РЎ
+    /// @brief Вязкость при 20С
     T viscosity20{ default_endogenious_parameter<T>() };
-    /// @brief Р’СЏР·РєРѕСЃС‚СЊ РїСЂРё 50РЎ
+    /// @brief Вязкость при 50С
     T viscosity50{ default_endogenious_parameter<T>() };
 };
 
-/// @brief РЎРµР»РµРєС‚РѕСЂ СЌРЅРґРѕРіРµРЅРЅС‹С… РїР°СЂР°РјРµС‚СЂРѕРІ - РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РІ РјРѕРґРµР»СЏС… Рё РІ СЃРјРµСЃРёС‚РµР»Рµ РєР°Рє РЅР°СЃС‚СЂРѕР№РєР° СЂР°СЃС‡РµС‚Р°
+/// @brief Селектор эндогенных параметров - используется в моделях и в смесителе как настройка расчета
 using endogenous_selector_t = endogenous_parameters_template_t<bool>;
-/// @brief РЎС‚СЂСѓРєС‚СѓСЂР° СЂР°СЃС‡РµС‚РЅС‹С… Р·РЅР°С‡РµРЅРёР№ СЌРЅРґРѕРіРµРЅРЅС‹С… СЃРІРѕР№СЃС‚РІ РґР»СЏ СЂР°СЃРїСЂРѕСЃС‚СЂР°РЅРµРЅРёСЏ РїРѕ РѕР±СЉРµРєС‚Р°Рј РіСЂР°С„Р°. 
-/// Р—РЅР°С‡Р°РµРЅРёСЏ СЌРЅРґРѕРіРµРЅРЅС‹С… СЃРІРѕР№СЃС‚РІ РѕРїСЂРµРґРµР»СЏСЋС‚СЃСЏ Р»РёР±Рѕ РёР· РёР·РјРµСЂРµРЅРёСЏ, Р»РёР±Рѕ РІ СЂРµР·СѓР»СЊС‚Р°С‚Рµ СЂР°СЃС‡РµС‚Р°.
-/// Р—РЅР°С‡РµРЅРёСЏ РїРѕР»РµР№ РјРѕРіСѓС‚ Р±С‹С‚СЊ РІ СЃР»РµРґСѓСЋРёС‰С… СЃРѕСЃС‚РѕСЏРЅРёСЏС…:
-/// 1. РќРµ Р·Р°РґР°РЅРѕ РёР· РёР·РјРµСЂРµРЅРёСЏ Рё РµС‰Рµ РЅРµ СЂР°СЃС‡РёС‚Р°РЅРѕ
-/// 2. РР· СЂР°СЃС‡РµС‚Р° РїРѕР»СѓС‡РµРЅРѕ РЅРµР°РґРµРІС‚Р°РЅРѕРµ NaN Р·РЅР°С‡РµРЅРёРµ
-/// 3. РР· СЂР°СЃС‡РµС‚Р° РїРѕР»СѓС‡РµРЅРѕ С‡РёСЃР»РµРЅРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ
+/// @brief Структура расчетных значений эндогенных свойств для распространения по объектам графа. 
+/// Значаения эндогенных свойств определяются либо из измерения, либо в результате расчета.
+/// Значения полей могут быть в следуюищх состояниях:
+/// 1. Не задано из измерения и еще не расчитано
+/// 2. Из расчета получено неадевтаное NaN значение
+/// 3. Из расчета получено численное значение
 using endogenous_double_values_t = endogenous_parameters_template_t<double>;
-/// @brief Р­РЅРґРѕРіРµРЅРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ Рё РёС… РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚СЊ
+/// @brief Эндогенные параметры и их достоверность
 using endogenous_values_t = endogenous_parameters_template_t<endogenous_confident_value_t>;
 
 
-/// @brief РЎР±СЂР°СЃС‹РІР°РµС‚ РєРѕРґ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚Рё РІ "Р»РѕР¶СЊ"
+/// @brief Сбрасывает код достоверности в "ложь"
 inline void reset_confidence(endogenous_values_t* values)
 {
     auto invalidate = [](endogenous_confident_value_t& confidence_value) {
@@ -78,7 +78,7 @@ inline void reset_confidence(endogenous_values_t* values)
         };
 
     invalidate(values->density_std);
-    invalidate(values->viscosity_std);
+    invalidate(values->viscosity_working);
     invalidate(values->sulfur);
     invalidate(values->improver);
     invalidate(values->temperature);
@@ -88,20 +88,20 @@ inline void reset_confidence(endogenous_values_t* values)
 }
 
 
-/// @brief РРЅС‚РµСЂРїСЂРµС‚РёСЂСѓРµС‚ СЃС‚РµРїРµРЅСЊ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚СЊ РєР°Рє Р±СѓР»РµРІ С„Р»Р°Рі РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚Рё
+/// @brief Интерпретирует степень достоверность как булев флаг достоверности
 inline bool discriminate_confidence_level(double confidence_level)
 {
-    return confidence_level > 0.95; // СЃ РєРѕРЅСЃС‚Р°РЅС‚РѕР№ СЌРєСЃРїРµСЂРёРјРµРЅС‚РёСЂСѓРµРј
+    return confidence_level > 0.95; // с константой экспериментируем
 }
 
-/// @brief Р Р°СЃС‡РµС‚РЅС‹Р№ СЃР»РѕР№ Рё РµРіРѕ РєРѕРґ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚Рё
+/// @brief Расчетный слой и его код достоверности
 struct confident_layer_t {
-    /// @brief РЎР°Рј СЂР°СЃС‡РµС‚РЅС‹Р№ РїР°СЂР°РјРµС‚СЂ
+    /// @brief Сам расчетный параметр
     std::vector<double> value;
-    /// @brief РљРѕРґ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚Рё - СЃС‡РёС‚Р°РµС‚СЃСЏ С‡РёСЃР»РµРЅРЅС‹Рј РјРµС‚РѕРґРѕРј, 
-    /// РїРѕСЌС‚РѕРјСѓ РЅРµ Р±СѓР»РµРІС‹Р№ Р° РІРµС‰РµСЃС‚РІРµРЅРЅС‹Р№
+    /// @brief Код достоверности - считается численным методом, 
+    /// поэтому не булевый а вещественный
     std::vector<double> confidence;
-    /// @brief РџСЂРёРЅРёРјР°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕС‡РµРє, РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ СЏС‡РµРµРє
+    /// @brief Принимает количество точек, инициализирует количество ячеек
     confident_layer_t(size_t point_count, double initial_value)
         : value(point_count - 1, initial_value)
         , confidence(point_count - 1, 0.0)
@@ -115,40 +115,40 @@ struct confident_layer_t {
     }
 };
 
-/// @brief Р Р°СЃС‡РµС‚РЅС‹Рµ С†РµР»РµРІС‹Рµ РїСЂРѕС„РёР»Рё РїРѕ С‚СЂСѓР±Рµ 
+/// @brief Расчетные целевые профили по трубе 
 struct pipe_endogenous_variable_layer_t
 {
-    /// @brief РќРѕРјРёРЅР°Р»СЊРЅС‹Р№ РѕР±СЉРµРјРЅС‹Р№ СЂР°СЃС…РѕРґ
+    /// @brief Номинальный объемный расход
     double std_volumetric_flow{ std::numeric_limits<double>::quiet_NaN() };
-    /// @brief РњР°СЃСЃРѕРІС‹Р№ СЂР°СЃС…РѕРґ
+    /// @brief Массовый расход
     std::vector<double> mass_flow;
-    /// @brief РЎРєРѕСЂРѕСЃС‚СЊ РїРѕС‚РѕРєР°
+    /// @brief Скорость потока
     std::vector<double> velocity;
-    /// @brief РџСЂРѕС„РёР»СЊ РїР»РѕС‚РЅРѕСЃС‚Рё
+    /// @brief Профиль плотности
     confident_layer_t density_std;
-    /// @brief РџСЂРѕС„РёР»СЊ РІСЏР·РєРѕСЃС‚Рё (СЂР°Р±РѕС‡Р°СЏ РїСЂРё РёР·РѕС‚РµСЂРјРёС‡РµСЃРєРѕРј СЂР°СЃС‡РµС‚Рµ)
-    confident_layer_t viscosity_std;
-    /// @brief РЎРµСЂРѕСЃРѕРґРµСЂР¶Р°РЅРЅРёРµ
+    /// @brief Профиль вязкости (рабочая при изотермическом расчете)
+    confident_layer_t viscosity_working;
+    /// @brief Серосодержанние
     confident_layer_t sulfur;
-    /// @brief РљРѕРЅС†РµРЅС‚СЂР°С†РёСЏ РџРўРџ
+    /// @brief Концентрация ПТП
     confident_layer_t improver;
-    /// @brief РўРµРјРїРµСЂР°С‚СѓСЂР°
+    /// @brief Температура
     confident_layer_t temperature;
-    /// @brief Р’СЏР·РєРѕСЃС‚СЊ РїСЂРё 0РЎ (СЃРѕСЂС‚РѕРІР°СЏ РїСЂРё РЅРµРёР·РѕС‚РµСЂРјРёС‡РµСЃРєРѕРј СЂР°СЃС‡РµС‚Рµ)
+    /// @brief Вязкость при 0С (сортовая при неизотермическом расчете)
     confident_layer_t viscosity0;
-    /// @brief Р’СЏР·РєРѕСЃС‚СЊ РїСЂРё 20РЎ (СЃРѕСЂС‚РѕРІР°СЏ РїСЂРё РЅРµРёР·РѕС‚РµСЂРјРёС‡РµСЃРєРѕРј СЂР°СЃС‡РµС‚Рµ)
+    /// @brief Вязкость при 20С (сортовая при неизотермическом расчете)
     confident_layer_t viscosity20;
-    /// @brief Р’СЏР·РєРѕСЃС‚СЊ РїСЂРё 50РЎ (СЃРѕСЂС‚РѕРІР°СЏ РїСЂРё РЅРµРёР·РѕС‚РµСЂРјРёС‡РµСЃРєРѕРј СЂР°СЃС‡РµС‚Рµ)
+    /// @brief Вязкость при 50С (сортовая при неизотермическом расчете)
     confident_layer_t viscosity50;
-    /// @brief РџСЂРёРЅРёРјР°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕС‡РµРє, РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ СЏС‡РµРµРє
-    /// Р’РђР–РќРћ!!! 
-    /// РІРµРєС‚РѕСЂС‹ mass_flow, velocity РЅРёС‡РµРіРѕ РЅРµ Р·РЅР°СЋС‚ РїСЂРѕ С‚РѕС‡РєРё СЏС‡РµР№РєРё
-    /// Р° confident_layer_t Р·РЅР°РµС‚ РїСЂРѕ СЌС‚Рѕ Рё РѕР¶РёРґР°РµС‚ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ РўРћР§РљР!!!
+    /// @brief Принимает количество точек, инициализирует количество ячеек
+    /// ВАЖНО!!! 
+    /// векторы mass_flow, velocity ничего не знают про точки ячейки
+    /// а confident_layer_t знает про это и ожидает в конструкторе ТОЧКИ!!!
     pipe_endogenous_variable_layer_t(size_t point_count)
         : mass_flow(point_count - 1, 0.0)
         , velocity(point_count - 1, 0.0)
         , density_std(point_count, 860)
-        , viscosity_std(point_count, 1e-6)
+        , viscosity_working(point_count, 1e-6)
         , sulfur(point_count, 1e-3)
         , improver(point_count, 0.0)
         , temperature(point_count, 300)
@@ -160,14 +160,14 @@ struct pipe_endogenous_variable_layer_t
     }
 };
 
-/// @brief РЎР±СЂР°СЃС‹РІР°РµС‚ РєРѕРґ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚Рё РІ "Р»РѕР¶СЊ"
+/// @brief Сбрасывает код достоверности в "ложь"
 inline void reset_confidence(pipe_endogenous_variable_layer_t* layer) {
     auto invalidate = [](confident_layer_t& parameter_layer) {
         std::fill(parameter_layer.confidence.begin(), parameter_layer.confidence.end(), false);
         };
 
     invalidate(layer->density_std);
-    invalidate(layer->viscosity_std);
+    invalidate(layer->viscosity_working);
     invalidate(layer->sulfur);
     invalidate(layer->improver);
     invalidate(layer->temperature);
@@ -176,20 +176,20 @@ inline void reset_confidence(pipe_endogenous_variable_layer_t* layer) {
     invalidate(layer->viscosity50);
 }
 
-/// @brief Р Р°СЃС‡РµС‚РЅС‹Р№ РїСЂРѕС„РёР»СЊ РЅР° РєРІРёРєРµСЃС‚
+/// @brief Расчетный профиль на квикест
 struct pipe_endogenous_calc_layer_t : public pipe_endogenous_variable_layer_t
 {
-    /// @brief РџСЂРѕС„РёР»СЊ РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹С… СЂР°СЃС‡РµС‚РѕРІ РґР»СЏ РјРµС‚РѕРґР° РєРѕРЅРµС‡РЅС‹С… РѕР±СЉРµРјРѕРІ (Рё РґР»СЏ РІСЏР·РєРѕСЃС‚Рё, Рё РґР»СЏ РїР»РѕС‚РЅРѕСЃС‚Рё)
+    /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
-    /// @brief РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РїСЂРѕС„РёР»РµР№
-    /// @param point_count РљРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕС‡РµРє
+    /// @brief Инициализация профилей
+    /// @param point_count Количество точек
     pipe_endogenous_calc_layer_t(size_t point_count)
         : pipe_endogenous_variable_layer_t(point_count)
         , specific(point_count)
     {
     }
 
-    /// @brief РџРѕРґРіРѕС‚РѕРІРєР° РїР»РѕС‚РЅРѕСЃС‚Рё РґР»СЏ СЂР°СЃС‡РµС‚Р° РјРµС‚РѕРґРѕРј РєРѕРЅРµС‡РЅС‹С… РѕР±СЉРµРјРѕРІ   
+    /// @brief Подготовка плотности для расчета методом конечных объемов   
     static quickest_ultimate_fv_wrapper<1> get_density_std_wrapper(
         pipe_endogenous_calc_layer_t& layer)
     {
@@ -200,16 +200,16 @@ struct pipe_endogenous_calc_layer_t : public pipe_endogenous_variable_layer_t
     {
         return quickest_ultimate_fv_wrapper<1>(layer.density_std.confidence, layer.specific);
     }
-    /// @brief РџРѕРґРіРѕС‚РѕРІРєР° РІСЏР·РєРѕСЃС‚Рё РґР»СЏ СЂР°СЃС‡РµС‚Р° РјРµС‚РѕРґРѕРј РєРѕРЅРµС‡РЅС‹С… РѕР±СЉРµРјРѕРІ 
-    static quickest_ultimate_fv_wrapper<1> get_viscosity_std_wrapper(
+    /// @brief Подготовка вязкости для расчета методом конечных объемов 
+    static quickest_ultimate_fv_wrapper<1> get_viscosity_working_wrapper(
         pipe_endogenous_calc_layer_t& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.viscosity_std.value, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.viscosity_working.value, layer.specific);
     }
-    static quickest_ultimate_fv_wrapper<1> get_viscosity_std_confidence_wrapper(
+    static quickest_ultimate_fv_wrapper<1> get_viscosity_working_confidence_wrapper(
         pipe_endogenous_calc_layer_t& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.viscosity_std.confidence, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.viscosity_working.confidence, layer.specific);
     }
 };
 

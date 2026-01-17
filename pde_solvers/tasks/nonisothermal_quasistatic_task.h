@@ -1,33 +1,33 @@
-п»ї#pragma once
+#pragma once
 
 namespace pde_solvers {
 ;
 
-/// @brief Р’Р°СЂРёР°РЅС‚С‹ Р±РµСЃРїР°СЂС‚РёР№РЅРѕРіРѕ РЅРµРёР·РѕС‚РµСЂРјРёС‡РµСЃРєРѕРіРѕ СЂР°СЃС‡С‘С‚Р° 
+/// @brief Варианты беспартийного неизотермического расчёта 
 enum class noniso_qsm_model_type {
-    /// @brief РџРѕР»РЅРѕС†РµРЅРЅР°СЏ РґРёРЅР°РјРёС‡РµСЃРєР°СЏ РјРѕРґРµР»СЊ
+    /// @brief Полноценная динамическая модель
     Dynamic,            
-    /// @brief Р¤РѕСЂРјСѓР»Р° РЁСѓС…РѕРІР°
+    /// @brief Формула Шухова
     Shukhov,              
-    /// @brief РЁСѓС…РѕРІ c Р°РґРІРµРєС†РёРµР№
+    /// @brief Шухов c адвекцией
     ShukhovWithAdvection,  
-    /// @brief РўРµРјРїРµСЂР°С‚СѓСЂР° РїРѕ РІСЃРµР№ С‚СЂСѓР±Рµ СЂР°РІРЅР° РІС…РѕРґРЅРѕР№
+    /// @brief Температура по всей трубе равна входной
     Isothemal 
 };
 
-/// @brief РџСЂРѕР±Р»РµРјРЅРѕ-РѕСЂРёРµРЅС‚РёСЂРѕРІР°РЅРЅС‹Р№ СЃР»РѕР№ РґР»СЏ TQ СЂР°СЃС‡РµС‚Р°
-/// @tparam CellFlag Р¤Р»Р°Рі СЂР°СЃС‡С‘С‚Р° СЂРµРѕР»РѕРіРёРё 
-/// true - РІ СЏС‡РµР№РєР°С… РґР»СЏ РјРµС‚РѕРґР° РєРѕРЅРµС‡РЅС‹С… РѕР±СЉС‘РјРѕРІ (Quickest-Ultimate)
-/// false - РІ С‚РѕС‡РєР°С… РґР»СЏ РјРµС‚РѕРґР° С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРє (advection_moc_solver)
+/// @brief Проблемно-ориентированный слой для TQ расчета
+/// @tparam CellFlag Флаг расчёта реологии 
+/// true - в ячейках для метода конечных объёмов (Quickest-Ultimate)
+/// false - в точках для метода характеристик (advection_moc_solver)
 struct qsm_noniso_T_layer {
-    /// @brief РџСЂРѕС„РёР»СЊ С‚РµРјРїРµСЂР°С‚СѓСЂС‹ (СЏС‡РµР№РєРё)
+    /// @brief Профиль температуры (ячейки)
     std::vector<double> temperature;
-    /// @brief РџСЂРѕС„РёР»СЊ С‚РµРјРїРµСЂР°С‚СѓСЂС‹  РЁСѓС…РѕРІС‹Рј (С‚РѕС‡РєРё)
+    /// @brief Профиль температуры  Шуховым (точки)
     std::vector<double> temperature_shukhov;
-    /// @brief РџСЂРѕС„РёР»СЊ РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹С… СЂР°СЃС‡РµС‚РѕРІ РґР»СЏ РјРµС‚РѕРґР° РєРѕРЅРµС‡РЅС‹С… РѕР±СЉРµРјРѕРІ (Рё РґР»СЏ РІСЏР·РєРѕСЃС‚Рё, Рё РґР»СЏ РїР»РѕС‚РЅРѕСЃС‚Рё)
+    /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
-    /// @brief РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РїСЂРѕС„РёР»РµР№
-    /// @param point_count РљРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕС‡РµРє
+    /// @brief Инициализация профилей
+    /// @param point_count Количество точек
     qsm_noniso_T_layer(size_t point_count)
         : temperature(point_count - 1)
         , temperature_shukhov(point_count)
@@ -35,35 +35,35 @@ struct qsm_noniso_T_layer {
     {
     }
 
-    /// @brief РџРѕРґРіРѕС‚РѕРІРєР° С‚РµРјРїРµСЂР°С‚СѓСЂС‹ РґР»СЏ СЂР°СЃС‡РµС‚Р° РјРµС‚РѕРґРѕРј РєРѕРЅРµС‡РЅС‹С… РѕР±СЉРµРјРѕРІ
-    /// @param layer РЎР»РѕР№
-    /// @return РћР±РµСЂС‚РєР° РЅР°Рґ СЃРѕСЃС‚Р°РІРЅС‹Рј СЃР»РѕРµРј
+    /// @brief Подготовка температуры для расчета методом конечных объемов
+    /// @param layer Слой
+    /// @return Обертка над составным слоем
     static quickest_ultimate_fv_wrapper<1> get_temperature_wrapper(qsm_noniso_T_layer& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.temperature, layer.specific);
     }
 };
 
-/// @brief РЎС‚СЂСѓРєС‚СѓСЂР°, СЃРѕРґРµСЂР¶Р°С‰Р°СЏ РІ СЃРµР±Рµ РєСЂР°РµРІС‹Рµ СѓСЃР»РѕРІРёСЏ Р·Р°РґР°С‡Рё T?
+/// @brief Структура, содержащая в себе краевые условия задачи T?
 struct qsm_noniso_T_task_boundaries_t { 
-    /// @brief РР·РЅР°С‡Р°Р»СЊРЅС‹Р№ РѕР±СЉРµРјРЅС‹Р№ СЂР°СЃС…РѕРґ
+    /// @brief Изначальный объемный расход
     double volumetric_flow;
-    /// @brief РР·РЅР°С‡Р°Р»СЊРЅРѕРµ С‚РµРјРїРµСЂР°С‚СѓСЂР° РЅР° РІС…РѕРґРµ
+    /// @brief Изначальное температура на входе
     double temperature;
-    /// @brief РР·РЅР°С‡Р°Р»СЊРЅР°СЏ С‚РµРјРї РЅР° РІС…РѕРґРµ
+    /// @brief Изначальная темп на входе
     double temperature_shukhov;
-    /// @brief РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+    /// @brief Конструктор по умолчанию
     qsm_noniso_T_task_boundaries_t() = default;
 
-    /// @brief РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РєСЂР°РµРІС‹С… СѓСЃР»РѕРІРёР№
-    /// @param values Р—РЅР°С‡РµРЅРёСЏ РєСЂР°РµРІС‹С… СѓСЃР»РѕРІРёР№
+    /// @brief Конструктор краевых условий
+    /// @param values Значения краевых условий
     qsm_noniso_T_task_boundaries_t(const std::vector<double>& values) {
         volumetric_flow = values[0];
         temperature = values[1];
         temperature_shukhov = values[1];
     }
 
-    /// @brief РЎРѕР·РґР°РЅРёРµ СЃС‚СЂСѓРєС‚СѓСЂС‹ СЃРѕ Р·РЅР°С‡РµРЅРёСЏРјРё РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+    /// @brief Создание структуры со значениями по умолчанию
     static qsm_noniso_T_task_boundaries_t default_values() {
         qsm_noniso_T_task_boundaries_t result;
         result.volumetric_flow = 0.2;
@@ -74,33 +74,33 @@ struct qsm_noniso_T_task_boundaries_t {
 };
 
 
-/// @brief Р Р°СЃС‡РµС‚РЅР°СЏ Р·Р°РґР°С‡Р° (task) РґР»СЏ РіРёРґСЂР°РІР»РёС‡РµСЃРєРѕРіРѕ РЅРµРёР·РѕС‚РµСЂРјРёС‡РµСЃРєРѕРіРѕ 
-/// РєРІР°Р·РёСЃС‚Р°С†РёРѕРЅР°СЂРЅРѕРіРѕ СЂР°СЃС‡РµС‚Р° РІ СѓСЃР»РѕРІРёСЏС… РґРІРёР¶РµРЅРёСЏ РїР°СЂС‚РёР№ СЃ СЂР°Р·РЅРѕР№ РїР»РѕС‚РЅРѕСЃС‚СЊСЋ Рё РІСЏР·РєРѕСЃС‚СЊСЋ, С‚РµРјРїРµСЂР°С‚СѓСЂРѕР№
-/// Р Р°СЃС‡РµС‚ РїР°СЂС‚РёР№ РґРµР»Р°РµС‚СЃСЏ РјРµС‚РѕРґРѕРј С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРє РёР»Рё Quickest-Ultimate
-/// @tparam Solver РўРёРї СЃРѕР»РІРµСЂР° РїР°СЂС‚РёР№ (advection_moc_solver РёР»Рё quickest_ultimate_fv_solver)
+/// @brief Расчетная задача (task) для гидравлического неизотермического 
+/// квазистационарного расчета в условиях движения партий с разной плотностью и вязкостью, температурой
+/// Расчет партий делается методом характеристик или Quickest-Ultimate
+/// @tparam Solver Тип солвера партий (advection_moc_solver или quickest_ultimate_fv_solver)
 class qsm_noniso_T_task_t {  
 public:
-    /// @brief РўРёРї СЃР»РѕСЏ
+    /// @brief Тип слоя
     using layer_type = qsm_noniso_T_layer;
-    /// @brief РўРёРї Р±СѓС„РµСЂР°
+    /// @brief Тип буфера
     using buffer_type = ring_buffer_t<layer_type>;
-    /// @brief РўРёРї РіСЂР°РЅРёС‡РЅС‹С… СѓСЃР»РѕРІРёР№
+    /// @brief Тип граничных условий
     using boundaries_type = qsm_noniso_T_task_boundaries_t;
 
     
 private:
-    // РњРѕРґРµР»СЊ С‚СЂСѓР±С‹
+    // Модель трубы
     pipe_noniso_properties_t pipe;
-    // РќРµС„С‚СЊ
+    // Нефть
     oil_parameters_t oil;
-    // РЎРѕР·РґР°С‘С‚СЃСЏ Р±СѓС„РµСЂ, С‚РёРї СЃР»РѕСЏ РєРѕС‚РѕСЂРѕРіРѕ РѕРїСЂРµРґРµР»СЏРµС‚СЃСЏ РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РёРїР° СЃРѕР»РІРµСЂР°
+    // Создаётся буфер, тип слоя которого определяется в зависимости от типа солвера
     buffer_type buffer;
-    /// @brief РўРµРїР»РѕРІР°СЏ РјРѕРґРµР»СЊ С‚СЂСѓР±С‹
+    /// @brief Тепловая модель трубы
     noniso_qsm_model_type model_type;
 
 public:
-    /// @brief РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ
-    /// @param pipe РњРѕРґРµР»СЊ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґР°
+    /// @brief Конструктор
+    /// @param pipe Модель трубопровода
     qsm_noniso_T_task_t(const pipe_noniso_properties_t& pipe, 
         const oil_parameters_t& oil, noniso_qsm_model_type model_type)
         : pipe(pipe)
@@ -110,41 +110,41 @@ public:
     {
     }
 
-    /// @brief Р“РµС‚С‚РµСЂ РґР»СЏ С‚РµРєСѓС‰РµРіРѕ СЃР»РѕСЏ  
+    /// @brief Геттер для текущего слоя  
     qsm_noniso_T_layer& get_current_layer() {
         return buffer.current();
     }
-    /// @brief Р“РµС‚С‚РµСЂ РїР°СЂР°РјРµС‚СЂРѕРІ С‚СЂСѓР±С‹
+    /// @brief Геттер параметров трубы
     const pipe_noniso_properties_t& get_pipe() const {
         return pipe;
     }
-    /// @brief РќР°С‡Р°Р»СЊРЅС‹Р№ СЃС‚Р°С†РёРѕРЅР°СЂРЅС‹Р№ СЂР°СЃС‡С‘С‚. 
-    /// РЎС‚Р°РІРёРј РїРѕ РІСЃРµР№ С‚СЂСѓР±Рµ СЂРµРѕР»РѕРіРёСЋ РёР· initial_conditions, РґРµР»Р°РµРј РіРёРґСЂР°РІР»РёС‡РµСЃРєРёР№ СЂР°СЃС‡РµС‚
-    /// @param initial_conditions РќР°С‡Р°Р»СЊРЅС‹Рµ СѓСЃР»РѕРІРёСЏ
+    /// @brief Начальный стационарный расчёт. 
+    /// Ставим по всей трубе реологию из initial_conditions, делаем гидравлический расчет
+    /// @param initial_conditions Начальные условия
     void solve(const qsm_noniso_T_task_boundaries_t& initial_conditions)
     {
-        // РљРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕС‡РµРє
+        // Количество точек
         size_t n = pipe.profile.get_point_count();
 
-        // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЂРµРѕР»РѕРіРёРё
+        // Инициализация реологии
         auto& current = buffer.current();
 
-        // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РЅР°С‡Р°Р»СЊРЅРѕРіРѕ РїСЂРѕС„РёР»СЏ С‚РµРјРїРµСЂР°С‚СѓСЂС‹ (РЅРµ РІР°Р¶РЅРѕ, СЏС‡РµР№РєРё РёР»Рё С‚РѕС‡РєРё)
+        // Инициализация начального профиля температуры (не важно, ячейки или точки)
         for (double& temperature : current.temperature) {
             temperature = initial_conditions.temperature;
         }
-        // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РЅР°С‡Р°Р»СЊРЅРѕРіРѕ РїСЂРѕС„РёР»СЏ С‚РµРјРїРµСЂР°С‚СѓСЂС‹ (РЅРµ РІР°Р¶РЅРѕ, СЏС‡РµР№РєРё РёР»Рё С‚РѕС‡РєРё)
+        // Инициализация начального профиля температуры (не важно, ячейки или точки)
         for (double& temperature_shukhov : current.temperature_shukhov) {
             temperature_shukhov = initial_conditions.temperature_shukhov;
         }
     }
 public:
-    /// @brief Р Р°СЃСЃС‡С‘С‚ С€Р°РіР° РїРѕ РІСЂРµРјРµРЅРё РґР»СЏ Cr = 1
-    /// @param v_max РњР°РєСЃРёРјР°Р»СЊРЅР°СЏ СЃРєРѕСЂРѕСЃС‚СЊ С‚РµС‡РµРЅРёРµ РїРѕС‚РѕРєР° РІ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґРµ
+    /// @brief Рассчёт шага по времени для Cr = 1
+    /// @param v_max Максимальная скорость течение потока в трубопроводе
     double get_time_step_assuming_max_speed(double v_max) const {
         const auto& x = pipe.profile.coordinates;
-        double dx = x[1] - x[0]; // РЁР°Рі СЃРµС‚РєРё
-        double dt = abs(dx / v_max); // РџРѕСЃС‚РѕСЏРЅРЅС‹Р№ С€Р°Рі РїРѕ РІСЂРµРјРµРЅРё РґР»СЏ РљСѓСЂР°РЅС‚Р° = 1
+        double dx = x[1] - x[0]; // Шаг сетки
+        double dt = abs(dx / v_max); // Постоянный шаг по времени для Куранта = 1
         return dt;
     }
 private:
@@ -153,30 +153,30 @@ private:
     /// @param boundaries 
     void make_rheology_step_shukhov(double dt, const qsm_noniso_T_task_boundaries_t& boundaries) {
 
-        std::vector<double>Q_profile(pipe.profile.get_point_count(), boundaries.volumetric_flow); /// Р·Р°РґР°РµРј РїРѕ С‚СЂСѓР±Рµ РЅРѕРІС‹Р№ СЂР°СЃС…РѕРґ РёР· РІСЂРµРјРµРЅРЅРѕРіРѕ СЂСЏРґР°
-        std::vector<double> G(pipe.profile.get_point_count(), Q_profile[0] * oil.density.nominal_density);   /// РјР°СЃСЃРѕРІС‹Р№ СЂР°СЃС…РѕРґ
+        std::vector<double>Q_profile(pipe.profile.get_point_count(), boundaries.volumetric_flow); /// задаем по трубе новый расход из временного ряда
+        std::vector<double> G(pipe.profile.get_point_count(), Q_profile[0] * oil.density.nominal_density);   /// массовый расход
         //pipe.heat.ambient_heat_transfer = 1.4917523388199689;
-        PipeHeatInflowConstArea heatModel(pipe, oil, G);         /// РѕРґРёРЅ С…РёС‚РјРѕРґРµР» РґР»СЏ РєРІРёРєРµСЃС‚Р°, РІС‚РѕСЂРѕР№ РґР»СЏ РЁСѓС…РѕРІР°
+        PipeHeatInflowConstArea heatModel(pipe, oil, G);         /// один хитмодел для квикеста, второй для Шухова
 
-        advance(); // РЎРґРІРёРіР°РµРј С‚РµРєСѓС‰РёР№ Рё РїСЂРµРґС‹РґСѓС‰РёР№ СЃР»РѕРё
+        advance(); // Сдвигаем текущий и предыдущий слои
 
     }
 
-    /// @brief РџРѕР»РЅРѕС†РµРЅРЅС‹Р№ С€Р°Рі РїРѕ С‚РµРјРїРµСЂР°С‚СѓСЂРµ. Р’С‹РїРѕР»РЅСЏРµС‚СЃСЏ РІ T_quasi_layer::temperature
+    /// @brief Полноценный шаг по температуре. Выполняется в T_quasi_layer::temperature
     void step_dynamic_temperature(double dt, const qsm_noniso_T_task_boundaries_t& boundaries) {
         size_t n = pipe.profile.get_point_count();
-        std::vector<double> G(n-1, boundaries.volumetric_flow * oil.density.nominal_density);   /// РјР°СЃСЃРѕРІС‹Р№ СЂР°СЃС…РѕРґ
+        std::vector<double> G(n-1, boundaries.volumetric_flow * oil.density.nominal_density);   /// массовый расход
         PipeHeatInflowConstArea heatModel(pipe, oil, G);
         auto temperature_wrapper = buffer.get_buffer_wrapper(&qsm_noniso_T_layer::get_temperature_wrapper);
         quickest_ultimate_fv_solver solver_tm(heatModel, temperature_wrapper);
         solver_tm.step(dt, boundaries.temperature, boundaries.temperature);
     }
-    /// @brief РЁР°Рі РїРѕ С‚РµРјРїРµСЂР°С‚СѓСЂРµ РІ РІРёРґРµ Р°РґРІРµРєС†РёРё. 
-    /// РџРѕРґСЂР°Р·СѓРјРµРІР°РµС‚СЃСЏ, С‡С‚Рѕ temperature_in - СЌС‚Рѕ С‚РµРјРїРµСЂР°С‚СѓСЂР°, СЂР°СЃСЃС‡РёС‚Р°РЅРЅР°СЏ РїРѕ РЁСѓС…РѕРІСѓ
+    /// @brief Шаг по температуре в виде адвекции. 
+    /// Подразумевается, что temperature_in - это температура, рассчитанная по Шухову
     void step_advection_temperature(double dt, double temperature_in, double vol_flow) {
-        // СЃС‡РёС‚Р°РµРј РїР°СЂС‚РёРё СЃ РїРѕРјРѕС‰СЊСЋ QUICKEST-ULTIMATE
+        // считаем партии с помощью QUICKEST-ULTIMATE
         size_t n = pipe.profile.get_point_count();
-        std::vector<double> Q_profile(n-1, vol_flow); /// Р·Р°РґР°РµРј РїРѕ С‚СЂСѓР±Рµ РЅРѕРІС‹Р№ СЂР°СЃС…РѕРґ РёР· РІСЂРµРјРµРЅРЅРѕРіРѕ СЂСЏРґР°
+        std::vector<double> Q_profile(n-1, vol_flow); /// задаем по трубе новый расход из временного ряда
         PipeQAdvection advection_model(pipe, Q_profile);
 
         auto temperature_wrapper = buffer.get_buffer_wrapper(&qsm_noniso_T_layer::get_temperature_wrapper);
@@ -185,10 +185,10 @@ private:
         solver_rho.step(dt, temperature_in, temperature_in);
 
     }
-    /// @brief Р Р°СЃС‡РµС‚ РїРѕ РЁСѓС…РѕРІСѓ. Р’РѕР·РІСЂР°С‰Р°РµС‚ С‚РµРјРїРµСЂР°С‚СѓСЂСѓ РІ РєРѕРЅС†Рµ С‚СЂСѓР±С‹
+    /// @brief Расчет по Шухову. Возвращает температуру в конце трубы
     double solve_shukhov_temperature(const qsm_noniso_T_task_boundaries_t& boundaries) {
         size_t n = pipe.profile.get_point_count();
-        std::vector<double> G(n, boundaries.volumetric_flow * oil.density.nominal_density);   /// РјР°СЃСЃРѕРІС‹Р№ СЂР°СЃС…РѕРґ
+        std::vector<double> G(n, boundaries.volumetric_flow * oil.density.nominal_density);   /// массовый расход
         PipeHeatInflowConstArea heatModel(pipe, oil, G);
         solve_euler_corrector<1>(heatModel, +1, { boundaries.temperature }, &buffer.current().temperature_shukhov);
         double Tout = buffer.current().temperature_shukhov.back();
@@ -197,23 +197,23 @@ private:
     }
 
 public:
-    /// @brief Р Р°СЃСЃС‡С‘С‚ С€Р°РіР° РјРѕРґРµР»РёСЂРѕРІР°РЅРёСЏ, РІРєР»СЋС‡Р°СЋС‰РёР№ РІ СЃРµР±СЏ СЂР°СЃС‡С‘С‚ С€Р°РіР° РґРІРёР¶РµРЅРёСЏ РїР°СЂС‚РёРё Рё РіРёРґСЂР°РІР»РёС‡РµСЃРєРёР№ СЂР°СЃС‡С‘С‚
-    /// Р¤СѓРЅРєС†РёСЏ РґРµР»Р°С‚ СЃРґРІРёРі Р±СѓС„РµСЂР° (advance) С‚Р°Рє, С‡С‚Рѕ buffer.current РїРѕСЃР»Рµ РІС‹Р·РѕРІР° СЃРѕРґРµСЂР¶РёС‚ СЃРІРµР¶РµСЂР°СЃС‡РёС‚Р°РЅРЅС‹Р№ СЃР»РѕР№
-    /// @param dt РІСЂРµРјРµРЅРЅРѕР№ С€Р°Рі РјРѕРґРµР»РёСЂРѕРІР°РЅРёСЏ
-    /// @param boundaries РљСЂР°РµРІС‹Рµ СѓСЃР»РѕРІРёРµ
+    /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
+    /// Функция делат сдвиг буфера (advance) так, что buffer.current после вызова содержит свежерасчитанный слой
+    /// @param dt временной шаг моделирования
+    /// @param boundaries Краевые условие
     void step(double dt, qsm_noniso_T_task_boundaries_t& boundaries) {
         size_t n = pipe.profile.get_point_count();
-        //std::vector<double> Q_profile(n, boundaries.volumetric_flow); /// Р·Р°РґР°РµРј РїРѕ С‚СЂСѓР±Рµ РЅРѕРІС‹Р№ СЂР°СЃС…РѕРґ РёР· РІСЂРµРјРµРЅРЅРѕРіРѕ СЂСЏРґР°
-        std::vector<double> G(pipe.profile.get_point_count(), boundaries.volumetric_flow * oil.density.nominal_density);   /// РјР°СЃСЃРѕРІС‹Р№ СЂР°СЃС…РѕРґ
+        //std::vector<double> Q_profile(n, boundaries.volumetric_flow); /// задаем по трубе новый расход из временного ряда
+        std::vector<double> G(pipe.profile.get_point_count(), boundaries.volumetric_flow * oil.density.nominal_density);   /// массовый расход
         auto heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);
 
-        advance(); // РЎРґРІРёРіР°РµРј С‚РµРєСѓС‰РёР№ Рё РїСЂРµРґС‹РґСѓС‰РёР№ СЃР»РѕРё
+        advance(); // Сдвигаем текущий и предыдущий слои
 
 
         switch (model_type) {
         case noniso_qsm_model_type::Dynamic: {
-            // TODO: Р·РґРµСЃСЊ РЅРµР»СЊР·СЏ СЌС‚Рѕ РїСЂРѕРїРёСЃС‹РІР°С‚СЊ, РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ РІ РёСЃС…РѕРґРЅС‹С… РґР°РЅРЅС‹С…!!!
-            // СЃРј. NonisothermalQuasistaticModelWithRealData, DynamicTemperature
+            // TODO: здесь нельзя это прописывать, должно быть в исходных данных!!!
+            // см. NonisothermalQuasistaticModelWithRealData, DynamicTemperature
             //pipe.heat.ambient_heat_transfer = 1.3786917741689342;
             step_dynamic_temperature(dt, boundaries);
             break;
@@ -222,27 +222,27 @@ public:
             //pipe.heat.ambient_heat_transfer = 1.4917523388199689;
             double T_out_shukhov = solve_shukhov_temperature(boundaries);
             auto& T_layer = buffer.current().temperature;
-            std::fill(T_layer.begin(), T_layer.end(), T_out_shukhov); // С‚СѓРїРѕ РєРѕРїРёСЂСѓРµРј С‚РµРјРїРµСЂР°С‚СѓСЂ РїРѕ РІСЃРµРјСѓ СЃР»РѕСЋ
+            std::fill(T_layer.begin(), T_layer.end(), T_out_shukhov); // тупо копируем температур по всему слою
             break;
         }
 
         case noniso_qsm_model_type::ShukhovWithAdvection: {
             //pipe.heat.ambient_heat_transfer = 1.4917523388199689;
             double T_out_shukhov = solve_shukhov_temperature(boundaries);
-            // Р·Р°РїСѓСЃРєР°РµРј Р°РґРІРµРєС†РёСЋ, РЅР° РІС…РѕРґ РєРѕС‚РѕСЂРѕР№ РґР°РµРј С‚РµРјРїРµСЂР°С‚СѓСЂСѓ СЃ РІС‹С…РѕРґР°, РїРѕСЃС‡РёС‚Р°РЅРЅСѓСЋ РїРѕ РЁСѓС…РѕРІСѓ
+            // запускаем адвекцию, на вход которой даем температуру с выхода, посчитанную по Шухову
             step_advection_temperature(dt, T_out_shukhov, boundaries.volumetric_flow); 
             break;
         }
         }
     }
 
-    /// @brief РЎРґРІРёРі С‚РµРєСѓС‰РµРіРѕ СЃР»РѕСЏ РІ Р±СѓС„РµСЂРµ
+    /// @brief Сдвиг текущего слоя в буфере
     void advance()
     {
         buffer.advance(+1);
     }
 
-    /// @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃСЃС‹Р»РєСѓ РЅР° Р±СѓС„РµСЂ
+    /// @brief Возвращает ссылку на буфер
     auto& get_buffer()
     {
         return buffer;
@@ -252,18 +252,18 @@ public:
 
 
 struct qsm_noniso_T_properties_t {
-    // РњРѕРґРµР»СЊ С‚СЂСѓР±С‹
+    // Модель трубы
     pipe_noniso_properties_t pipe;
-    // РќРµС„С‚СЊ
+    // Нефть
     oil_parameters_t oil;
-    /// @brief РўРµРїР»РѕРІР°СЏ РјРѕРґРµР»СЊ С‚СЂСѓР±С‹
+    /// @brief Тепловая модель трубы
     noniso_qsm_model_type model_type;
 
     qsm_noniso_T_properties_t() = default;
     qsm_noniso_T_properties_t(const pde_solvers::pipe_json_data& json_pipe) {
         throw std::runtime_error("Please, implement");
     }
-    /// @brief РџСЂРµРѕР±СЂР°Р·РѕРІС‹РІР°РµС‚ РїСЂРѕС„РёР»СЊ РїРѕРґ СЂР°РІРЅРѕРјРµСЂРЅС‹Р№ С€Р°Рі РїРѕ РєРѕРѕСЂРґРёРЅР°С‚Рµ
+    /// @brief Преобразовывает профиль под равномерный шаг по координате
     void make_uniform_profile(double desired_dx) {
         throw std::runtime_error("Please, implement");
     }
@@ -275,28 +275,28 @@ struct qsm_noniso_T_properties_t {
 
 class qsm_noniso_T_solver_t {
 public:
-    /// @brief РўРёРї СЃР»РѕСЏ
+    /// @brief Тип слоя
     using layer_type = qsm_noniso_T_layer;
-    /// @brief РўРёРї Р±СѓС„РµСЂР°
+    /// @brief Тип буфера
     using buffer_type = ring_buffer_t<layer_type>;
-    /// @brief РўРёРї РіСЂР°РЅРёС‡РЅС‹С… СѓСЃР»РѕРІРёР№
+    /// @brief Тип граничных условий
     using boundaries_type = qsm_noniso_T_task_boundaries_t;
-    /// @brief РўРёРї РїР°СЂР°РјРµС‚СЂРѕРІ С‚СЂСѓР±С‹
+    /// @brief Тип параметров трубы
     using pipe_parameters_type = qsm_noniso_T_properties_t;
 
 
 private:
-    // РњРѕРґРµР»СЊ С‚СЂСѓР±С‹
+    // Модель трубы
     const pipe_noniso_properties_t& pipe;
-    // РќРµС„С‚СЊ
+    // Нефть
     const oil_parameters_t& oil;
-    /// @brief РўРµРїР»РѕРІР°СЏ РјРѕРґРµР»СЊ С‚СЂСѓР±С‹
+    /// @brief Тепловая модель трубы
     const noniso_qsm_model_type model_type;
-    // РЎРѕР·РґР°С‘С‚СЃСЏ Р±СѓС„РµСЂ, С‚РёРї СЃР»РѕСЏ РєРѕС‚РѕСЂРѕРіРѕ РѕРїСЂРµРґРµР»СЏРµС‚СЃСЏ РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РёРїР° СЃРѕР»РІРµСЂР°
+    // Создаётся буфер, тип слоя которого определяется в зависимости от типа солвера
     buffer_type& buffer;
 public:
-    /// @brief РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ
-    /// @param pipe РњРѕРґРµР»СЊ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґР°
+    /// @brief Конструктор
+    /// @param pipe Модель трубопровода
     qsm_noniso_T_solver_t(
         const qsm_noniso_T_properties_t& properties,
         ring_buffer_t<layer_type>& buffer,
@@ -307,7 +307,7 @@ public:
         , model_type(properties.model_type)
     {
         if (endogenous_selector.density_std || endogenous_selector.improver || 
-            endogenous_selector.sulfur || endogenous_selector.viscosity_std || 
+            endogenous_selector.sulfur || endogenous_selector.viscosity_working || 
             endogenous_selector.viscosity0 || 
             endogenous_selector.viscosity20 || 
             endogenous_selector.viscosity50
@@ -321,39 +321,39 @@ public:
 
     }
 
-    /// @brief Р“РµС‚С‚РµСЂ РґР»СЏ С‚РµРєСѓС‰РµРіРѕ СЃР»РѕСЏ  
+    /// @brief Геттер для текущего слоя  
     qsm_noniso_T_layer& get_current_layer() {
         return buffer.current();
     }
 
 
-    /// @brief РќР°С‡Р°Р»СЊРЅС‹Р№ СЃС‚Р°С†РёРѕРЅР°СЂРЅС‹Р№ СЂР°СЃС‡С‘С‚. 
-    /// РЎС‚Р°РІРёРј РїРѕ РІСЃРµР№ С‚СЂСѓР±Рµ СЂРµРѕР»РѕРіРёСЋ РёР· initial_conditions, РґРµР»Р°РµРј РіРёРґСЂР°РІР»РёС‡РµСЃРєРёР№ СЂР°СЃС‡РµС‚
-    /// @param initial_conditions РќР°С‡Р°Р»СЊРЅС‹Рµ СѓСЃР»РѕРІРёСЏ
+    /// @brief Начальный стационарный расчёт. 
+    /// Ставим по всей трубе реологию из initial_conditions, делаем гидравлический расчет
+    /// @param initial_conditions Начальные условия
     void solve(const qsm_noniso_T_task_boundaries_t& initial_conditions)
     {
-        // РљРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕС‡РµРє
+        // Количество точек
         size_t n = pipe.profile.get_point_count();
 
-        // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЂРµРѕР»РѕРіРёРё
+        // Инициализация реологии
         auto& current = buffer.current();
 
-        // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РЅР°С‡Р°Р»СЊРЅРѕРіРѕ РїСЂРѕС„РёР»СЏ С‚РµРјРїРµСЂР°С‚СѓСЂС‹ (РЅРµ РІР°Р¶РЅРѕ, СЏС‡РµР№РєРё РёР»Рё С‚РѕС‡РєРё)
+        // Инициализация начального профиля температуры (не важно, ячейки или точки)
         for (double& temperature : current.temperature) {
             temperature = initial_conditions.temperature;
         }
-        // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РЅР°С‡Р°Р»СЊРЅРѕРіРѕ РїСЂРѕС„РёР»СЏ С‚РµРјРїРµСЂР°С‚СѓСЂС‹ (РЅРµ РІР°Р¶РЅРѕ, СЏС‡РµР№РєРё РёР»Рё С‚РѕС‡РєРё)
+        // Инициализация начального профиля температуры (не важно, ячейки или точки)
         for (double& temperature_shukhov : current.temperature_shukhov) {
             temperature_shukhov = initial_conditions.temperature_shukhov;
         }
     }
 public:
-    /// @brief Р Р°СЃСЃС‡С‘С‚ С€Р°РіР° РїРѕ РІСЂРµРјРµРЅРё РґР»СЏ Cr = 1
-    /// @param v_max РњР°РєСЃРёРјР°Р»СЊРЅР°СЏ СЃРєРѕСЂРѕСЃС‚СЊ С‚РµС‡РµРЅРёРµ РїРѕС‚РѕРєР° РІ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґРµ
+    /// @brief Рассчёт шага по времени для Cr = 1
+    /// @param v_max Максимальная скорость течение потока в трубопроводе
     double get_time_step_assuming_max_speed(double v_max) const {
         const auto& x = pipe.profile.coordinates;
-        double dx = x[1] - x[0]; // РЁР°Рі СЃРµС‚РєРё
-        double dt = abs(dx / v_max); // РџРѕСЃС‚РѕСЏРЅРЅС‹Р№ С€Р°Рі РїРѕ РІСЂРµРјРµРЅРё РґР»СЏ РљСѓСЂР°РЅС‚Р° = 1
+        double dx = x[1] - x[0]; // Шаг сетки
+        double dt = abs(dx / v_max); // Постоянный шаг по времени для Куранта = 1
         return dt;
     }
 private:
@@ -362,30 +362,30 @@ private:
     /// @param boundaries 
     void make_rheology_step_shukhov(double dt, const qsm_noniso_T_task_boundaries_t& boundaries) {
 
-        std::vector<double>Q_profile(pipe.profile.get_point_count(), boundaries.volumetric_flow); /// Р·Р°РґР°РµРј РїРѕ С‚СЂСѓР±Рµ РЅРѕРІС‹Р№ СЂР°СЃС…РѕРґ РёР· РІСЂРµРјРµРЅРЅРѕРіРѕ СЂСЏРґР°
-        std::vector<double> G(pipe.profile.get_point_count(), Q_profile[0] * oil.density.nominal_density);   /// РјР°СЃСЃРѕРІС‹Р№ СЂР°СЃС…РѕРґ
+        std::vector<double>Q_profile(pipe.profile.get_point_count(), boundaries.volumetric_flow); /// задаем по трубе новый расход из временного ряда
+        std::vector<double> G(pipe.profile.get_point_count(), Q_profile[0] * oil.density.nominal_density);   /// массовый расход
         //pipe.heat.ambient_heat_transfer = 1.4917523388199689;
-        PipeHeatInflowConstArea heatModel(pipe, oil, G);         /// РѕРґРёРЅ С…РёС‚РјРѕРґРµР» РґР»СЏ РєРІРёРєРµСЃС‚Р°, РІС‚РѕСЂРѕР№ РґР»СЏ РЁСѓС…РѕРІР°
+        PipeHeatInflowConstArea heatModel(pipe, oil, G);         /// один хитмодел для квикеста, второй для Шухова
 
-        advance(); // РЎРґРІРёРіР°РµРј С‚РµРєСѓС‰РёР№ Рё РїСЂРµРґС‹РґСѓС‰РёР№ СЃР»РѕРё
+        advance(); // Сдвигаем текущий и предыдущий слои
 
     }
 
-    /// @brief РџРѕР»РЅРѕС†РµРЅРЅС‹Р№ С€Р°Рі РїРѕ С‚РµРјРїРµСЂР°С‚СѓСЂРµ. Р’С‹РїРѕР»РЅСЏРµС‚СЃСЏ РІ T_quasi_layer::temperature
+    /// @brief Полноценный шаг по температуре. Выполняется в T_quasi_layer::temperature
     void step_dynamic_temperature(double dt, const qsm_noniso_T_task_boundaries_t& boundaries) {
         size_t n = pipe.profile.get_point_count();
-        std::vector<double> G(n - 1, boundaries.volumetric_flow * oil.density.nominal_density);   /// РјР°СЃСЃРѕРІС‹Р№ СЂР°СЃС…РѕРґ
+        std::vector<double> G(n - 1, boundaries.volumetric_flow * oil.density.nominal_density);   /// массовый расход
         PipeHeatInflowConstArea heatModel(pipe, oil, G);
         auto temperature_wrapper = buffer.get_buffer_wrapper(&qsm_noniso_T_layer::get_temperature_wrapper);
         quickest_ultimate_fv_solver solver_tm(heatModel, temperature_wrapper);
         solver_tm.step(dt, boundaries.temperature, boundaries.temperature);
     }
-    /// @brief РЁР°Рі РїРѕ С‚РµРјРїРµСЂР°С‚СѓСЂРµ РІ РІРёРґРµ Р°РґРІРµРєС†РёРё. 
-    /// РџРѕРґСЂР°Р·СѓРјРµРІР°РµС‚СЃСЏ, С‡С‚Рѕ temperature_in - СЌС‚Рѕ С‚РµРјРїРµСЂР°С‚СѓСЂР°, СЂР°СЃСЃС‡РёС‚Р°РЅРЅР°СЏ РїРѕ РЁСѓС…РѕРІСѓ
+    /// @brief Шаг по температуре в виде адвекции. 
+    /// Подразумевается, что temperature_in - это температура, рассчитанная по Шухову
     void step_advection_temperature(double dt, double temperature_in, double vol_flow) {
-        // СЃС‡РёС‚Р°РµРј РїР°СЂС‚РёРё СЃ РїРѕРјРѕС‰СЊСЋ QUICKEST-ULTIMATE
+        // считаем партии с помощью QUICKEST-ULTIMATE
         size_t n = pipe.profile.get_point_count();
-        std::vector<double> Q_profile(n - 1, vol_flow); /// Р·Р°РґР°РµРј РїРѕ С‚СЂСѓР±Рµ РЅРѕРІС‹Р№ СЂР°СЃС…РѕРґ РёР· РІСЂРµРјРµРЅРЅРѕРіРѕ СЂСЏРґР°
+        std::vector<double> Q_profile(n - 1, vol_flow); /// задаем по трубе новый расход из временного ряда
         PipeQAdvection advection_model(pipe, Q_profile);
 
         auto temperature_wrapper = buffer.get_buffer_wrapper(&qsm_noniso_T_layer::get_temperature_wrapper);
@@ -394,10 +394,10 @@ private:
         solver_rho.step(dt, temperature_in, temperature_in);
 
     }
-    /// @brief Р Р°СЃС‡РµС‚ РїРѕ РЁСѓС…РѕРІСѓ. Р’РѕР·РІСЂР°С‰Р°РµС‚ С‚РµРјРїРµСЂР°С‚СѓСЂСѓ РІ РєРѕРЅС†Рµ С‚СЂСѓР±С‹
+    /// @brief Расчет по Шухову. Возвращает температуру в конце трубы
     double solve_shukhov_temperature(const qsm_noniso_T_task_boundaries_t& boundaries) {
         size_t n = pipe.profile.get_point_count();
-        std::vector<double> G(n, boundaries.volumetric_flow * oil.density.nominal_density);   /// РјР°СЃСЃРѕРІС‹Р№ СЂР°СЃС…РѕРґ
+        std::vector<double> G(n, boundaries.volumetric_flow * oil.density.nominal_density);   /// массовый расход
         PipeHeatInflowConstArea heatModel(pipe, oil, G);
         solve_euler_corrector<1>(heatModel, +1, { boundaries.temperature }, &buffer.current().temperature_shukhov);
         double Tout = buffer.current().temperature_shukhov.back();
@@ -408,23 +408,23 @@ private:
 public:
 
 
-    /// @brief Р Р°СЃСЃС‡С‘С‚ С€Р°РіР° РјРѕРґРµР»РёСЂРѕРІР°РЅРёСЏ, РІРєР»СЋС‡Р°СЋС‰РёР№ РІ СЃРµР±СЏ СЂР°СЃС‡С‘С‚ С€Р°РіР° РґРІРёР¶РµРЅРёСЏ РїР°СЂС‚РёРё Рё РіРёРґСЂР°РІР»РёС‡РµСЃРєРёР№ СЂР°СЃС‡С‘С‚
-    /// Р¤СѓРЅРєС†РёСЏ РґРµР»Р°С‚ СЃРґРІРёРі Р±СѓС„РµСЂР° (advance) С‚Р°Рє, С‡С‚Рѕ buffer.current РїРѕСЃР»Рµ РІС‹Р·РѕРІР° СЃРѕРґРµСЂР¶РёС‚ СЃРІРµР¶РµСЂР°СЃС‡РёС‚Р°РЅРЅС‹Р№ СЃР»РѕР№
-    /// @param dt РІСЂРµРјРµРЅРЅРѕР№ С€Р°Рі РјРѕРґРµР»РёСЂРѕРІР°РЅРёСЏ
-    /// @param boundaries РљСЂР°РµРІС‹Рµ СѓСЃР»РѕРІРёРµ
+    /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
+    /// Функция делат сдвиг буфера (advance) так, что buffer.current после вызова содержит свежерасчитанный слой
+    /// @param dt временной шаг моделирования
+    /// @param boundaries Краевые условие
     void step(double dt, qsm_noniso_T_task_boundaries_t& boundaries) {
         size_t n = pipe.profile.get_point_count();
-        //std::vector<double> Q_profile(n, boundaries.volumetric_flow); /// Р·Р°РґР°РµРј РїРѕ С‚СЂСѓР±Рµ РЅРѕРІС‹Р№ СЂР°СЃС…РѕРґ РёР· РІСЂРµРјРµРЅРЅРѕРіРѕ СЂСЏРґР°
-        std::vector<double> G(pipe.profile.get_point_count(), boundaries.volumetric_flow * oil.density.nominal_density);   /// РјР°СЃСЃРѕРІС‹Р№ СЂР°СЃС…РѕРґ
+        //std::vector<double> Q_profile(n, boundaries.volumetric_flow); /// задаем по трубе новый расход из временного ряда
+        std::vector<double> G(pipe.profile.get_point_count(), boundaries.volumetric_flow * oil.density.nominal_density);   /// массовый расход
         auto heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);
 
-        advance(); // РЎРґРІРёРіР°РµРј С‚РµРєСѓС‰РёР№ Рё РїСЂРµРґС‹РґСѓС‰РёР№ СЃР»РѕРё
+        advance(); // Сдвигаем текущий и предыдущий слои
 
 
         switch (model_type) {
         case noniso_qsm_model_type::Dynamic: {
-            // TODO: Р·РґРµСЃСЊ РЅРµР»СЊР·СЏ СЌС‚Рѕ РїСЂРѕРїРёСЃС‹РІР°С‚СЊ, РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ РІ РёСЃС…РѕРґРЅС‹С… РґР°РЅРЅС‹С…!!!
-            // СЃРј. NonisothermalQuasistaticModelWithRealData, DynamicTemperature
+            // TODO: здесь нельзя это прописывать, должно быть в исходных данных!!!
+            // см. NonisothermalQuasistaticModelWithRealData, DynamicTemperature
             //pipe.heat.ambient_heat_transfer = 1.3786917741689342;
             step_dynamic_temperature(dt, boundaries);
             break;
@@ -433,27 +433,27 @@ public:
             //pipe.heat.ambient_heat_transfer = 1.4917523388199689;
             double T_out_shukhov = solve_shukhov_temperature(boundaries);
             auto& T_layer = buffer.current().temperature;
-            std::fill(T_layer.begin(), T_layer.end(), T_out_shukhov); // С‚СѓРїРѕ РєРѕРїРёСЂСѓРµРј С‚РµРјРїРµСЂР°С‚СѓСЂ РїРѕ РІСЃРµРјСѓ СЃР»РѕСЋ
+            std::fill(T_layer.begin(), T_layer.end(), T_out_shukhov); // тупо копируем температур по всему слою
             break;
         }
 
         case noniso_qsm_model_type::ShukhovWithAdvection: {
             //pipe.heat.ambient_heat_transfer = 1.4917523388199689;
             double T_out_shukhov = solve_shukhov_temperature(boundaries);
-            // Р·Р°РїСѓСЃРєР°РµРј Р°РґРІРµРєС†РёСЋ, РЅР° РІС…РѕРґ РєРѕС‚РѕСЂРѕР№ РґР°РµРј С‚РµРјРїРµСЂР°С‚СѓСЂСѓ СЃ РІС‹С…РѕРґР°, РїРѕСЃС‡РёС‚Р°РЅРЅСѓСЋ РїРѕ РЁСѓС…РѕРІСѓ
+            // запускаем адвекцию, на вход которой даем температуру с выхода, посчитанную по Шухову
             step_advection_temperature(dt, T_out_shukhov, boundaries.volumetric_flow); 
             break;
         }
         }
     }
 
-    /// @brief РЎРґРІРёРі С‚РµРєСѓС‰РµРіРѕ СЃР»РѕСЏ РІ Р±СѓС„РµСЂРµ
+    /// @brief Сдвиг текущего слоя в буфере
     void advance()
     {
         buffer.advance(+1);
     }
 
-    /// @brief Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃСЃС‹Р»РєСѓ РЅР° Р±СѓС„РµСЂ
+    /// @brief Возвращает ссылку на буфер
     auto& get_buffer()
     {
         return buffer;
@@ -472,19 +472,19 @@ public:
 
 
 
-/// @brief РЎС‚Р°С†РёРѕРЅР°СЂРЅС‹Р№ СЂР°СЃС‡РµС‚ (СЃ РїРѕРјРѕС‰СЊСЋ initial boundaries),
-/// Р° Р·Р°С‚РµРј РєРІР°Р·РёСЃС‚Р°С†РёРѕРЅР°СЂРЅС‹Р№ СЂР°СЃС‡РµС‚ РїРѕ РєСЂР°РµРІС‹Рј СѓСЃР»РѕРІРёСЏРј (boundary_timeseries)
-/// @tparam Solver Р§РёСЃР»РµРЅРЅС‹Р№ РјРµС‚РѕРґ СЂР°СЃС‡РµС‚Р° РґРІРёР¶РµРЅРёСЏ РїР°СЂС‚РёР№
-/// @tparam Printer РљР»Р°СЃСЃ РґР»СЏ РІС‹РІРѕРґР° СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ РІ С„Р°Р№Р»
-/// @param path РџСѓС‚СЊ Рє С„Р°Р№Р»Р°Рј СЃ СЂРµР·СѓР»СЊС‚Р°С‚Р°РјРё
-/// @param pipe РњРѕРґРµР»СЊ С‚СЂСѓР±С‹
-/// @param initial_boundaries РќР°С‡Р°Р»СЊРЅС‹Рµ СѓСЃР»РѕРІРёСЏ
-/// @param boundary_timeseries РљСЂР°РµРІС‹Рµ СѓСЃР»РѕРІРёСЏ
-/// !!! Р’Р°Р¶РЅРѕ, С‡С‚РѕР±С‹ РІРµРєС‚РѕСЂ РЅР° Р·Р°РґР°РЅРЅС‹Р№ РјРѕРјРµРЅС‚ РІСЂРµРјРµРЅРё Р±С‹Р» СЃРѕРІРјРµСЃС‚РёРј РїРѕ РїРѕСЂСЏРґРєСѓ РїР°СЂР°РјРµС‚СЂРѕРІ СЃ isothermal_quasistatic_task_boundaries_t !!!
-/// @param model_type РЎРїРѕСЃРѕР± СЂР°СЃС‡С‘С‚Р°
-/// @param etalon_timeseries Р­С‚Р°Р»РѕРЅРЅС‹Рµ РґР°РЅРЅС‹Рµ РґР°РІР»РµРЅРёСЏ РІ РєРѕРЅС†Рµ С‚СЂСѓР±РѕРїСЂРѕРІРѕРґР° 
-/// @param dt РЁР°Рі РїРѕ РІСЂРµРјРµРЅРё Р»РёР±Рѕ Р·Р°РґР°С‘С‚СЃСЏ РїРѕСЃС‚РѕСЏРЅРЅС‹Рј, 
-/// Р»РёР±Рѕ СЂР°СЃСЃС‡РёС‚С‹РІР°РµС‚СЃСЏ РЅР° РєР°Р¶РґРѕРј С€Р°РіРµ РјРѕРґРµР»РёСЂРѕРІР°РЅРёСЏ РґР»СЏ Cr = 1 
+/// @brief Стационарный расчет (с помощью initial boundaries),
+/// а затем квазистационарный расчет по краевым условиям (boundary_timeseries)
+/// @tparam Solver Численный метод расчета движения партий
+/// @tparam Printer Класс для вывода результатов в файл
+/// @param path Путь к файлам с результатами
+/// @param pipe Модель трубы
+/// @param initial_boundaries Начальные условия
+/// @param boundary_timeseries Краевые условия
+/// !!! Важно, чтобы вектор на заданный момент времени был совместим по порядку параметров с isothermal_quasistatic_task_boundaries_t !!!
+/// @param model_type Способ расчёта
+/// @param etalon_timeseries Эталонные данные давления в конце трубопровода 
+/// @param dt Шаг по времени либо задаётся постоянным, 
+/// либо рассчитывается на каждом шаге моделирования для Cr = 1 
 //template <typename Solver, typename Printer>
 //inline void perform_noniso_quasistatic_simulation(
 //    const std::string& path,
@@ -498,20 +498,20 @@ public:
 //    double dt
 //)
 //{
-//    time_t t = boundary_timeseries.get_start_date(); // РњРѕРјРµРЅС‚ РІСЂРµРјРµРЅРё РЅР°С‡Р°Р»Р° РјРѕРґРµР»РёСЂРѕРІР°РЅРёСЏ
+//    time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
 //    Printer layer_printer;
 //
 //    noniso_quasistatic_PQ_task_t<Solver> task(pipe, oil, model_type);
 //    task.solve(initial_boundaries);
 //
-//    // РџРµС‡Р°С‚Р°РµРј РїСЂРѕС„РёР»СЊ С‚СЂСѓР±С‹ Рё РїРµСЂРІС‹Р№ СЃР»РѕР№ Рє РЅРµРјСѓ
+//    // Печатаем профиль трубы и первый слой к нему
 //    write_profile(pipe.profile, path + "pipe_coord_heights");
-//    // Р’С‹РІРѕРґ РЅР°С‡Р°Р»СЊРЅРѕРіРѕ СЂР°СЃС‡С‘С‚Р°
+//    // Вывод начального расчёта
 //    layer_printer.print_t_all(path, t, pipe, task.get_current_layer());
 //
 //    do
 //    {
-//        // РРЅС‚РµСЂРїРѕР»РёСЂСѓРµРј Р·РЅР°С‡РµРЅРёСЏ РїР°СЂР°РјРµС‚СЂРѕРІ РІ Р·Р°РґР°РЅРЅС‹Р№ РјРѕРјРµРЅС‚ РІСЂРµРјРµРЅРё
+//        // Интерполируем значения параметров в заданный момент времени
 //        std::vector<double> values_in_time_model = boundary_timeseries(t);
 //        nonisothermal_quasistatic_PQ_task_boundaries_t boundaries(values_in_time_model);
 //        
@@ -519,16 +519,16 @@ public:
 //        if (std::isnan(time_step)) {
 //            const auto& vec = boundary_timeseries.data[0].second;
 //            auto max_it = std::max_element(vec.begin(), vec.end());
-//            double v = *max_it / pipe.wall.getArea();       // Cr РїСЂРµРІС‹С€Р°РµС‚СЃСЏ, РєРѕСЃС‚С‹Р»СЊ                    
+//            double v = *max_it / pipe.wall.getArea();       // Cr превышается, костыль                    
 //            //double v = boundaries.volumetric_flow / pipe.wall.getArea();      
 //            time_step = task.get_time_step_assuming_max_speed(v);
 //        }
 //        t += static_cast<time_t>(time_step);
 //
-//        // Р”РµР»Р°РµРј С€Р°Рі
+//        // Делаем шаг
 //        task.step(time_step, boundaries, step_mode);
 //
-//        // Р’С‹РІРѕРґ РїСЂРѕС„РёР»РµР№ Рё РІСЂРµРјРµРЅРЅРѕРіРѕ СЂСЏРґР° СЃСЂР°РІРЅРµРЅРёСЏ СЃ СЌС‚Р°Р»РѕРЅРЅС‹РјРё РґР°РЅРЅС‹РјРё
+//        // Вывод профилей и временного ряда сравнения с эталонными данными
 //        if (etalon_timeseries.data.empty())
 //        {
 //
@@ -543,8 +543,8 @@ public:
 //
 //}
 //
-///// @brief РџРµСЂРµРіСЂСѓР·РєР° С„СѓРЅРєС†РёРё РґР»СЏ РІРѕР·РјРѕР¶РЅРѕСЃС‚Рё 
-///// РЅРµ РїРµСЂРµРґР°РІР°С‚СЊ РЅР°С‡Р°Р»СЊРЅС‹Рµ СѓСЃР»РѕРІРёСЏ
+///// @brief Перегрузка функции для возможности 
+///// не передавать начальные условия
 //template <typename Solver, typename Printer>
 //inline void perform_noniso_quasistatic_simulation(
 //    const std::string& path,
@@ -557,44 +557,44 @@ public:
 //    double dt=std::numeric_limits<double>::quiet_NaN()
 //)
 //{
-//    time_t t = boundary_timeseries.get_start_date(); // РњРѕРјРµРЅС‚ РІСЂРµРјРµРЅРё РЅР°С‡Р°Р»Р° РјРѕРґРµР»РёСЂРѕРІР°РЅРёСЏ
+//    time_t t = boundary_timeseries.get_start_date(); // Момент времени начала моделирования
 //    nonisothermal_quasistatic_PQ_task_boundaries_t initial_boundaries(boundary_timeseries(t));
 //
 //    perform_noniso_quasistatic_simulation<Solver, Printer>(path, pipe, oil, initial_boundaries, boundary_timeseries, model_type, etalon_timeseries, step_mode, dt);
 //}
 
 
-/// @brief РќР°РєР°РїР»РёРІР°РµС‚ СЂРµР·СѓР»СЊС‚Р°С‚С‹ РїРѕ РІС‹С…РѕРґРЅРѕР№ С‚РµРјРїРµСЂР°С‚СѓСЂРµ
+/// @brief Накапливает результаты по выходной температуре
 class nonisothermal_qsm_batch_Tout_collector_t
     : public batch_processor_precalculated_times<qsm_noniso_T_layer>
 {
 public:
-    /// @brief РўРёРї РґР°РЅРЅС‹С… СЃР»РѕСЏ Р±СѓС„РµСЂР° РёР·РѕС‚РµСЂРјРёС‡РµСЃРєРѕР№ РєРІР°Р·РёСЃС‚Р°С†РёРѕРЅР°СЂРЅРѕР№ РјРѕРґРµР»Рё
+    /// @brief Тип данных слоя буфера изотермической квазистационарной модели
     typedef qsm_noniso_T_layer layer_type;
 protected:
-    /// @brief Р’РµРєС‚РѕСЂ СЂР°СЃС‡С‘С‚РЅС‹С… Р·РЅР°С‡РµРЅРёР№ РґР°РІР»РµРЅРёСЏ РЅР° РІС‹С…РѕРґРµ Р›РЈ
+    /// @brief Вектор расчётных значений давления на выходе ЛУ
     std::vector<double> pipe_temperature_out;
 public:
-    /// @brief РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РѕР±СЂР°Р±РѕС‚С‡РёРєР°
-    /// @param times РџСЂРµРґРїРѕСЃС‡РёС‚Р°РЅРЅР°СЏ РІСЂРµРјРµРЅРЅР°СЏ СЃРµС‚РєР° РјРѕРґРµР»РёСЂРѕРІР°РЅРёСЏ СЂР°Р±РѕС‚С‹ Р›РЈ
+    /// @brief Конструктор обработчика
+    /// @param times Предпосчитанная временная сетка моделирования работы ЛУ
     nonisothermal_qsm_batch_Tout_collector_t(const std::vector<double>& times)
         : pipe_temperature_out(times.size(), std::numeric_limits<double>::quiet_NaN())
     {
 
     }
 
-    /// @brief РЎРѕС…СЂР°РЅРµРЅРёРµ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ СЂР°СЃС‡С‘С‚Р° РґР°РІР»РµРЅРёСЏ РІ РєРѕРЅС†Рµ Р›РЈ РІ РІРµРєС‚РѕСЂ
-    /// @param step_index РўРµРєСѓС‰РёР№ С€Р°Рі РјРѕРґРµР»РёСЂРѕРІР°РЅРёСЏ
-    /// @param layer РўРµРєСѓС‰РёР№ СЃР»РѕР№
+    /// @brief Сохранение результатов расчёта давления в конце ЛУ в вектор
+    /// @param step_index Текущий шаг моделирования
+    /// @param layer Текущий слой
     virtual void process_data(size_t step_index,
         const qsm_noniso_T_layer& layer) override
     {
-        // at() - РїСЂРѕРІРµСЂСЏРµС‚ РІС‹С…РѕРґ Р·Р° РіСЂР°РЅРёС†С‹ РјР°СЃСЃРёРІР°
+        // at() - проверяет выход за границы массива
         //pipe_pressure_out.at(step_index) = layer.pressure.back();
         pipe_temperature_out[step_index] = layer.temperature.back();
     }
-    /// @brief Р“РµС‚С‚РµСЂ РґР»СЏ РІРµРєС‚РѕСЂР° СЃРѕР±СЂР°РЅРЅС‹С… СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ СЂР°СЃС‡С‘С‚Р° РґР°РІР»РµРЅРёСЏ РІ РєРѕРЅС†Рµ Р›РЈ
-    /// @return Р’РµРєС‚РѕСЂ СЂР°СЃС‡С‘С‚РЅС‹С… Р·РЅР°С‡РµРЅРёР№ РґР°РІР»РµРЅРёСЏ РЅР° РІС‹С…РѕРґРµ Р›РЈ
+    /// @brief Геттер для вектора собранных результатов расчёта давления в конце ЛУ
+    /// @return Вектор расчётных значений давления на выходе ЛУ
     const std::vector<double>& get_temp_out_calculated() const {
         return pipe_temperature_out;
     }
