@@ -42,7 +42,7 @@ struct endogenous_parameters_template_t {
     T density_std{ default_endogenious_parameter<T>() };
     /// @brief Номинальная вязкость для изотермического случая
     // TODO: не ли здесь дублирования с visc20?
-    T viscosity_std{ default_endogenious_parameter<T>() };
+    T viscosity_working{ default_endogenious_parameter<T>() };
     /// @brief Серосодержанние
     T sulfur{ default_endogenious_parameter<T>() };
     /// @brief Концентрация ПТП
@@ -78,7 +78,7 @@ inline void reset_confidence(endogenous_values_t* values)
         };
 
     invalidate(values->density_std);
-    invalidate(values->viscosity_std);
+    invalidate(values->viscosity_working);
     invalidate(values->sulfur);
     invalidate(values->improver);
     invalidate(values->temperature);
@@ -127,7 +127,7 @@ struct pipe_endogenous_variable_layer_t
     /// @brief Профиль плотности
     confident_layer_t density_std;
     /// @brief Профиль вязкости (рабочая при изотермическом расчете)
-    confident_layer_t viscosity_std;
+    confident_layer_t viscosity_working;
     /// @brief Серосодержанние
     confident_layer_t sulfur;
     /// @brief Концентрация ПТП
@@ -148,7 +148,7 @@ struct pipe_endogenous_variable_layer_t
         : mass_flow(point_count - 1, 0.0)
         , velocity(point_count - 1, 0.0)
         , density_std(point_count, 860)
-        , viscosity_std(point_count, 1e-6)
+        , viscosity_working(point_count, 1e-6)
         , sulfur(point_count, 1e-3)
         , improver(point_count, 0.0)
         , temperature(point_count, 300)
@@ -167,7 +167,7 @@ inline void reset_confidence(pipe_endogenous_variable_layer_t* layer) {
         };
 
     invalidate(layer->density_std);
-    invalidate(layer->viscosity_std);
+    invalidate(layer->viscosity_working);
     invalidate(layer->sulfur);
     invalidate(layer->improver);
     invalidate(layer->temperature);
@@ -201,15 +201,15 @@ struct pipe_endogenous_calc_layer_t : public pipe_endogenous_variable_layer_t
         return quickest_ultimate_fv_wrapper<1>(layer.density_std.confidence, layer.specific);
     }
     /// @brief Подготовка вязкости для расчета методом конечных объемов 
-    static quickest_ultimate_fv_wrapper<1> get_viscosity_std_wrapper(
+    static quickest_ultimate_fv_wrapper<1> get_viscosity_working_wrapper(
         pipe_endogenous_calc_layer_t& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.viscosity_std.value, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.viscosity_working.value, layer.specific);
     }
-    static quickest_ultimate_fv_wrapper<1> get_viscosity_std_confidence_wrapper(
+    static quickest_ultimate_fv_wrapper<1> get_viscosity_working_confidence_wrapper(
         pipe_endogenous_calc_layer_t& layer)
     {
-        return quickest_ultimate_fv_wrapper<1>(layer.viscosity_std.confidence, layer.specific);
+        return quickest_ultimate_fv_wrapper<1>(layer.viscosity_working.confidence, layer.specific);
     }
 };
 
