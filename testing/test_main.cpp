@@ -51,6 +51,8 @@ using namespace pde_solvers;
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
+    setlocale(LC_ALL, "ru");
+
 #if defined(_WIN32) && !defined(__MINGW32__)
     std::wcout.imbue(std::locale("rus_rus.866"));
 #endif

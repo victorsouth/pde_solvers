@@ -1,39 +1,6 @@
 ﻿#pragma once
 
 
-// Настройка кодировки для Windows
-#ifdef _WIN32
-#include <windows.h>
-
-class WindowsConsoleSetup {
-public:
-    WindowsConsoleSetup() {
-        // Сохраняем текущие настройки
-        oldOutputCP = GetConsoleOutputCP();
-        oldInputCP = GetConsoleCP();
-
-        // Устанавливаем UTF-8
-        SetConsoleOutputCP(CP_UTF8);
-        SetConsoleCP(CP_UTF8);
-
-        std::cout << "Консоль настроена на UTF-8" << std::endl;
-    }
-
-    ~WindowsConsoleSetup() {
-        // Восстанавливаем настройки (опционально)
-        SetConsoleOutputCP(oldOutputCP);
-        SetConsoleCP(oldInputCP);
-    }
-
-private:
-    UINT oldOutputCP;
-    UINT oldInputCP;
-};
-
-// Глобальный объект для настройки консоли
-static WindowsConsoleSetup consoleSetup;
-#endif
-
 
 
 
@@ -189,7 +156,7 @@ protected:
 };
 
 /// @brief Проверка, правильно ли учитывается инверсия потока
-TEST_F(UpstreamDifferencing, CanConsiderFlowSwap) {
+TEST_F(UpstreamDifferencing, ConsidersFlowSwap) {
     Q = std::vector<double>(pipe.profile.get_point_count(), -0.5);
 
     //Получение текущего/предыдущего слоя
@@ -520,7 +487,7 @@ TEST_F(QUICKEST_ULTIMATE, DISABLED_UseCaseStepDensity)
 }
 
 /// @brief Проверка QUICKEST-ULTIMATE, правильно ли учитывается инверсия потока
-TEST_F(QUICKEST_ULTIMATE, CanConsiderFlowSwap) {
+TEST_F(QUICKEST_ULTIMATE, ConsidersFlowSwap) {
     Q = std::vector<double>(pipe.profile.get_point_count(), -0.5);
 
     //Получение текущего/предыдущего слоя
