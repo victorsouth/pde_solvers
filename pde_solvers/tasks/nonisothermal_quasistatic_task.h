@@ -307,7 +307,7 @@ public:
         , model_type(properties.model_type)
     {
         if (endogenous_selector.density_std || endogenous_selector.improver || 
-            endogenous_selector.sulfur || endogenous_selector.viscosity_std || 
+            endogenous_selector.sulfur || endogenous_selector.viscosity_working || 
             endogenous_selector.viscosity0 || 
             endogenous_selector.viscosity20 || 
             endogenous_selector.viscosity50
