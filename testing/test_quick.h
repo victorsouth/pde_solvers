@@ -5,6 +5,23 @@
 
 
 
+        SetConsoleOutputCP(oldOutputCP);
+        SetConsoleCP(oldInputCP);
+    }
+
+private:
+    UINT oldOutputCP;
+    UINT oldInputCP;
+};
+
+// Глобальный объект для настройки консоли
+static WindowsConsoleSetup consoleSetup;
+#endif
+
+
+
+
+
 /// @brief Тесты для солвера upstream_fv_solver
 class UpstreamDifferencing : public ::testing::Test {
 protected:
@@ -668,167 +685,217 @@ TEST(QuickestUltimate, HandlesShortPipe_Reverse)
 }
 
 
-/// @brief Тест для проверки консервативности численной схемы QUICKEST-ULTIMATE (для одной трубы) 
-TEST(QuickestUltimate, SinglePipeConservativityTest)
-{
-    // === ARRANGE ===
-    const double pipe_length = 50e3;/// Длина трубы [м]
-    const double dx = 200.0;/// Шаг пространственной сетки [м]
-    const double diameter = 0.7;/// Диаметр трубы [м]
-    const double total_time = 120 * 3600;///Общее время моделирования [с]
+///@brief Тест для проверки консервативности численной схемы QUICKEST-ULTIMATE (для одной трубы) 
+//TEST(QuickestUltimate, SinglePipeConservativityTest)
+//{
+//    // === ARRANGE ===
+//    const double pipe_length = 50e3;/// Длина трубы [м]
+//    const double dx = 200.0;/// Шаг пространственной сетки [м]
+//    const double diameter = 0.7;/// Диаметр трубы [м]
+//    const double total_time = 120 * 3600;///Общее время моделирования [с]
+//
+//
+//    const double rho_first = 600.0;///Плотность первой партии [кг/м³]
+//    const double rho_second = 650.0;///Плотность второй партии [кг/м³]
+//
+//    const double flow_rate = 0.5;///Скорость потока [м³/с]
+//
+//    const int n_cells_int = static_cast<int>(pipe_length / dx);///Число ячеек сетки
+//
+//    const double switch_time = 6 * 3600;///Время через которое приходит вторая партия
+//    double dt = 60;///Шаг по времени [с]
+//    int n_steps = static_cast<int>(total_time / dt);///Число шагов по времени
+//
+//    const double area = 3.141592653589793 * diameter * diameter / 4.0;///Площадь сечения [м²]
+//    const double cell_volume = area * dx; ///Объем одной ячейки[м³]
+//
+//    double initial_mass_in_pipe = 0.0;
+//
+//    simple_pipe_properties simple_pipe;
+//    simple_pipe.length = pipe_length;
+//    simple_pipe.dx = dx;
+//    simple_pipe.diameter = diameter;
+//    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
+//    
+//    std::vector<double> Q(pipe.profile.get_point_count(), flow_rate);///Вектор расходов
+//    PipeQAdvection advection_model(pipe, Q);///Модель адвекции
+//
+//    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
+//    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
+//    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
+//
+//    ring_buffer_t<layer_t> buffer(2, pipe.profile.get_point_count());
+//    layer_t& prev = buffer.previous();
+//    prev.vars.cell_double[0] = std::vector<double>(prev.vars.cell_double[0].size(), rho_first);
+//
+//    double v = 0.0;
+//    if (!Q.empty()) {
+//        v = advection_model.getEquationsCoeffs(0, Q[0]);
+//    }    
+//    const auto& initial_densities = prev.vars.cell_double[0];
+//    for (int i = 0; i < n_cells_int; ++i) {
+//        if (static_cast<size_t>(i) < initial_densities.size()) {
+//            initial_mass_in_pipe += initial_densities[i] * cell_volume;
+//        }
+//    }
+//
+//    double cumulative_mass_in = 0.0;
+//    double cumulative_mass_out = 0.0;
+//
+//    std::vector<double> mass_in_pipe_history, mass_balance_history, time_history, balance_error_history, rho_outlet_history;
+//
+//    mass_in_pipe_history.push_back(initial_mass_in_pipe);
+//    mass_balance_history.push_back(initial_mass_in_pipe);
+//    time_history.push_back(0.0);
+//    balance_error_history.push_back(0.0);
+//    rho_outlet_history.push_back(rho_first);
+//
+//    double current_time = 0.0;
+//    int switch_step = static_cast<int>(switch_time / dt);
+//    double current_mass_in_pipe = initial_mass_in_pipe;
+//
+//    // === ACT ===
+//    /// Основной цикл расчетов
+//    for (int step = 1; step <= n_steps; ++step) {
+//        current_time += dt;
+//
+//        double rho_in = (step <= switch_step) ? rho_first : rho_second;
+//
+//        double rho_outlet_current = 0.0;
+//        if (!prev.vars.cell_double[0].empty()) {
+//            rho_outlet_current = prev.vars.cell_double[0].back();
+//        }
+//        else {
+//            rho_outlet_current = rho_first;
+//        }
+//
+//        double mass_flow_in = rho_in * flow_rate * dt;
+//        double mass_flow_out = rho_outlet_current * flow_rate * dt;
+//
+//        cumulative_mass_in += mass_flow_in;
+//        cumulative_mass_out += mass_flow_out;
+//
+//        double mass_by_balance = initial_mass_in_pipe + cumulative_mass_in - cumulative_mass_out;
+//
+//        try {
+//            layer_t& next = buffer.current();
+//            quickest_ultimate_fv_solver solver(advection_model, prev, next);
+//
+//            solver.step(dt, rho_in, rho_outlet_current);
+//
+//            current_mass_in_pipe = 0.0;
+//            const auto& densities = next.vars.cell_double[0];
+//            for (int i = 0; i < n_cells_int; ++i) {
+//                if (static_cast<size_t>(i) < densities.size()) {
+//                    current_mass_in_pipe += densities[i] * cell_volume;
+//                }
+//            }
+//
+//            double balance_error = current_mass_in_pipe - mass_by_balance;
+//
+//            mass_in_pipe_history.push_back(current_mass_in_pipe);
+//            mass_balance_history.push_back(mass_by_balance);
+//            time_history.push_back(current_time);
+//            balance_error_history.push_back(balance_error);
+//            rho_outlet_history.push_back(rho_outlet_current);
+//
+//            buffer.advance(+1);
+//            prev = buffer.previous();
+//        }
+//        catch (const std::exception& e) {
+//            FAIL() << "Ошибка на шаге " << step << ": " << e.what();
+//        }
+//    }
+//
+//    // === ASSERT ===
+//    double final_mass_by_scheme = current_mass_in_pipe;
+//    double final_mass_by_balance = initial_mass_in_pipe + cumulative_mass_in - cumulative_mass_out;
+//    double absolute_error = final_mass_by_scheme - final_mass_by_balance;
+//
+//    double ref1 = std::abs(initial_mass_in_pipe);
+//    double ref2 = std::abs(final_mass_by_scheme);
+//    double ref3 = std::abs(cumulative_mass_in);
+//    double ref4 = std::abs(cumulative_mass_out);
+//
+//    double max_mass = ref1;
+//    if (ref2 > max_mass) max_mass = ref2;
+//    if (ref3 > max_mass) max_mass = ref3;
+//    if (ref4 > max_mass) max_mass = ref4;
+//
+//    if (max_mass < 1.0) max_mass = 1.0;
+//    double relative_error = std::abs(absolute_error) / max_mass;
+//
+//    const double absolute_tolerance = 1e-6;
+//    const double relative_tolerance = 1e-10;
+//
+//    double tolerance1 = absolute_tolerance;
+//    double tolerance2 = relative_tolerance * max_mass;
+//    double tolerance = (tolerance1 > tolerance2) ? tolerance1 : tolerance2;
+//
+//    EXPECT_NEAR(final_mass_by_scheme, final_mass_by_balance, tolerance)
+//        << "Схема QUICKEST-ULTIMATE не консервативна. "
+//        << "M_расчетная = " << final_mass_by_scheme << " кг, "
+//        << "M_балансная = " << final_mass_by_balance << " кг, "
+//        << "разница = " << absolute_error << " кг";
+//
+//    // Сохранение в CSV файл
+//    if (auto csv = std::ofstream("conservativity_results.csv")) {
+//        csv << "step,time_h,mass_scheme_kg,mass_balance_kg,error_kg,rho_out_kg_m3\n";
+//        for (size_t i = 0; i < time_history.size(); ++i)
+//            csv << i << ';' << time_history[i] / 3600 << ';' << mass_in_pipe_history[i] << ';'
+//            << mass_balance_history[i] << ';' << balance_error_history[i] << ';'
+//            << rho_outlet_history[i] << '\n';
+//    }
+//}
 
+///@brief Тест для проверки консервативности численной схемы QUICKEST-ULTIMATE (для одной трубы) 
+TEST(QuickestUltimate, SinglePipeConservativityTest) {
+    // Параметры
+    const double L = 50e3, dx = 200.0, D = 0.7, T = 120 * 3600;
+    const double ρ1 = 600.0, ρ2 = 650.0, Q = 0.5, t_sw = 6 * 3600, dt = 60;
+    const double V_cell = (M_PI * D * D / 4.0 )*dx;
+    const int N = static_cast<int>(L / dx);
+    const int steps = static_cast<int>(T / dt);
+    const int sw_step = static_cast<int>(t_sw / dt);
 
-    const double rho_first = 600.0;///Плотность первой партии [кг/м³]
-    const double rho_second = 650.0;///Плотность второй партии [кг/м³]
+    // Инициализация трубы
+    simple_pipe_properties sp{ L, dx, D };
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(sp);
+    std::vector<double> flows(pipe.profile.get_point_count(), Q);
+    PipeQAdvection model(pipe, flows);
+    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_t;
+    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer spec_t;
+    typedef composite_layer_t<target_t, spec_t> layer_t;
+    ring_buffer_t<layer_t> buf(2, pipe.profile.get_point_count());
+    layer_t& prev = buf.previous();
+    prev.vars.cell_double[0] = std::vector<double>(N, ρ1);
 
-    const double flow_rate = 0.5;///Скорость потока [м³/с]
-
-    const int n_cells_int = static_cast<int>(pipe_length / dx);///Число ячеек сетки
-
-    const double switch_time = 6 * 3600;///Время через которое приходит вторая партия
-    double dt = 60;///Шаг по времени [с]
-    int n_steps = static_cast<int>(total_time / dt);///Число шагов по времени
-
-    const double area = 3.141592653589793 * diameter * diameter / 4.0;///Площадь сечения [м²]
-    const double cell_volume = area * dx; ///Объем одной ячейки[м³]
-
-    double initial_mass_in_pipe = 0.0;
-
-    simple_pipe_properties simple_pipe;
-    simple_pipe.length = pipe_length;
-    simple_pipe.dx = dx;
-    simple_pipe.diameter = diameter;
-    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-    
-    std::vector<double> Q(pipe.profile.get_point_count(), flow_rate);///Вектор расходов
-    PipeQAdvection advection_model(pipe, Q);///Модель адвекции
-
-    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
-    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
-    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
-
-    ring_buffer_t<layer_t> buffer(2, pipe.profile.get_point_count());
-    layer_t& prev = buffer.previous();
-    prev.vars.cell_double[0] = std::vector<double>(prev.vars.cell_double[0].size(), rho_first);
-
-    double v = 0.0;
-    if (!Q.empty()) {
-        v = advection_model.getEquationsCoeffs(0, Q[0]);
-    }    
-    const auto& initial_densities = prev.vars.cell_double[0];
-    for (int i = 0; i < n_cells_int; ++i) {
-        if (static_cast<size_t>(i) < initial_densities.size()) {
-            initial_mass_in_pipe += initial_densities[i] * cell_volume;
-        }
+    double M0 = 0.0;
+    for (double ρ : prev.vars.cell_double[0]) M0 += ρ * V_cell;
+    double M_in = 0.0, M_out = 0.0;
+    for (int s = 1; s <= steps; ++s) {
+        double ρ_in = (s <= sw_step) ? ρ1 : ρ2;
+        double ρ_out = prev.vars.cell_double[0].back();
+        double m_in = ρ_in * Q * dt;
+        double m_out = ρ_out * Q * dt;
+        M_in += m_in;
+        M_out += m_out;
+        layer_t& next = buf.current();
+        quickest_ultimate_fv_solver solver(model, prev, next);
+        solver.step(dt, ρ_in, ρ_out);
+        buf.advance(+1);
+        prev = buf.previous();
     }
+    double M_scheme = 0.0;
+    for (double ρ : prev.vars.cell_double[0]) M_scheme += ρ * V_cell;
 
-    double cumulative_mass_in = 0.0;
-    double cumulative_mass_out = 0.0;
+    // Проверка консервативности
+    double M_bal = M0 + M_in - M_out;
+    double err = M_scheme - M_bal;
+    double M_ref = std::max({ std::abs(M0), std::abs(M_scheme),
+                           std::abs(M_in), std::abs(M_out), 1.0 });
+    double tol = std::max(1e-6, 1e-10 * M_ref);
 
-    std::vector<double> mass_in_pipe_history, mass_balance_history, time_history, balance_error_history, rho_outlet_history;
-
-    mass_in_pipe_history.push_back(initial_mass_in_pipe);
-    mass_balance_history.push_back(initial_mass_in_pipe);
-    time_history.push_back(0.0);
-    balance_error_history.push_back(0.0);
-    rho_outlet_history.push_back(rho_first);
-
-    double current_time = 0.0;
-    int switch_step = static_cast<int>(switch_time / dt);
-    double current_mass_in_pipe = initial_mass_in_pipe;
-
-    // === ACT ===
-    /// Основной цикл расчетов
-    for (int step = 1; step <= n_steps; ++step) {
-        current_time += dt;
-
-        double rho_in = (step <= switch_step) ? rho_first : rho_second;
-
-        double rho_outlet_current = 0.0;
-        if (!prev.vars.cell_double[0].empty()) {
-            rho_outlet_current = prev.vars.cell_double[0].back();
-        }
-        else {
-            rho_outlet_current = rho_first;
-        }
-
-        double mass_flow_in = rho_in * flow_rate * dt;
-        double mass_flow_out = rho_outlet_current * flow_rate * dt;
-
-        cumulative_mass_in += mass_flow_in;
-        cumulative_mass_out += mass_flow_out;
-
-        double mass_by_balance = initial_mass_in_pipe + cumulative_mass_in - cumulative_mass_out;
-
-        try {
-            layer_t& next = buffer.current();
-            quickest_ultimate_fv_solver solver(advection_model, prev, next);
-
-            solver.step(dt, rho_in, rho_outlet_current);
-
-            current_mass_in_pipe = 0.0;
-            const auto& densities = next.vars.cell_double[0];
-            for (int i = 0; i < n_cells_int; ++i) {
-                if (static_cast<size_t>(i) < densities.size()) {
-                    current_mass_in_pipe += densities[i] * cell_volume;
-                }
-            }
-
-            double balance_error = current_mass_in_pipe - mass_by_balance;
-
-            mass_in_pipe_history.push_back(current_mass_in_pipe);
-            mass_balance_history.push_back(mass_by_balance);
-            time_history.push_back(current_time);
-            balance_error_history.push_back(balance_error);
-            rho_outlet_history.push_back(rho_outlet_current);
-
-            buffer.advance(+1);
-            prev = buffer.previous();
-        }
-        catch (const std::exception& e) {
-            FAIL() << "Ошибка на шаге " << step << ": " << e.what();
-        }
-    }
-
-    // === ASSERT ===
-    double final_mass_by_scheme = current_mass_in_pipe;
-    double final_mass_by_balance = initial_mass_in_pipe + cumulative_mass_in - cumulative_mass_out;
-    double absolute_error = final_mass_by_scheme - final_mass_by_balance;
-
-    double ref1 = std::abs(initial_mass_in_pipe);
-    double ref2 = std::abs(final_mass_by_scheme);
-    double ref3 = std::abs(cumulative_mass_in);
-    double ref4 = std::abs(cumulative_mass_out);
-
-    double max_mass = ref1;
-    if (ref2 > max_mass) max_mass = ref2;
-    if (ref3 > max_mass) max_mass = ref3;
-    if (ref4 > max_mass) max_mass = ref4;
-
-    if (max_mass < 1.0) max_mass = 1.0;
-    double relative_error = std::abs(absolute_error) / max_mass;
-
-    const double absolute_tolerance = 1e-6;
-    const double relative_tolerance = 1e-10;
-
-    double tolerance1 = absolute_tolerance;
-    double tolerance2 = relative_tolerance * max_mass;
-    double tolerance = (tolerance1 > tolerance2) ? tolerance1 : tolerance2;
-
-    EXPECT_NEAR(final_mass_by_scheme, final_mass_by_balance, tolerance)
-        << "Схема QUICKEST-ULTIMATE не консервативна. "
-        << "M_расчетная = " << final_mass_by_scheme << " кг, "
-        << "M_балансная = " << final_mass_by_balance << " кг, "
-        << "разница = " << absolute_error << " кг";
-
-    // Сохранение в CSV файл
-    if (auto csv = std::ofstream("conservativity_results.csv")) {
-        csv << "step,time_h,mass_scheme_kg,mass_balance_kg,error_kg,rho_out_kg_m3\n";
-        for (size_t i = 0; i < time_history.size(); ++i)
-            csv << i << ';' << time_history[i] / 3600 << ';' << mass_in_pipe_history[i] << ';'
-            << mass_balance_history[i] << ';' << balance_error_history[i] << ';'
-            << rho_outlet_history[i] << '\n';
-    }
+    EXPECT_NEAR(M_scheme, M_bal, tol)
+        << "Ошибка консервативности: " << err << " кг";
 }
-
-
