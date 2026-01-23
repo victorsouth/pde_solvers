@@ -14,6 +14,10 @@ struct simple_pipe_properties {
     size_t get_segment_count() const {
         return static_cast<size_t>(0.5 + length / dx);
     }
+    /// @brief Количество точек при дроблении длины length с шагом dx 
+    size_t get_point_count() const {
+        return get_segment_count() + 1;
+    }
     /// @brief Имитация ТУ для расчетов движения партий
     /// длина 700км, диаметр 514мм, горизонтальная, сетка 100 м
     static simple_pipe_properties sample_district() {

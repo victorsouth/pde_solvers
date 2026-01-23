@@ -1,27 +1,6 @@
 ﻿#pragma once
 
 
-
-
-
-
-        SetConsoleOutputCP(oldOutputCP);
-        SetConsoleCP(oldInputCP);
-    }
-
-private:
-    UINT oldOutputCP;
-    UINT oldInputCP;
-};
-
-// Глобальный объект для настройки консоли
-static WindowsConsoleSetup consoleSetup;
-#endif
-
-
-
-
-
 /// @brief Тесты для солвера upstream_fv_solver
 class UpstreamDifferencing : public ::testing::Test {
 protected:
@@ -899,3 +878,194 @@ TEST(QuickestUltimate, SinglePipeConservativityTest) {
     EXPECT_NEAR(M_scheme, M_bal, tol)
         << "Ошибка консервативности: " << err << " кг";
 }
+namespace pde_solvers {
+    ;
+
+
+    /// @brief Проблемно-ориентированный слой для расчета адвекции одного параметра
+    struct qsm_advection_layer {
+        /// @brief Профиль температуры (ячейки)
+        std::vector<double> value;
+        /// @brief Профиль вспомогательных расчетов для метода конечных объемов
+        quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
+        /// @brief Инициализация профилей
+        /// @param point_count Количество точек
+        qsm_advection_layer(size_t point_count)
+            : value(point_count - 1)
+            , specific(point_count)
+        {
+        }
+
+        /// @brief Подготовка обертки слоя для расчета методом конечных объемов
+        static quickest_ultimate_fv_wrapper<1> get_value_wrapper(qsm_advection_layer& layer)
+        {
+            return quickest_ultimate_fv_wrapper<1>(layer.value, layer.specific);
+        }
+    };
+
+    /// @brief Структура, содержащая в себе краевые условия задачи адвекиции
+    struct qsm_advection_task_boundaries_t {
+        /// @brief Объемный расход
+        double volumetric_flow;
+        /// @brief Значение параметра на входе/выходе
+        double value;
+        /// @brief Конструктор по умолчанию
+        qsm_advection_task_boundaries_t() = default;
+
+
+        /// @brief Создание структуры со значениями по умолчанию
+        static qsm_advection_task_boundaries_t default_values() {
+            qsm_advection_task_boundaries_t result;
+            result.volumetric_flow = 0.2;
+            result.value = 600;// значение плотности
+            return result;
+        }
+    };
+
+
+    /// @brief Расчетная задача (task) для расчета адвекции Quickest-Ultimate
+    class qsm_advection_task_t {
+    public:
+        /// @brief Тип слоя
+        using layer_type = qsm_advection_layer;
+        /// @brief Тип буфера
+        using buffer_type = ring_buffer_t<layer_type>;
+        /// @brief Тип граничных условий
+        using boundaries_type = qsm_advection_task_boundaries_t;
+    private:
+        /// @brief Модель трубы
+        pipe_properties_t pipe;
+        /// @brief Буфер для двух слоев адвекции (текущий и предыдущий)
+        buffer_type buffer;
+
+    public:
+        /// @brief Конструктор
+        /// @param pipe Модель трубопровода
+        qsm_advection_task_t(const simple_pipe_properties& pipe)
+            : pipe(pipe_properties_t::build_simple_pipe(pipe))
+            , buffer(2 /*количество слоев*/, pipe.get_point_count())
+        {
+
+        }
+
+        /////// @brief Геттер для текущего слоя  
+        ////qsm_noniso_T_layer& get_current_layer() {
+        ////    return buffer.current();
+        ////}
+        /////// @brief Геттер параметров трубы
+        ////const pipe_noniso_properties_t& get_pipe() const {
+        ////    return pipe;
+        ////}
+
+        /// @brief Начальный стационарный расчёт. 
+        /// Ставим по всей трубе параметр из initial_conditions
+        void solve(const qsm_advection_task_boundaries_t& initial_conditions)
+        {
+            auto& current = buffer.current();
+            for (double& value : current.value) {
+                value = initial_conditions.value;
+            }
+        }
+        //public:
+        //    /// @brief Рассчёт шага по времени для Cr = 1
+        //    /// @param v_max Максимальная скорость течение потока в трубопроводе
+        //    double get_time_step_assuming_max_speed(double v_max) const {
+        //        const auto& x = pipe.profile.coordinates;
+        //        double dx = x[1] - x[0]; // Шаг сетки
+        //        double dt = abs(dx / v_max); // Постоянный шаг по времени для Куранта = 1
+        //        return dt;
+        //    }
+
+
+    public:
+        /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
+        /// Функция делат сдвиг буфера (advance) так, что buffer.current после вызова содержит свежерасчитанный слой
+        /// @param dt временной шаг моделирования
+        /// @param boundaries Краевые условие
+        void step(double dt, qsm_advection_task_boundaries_t& boundaries) {
+            // считаем партии с помощью QUICKEST-ULTIMATE
+            size_t n = pipe.profile.get_point_count();
+            std::vector<double> Q_profile(n - 1, boundaries.volumetric_flow); /// задаем по трубе новый расход из временного ряда
+            PipeQAdvection advection_model(pipe, Q_profile);
+
+            auto temperature_wrapper = buffer.get_buffer_wrapper(&qsm_advection_layer::get_value_wrapper);
+
+            quickest_ultimate_fv_solver solver_rho(advection_model, temperature_wrapper);
+            solver_rho.step(dt, boundaries.value, boundaries.value);
+
+        }
+
+        /// @brief Сдвиг текущего слоя в буфере
+        void advance()
+        {
+            buffer.advance(+1);
+        }
+
+        /// @brief Возвращает ссылку на буфер
+        auto& get_buffer()
+        {
+            return buffer;
+        }
+    };
+
+}
+
+//qsm_advection_task_t prepare_conservativity_pipe() {
+//    qsm_advection_task_t task();
+//
+//
+//    return task;
+//}
+
+///@brief Тест для проверки консервативности численной схемы QUICKEST-ULTIMATE (для одной трубы) 
+TEST(QuickestUltimate, HasConservativity) {
+    // Параметры
+    const double L = 50e3, dx = 200.0, D = 0.7, T = 120 * 3600;
+    const double ρ1 = 600.0, ρ2 = 650.0, Q = 0.5, t_sw = 6 * 3600, dt = 60;
+    const double V_cell = (M_PI * D * D / 4.0) * dx;
+    const int N = static_cast<int>(L / dx);
+    const int steps = static_cast<int>(T / dt);
+    const int sw_step = static_cast<int>(t_sw / dt);
+
+    // Инициализация трубы
+    simple_pipe_properties sp{ L, dx, D };
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(sp);
+    std::vector<double> flows(pipe.profile.get_point_count(), Q);
+    PipeQAdvection model(pipe, flows);
+    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_t;
+    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer spec_t;
+    typedef composite_layer_t<target_t, spec_t> layer_t;
+    ring_buffer_t<layer_t> buf(2, pipe.profile.get_point_count());
+    layer_t& prev = buf.previous();
+    prev.vars.cell_double[0] = std::vector<double>(N, ρ1);
+
+    double M0 = 0.0;
+    for (double ρ : prev.vars.cell_double[0]) M0 += ρ * V_cell;
+    double M_in = 0.0, M_out = 0.0;
+    for (int s = 1; s <= steps; ++s) {
+        double ρ_in = (s <= sw_step) ? ρ1 : ρ2;
+        double ρ_out = prev.vars.cell_double[0].back();
+        double m_in = ρ_in * Q * dt;
+        double m_out = ρ_out * Q * dt;
+        M_in += m_in;
+        M_out += m_out;
+        layer_t& next = buf.current();
+        quickest_ultimate_fv_solver solver(model, prev, next);
+        solver.step(dt, ρ_in, ρ_out);
+        buf.advance(+1);
+        prev = buf.previous();
+    }
+    double M_scheme = 0.0;
+    for (double ρ : prev.vars.cell_double[0]) M_scheme += ρ * V_cell;
+
+    // Проверка консервативности
+    double M_bal = M0 + M_in - M_out;
+    double err = M_scheme - M_bal;
+    double M_ref = std::max({ std::abs(M0), std::abs(M_scheme),
+                           std::abs(M_in), std::abs(M_out), 1.0 });
+    double tol = std::max(1e-6, 1e-10 * M_ref);
+
+    EXPECT_NEAR(M_scheme, M_bal, tol)
+        << "Ошибка консервативности: " << err << " кг";
+}
+
