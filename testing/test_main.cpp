@@ -1,4 +1,4 @@
-﻿#include <pde_solvers/pde_solvers.h>
+#include <pde_solvers/pde_solvers.h>
 
 
 
@@ -41,6 +41,7 @@ using namespace pde_solvers;
 #include "test_diffusion.h"
 #include "test_moc.h"
 #include "test_quick.h"
+#include "test_quick_conservativity.h"
 #include "test_condensate_pipe_PQ.h"
 #include "test_condensate_pipe_PP.h"
 #include "test_static_pipe_solver.h"

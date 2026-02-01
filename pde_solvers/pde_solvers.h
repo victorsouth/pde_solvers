@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 //#define M_PI       3.14159265358979323846
 #include <fixed/fixed.h>
@@ -47,6 +47,7 @@
 #include "tasks/nonisothermal_quasistatic_task_p.h"
 #include "tasks/nonisothermal_quasistatic_ident.h"
 #include "tasks/iso_nonbarotropic_pipe_task.h"
+#include "tasks/advection_task.h"
 
 namespace pde_solvers
 {
