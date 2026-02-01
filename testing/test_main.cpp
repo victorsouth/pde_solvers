@@ -1,4 +1,4 @@
-﻿#include <pde_solvers/pde_solvers.h>
+#include <pde_solvers/pde_solvers.h>
 
 
 
@@ -41,6 +41,7 @@ using namespace pde_solvers;
 #include "test_diffusion.h"
 #include "test_moc.h"
 #include "test_quick.h"
+#include "test_quick_conservativity.h"
 #include "test_condensate_pipe_PQ.h"
 #include "test_condensate_pipe_PP.h"
 #include "test_static_pipe_solver.h"
@@ -51,6 +52,8 @@ using namespace pde_solvers;
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
+    setlocale(LC_ALL, "ru");
+
 #if defined(_WIN32) && !defined(__MINGW32__)
     std::wcout.imbue(std::locale("rus_rus.866"));
 #endif

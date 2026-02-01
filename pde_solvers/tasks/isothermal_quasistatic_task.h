@@ -443,4 +443,26 @@ inline void quasistatic_batch(
     }
 
 };
+
+template <typename Task, typename DataProcessor>
+inline void quasistatic_batch(
+    Task& task,
+    const std::vector<double>& times,
+    const std::vector<typename Task::boundaries_type>& boundary_timeseries,
+    DataProcessor* data_processor
+)
+{
+    // Вычленение начальных условий
+    task.solve(boundary_timeseries[0]);
+    data_processor->process_data(0, task.get_buffer().current());
+
+    for (size_t step_index = 1; step_index < times.size(); step_index++)
+    {
+        double time_step = times[step_index] - times[step_index - 1];
+        task.step(time_step, boundary_timeseries[step_index]);
+        data_processor->process_data(step_index, task.get_buffer().current());
+    }
+
+};
+
 }
