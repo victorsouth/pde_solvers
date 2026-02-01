@@ -1,22 +1,24 @@
-﻿#pragma once
-
+#pragma once
 
 
 /// @brief Тесты для солвера upstream_fv_solver
 class UpstreamDifferencing : public ::testing::Test {
 protected:
-    // Профиль переменных
+    /// @brief Профиль переменных
     typedef upstream_fv_solver_traits<1>::var_layer_data target_var_t;
+    /// @brief Профиль specific переменных
     typedef upstream_fv_solver_traits<1>::specific_layer specific_data_t;
 
-    // Слой: переменных Vars + сколько угодно служебных Specific
+    /// @brief Слой: переменных Vars + сколько угодно служебных Specific
     typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
 protected:
     /// @brief Параметры трубы
     pipe_properties_t pipe;
     /// @brief Профиль расхода
     std::vector<double> Q;
+    /// @brief Модель адвекции
     std::unique_ptr<PipeQAdvection> advection_model;
+    /// @brief Буфер слоев
     std::unique_ptr<ring_buffer_t<layer_t>> buffer;
 protected:
     
@@ -38,18 +40,21 @@ protected:
 /// @brief Тесты для солвера quick_fv_solver
 class QUICK : public ::testing::Test {
 protected:
-    // Профиль переменных
+    /// @brief Профиль переменных
     typedef quick_fv_solver_traits<1>::var_layer_data target_var_t;
+    /// @brief Профиль specific переменных
     typedef quick_fv_solver_traits<1>::specific_layer specific_data_t;
 
-    // Слой: переменных Vars + сколько угодно служебных Specific
+    /// @brief Слой: переменных Vars + сколько угодно служебных Specific
     typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
 protected:
     /// @brief Параметры трубы
     pipe_properties_t pipe;
     /// @brief Профиль расхода
     std::vector<double> Q;
+    /// @brief Модель адвекции
     std::unique_ptr<PipeQAdvection> advection_model;
+    /// @brief Буфер слоев
     std::unique_ptr<ring_buffer_t<layer_t>> buffer;
 protected:
 
@@ -77,18 +82,21 @@ protected:
 /// @brief Тесты для солвера quickest_fv_solver
 class QUICKEST : public ::testing::Test {
 protected:
-    // Профиль переменных
+    /// @brief Профиль переменных
     typedef quickest_fv_solver_traits<1>::var_layer_data target_var_t;
+    /// @brief Профиль specific переменных
     typedef quickest_fv_solver_traits<1>::specific_layer specific_data_t;
 
-    // Слой: переменных Vars + сколько угодно служебных Specific
+    /// @brief Слой: переменных Vars + сколько угодно служебных Specific
     typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
 protected:
     /// @brief Параметры трубы
     pipe_properties_t pipe;
     /// @brief Профиль расхода
     std::vector<double> Q;
+    /// @brief Модель адвекции
     std::unique_ptr<PipeQAdvection> advection_model;
+    /// @brief Буфер слоев
     std::unique_ptr<ring_buffer_t<layer_t>> buffer;
 protected:
 
@@ -116,18 +124,20 @@ protected:
 /// @brief Тесты для солвера quickest_ultimate_fv_solver
 class QUICKEST_ULTIMATE : public ::testing::Test {
 protected:
-    // Профиль переменных
+    /// @brief Тип данных для переменных слоя
     typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
+    /// @brief Тип данных для специфичных переменных слоя
     typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
-
-    // Слой: переменных Vars + сколько угодно служебных Specific
+    /// @brief Слой: переменных Vars + сколько угодно служебных Specific
     typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
 protected:
     /// @brief Параметры трубы
     pipe_properties_t pipe;
     /// @brief Профиль расхода
     std::vector<double> Q;
+    /// @brief Модель адвекции
     std::unique_ptr<PipeQAdvection> advection_model;
+    /// @brief Буфер слоев
     std::unique_ptr<ring_buffer_t<layer_t>> buffer;
 protected:
 
@@ -153,7 +163,7 @@ protected:
 };
 
 /// @brief Проверка, правильно ли учитывается инверсия потока
-TEST_F(UpstreamDifferencing, CanConsiderFlowSwap) {
+TEST_F(UpstreamDifferencing, ConsidersFlowSwap) {
     Q = std::vector<double>(pipe.profile.get_point_count(), -0.5);
 
     //Получение текущего/предыдущего слоя
@@ -484,7 +494,7 @@ TEST_F(QUICKEST_ULTIMATE, DISABLED_UseCaseStepDensity)
 }
 
 /// @brief Проверка QUICKEST-ULTIMATE, правильно ли учитывается инверсия потока
-TEST_F(QUICKEST_ULTIMATE, CanConsiderFlowSwap) {
+TEST_F(QUICKEST_ULTIMATE, ConsidersFlowSwap) {
     Q = std::vector<double>(pipe.profile.get_point_count(), -0.5);
 
     //Получение текущего/предыдущего слоя
@@ -514,19 +524,23 @@ TEST_F(QUICKEST_ULTIMATE, CanConsiderFlowSwap) {
 /// @brief Тесты для солвера quickest_ultimate_fv_solver
 class QUICKEST_ULTIMATE2 : public ::testing::Test {
 protected:
-    // Профиль переменных
+    /// @brief Профиль переменных
     typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
+    /// @brief Профиль specific переменных
     typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
 
-    // Слой: переменных Vars + сколько угодно служебных Specific
+    /// @brief Слой: переменных Vars + сколько угодно служебных Specific
     typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
 protected:
     /// @brief Параметры трубы
     pipe_noniso_properties_t pipe;
+    /// @brief Параметры нефти
     oil_parameters_t oil;
     /// @brief Профиль расхода
     std::vector<double> G;
+    /// @brief Модель теллообмена(?)
     std::unique_ptr<PipeHeatInflowConstArea> heatModel;
+    /// @brief Буфер слоев
     std::unique_ptr<ring_buffer_t<layer_t>> buffer;
 protected:
 
@@ -594,7 +608,7 @@ inline std::pair<double, double> short_pipe_step(double vol_flow,
 {
     simple_pipe_properties simple_pipe;
     simple_pipe.length = 100.0;   // длина 100 м
-    simple_pipe.dx = 100.0;       // шаг сетки = длина (1 ячейка)
+    simple_pipe.dx = 50.0;       // шаг сетки = длина (1 ячейка)
     simple_pipe.diameter = 0.7;
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
