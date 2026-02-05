@@ -552,6 +552,49 @@ public:
     }
 };
 
+/// @brief Профиль эндогенных параметров для конденсатопровода (без температуры и ПТП)
+struct iso_nonbaro_improver_pipe_endogenious_layer_t {
+    /// @brief Профиль плотности с достоверностью
+    confident_layer_t density_std;
+    /// @brief Профиль концентрации присадки с достоверностью
+    confident_layer_t improver_concentration;
+    /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
+    quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
+    /// @brief Инициализация профилей
+    /// @param point_count Количество точек
+    iso_nonbaro_improver_pipe_endogenious_layer_t(size_t point_count)
+        : density_std(point_count, 850.0)
+        , improver_concentration(point_count, 0.0)
+        , specific(point_count)
+    {
+    }
+
+    /// @brief Подготовка обертки над слоем плотности для расчета методом конечных объемов 
+    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(iso_nonbaro_improver_pipe_endogenious_layer_t& layer)
+    {
+        return quickest_ultimate_fv_wrapper<1>(layer.density_std.value, layer.specific);
+    }
+
+    /// @brief Подготовка обертки над слоем концентрации присадки для расчета методом конечных объемов 
+    static quickest_ultimate_fv_wrapper<1> get_improver_concentration_wrapper(iso_nonbaro_improver_pipe_endogenious_layer_t& layer)
+    {
+        return quickest_ultimate_fv_wrapper<1>(layer.improver_concentration.value, layer.specific);
+    }
+
+    /// @brief Подготовка обертки над слоем достоверности плотности для расчета методом конечных объемов 
+    static quickest_ultimate_fv_wrapper<1> get_density_confidence_wrapper(iso_nonbaro_improver_pipe_endogenious_layer_t& layer)
+    {
+        return quickest_ultimate_fv_wrapper<1>(layer.density_std.confidence, layer.specific);
+    }
+
+    /// @brief Подготовка обертки над слоем достоверности концентрации присадки для расчета методом конечных объемов 
+    static quickest_ultimate_fv_wrapper<1> get_improver_concentration_confidence_wrapper(iso_nonbaro_improver_pipe_endogenious_layer_t& layer)
+    {
+        return quickest_ultimate_fv_wrapper<1>(layer.improver_concentration.confidence, layer.specific);
+    }
+
+};
+
 
 }
 
