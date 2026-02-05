@@ -11,20 +11,20 @@ class solve_condensate_PP : public fixed_system_t<1> {
     /// @brief Тип переменной для системы уравнений
     using fixed_system_t<1>::var_type;
 private:
+    /// @brief ссылка на уравнение импульса (расход обновляется в residuals)
+    iso_nonbaro_impulse_equation_t& pipeModel;
     /// @brief слой расчета
     LayerType& current_layer;
     /// @brief ГУ
     const BoundariesType& bound;
-    /// @brief свойства трубы
-    const iso_nonbarotropic_pipe_properties_t& pipe;
 
 public:
     /// @brief Конструктор класса для решения задачи PP методом Ньютона
-    /// @param pipe Свойства конденсатопровода
+    /// @param pipeModel Ссылка на экземпляр уравнения импульса конденсатопровода
     /// @param bound Граничные условия задачи PP
     /// @param current_layer Текущий расчетный слой
-    solve_condensate_PP(const iso_nonbarotropic_pipe_properties_t& pipe, const BoundariesType& bound, LayerType& current_layer)
-        : pipe(pipe)
+    solve_condensate_PP(iso_nonbaro_impulse_equation_t& pipeModel, const BoundariesType& bound, LayerType& current_layer)
+        : pipeModel(pipeModel)
         , bound(bound)
         , current_layer(current_layer)
     {
@@ -36,10 +36,9 @@ public:
     virtual double residuals(const double& x) {
         auto& current = current_layer;
 
+        pipeModel.set_flow(x);
         std::vector<double>& p_profile = current.pressure;
-        int euler_direction = +1; // Задаем направление для Эйлера
-        iso_nonbaro_impulse_equation_t pipeModel(pipe, current.density_std.value, x, euler_direction);
-        solve_euler<1>(pipeModel, euler_direction, bound.pressure_in, &p_profile);
+        solve_euler<1>(pipeModel, pipeModel.get_solver_direction(), bound.pressure_in, &p_profile);
 
         return p_profile.back() - bound.pressure_out;
     }
@@ -50,7 +49,6 @@ public:
     virtual double objective_function(const var_type& r) const override {
         return std::abs(r);
     }
-
 };
 
 
@@ -77,27 +75,27 @@ struct hydraulic_pipe_layer : BaseEndogenousLayer {
 };
 
 /// @brief Профиль эндогенных параметров для конденсатопровода (без температуры и ПТП)
-struct iso_nonbarotropic_pipe_endogenious_layer_t {
+struct iso_nonbaro_pipe_endogenious_layer_t {
     /// @brief Профиль плотности с достоверностью
     confident_layer_t density_std;
     /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
     quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
     /// @brief Инициализация профилей
     /// @param point_count Количество точек
-    iso_nonbarotropic_pipe_endogenious_layer_t(size_t point_count)
+    iso_nonbaro_pipe_endogenious_layer_t(size_t point_count)
         : density_std(point_count, 850.0)
         , specific(point_count)
     {
     }
 
     /// @brief Подготовка обертки над слоем плотности для расчета методом конечных объемов 
-    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(iso_nonbarotropic_pipe_endogenious_layer_t& layer)
+    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(iso_nonbaro_pipe_endogenious_layer_t& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.density_std.value, layer.specific);
     }
 
     /// @brief Подготовка обертки над слоем достоверности плотности для расчета методом конечных объемов 
-    static quickest_ultimate_fv_wrapper<1> get_density_confidence_wrapper(iso_nonbarotropic_pipe_endogenious_layer_t& layer)
+    static quickest_ultimate_fv_wrapper<1> get_density_confidence_wrapper(iso_nonbaro_pipe_endogenious_layer_t& layer)
     {
         return quickest_ultimate_fv_wrapper<1>(layer.density_std.confidence, layer.specific);
     }
@@ -105,7 +103,7 @@ struct iso_nonbarotropic_pipe_endogenious_layer_t {
 };
 
 /// @brief Расчетный слой для квазистационарного расчета при переменной плотности
-using iso_nonbaro_pipe_layer_t = hydraulic_pipe_layer<iso_nonbarotropic_pipe_endogenious_layer_t>;
+using iso_nonbaro_pipe_layer_t = hydraulic_pipe_layer<iso_nonbaro_pipe_endogenious_layer_t>;
 
 
 /// @brief Структура, содержащая в себе краевые условия задачи PP
@@ -183,10 +181,12 @@ public:
 
         // TODO: задавать начальное приближение расхода (брать из настроек солвера?)
         double volumetric_flow_initial = 0.2;
+        int euler_direction = +1;
+        iso_nonbaro_impulse_equation_t pipeModel(pipe, current.density_std.value, volumetric_flow_initial, euler_direction);
 
         // Создаем объект класса для расчета невязки при решении PP задачи методом Ньютона
         solve_condensate_PP<iso_nonbarotropic_pipe_PP_task_boundaries_t, layer_type> solver_pp(
-            pipe, boundaries, current);
+            pipeModel, boundaries, current);
 
         fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
         parameters.residuals_norm = 0.1; // погрешность 0.1 Па
@@ -281,12 +281,12 @@ public:
 
         if (std::isinf(dt)) {
             auto value_buffer_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbarotropic_pipe_endogenious_layer_t::get_density_wrapper);
+                &iso_nonbaro_pipe_endogenious_layer_t::get_density_wrapper);
             std::vector<double>& val = value_buffer_wrapper.current().vars;
             std::fill(val.begin(), val.end(), boundaries.density_std.value);
 
             auto confidence_buffer_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbarotropic_pipe_endogenious_layer_t::get_density_confidence_wrapper);
+                &iso_nonbaro_pipe_endogenious_layer_t::get_density_confidence_wrapper);
             std::vector<double>& conf = confidence_buffer_wrapper.current().vars;
             std::fill(conf.begin(), conf.end(), boundaries.density_std.confidence);
         }
@@ -296,13 +296,13 @@ public:
                 volumetric_flow, pipe.profile.coordinates);
             {
                 auto buffer_wrapper = buffer.get_buffer_wrapper(
-                    &iso_nonbarotropic_pipe_endogenious_layer_t::get_density_wrapper);
+                    &iso_nonbaro_pipe_endogenious_layer_t::get_density_wrapper);
                 pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
                 solver.step(dt, boundaries.density_std.value, boundaries.density_std.value);
             }
             {
                 auto buffer_wrapper = buffer.get_buffer_wrapper(
-                    &iso_nonbarotropic_pipe_endogenious_layer_t::get_density_confidence_wrapper);
+                    &iso_nonbaro_pipe_endogenious_layer_t::get_density_confidence_wrapper);
                 pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
                 solver.step(dt, boundaries.density_std.confidence, boundaries.density_std.confidence);
             }
@@ -657,10 +657,12 @@ public:
 
         //// TODO: задавать начальное приближение расхода (брать из настроек солвера?)
         //double volumetric_flow_initial = 0.2;
+        //int euler_direction = +1;
+        //iso_nonbaro_impulse_equation_t pipeModel(pipe, current.density_std.value, volumetric_flow_initial, euler_direction);
 
         //// Создаем объект класса для расчета невязки при решении PP задачи методом Ньютона
         //solve_condensate_PP<iso_nonbarotropic_pipe_PP_task_boundaries_t, layer_type> solver_pp(
-        //    pipe, boundaries, current);
+        //    pipeModel, boundaries, current);
 
         //fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
         //parameters.residuals_norm = 0.1; // погрешность 0.1 Па

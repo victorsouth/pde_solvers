@@ -62,11 +62,16 @@ protected:
     const std::vector<double>& density_profile;
     /// @brief Свойства конденсатопровода
     const iso_nonbarotropic_pipe_properties_t& pipe;
-    /// @brief Объемный расход, м³/с
-    const double flow;
+    /// @brief Объемный расход, м³/с (изменяется при итерациях Ньютона в задаче PP)
+    double flow;
     /// @brief Направление расчета по Эйлеру (+1 - от входа к выходу, -1 - от выхода ко входу)
     const int solver_direction;
 public:
+    /// @brief Устанавливает объемный расход (для задачи PP при итерациях Ньютона)
+    void set_flow(double new_flow) { flow = new_flow; }
+    /// @brief Возвращает направление расчета по Эйлеру
+    int get_solver_direction() const { return solver_direction; }
+
     /// @brief Констуктор уравнения трубы
     /// @param pipe Ссылка на сущность трубы
     /// @param rho_profile Профиль плотности
