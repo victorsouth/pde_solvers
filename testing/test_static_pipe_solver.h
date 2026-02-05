@@ -34,7 +34,7 @@ inline double deltaP_for_solve_qP(
     const pde_solvers::iso_nonbarotropic_pipe_PQ_task_boundaries_t& conditions)
 {
 
-    iso_nonbarotropic_pipe_layer_t layer(pipe.profile.get_point_count());
+    iso_nonbaro_pipe_layer_t layer(pipe.profile.get_point_count());
     for (double& density : layer.density_std.value) {
         density = conditions.density;
     }
@@ -60,12 +60,12 @@ inline double Q_for_solve_PP(
     const pde_solvers::iso_nonbarotropic_pipe_PP_task_boundaries_t& conditions,
     double initial_Q_for_Newton = 0.2)
 {
-    iso_nonbarotropic_pipe_layer_t layer(pipe.profile.get_point_count());
+    iso_nonbaro_pipe_layer_t layer(pipe.profile.get_point_count());
     for (double& density : layer.density_std.value) {
         density = conditions.density;
     }
 
-    solve_condensate_PP<iso_nonbarotropic_pipe_PP_task_boundaries_t, iso_nonbarotropic_pipe_layer_t> test = solve_condensate_PP(pipe, conditions, layer);
+    solve_condensate_PP<iso_nonbarotropic_pipe_PP_task_boundaries_t, iso_nonbaro_pipe_layer_t> test = solve_condensate_PP(pipe, conditions, layer);
     fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
     parameters.residuals_norm = 0.1; // погрешность 0.1 Па
     parameters.argument_increment_norm = 0;
