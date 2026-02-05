@@ -12,7 +12,7 @@ class solve_condensate_PP : public fixed_system_t<1> {
     using fixed_system_t<1>::var_type;
 private:
     /// @brief ссылка на уравнение импульса (расход обновляется в residuals)
-    iso_nonbaro_impulse_equation_t& pipeModel;
+    iso_nonbaro_impulse_equation_t& pipe_model;
     /// @brief слой расчета
     LayerType& current_layer;
     /// @brief ГУ
@@ -23,8 +23,9 @@ public:
     /// @param pipeModel Ссылка на экземпляр уравнения импульса конденсатопровода
     /// @param bound Граничные условия задачи PP
     /// @param current_layer Текущий расчетный слой
-    solve_condensate_PP(iso_nonbaro_impulse_equation_t& pipeModel, const BoundariesType& bound, LayerType& current_layer)
-        : pipeModel(pipeModel)
+    solve_condensate_PP(iso_nonbaro_impulse_equation_t& pipe_model,
+        const BoundariesType& bound, LayerType& current_layer)
+        : pipe_model(pipe_model)
         , bound(bound)
         , current_layer(current_layer)
     {
@@ -34,18 +35,14 @@ public:
     /// @param x - неизвестное (для задачи PP является расходом)
     /// @return 
     virtual double residuals(const double& x) {
-        auto& current = current_layer;
-
-        pipeModel.set_flow(x);
-        std::vector<double>& p_profile = current.pressure;
-        solve_euler<1>(pipeModel, pipeModel.get_solver_direction(), bound.pressure_in, &p_profile);
+        pipe_model.set_flow(x);
+        std::vector<double>& p_profile = current_layer.pressure;
+        solve_euler<1>(pipe_model, pipe_model.get_solver_direction(), bound.pressure_in, &p_profile);
 
         return p_profile.back() - bound.pressure_out;
     }
 
     /// @brief переопределяем целевую функцию, чтобы был модуль невязок
-    /// @param r 
-    /// @return 
     virtual double objective_function(const var_type& r) const override {
         return std::abs(r);
     }
