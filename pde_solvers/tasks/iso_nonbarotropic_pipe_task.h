@@ -77,17 +77,12 @@ public:
     virtual double hydro_solve_QP(double volumetric_flow, double pressure_output) override {
         auto& current = buffer.current();
 
-        // Рассчитываем профиль давления методом Эйлера в обратном направлении (от выхода ко входу)
-        std::vector<double>& p_profile = current.pressure;
-        int euler_direction = -1;
-        iso_nonbaro_impulse_equation_t pipeModel(pipe, current, volumetric_flow, euler_direction);
-        solve_euler<1>(pipeModel, euler_direction, pressure_output, &p_profile);
+        if (current.density_std.value.empty()) {
+            throw std::runtime_error("iso_nonbarotropic_pipe_solver_t::hydro_solve_QP: density profile is empty");
+        }
 
-        // Обновляем расход в текущем слое
-        current.std_volumetric_flow = volumetric_flow;
-
-        // Возвращаем давление на входе (первый элемент профиля)
-        return p_profile.front();
+        return rigorous_impulse_solve_QP<iso_nonbaro_impulse_equation_t>(
+            pipe, current, volumetric_flow, pressure_output, -1);
     }
 
     /// @brief Решение гидравлической задачи PQ
@@ -95,22 +90,12 @@ public:
     virtual double hydro_solve_PQ(double volumetric_flow, double pressure_in) override {
         auto& current = buffer.current();
 
-        // Проверяем наличие данных о плотности
         if (current.density_std.value.empty()) {
             throw std::runtime_error("iso_nonbarotropic_pipe_solver_t::hydro_solve_PQ: density profile is empty");
         }
 
-        // Рассчитываем профиль давления методом Эйлера
-        std::vector<double>& p_profile = current.pressure;
-        int euler_direction = +1; // Задаем направление для Эйлера
-        iso_nonbaro_impulse_equation_t pipeModel(pipe, current, volumetric_flow, euler_direction);
-        solve_euler<1>(pipeModel, euler_direction, pressure_in, &p_profile);
-
-        // Обновляем расход в текущем слое
-        current.std_volumetric_flow = volumetric_flow;
-
-        // Возвращаем давление на выходе (последний элемент профиля)
-        return p_profile.back();
+        return rigorous_impulse_solve_QP<iso_nonbaro_impulse_equation_t>(
+            pipe, current, volumetric_flow, pressure_in, +1);
     }
 
     /// @brief Выполнение транспортного шага (расчет движения партий)
@@ -411,64 +396,24 @@ public:
 
     /// @brief Решение гидравлической задачи PP (заданы давления на входе и выходе, найти расход)
     virtual double hydro_solve_PP(double pressure_input, double pressure_output) override {
-        throw std::runtime_error("not implemented");
-        //auto& current = buffer.current();
+        auto& current = buffer.current();
 
-        //// Проверяем наличие данных о плотности
-        //if (current.density_std.value.empty()) {
-        //    throw std::runtime_error("density profile is empty");
-        //}
 
-        //// Создаем граничные условия для задачи PP
-        //iso_nonbarotropic_pipe_PP_task_boundaries_t boundaries;
-        //boundaries.pressure_in = pressure_input;
-        //boundaries.pressure_out = pressure_output;
-        //boundaries.density = current.density_std.value[0];
 
-        //// TODO: задавать начальное приближение расхода (брать из настроек солвера?)
-        //double volumetric_flow_initial = 0.2;
-        //int euler_direction = +1;
-        //iso_nonbaro_impulse_equation_t pipeModel(pipe, current, volumetric_flow_initial, euler_direction);
-
-        //// Создаем объект класса для расчета невязки при решении PP задачи методом Ньютона
-        //solve_condensate_PP<iso_nonbaro_impulse_equation_t, iso_nonbarotropic_pipe_PP_task_boundaries_t, layer_type> solver_pp(
-        //    pipeModel, boundaries, current);
-
-        //fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
-        //parameters.residuals_norm = 0.1; // погрешность 0.1 Па
-        //parameters.argument_increment_norm = 0;
-        //parameters.residuals_norm_allow_early_exit = true;
-
-        //// Создание структуры для записи результатов расчета
-        //fixed_solver_result_t<1> result;
-        //fixed_newton_raphson<1>::solve_dense(solver_pp, { volumetric_flow_initial }, parameters, &result);
-
-        //// Обновляем расход в текущем слое
-        //current.std_volumetric_flow = result.argument;
-
-        //return result.argument;
+        double volumetric_flow_initial = current.std_volumetric_flow;
+        rigorous_impulse_solver_PP<iso_nonbaro_improver_impulse_equation_t>
+            solver_pp(pipe, current, pressure_input, pressure_output);
+        return solver_pp.solve(volumetric_flow_initial);
     }
 
     /// @brief Решение гидравлической задачи QP
     virtual double hydro_solve_QP(double volumetric_flow, double pressure_output) override {
         auto& current = buffer.current();
 
-        // Проверяем наличие данных о плотности
-        if (current.density_std.value.empty()) {
-            throw std::runtime_error("iso_nonbarotropic_pipe_solver_t::hydro_solve_QP: density profile is empty");
-        }
 
-        // Рассчитываем профиль давления методом Эйлера в обратном направлении (от выхода ко входу)
-        std::vector<double>& p_profile = current.pressure;
-        int euler_direction = -1;
-        iso_nonbaro_improver_impulse_equation_t pipeModel(pipe, current, volumetric_flow, euler_direction);
-        solve_euler<1>(pipeModel, euler_direction, pressure_output, &p_profile);
 
-        // Обновляем расход в текущем слое
-        current.std_volumetric_flow = volumetric_flow;
-
-        // Возвращаем давление на входе (первый элемент профиля)
-        return p_profile.front();
+        return rigorous_impulse_solve_QP<iso_nonbaro_improver_impulse_equation_t>(
+            pipe, current, volumetric_flow, pressure_output, -1);
     }
 
     /// @brief Решение гидравлической задачи PQ
@@ -476,25 +421,10 @@ public:
     virtual double hydro_solve_PQ(double volumetric_flow, double pressure_in) override {
         auto& current = buffer.current();
 
-        // Проверяем наличие данных о плотности
-        if (current.density_std.value.empty()) {
-            throw std::runtime_error("iso_nonbaro_improver_pipe_solver_t::hydro_solve_PQ: density profile is empty");
-        }
-        if (current.improver_concentration.value.empty()) {
-            throw std::runtime_error("iso_nonbaro_improver_pipe_solver_t::hydro_solve_PQ: concentration profile is empty");
-        }
 
-        // Рассчитываем профиль давления методом Эйлера
-        std::vector<double>& p_profile = current.pressure;
-        int euler_direction = +1; // Задаем направление для Эйлера
-        iso_nonbaro_improver_impulse_equation_t pipeModel(pipe, current, volumetric_flow, euler_direction);
-        solve_euler<1>(pipeModel, euler_direction, pressure_in, &p_profile);
 
-        // Обновляем расход в текущем слое
-        current.std_volumetric_flow = volumetric_flow;
-
-        // Возвращаем давление на выходе (последний элемент профиля)
-        return p_profile.back();
+        return rigorous_impulse_solve_QP<iso_nonbaro_improver_impulse_equation_t>(
+            pipe, current, volumetric_flow, pressure_in, +1);
     }
 
     /// @brief Выполнение транспортного шага (расчет движения партий)
