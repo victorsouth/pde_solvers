@@ -64,7 +64,10 @@ public:
     /// @brief Решение гидравлической задачи PP (заданы давления на входе и выходе, найти расход)
     virtual double hydro_solve_PP(double pressure_input, double pressure_output) override {
         auto& current = buffer.current();
-        double volumetric_flow_initial = current.std_volumetric_flow;
+        double volumetric_flow_initial = 0.0;
+        if (std::isfinite(current.std_volumetric_flow)) {
+            volumetric_flow_initial = current.std_volumetric_flow;
+        }
 
         rigorous_impulse_solver_PP<iso_nonbaro_impulse_equation_t>
             solver_pp(pipe, current, pressure_input, pressure_output);
@@ -397,10 +400,11 @@ public:
     /// @brief Решение гидравлической задачи PP (заданы давления на входе и выходе, найти расход)
     virtual double hydro_solve_PP(double pressure_input, double pressure_output) override {
         auto& current = buffer.current();
+        double volumetric_flow_initial = 0.0;
+        if (std::isfinite(current.std_volumetric_flow)) {
+            volumetric_flow_initial = current.std_volumetric_flow;
+        }
 
-
-
-        double volumetric_flow_initial = current.std_volumetric_flow;
         rigorous_impulse_solver_PP<iso_nonbaro_improver_impulse_equation_t>
             solver_pp(pipe, current, pressure_input, pressure_output);
         return solver_pp.solve(volumetric_flow_initial);

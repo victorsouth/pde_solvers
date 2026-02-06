@@ -172,14 +172,20 @@ public:
         // (обязательно для расчета самотеков, для напорного течения хуже не будет)
         int euler_direction = (std_volumetric_flow >= 0) ? -1 : +1;
         if (euler_direction > 0) {
+            double calc_pressure_in = bound_pressure_in;
             double calc_pressure_out = rigorous_impulse_solve_QP<PipeEquationType>(pipe, current_layer,
                 std_volumetric_flow, bound_pressure_in, euler_direction);
-            return calc_pressure_out - bound_pressure_out;
+
+            return (bound_pressure_in - bound_pressure_out) -
+                (calc_pressure_in - calc_pressure_out);
+
         }
         else {
+            double calc_pressure_out = bound_pressure_out;
             double calc_pressure_in = rigorous_impulse_solve_QP<PipeEquationType>(pipe, current_layer,
                 std_volumetric_flow, bound_pressure_out, euler_direction);
-            return calc_pressure_in - bound_pressure_in;
+            return (bound_pressure_in - bound_pressure_out) - 
+                (calc_pressure_in - calc_pressure_out);
         }
     }
 
@@ -195,6 +201,7 @@ public:
         parameters.residuals_norm = 0.1; // погрешность 0.1 Па
         parameters.argument_increment_norm = 0;
         parameters.residuals_norm_allow_early_exit = true;
+        parameters.line_search.iteration_count = 100; // без этого начальный шаг с нулевого расхода плохо работает
 
         // Создание структуры для записи результатов расчета
         if (result == nullptr) {
