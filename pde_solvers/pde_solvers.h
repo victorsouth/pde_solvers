@@ -37,8 +37,8 @@
 
 #include "solvers/diffusion_solver.h" // нужно инклудить после объявления трубы и проч.
 #include "tasks/pipe_heat_task_util.h"
-#include "pipe/iso_nonbaro_impulse_pde.h"
 #include "tasks/endogenous_values.h"
+#include "pipe/iso_nonbaro_impulse_pde.h"
 #include "tasks/pipe_solver_interface.h"
 
 #include "tasks/isothermal_quasistatic_task.h"

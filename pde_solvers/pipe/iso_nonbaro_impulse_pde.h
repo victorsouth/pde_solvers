@@ -1,20 +1,52 @@
 #pragma once
 
-
 namespace pde_solvers {
+
+/// @brief Профиль эндогенных параметров для небаротропной трубы (переменная только плотность по длине)
+struct iso_nonbaro_pipe_endogenious_layer_t {
+    /// @brief Профиль плотности с достоверностью
+    confident_layer_t density_std;
+    /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
+    quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
+    /// @brief Инициализация профилей
+    /// @param point_count Количество точек
+    iso_nonbaro_pipe_endogenious_layer_t(size_t point_count)
+        : density_std(point_count, 850.0)
+        , specific(point_count)
+    {
+    }
+
+    /// @brief Подготовка обертки над слоем плотности для расчета методом конечных объемов 
+    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(iso_nonbaro_pipe_endogenious_layer_t& layer)
+    {
+        return quickest_ultimate_fv_wrapper<1>(layer.density_std.value, layer.specific);
+    }
+
+    /// @brief Подготовка обертки над слоем достоверности плотности для расчета методом конечных объемов 
+    static quickest_ultimate_fv_wrapper<1> get_density_confidence_wrapper(iso_nonbaro_pipe_endogenious_layer_t& layer)
+    {
+        return quickest_ultimate_fv_wrapper<1>(layer.density_std.confidence, layer.specific);
+    }
+};
 
 /// @brief Свойства конденсатопровода
 /// Расширяет базовые свойства трубы добавлением кинематической вязкости
-struct iso_nonbarotropic_pipe_properties_t : public pipe_properties_t {
+struct iso_nonbaro_pipe_properties_t : public pipe_properties_t {
     /// @brief Кинематическая вязкость, м²/с
     double kinematic_viscosity{1e-7};
-
     /// @brief Конструктор по умолчанию
-    iso_nonbarotropic_pipe_properties_t() = default;
-
+    iso_nonbaro_pipe_properties_t() = default;
+    /// @brief Конструктор из JSON данных
+    /// @param json_data Данные о трубе в формате JSON
+    iso_nonbaro_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
+    {
+        *this = iso_nonbaro_pipe_properties_t::default_values();
+        profile.coordinates = { json_data.x_start, json_data.x_end };
+        wall.diameter = json_data.diameter;
+    }
     /// @brief Объект со значениями по умолчанию
-    static iso_nonbarotropic_pipe_properties_t default_values() {
-        iso_nonbarotropic_pipe_properties_t result;
+    static iso_nonbaro_pipe_properties_t default_values() {
+        iso_nonbaro_pipe_properties_t result;
         double length = 5000;
         double dx = 200;
         result.profile.coordinates =
@@ -22,16 +54,6 @@ struct iso_nonbarotropic_pipe_properties_t : public pipe_properties_t {
         result.wall.diameter = 1;       
         return result;
     }
-
-    /// @brief Конструктор из JSON данных
-    /// @param json_data Данные о трубе в формате JSON
-    iso_nonbarotropic_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
-    {
-        *this = iso_nonbarotropic_pipe_properties_t::default_values();
-        profile.coordinates = { json_data.x_start, json_data.x_end };
-        wall.diameter = json_data.diameter;
-    }
-
     /// @brief Создает равномерный профиль трубы с заданным шагом
     /// TODO: Метод одинаков для всех профилей. Убрать дублирование
     /// @param desired_dx Желаемый шаг сетки, м
@@ -58,10 +80,10 @@ public:
     /// @brief Тип переменной дифференциального уравнения
     using ode_t<1>::var_type;
 protected:
-    /// @brief Профиль плотности вдоль трубы, кг/м³
-    const std::vector<double>& density_profile;
+    /// @brief Профиль эндогенных параметров (плотность и др.) вдоль трубы
+    const iso_nonbaro_pipe_endogenious_layer_t& endogenious_layer;
     /// @brief Свойства конденсатопровода
-    const iso_nonbarotropic_pipe_properties_t& pipe;
+    const iso_nonbaro_pipe_properties_t& pipe;
     /// @brief Объемный расход, м³/с (изменяется при итерациях Ньютона в задаче PP)
     double flow;
     /// @brief Направление расчета по Эйлеру (+1 - от входа к выходу, -1 - от выхода ко входу)
@@ -74,15 +96,15 @@ public:
 
     /// @brief Констуктор уравнения трубы
     /// @param pipe Ссылка на сущность трубы
-    /// @param rho_profile Профиль плотности
+    /// @param endogenious_layer Профиль эндогенных параметров (плотность и др.)
     /// @param flow Объемный расход
     /// @param solver_direction Направление расчета по Эйлеру, должно обязательно совпадать с параметром солвера Эйлера
-    iso_nonbaro_impulse_equation_t(const iso_nonbarotropic_pipe_properties_t& pipe,
-        const std::vector<double>& density_profile, 
+    iso_nonbaro_impulse_equation_t(const iso_nonbaro_pipe_properties_t& pipe,
+        const iso_nonbaro_pipe_endogenious_layer_t& endogenious_layer,
         double flow,
         int solver_direction)
         : pipe(pipe)
-        , density_profile(density_profile)
+        , endogenious_layer(endogenious_layer)
         , flow(flow)
         , solver_direction(solver_direction)
     {
@@ -105,7 +127,8 @@ public:
         /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
         size_t rheo_index = grid_index;
 
-        if (pipe.profile.get_point_count() == density_profile.size())
+        const std::vector<double>& density_values = endogenious_layer.density_std.value;
+        if (pipe.profile.get_point_count() == density_values.size())
         {
             // Случай расчета партий в точках (например для метода характеристик)
             if (solver_direction == +1)
@@ -120,7 +143,7 @@ public:
                 ? grid_index
                 : grid_index - 1;
         }
-        double rho = density_profile[rheo_index];
+        double rho = density_values[rheo_index];
         double S_0 = pipe.wall.getArea();
         double v = flow / (S_0);
         double Re = v * pipe.wall.diameter / pipe.kinematic_viscosity;
