@@ -68,10 +68,34 @@ struct iso_nonbaro_pipe_properties_t : public pipe_properties_t {
     }
 };
 
+/// @brief Базовый слой для гидравлического расчета
+/// @tparam BaseEndogenousLayer Слой эндогенных параметров, характерных для решаемой задачи
+template <typename BaseEndogenousLayer>
+struct hydraulic_pipe_layer : BaseEndogenousLayer {
+    /// @brief Номинальный объемный расход
+    double std_volumetric_flow{ std::numeric_limits<double>::quiet_NaN() };
+    /// @brief Профиль давления
+    std::vector<double> pressure;
+
+    /// @brief Инициализация профилей
+    /// @param point_count Количество точек
+    hydraulic_pipe_layer(size_t point_count)
+        : BaseEndogenousLayer(point_count)
+        , pressure(point_count)
+    {
+    }
+};
+
+/// @brief Расчетный слой для квазистационарного расчета при переменной плотности
+using iso_nonbaro_pipe_layer_t = hydraulic_pipe_layer<iso_nonbaro_pipe_endogenious_layer_t>;
+
 /// @brief Уравнение сохранения импульса для конденсатопровода с учетом движения партий
 /// Используется для задач PQ (задан расход, найти профиль давления) и PP (заданы давления, найти расход методом Ньютона)
 /// Учитывает гидравлические потери на трение и влияние гравитации
 class iso_nonbaro_impulse_equation_t : public ode_t<1> {
+public:
+    using pipe_properties_type = iso_nonbaro_pipe_properties_t;
+    using layer_type = iso_nonbaro_pipe_layer_t;
 protected:
     /// @brief Профиль эндогенных параметров (плотность и др.) вдоль трубы
     const iso_nonbaro_pipe_endogenious_layer_t& endogenious_layer;
@@ -312,11 +336,17 @@ struct iso_nonbaro_improver_pipe_endogenious_layer_t {
     }
 };
 
+/// @brief Расчетный слой для конденсатопровода с присадкой
+using iso_nonbaro_improver_pipe_layer_t = hydraulic_pipe_layer<iso_nonbaro_improver_pipe_endogenious_layer_t>;
+
 /// @brief Уравнение сохранения импульса для конденсатопровода с учетом движения партий
 /// Используется для задач PQ (задан расход, найти профиль давления) и PP (заданы давления, найти расход методом Ньютона)
 /// Учитывает гидравлические потери на трение и влияние гравитации
 class iso_nonbaro_improver_impulse_equation_t : public ode_t<1>
 {
+public:
+    using pipe_properties_type = iso_nonbaro_improver_pipe_properties_t;
+    using layer_type = iso_nonbaro_improver_pipe_layer_t;
 protected:
     /// @brief Профиль эндогенных параметров (плотность, концентрация присадки) вдоль трубы
     const iso_nonbaro_improver_pipe_endogenious_layer_t& endogenious_layer;

@@ -3,34 +3,8 @@
 namespace pde_solvers {
 ;
 
-
-
-
-/// @brief Базовый слой для гидравлического расчета
-/// @tparam BaseEndogenousProfile Слой эндогенных параметром, характерных для решаемой задачи
-template <typename BaseEndogenousLayer>
-struct hydraulic_pipe_layer : BaseEndogenousLayer {
-    /// @brief Номинальный объемный расход
-    double std_volumetric_flow{ std::numeric_limits<double>::quiet_NaN() };
-    /// @brief Профиль давления
-    std::vector<double> pressure;
-
-    /// @brief Инициализация профилей
-    /// @param point_count Количество точек
-    hydraulic_pipe_layer(size_t point_count)
-        : BaseEndogenousLayer(point_count)
-        , pressure(point_count)
-        
-    {
-    }
-};
-
-/// @brief Расчетный слой для квазистационарного расчета при переменной плотности
-using iso_nonbaro_pipe_layer_t = hydraulic_pipe_layer<iso_nonbaro_pipe_endogenious_layer_t>;
-
-
 /// @brief Структура, содержащая в себе краевые условия задачи PP
-struct iso_nonbarotropic_pipe_PP_task_boundaries_t {
+struct iso_nonbaro_pipe_PP_task_boundaries_t {
     /// @brief Изначальное давление на входе
     double pressure_in;
     /// @brief Изначальное давление на выходе
@@ -38,8 +12,8 @@ struct iso_nonbarotropic_pipe_PP_task_boundaries_t {
     /// @brief Изначальная плотность на входе
     double density;
     /// @brief Создание структуры со значениями по умолчанию
-    static iso_nonbarotropic_pipe_PP_task_boundaries_t default_values() {
-        iso_nonbarotropic_pipe_PP_task_boundaries_t result;
+    static iso_nonbaro_pipe_PP_task_boundaries_t default_values() {
+        iso_nonbaro_pipe_PP_task_boundaries_t result;
         result.pressure_out = 0.6e6;
         result.pressure_in = 6e6;
         result.density = 850;
@@ -90,50 +64,18 @@ public:
     /// @brief Решение гидравлической задачи PP (заданы давления на входе и выходе, найти расход)
     virtual double hydro_solve_PP(double pressure_input, double pressure_output) override {
         auto& current = buffer.current();
+        double volumetric_flow_initial = current.std_volumetric_flow;
 
-        // Проверяем наличие данных о плотности
-        if (current.density_std.value.empty()) {
-            throw std::runtime_error("density profile is empty");
-        }
+        rigorous_impulse_solver_PP<iso_nonbaro_impulse_equation_t>
+            solver_pp(pipe, current, pressure_input, pressure_output);
 
-        // Создаем граничные условия для задачи PP
-        iso_nonbarotropic_pipe_PP_task_boundaries_t boundaries;
-        boundaries.pressure_in = pressure_input;
-        boundaries.pressure_out = pressure_output;
-        boundaries.density = current.density_std.value[0];
-
-        // TODO: задавать начальное приближение расхода (брать из настроек солвера?)
-        double volumetric_flow_initial = 0.2;
-        int euler_direction = +1;
-        iso_nonbaro_impulse_equation_t pipeModel(pipe, current, volumetric_flow_initial, euler_direction);
-
-        // Создаем объект класса для расчета невязки при решении PP задачи методом Ньютона
-        impulse_solver_PP<iso_nonbaro_impulse_equation_t, iso_nonbarotropic_pipe_PP_task_boundaries_t, layer_type> solver_pp(
-            pipeModel, boundaries, current);
-
-        fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
-        parameters.residuals_norm = 0.1; // погрешность 0.1 Па
-        parameters.argument_increment_norm = 0;
-        parameters.residuals_norm_allow_early_exit = true;
-
-        // Создание структуры для записи результатов расчета
-        fixed_solver_result_t<1> result;
-        fixed_newton_raphson<1>::solve_dense(solver_pp, { volumetric_flow_initial }, parameters, &result);
-
-        // Обновляем расход в текущем слое
-        current.std_volumetric_flow = result.argument;
-
-        return result.argument;
+        double std_vol_flow = solver_pp.solve(volumetric_flow_initial);
+        return std_vol_flow;
     }
 
     /// @brief Решение гидравлической задачи QP
     virtual double hydro_solve_QP(double volumetric_flow, double pressure_output) override {
         auto& current = buffer.current();
-
-        // Проверяем наличие данных о плотности
-        if (current.density_std.value.empty()) {
-            throw std::runtime_error("iso_nonbarotropic_pipe_solver_t::hydro_solve_QP: density profile is empty");
-        }
 
         // Рассчитываем профиль давления методом Эйлера в обратном направлении (от выхода ко входу)
         std::vector<double>& p_profile = current.pressure;
@@ -210,30 +152,9 @@ public:
     ///// @return Эндогенные значения на выходе
     pde_solvers::endogenous_values_t get_endogenous_output(double volumetric_flow) const override
     {
-        auto get_boundary_value =
-            [&](const pde_solvers::confident_layer_t& layer)
-            {
-                pde_solvers::endogenous_confident_value_t boundary_parameter;
-                if (volumetric_flow >= 0) {
-                    boundary_parameter.value = layer.value.back();
-                    boundary_parameter.confidence =
-                        pde_solvers::discriminate_confidence_level(layer.confidence.back());
-                }
-                else {
-                    boundary_parameter.value = layer.value.front();
-                    boundary_parameter.confidence =
-                        pde_solvers::discriminate_confidence_level(layer.confidence.front());
-                }
-                return boundary_parameter;
-            };
-
         pde_solvers::endogenous_values_t result;
-
-        // Текущий расчетный слой
         layer_type& current_layer = buffer.current();
-
-        result.density_std = get_boundary_value(current_layer.density_std);
-
+        result.density_std = current_layer.density_std.get_boundary_value(volumetric_flow);
         return result;
     }
 
@@ -363,7 +284,7 @@ public:
     /// @brief Тип буфера
     using buffer_type = ring_buffer_t<layer_type>;
     /// @brief Тип граничных условий
-    using boundaries_type = iso_nonbarotropic_pipe_PP_task_boundaries_t;
+    using boundaries_type = iso_nonbaro_pipe_PP_task_boundaries_t;
 private:
     // Модель трубы
     iso_nonbaro_pipe_properties_t pipe;
@@ -450,9 +371,6 @@ public:
         return buffer.current();
     }
 };
-
-using iso_nonbaro_improver_pipe_layer_t = hydraulic_pipe_layer<iso_nonbaro_improver_pipe_endogenious_layer_t>;
-
 
 /// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода
 class iso_nonbaro_improver_pipe_solver_t : public pipe_solver_hydrotransport_interface_t {
@@ -646,31 +564,10 @@ public:
     ///// @return Эндогенные значения на выходе
     pde_solvers::endogenous_values_t get_endogenous_output(double volumetric_flow) const override
     {
-        auto get_boundary_value =
-            [&](const pde_solvers::confident_layer_t& layer)
-            {
-                pde_solvers::endogenous_confident_value_t boundary_parameter;
-                if (volumetric_flow >= 0) {
-                    boundary_parameter.value = layer.value.back();
-                    boundary_parameter.confidence =
-                        pde_solvers::discriminate_confidence_level(layer.confidence.back());
-                }
-                else {
-                    boundary_parameter.value = layer.value.front();
-                    boundary_parameter.confidence =
-                        pde_solvers::discriminate_confidence_level(layer.confidence.front());
-                }
-                return boundary_parameter;
-            };
-
         pde_solvers::endogenous_values_t result;
-
-        // Текущий расчетный слой
         layer_type& current_layer = buffer.current();
-
-        result.density_std = get_boundary_value(current_layer.density_std);
-        result.improver = get_boundary_value(current_layer.improver_concentration);
-
+        result.density_std = current_layer.density_std.get_boundary_value(volumetric_flow);
+        result.improver = current_layer.improver_concentration.get_boundary_value(volumetric_flow);
         return result;
     }
 

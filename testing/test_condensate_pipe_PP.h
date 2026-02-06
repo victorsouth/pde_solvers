@@ -29,7 +29,7 @@
         // Arrange
         auto pipe = create_test_pipe_for_PP();
         pde_solvers::iso_nonbarotropic_pipe_PP_task_t task(pipe);
-        auto initial_conditions = pde_solvers::iso_nonbarotropic_pipe_PP_task_boundaries_t::default_values();
+        auto initial_conditions = pde_solvers::iso_nonbaro_pipe_PP_task_boundaries_t::default_values();
         initial_conditions.pressure_in = 5e6;
         initial_conditions.pressure_out = 4e6;
         initial_conditions.density = 850.0;
@@ -78,7 +78,7 @@
         double calculated_pressure_out = pq_task.get_current_layer().pressure.back();
 
         // Используем найденное давление в PP задаче
-        auto pp_conditions = pde_solvers::iso_nonbarotropic_pipe_PP_task_boundaries_t::default_values();
+        auto pp_conditions = pde_solvers::iso_nonbaro_pipe_PP_task_boundaries_t::default_values();
         pp_conditions.pressure_in = pq_conditions.pressure_in;
         pp_conditions.pressure_out = calculated_pressure_out;
         pp_conditions.density = pq_conditions.density;
@@ -96,7 +96,7 @@
         // Arrange
         auto pipe = create_test_pipe_for_PP();
         pde_solvers::iso_nonbarotropic_pipe_PP_task_t task(pipe);
-        auto initial_conditions = pde_solvers::iso_nonbarotropic_pipe_PP_task_boundaries_t::default_values();
+        auto initial_conditions = pde_solvers::iso_nonbaro_pipe_PP_task_boundaries_t::default_values();
         initial_conditions.pressure_in = 5e6;
         initial_conditions.pressure_out = 4.5e6;
         initial_conditions.density = 850.0;
