@@ -207,12 +207,12 @@ public:
 
         // Создание структуры для записи результатов расчета
         if (result == nullptr) {
-            fixed_solver_result_t<1> result_carrier;
+            fixed_solver_result_t<1> local_result;
             fixed_newton_raphson<1>::solve_dense(*this, { volumetric_flow_initial },
-                parameters, &result_carrier);
+                parameters, &local_result);
 
-            if (result_carrier.result_code == numerical_result_code_t::Converged) {
-                return result_carrier.argument;
+            if (local_result.result_code == numerical_result_code_t::Converged) {
+                return local_result.argument;
             }
             else {
                 throw std::runtime_error("Solve PP not converged");
