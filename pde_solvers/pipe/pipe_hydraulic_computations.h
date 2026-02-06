@@ -99,4 +99,58 @@ inline double solve_pipe_PP(PipeModel& model, double Pin, double Pout,
 
     return result.argument;
 }
+
+
+/// @brief класс для нахождения расхода Q для задачи PP с помощью метода Ньютона
+/// @tparam PipeEquationType тип уравнения импульса (iso_nonbaro_impulse_equation_t или iso_nonbaro_improver_impulse_equation_t)
+/// @tparam BoundariesType класс граничных условий
+/// @tparam LayerType класс уровней в buffer
+template <typename PipeEquationType, typename BoundariesType, typename LayerType>
+class impulse_solver_PP : public fixed_system_t<1> {
+    /// @brief Тип переменной для системы уравнений
+    using fixed_system_t<1>::var_type;
+private:
+    /// @brief ссылка на уравнение импульса (расход обновляется в residuals)
+    PipeEquationType& pipe_model;
+    /// @brief слой расчета
+    LayerType& current_layer;
+    /// @brief ГУ
+    const BoundariesType& bound;
+
+public:
+    /// @brief Конструктор класса для решения задачи PP методом Ньютона
+    /// @param pipe_model Ссылка на экземпляр уравнения импульса конденсатопровода
+    /// @param bound Граничные условия задачи PP
+    /// @param current_layer Текущий расчетный слой
+    impulse_solver_PP(PipeEquationType& pipe_model,
+        const BoundariesType& bound, LayerType& current_layer)
+        : pipe_model(pipe_model)
+        , bound(bound)
+        , current_layer(current_layer)
+    {
+    }
+    /// @brief Невязка по давлению как функция от расхода
+    virtual double residuals(const double& std_volumetric_flow) {
+        pipe_model.set_flow(std_volumetric_flow);
+        std::vector<double>& p_profile = current_layer.pressure;
+
+        int euler_direction = pipe_model.get_solver_direction();
+        if (euler_direction > 0) {
+            solve_euler<1>(pipe_model, euler_direction, bound.pressure_in, &p_profile);
+            return p_profile.back() - bound.pressure_out;
+        }
+        else {
+            solve_euler<1>(pipe_model, euler_direction, bound.pressure_out, &p_profile);
+            return p_profile.front() - bound.pressure_in;
+        }
+    }
+
+    /// @brief переопределяем целевую функцию, чтобы был модуль невязок
+    virtual double objective_function(const var_type& r) const override {
+        return std::abs(r);
+    }
+};
+
+
+
 }

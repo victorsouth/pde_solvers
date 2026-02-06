@@ -43,7 +43,7 @@ inline double Q_for_solve_PP(
     int euler_direction = +1;
     iso_nonbaro_impulse_equation_t pipeModel(pipe, layer, initial_Q_for_Newton, euler_direction);
 
-    solve_condensate_PP<iso_nonbarotropic_pipe_PP_task_boundaries_t, iso_nonbaro_pipe_layer_t> test = solve_condensate_PP(pipeModel, conditions, layer);
+    impulse_solver_PP<iso_nonbaro_impulse_equation_t, iso_nonbarotropic_pipe_PP_task_boundaries_t, iso_nonbaro_pipe_layer_t> test = impulse_solver_PP(pipeModel, conditions, layer);
     fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
     parameters.residuals_norm = 0.1; // погрешность 0.1 Па
     parameters.argument_increment_norm = 0;

@@ -3,52 +3,6 @@
 namespace pde_solvers {
 ;
 
-/// @brief класс для нахождения расхода Q для задачи PP с помощью метода Ньютона
-/// @tparam boundaries_type класс граничных условий
-/// @tparam layer_type класс уровней в buffer
-template <typename BoundariesType, typename LayerType>
-class solve_condensate_PP : public fixed_system_t<1> {
-    /// @brief Тип переменной для системы уравнений
-    using fixed_system_t<1>::var_type;
-private:
-    /// @brief ссылка на уравнение импульса (расход обновляется в residuals)
-    iso_nonbaro_impulse_equation_t& pipe_model;
-    /// @brief слой расчета
-    LayerType& current_layer;
-    /// @brief ГУ
-    const BoundariesType& bound;
-
-public:
-    /// @brief Конструктор класса для решения задачи PP методом Ньютона
-    /// @param pipeModel Ссылка на экземпляр уравнения импульса конденсатопровода
-    /// @param bound Граничные условия задачи PP
-    /// @param current_layer Текущий расчетный слой
-    solve_condensate_PP(iso_nonbaro_impulse_equation_t& pipe_model,
-        const BoundariesType& bound, LayerType& current_layer)
-        : pipe_model(pipe_model)
-        , bound(bound)
-        , current_layer(current_layer)
-    {
-    }
-
-    /// @brief функция невязки для решения методом Ньютона
-    /// @param x - неизвестное (для задачи PP является расходом)
-    /// @return 
-    virtual double residuals(const double& x) {
-        pipe_model.set_flow(x);
-        std::vector<double>& p_profile = current_layer.pressure;
-        solve_euler<1>(pipe_model, pipe_model.get_solver_direction(), bound.pressure_in, &p_profile);
-
-        return p_profile.back() - bound.pressure_out;
-    }
-
-    /// @brief переопределяем целевую функцию, чтобы был модуль невязок
-    virtual double objective_function(const var_type& r) const override {
-        return std::abs(r);
-    }
-};
-
-
 
 
 
@@ -154,7 +108,7 @@ public:
         iso_nonbaro_impulse_equation_t pipeModel(pipe, current, volumetric_flow_initial, euler_direction);
 
         // Создаем объект класса для расчета невязки при решении PP задачи методом Ньютона
-        solve_condensate_PP<iso_nonbarotropic_pipe_PP_task_boundaries_t, layer_type> solver_pp(
+        impulse_solver_PP<iso_nonbaro_impulse_equation_t, iso_nonbarotropic_pipe_PP_task_boundaries_t, layer_type> solver_pp(
             pipeModel, boundaries, current);
 
         fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
@@ -215,33 +169,6 @@ public:
 
         // Возвращаем давление на выходе (последний элемент профиля)
         return p_profile.back();
-    }
-
-    /// @brief Вычисление якобиана для задачи PP
-    /// @return Массив из двух элементов: [dQ/dP_in, dQ/dP_out]
-    virtual std::array<double, 2> hydro_solve_PP_jacobian(double pressure_input, double pressure_output) override {
-        // Вычисляем базовое решение - расход при заданных давлениях
-        double Q_base = hydro_solve_PP(pressure_input, pressure_output);
-
-        // Малое приращение для численного дифференцирования (0.1% от расхода)
-        const double eps = std::max(1e-6, std::abs(Q_base) * 1e-3);
-
-        // Вычисляем производную перепада давления по расходу dP/dQ
-        // Вычисляем давление на выходе при базовом и увеличенном расходе
-        double P_out_base = hydro_solve_PQ(Q_base, pressure_input);
-        double P_out_plus = hydro_solve_PQ(Q_base + eps, pressure_input);
-
-        // Производная давления на выходе по расходу: dP_out/dQ
-        double dP_out_dQ = (P_out_plus - P_out_base) / eps;
-
-        // Производная перепада давления по расходу: dP/dQ = -dP_out/dQ
-        double dP_dQ = -dP_out_dQ;
-
-        // Используем формулу переворота производной:
-        double dQ_dP_in = 1.0 / dP_dQ;
-        double dQ_dP_out = -1.0 / dP_dQ;
-
-        return { dQ_dP_in, dQ_dP_out };
     }
 
     /// @brief Выполнение транспортного шага (расчет движения партий)
@@ -524,50 +451,6 @@ public:
     }
 };
 
-/// @brief Профиль эндогенных параметров для конденсатопровода (без температуры и ПТП)
-struct iso_nonbaro_improver_pipe_endogenious_layer_t {
-    /// @brief Профиль плотности с достоверностью
-    confident_layer_t density_std;
-    /// @brief Профиль концентрации присадки с достоверностью
-    confident_layer_t improver_concentration;
-    /// @brief Профиль вспомогательных расчетов для метода конечных объемов (и для вязкости, и для плотности)
-    quickest_ultimate_fv_solver_traits<1>::specific_layer specific;
-    /// @brief Инициализация профилей
-    /// @param point_count Количество точек
-    iso_nonbaro_improver_pipe_endogenious_layer_t(size_t point_count)
-        : density_std(point_count, 850.0)
-        , improver_concentration(point_count, 0.0)
-        , specific(point_count)
-    {
-    }
-
-    /// @brief Подготовка обертки над слоем плотности для расчета методом конечных объемов 
-    static quickest_ultimate_fv_wrapper<1> get_density_wrapper(iso_nonbaro_improver_pipe_endogenious_layer_t& layer)
-    {
-        return quickest_ultimate_fv_wrapper<1>(layer.density_std.value, layer.specific);
-    }
-
-    /// @brief Подготовка обертки над слоем концентрации присадки для расчета методом конечных объемов 
-    static quickest_ultimate_fv_wrapper<1> get_improver_concentration_wrapper(iso_nonbaro_improver_pipe_endogenious_layer_t& layer)
-    {
-        return quickest_ultimate_fv_wrapper<1>(layer.improver_concentration.value, layer.specific);
-    }
-
-    /// @brief Подготовка обертки над слоем достоверности плотности для расчета методом конечных объемов 
-    static quickest_ultimate_fv_wrapper<1> get_density_confidence_wrapper(iso_nonbaro_improver_pipe_endogenious_layer_t& layer)
-    {
-        return quickest_ultimate_fv_wrapper<1>(layer.density_std.confidence, layer.specific);
-    }
-
-    /// @brief Подготовка обертки над слоем достоверности концентрации присадки для расчета методом конечных объемов 
-    static quickest_ultimate_fv_wrapper<1> get_improver_concentration_confidence_wrapper(iso_nonbaro_improver_pipe_endogenious_layer_t& layer)
-    {
-        return quickest_ultimate_fv_wrapper<1>(layer.improver_concentration.confidence, layer.specific);
-    }
-
-};
-
-
 using iso_nonbaro_improver_pipe_layer_t = hydraulic_pipe_layer<iso_nonbaro_improver_pipe_endogenious_layer_t>;
 
 
@@ -630,7 +513,7 @@ public:
         //iso_nonbaro_impulse_equation_t pipeModel(pipe, current, volumetric_flow_initial, euler_direction);
 
         //// Создаем объект класса для расчета невязки при решении PP задачи методом Ньютона
-        //solve_condensate_PP<iso_nonbarotropic_pipe_PP_task_boundaries_t, layer_type> solver_pp(
+        //solve_condensate_PP<iso_nonbaro_impulse_equation_t, iso_nonbarotropic_pipe_PP_task_boundaries_t, layer_type> solver_pp(
         //    pipeModel, boundaries, current);
 
         //fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
@@ -660,9 +543,7 @@ public:
         // Рассчитываем профиль давления методом Эйлера в обратном направлении (от выхода ко входу)
         std::vector<double>& p_profile = current.pressure;
         int euler_direction = -1;
-        iso_nonbaro_improver_impulse_equation_t pipeModel(pipe, 
-            current.density_std.value, current.improver_concentration.value,
-            volumetric_flow, euler_direction);
+        iso_nonbaro_improver_impulse_equation_t pipeModel(pipe, current, volumetric_flow, euler_direction);
         solve_euler<1>(pipeModel, euler_direction, pressure_output, &p_profile);
 
         // Обновляем расход в текущем слое
@@ -688,9 +569,7 @@ public:
         // Рассчитываем профиль давления методом Эйлера
         std::vector<double>& p_profile = current.pressure;
         int euler_direction = +1; // Задаем направление для Эйлера
-        iso_nonbaro_improver_impulse_equation_t pipeModel(pipe, 
-            current.density_std.value, current.improver_concentration.value,
-            volumetric_flow, euler_direction);
+        iso_nonbaro_improver_impulse_equation_t pipeModel(pipe, current, volumetric_flow, euler_direction);
         solve_euler<1>(pipeModel, euler_direction, pressure_in, &p_profile);
 
         // Обновляем расход в текущем слое
@@ -698,33 +577,6 @@ public:
 
         // Возвращаем давление на выходе (последний элемент профиля)
         return p_profile.back();
-    }
-
-    /// @brief Вычисление якобиана для задачи PP
-    /// @return Массив из двух элементов: [dQ/dP_in, dQ/dP_out]
-    virtual std::array<double, 2> hydro_solve_PP_jacobian(double pressure_input, double pressure_output) override {
-        // Вычисляем базовое решение - расход при заданных давлениях
-        double Q_base = hydro_solve_PP(pressure_input, pressure_output);
-
-        // Малое приращение для численного дифференцирования (0.1% от расхода)
-        const double eps = std::max(1e-6, std::abs(Q_base) * 1e-3);
-
-        // Вычисляем производную перепада давления по расходу dP/dQ
-        // Вычисляем давление на выходе при базовом и увеличенном расходе
-        double P_out_base = hydro_solve_PQ(Q_base, pressure_input);
-        double P_out_plus = hydro_solve_PQ(Q_base + eps, pressure_input);
-
-        // Производная давления на выходе по расходу: dP_out/dQ
-        double dP_out_dQ = (P_out_plus - P_out_base) / eps;
-
-        // Производная перепада давления по расходу: dP/dQ = -dP_out/dQ
-        double dP_dQ = -dP_out_dQ;
-
-        // Используем формулу переворота производной:
-        double dQ_dP_in = 1.0 / dP_dQ;
-        double dQ_dP_out = -1.0 / dP_dQ;
-
-        return { dQ_dP_in, dQ_dP_out };
     }
 
     /// @brief Выполнение транспортного шага (расчет движения партий)
