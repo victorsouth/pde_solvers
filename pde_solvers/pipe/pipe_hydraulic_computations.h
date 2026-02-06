@@ -171,21 +171,23 @@ public:
         // Направление Эйлера противоположно направлению расхода 
         // (обязательно для расчета самотеков, для напорного течения хуже не будет)
         int euler_direction = (std_volumetric_flow >= 0) ? -1 : +1;
+
+        double dp_bound = bound_pressure_in - bound_pressure_out;
+
         if (euler_direction > 0) {
-            double calc_pressure_in = bound_pressure_in;
             double calc_pressure_out = rigorous_impulse_solve_QP<PipeEquationType>(pipe, current_layer,
                 std_volumetric_flow, bound_pressure_in, euler_direction);
 
-            return (bound_pressure_in - bound_pressure_out) -
-                (calc_pressure_in - calc_pressure_out);
-
+            // здесь и в else эти выкрутасы нужны для аккуратного перехода через нулевой расход
+            double dp_calc = bound_pressure_in - calc_pressure_out;
+            return dp_calc - dp_bound; 
         }
         else {
-            double calc_pressure_out = bound_pressure_out;
             double calc_pressure_in = rigorous_impulse_solve_QP<PipeEquationType>(pipe, current_layer,
                 std_volumetric_flow, bound_pressure_out, euler_direction);
-            return (bound_pressure_in - bound_pressure_out) - 
-                (calc_pressure_in - calc_pressure_out);
+            double dp_calc = calc_pressure_in - bound_pressure_out;
+            return dp_calc - dp_bound;
+
         }
     }
 
