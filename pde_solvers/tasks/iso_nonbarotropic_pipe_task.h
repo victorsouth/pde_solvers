@@ -79,11 +79,6 @@ public:
     /// @brief Решение гидравлической задачи QP/PQ (заданы расход и давление на одной границе)
     virtual double hydro_solve_QP(double volumetric_flow, double bound_pressure, int solve_direction) override {
         auto& current = buffer.current();
-
-        if (current.density_std.value.empty()) {
-            throw std::runtime_error("iso_nonbarotropic_pipe_solver_t::hydro_solve_QP: density profile is empty");
-        }
-
         return rigorous_impulse_solve_QP<iso_nonbaro_impulse_equation_t>(
             pipe, current, volumetric_flow, bound_pressure, solve_direction);
     }
@@ -187,41 +182,36 @@ public:
     }
 
 
-    /// @brief Начальный стационарный расчёт. 
+    /// @brief Начальный стационарный расчёт.
     /// Ставим по всей трубе реологию из initial_conditions, делаем гидравлический расчет
     /// @param initial_conditions Начальные условия
     void solve(const boundaries_type& initial_conditions)
     {
-        // Количество точек
-        size_t n = pipe.profile.get_point_count();
+        pde_solvers::endogenous_values_t endogenous_boundaries;
+        endogenous_boundaries.density_std.value = initial_conditions.density;
+        endogenous_boundaries.density_std.confidence = true;
 
-        // Инициализация реологии
-        auto& current = buffer.current();
-
-        // Инициализация начального профиля плотности (не важно, ячейки или точки)
-        for (double& density : current.density_std.value) {
-            density = initial_conditions.density;
-        }
-
-        current.std_volumetric_flow = initial_conditions.volumetric_flow;
-
-        //// Начальный гидравлический расчет
-        calc_pressure_layer(initial_conditions);
+        iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
+        solver.transport_solve(initial_conditions.volumetric_flow, endogenous_boundaries);
+        solver.hydro_solve_QP(initial_conditions.volumetric_flow, initial_conditions.pressure_in, +1);
     }
 private:
     /// @brief Проводится расчёт шага движения партии
     /// @param dt Временной шаг моделирования
     /// @param boundaries Краевые условия
     void make_rheology_step(double dt, const boundaries_type& boundaries) {
-        advance(); // Сдвигаем текущий и предыдущий слои
+        advance();
 
-        // Преобразуем граничные условия в формат endogenous_values_t
         pde_solvers::endogenous_values_t endogenous_boundaries;
         endogenous_boundaries.density_std.value = boundaries.density;
         endogenous_boundaries.density_std.confidence = true;
 
         iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
-        solver.transport_step(dt, boundaries.volumetric_flow, endogenous_boundaries);
+        if (std::isfinite(dt)) {
+            solver.transport_step(dt, boundaries.volumetric_flow, endogenous_boundaries);
+        } else {
+            solver.transport_solve(boundaries.volumetric_flow, endogenous_boundaries);
+        }
     }
 
     /// @brief Рассчёт профиля давления методом Эйлера (задача PQ)
@@ -281,47 +271,43 @@ public:
     }
 
 
-    /// @brief Начальный стационарный расчёт. 
+    /// @brief Начальный стационарный расчёт.
     /// Ставим по всей трубе реологию из initial_conditions, делаем гидравлический расчет
     /// @param initial_conditions Начальные условия
-    /// @param pressure_initial Начальное значение давления для метода Ньютона
+    /// @param volumetric_flow_initial Начальное значение расхода для заполнения трубы
     void solve(const boundaries_type& initial_conditions, double volumetric_flow_initial = 0.2)
     {
-        // Количество точек
-        size_t n = pipe.profile.get_point_count();
+        pde_solvers::endogenous_values_t endogenous_boundaries;
+        endogenous_boundaries.density_std.value = initial_conditions.density;
+        endogenous_boundaries.density_std.confidence = true;
 
-        // Инициализация реологии
-        auto& current = buffer.current();
-        for (double& density : current.density_std.value) {
-            density = initial_conditions.density;
-        }
-
-        //// Начальный гидравлический расчет
-        calc_pressure_layer(initial_conditions, volumetric_flow_initial);
+        iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
+        solver.transport_solve(volumetric_flow_initial, endogenous_boundaries);
+        solver.hydro_solve_PP(initial_conditions.pressure_in, initial_conditions.pressure_out);
     }
 private:
     /// @brief Проводится расчёт шага движения партии
     /// @param dt Временной шаг моделирования
     /// @param boundaries Краевые условия
     void make_rheology_step(double dt, const boundaries_type& boundaries) {
-        // Сохраняем расход из текущего слоя до advance()
         double volumetric_flow = buffer.current().std_volumetric_flow;
-        
-        advance(); // Сдвигаем текущий и предыдущий слои
+        advance();
 
-        // Преобразуем граничные условия в формат endogenous_values_t
         pde_solvers::endogenous_values_t endogenous_boundaries;
         endogenous_boundaries.density_std.value = boundaries.density;
         endogenous_boundaries.density_std.confidence = true;
 
         iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
-        solver.transport_step(dt, volumetric_flow, endogenous_boundaries);
+        if (std::isfinite(dt)) {
+            solver.transport_step(dt, volumetric_flow, endogenous_boundaries);
+        } else {
+            solver.transport_solve(volumetric_flow, endogenous_boundaries);
+        }
     }
 
     /// @brief Рассчёт профиля давления методом Ньютона над Эйлером (задача PP)
     /// @param boundaries Краевые условия
-    /// @param volumetric_flow_initial Начальное значение расхода для метода Ньютона
-    void calc_pressure_layer(const boundaries_type& boundaries, double volumetric_flow_initial) {
+    void calc_pressure_layer(const boundaries_type& boundaries) {
         iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
         solver.hydro_solve_PP(boundaries.pressure_in, boundaries.pressure_out);
     }
@@ -332,8 +318,7 @@ public:
     /// @param boundaries Краевые условие
     void step(double dt, const boundaries_type& boundaries) {
         make_rheology_step(dt, boundaries);
-        double volumetric_flow_initial = buffer.previous().std_volumetric_flow;
-        calc_pressure_layer(boundaries, volumetric_flow_initial);
+        calc_pressure_layer(boundaries);
     }
 
     /// @brief Сдвиг текущего слоя в буфере
