@@ -6,11 +6,15 @@ namespace pde_solvers {
 /// @brief Интерфейс для транспортных солверов трубы (движение партий)
 class pipe_solver_transport_interface_t {
 public:
-    /// @brief Выполнение шага эндогенного расчета
+    /// @brief Выполнение шага эндогенного расчета (конечный шаг по времени)
     /// @param dt Временной шаг
     /// @param volumetric_flow Объемный расход
     /// @param boundaries Эндогенные свойства на входе трубы
     virtual void transport_step(double dt, double volumetric_flow, const pde_solvers::endogenous_values_t& boundaries) = 0;
+    /// @brief Транспортное решение при бесконечном dt (заполнение трубы граничными значениями, стационарный режим)
+    /// @param volumetric_flow Объемный расход
+    /// @param boundaries Эндогенные свойства на входе трубы
+    virtual void transport_solve(double volumetric_flow, const pde_solvers::endogenous_values_t& boundaries) = 0;
     /// @brief Получение эндогенных значений на выходе трубы
     /// @param volumetric_flow Объемный расход для определения направления движения партий
     virtual pde_solvers::endogenous_values_t get_endogenous_output(double volumetric_flow) const = 0;

@@ -90,36 +90,41 @@ public:
 
     /// @brief Выполнение транспортного шага (расчет движения партий)
     virtual void transport_step(double dt, double volumetric_flow, const pde_solvers::endogenous_values_t& boundaries) override {
+        if (std::isinf(dt)) {
+            transport_solve(volumetric_flow, boundaries);
+            return;
+        }
+        buffer.current().std_volumetric_flow = volumetric_flow;
+        // считаем партии с помощью QUICKEST-ULTIMATE
+        pde_solvers::pipe_advection_pde_t advection_model(pde_solvers::circle_area(pipe.wall.diameter),
+            volumetric_flow, pipe.profile.coordinates);
+        {
+            auto buffer_wrapper = buffer.get_buffer_wrapper(
+                &iso_nonbaro_pipe_endogenious_layer_t::get_density_wrapper);
+            pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
+            solver.step(dt, boundaries.density_std.value, boundaries.density_std.value);
+        }
+        {
+            auto buffer_wrapper = buffer.get_buffer_wrapper(
+                &iso_nonbaro_pipe_endogenious_layer_t::get_density_confidence_wrapper);
+            pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
+            solver.step(dt, boundaries.density_std.confidence, boundaries.density_std.confidence);
+        }
+    }
+
+    /// @brief Транспортное решение при бесконечном dt (заполнение трубы граничными значениями)
+    virtual void transport_solve(double volumetric_flow, const pde_solvers::endogenous_values_t& boundaries) override {
         buffer.current().std_volumetric_flow = volumetric_flow;
 
-        if (std::isinf(dt)) {
-            auto value_buffer_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbaro_pipe_endogenious_layer_t::get_density_wrapper);
-            std::vector<double>& val = value_buffer_wrapper.current().vars;
-            std::fill(val.begin(), val.end(), boundaries.density_std.value);
+        auto value_buffer_wrapper = buffer.get_buffer_wrapper(
+            &iso_nonbaro_pipe_endogenious_layer_t::get_density_wrapper);
+        std::vector<double>& val = value_buffer_wrapper.current().vars;
+        std::fill(val.begin(), val.end(), boundaries.density_std.value);
 
-            auto confidence_buffer_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbaro_pipe_endogenious_layer_t::get_density_confidence_wrapper);
-            std::vector<double>& conf = confidence_buffer_wrapper.current().vars;
-            std::fill(conf.begin(), conf.end(), boundaries.density_std.confidence);
-        }
-        else {
-            // считаем партии с помощью QUICKEST-ULTIMATE
-            pde_solvers::pipe_advection_pde_t advection_model(pde_solvers::circle_area(pipe.wall.diameter),
-                volumetric_flow, pipe.profile.coordinates);
-            {
-                auto buffer_wrapper = buffer.get_buffer_wrapper(
-                    &iso_nonbaro_pipe_endogenious_layer_t::get_density_wrapper);
-                pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-                solver.step(dt, boundaries.density_std.value, boundaries.density_std.value);
-            }
-            {
-                auto buffer_wrapper = buffer.get_buffer_wrapper(
-                    &iso_nonbaro_pipe_endogenious_layer_t::get_density_confidence_wrapper);
-                pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-                solver.step(dt, boundaries.density_std.confidence, boundaries.density_std.confidence);
-            }
-        }
+        auto confidence_buffer_wrapper = buffer.get_buffer_wrapper(
+            &iso_nonbaro_pipe_endogenious_layer_t::get_density_confidence_wrapper);
+        std::vector<double>& conf = confidence_buffer_wrapper.current().vars;
+        std::fill(conf.begin(), conf.end(), boundaries.density_std.confidence);
     }
 
     ///// @brief Получает эндогенные значения на выходе трубы
@@ -407,63 +412,65 @@ public:
 
     /// @brief Выполнение транспортного шага (расчет движения партий)
     virtual void transport_step(double dt, double volumetric_flow, const pde_solvers::endogenous_values_t& boundaries) override {
+        if (std::isinf(dt)) {
+            transport_solve(volumetric_flow, boundaries);
+            return;
+        }
+        buffer.current().std_volumetric_flow = volumetric_flow;
+        // считаем партии с помощью QUICKEST-ULTIMATE
+        pde_solvers::pipe_advection_pde_t advection_model(pde_solvers::circle_area(pipe.wall.diameter),
+            volumetric_flow, pipe.profile.coordinates);
+        {
+            auto buffer_wrapper = buffer.get_buffer_wrapper(
+                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_wrapper);
+            pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
+            solver.step(dt, boundaries.density_std.value, boundaries.density_std.value);
+        }
+        {
+            auto buffer_wrapper = buffer.get_buffer_wrapper(
+                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_confidence_wrapper);
+            pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
+            solver.step(dt, boundaries.density_std.confidence, boundaries.density_std.confidence);
+        }
+        {
+            auto buffer_wrapper = buffer.get_buffer_wrapper(
+                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_wrapper);
+            pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
+            solver.step(dt, boundaries.improver.value, boundaries.improver.value);
+        }
+        {
+            auto buffer_wrapper = buffer.get_buffer_wrapper(
+                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_confidence_wrapper);
+            pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
+            solver.step(dt, boundaries.improver.confidence, boundaries.improver.confidence);
+        }
+    }
+
+    /// @brief Транспортное решение при бесконечном dt (заполнение трубы граничными значениями)
+    virtual void transport_solve(double volumetric_flow, const pde_solvers::endogenous_values_t& boundaries) override {
         buffer.current().std_volumetric_flow = volumetric_flow;
 
-        if (std::isinf(dt)) {
-            {
-                auto value_buffer_wrapper = buffer.get_buffer_wrapper(
-                    &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_wrapper);
-                std::vector<double>& val = value_buffer_wrapper.current().vars;
-                std::fill(val.begin(), val.end(), boundaries.density_std.value);
+        {
+            auto value_buffer_wrapper = buffer.get_buffer_wrapper(
+                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_wrapper);
+            std::vector<double>& val = value_buffer_wrapper.current().vars;
+            std::fill(val.begin(), val.end(), boundaries.density_std.value);
 
-                auto confidence_buffer_wrapper = buffer.get_buffer_wrapper(
-                    &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_confidence_wrapper);
-                std::vector<double>& conf = confidence_buffer_wrapper.current().vars;
-                std::fill(conf.begin(), conf.end(), boundaries.density_std.confidence);
-            }
-            {
-                auto concentration_buffer_wrapper = buffer.get_buffer_wrapper(
-                    &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_wrapper);
-                std::vector<double>& concentration_val = concentration_buffer_wrapper.current().vars;
-                std::fill(concentration_val.begin(), concentration_val.end(), boundaries.improver.value);
-
-                auto confidence_concentration_wrapper = buffer.get_buffer_wrapper(
-                    &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_confidence_wrapper);
-                std::vector<double>& concentration_conf = confidence_concentration_wrapper.current().vars;
-                std::fill(concentration_conf.begin(), concentration_conf.end(), boundaries.improver.confidence);
-            }
-
+            auto confidence_buffer_wrapper = buffer.get_buffer_wrapper(
+                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_confidence_wrapper);
+            std::vector<double>& conf = confidence_buffer_wrapper.current().vars;
+            std::fill(conf.begin(), conf.end(), boundaries.density_std.confidence);
         }
-        else {
-            // считаем партии с помощью QUICKEST-ULTIMATE
-            pde_solvers::pipe_advection_pde_t advection_model(pde_solvers::circle_area(pipe.wall.diameter),
-                volumetric_flow, pipe.profile.coordinates);
-            {
-                auto buffer_wrapper = buffer.get_buffer_wrapper(
-                    &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_wrapper);
-                pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-                solver.step(dt, boundaries.density_std.value, boundaries.density_std.value);
-            }
-            {
-                auto buffer_wrapper = buffer.get_buffer_wrapper(
-                    &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_confidence_wrapper);
-                pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-                solver.step(dt, boundaries.density_std.confidence, boundaries.density_std.confidence);
-            }
+        {
+            auto concentration_buffer_wrapper = buffer.get_buffer_wrapper(
+                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_wrapper);
+            std::vector<double>& concentration_val = concentration_buffer_wrapper.current().vars;
+            std::fill(concentration_val.begin(), concentration_val.end(), boundaries.improver.value);
 
-            {
-                auto buffer_wrapper = buffer.get_buffer_wrapper(
-                    &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_wrapper);
-                pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-                solver.step(dt, boundaries.improver.value, boundaries.improver.value);
-            }
-            {
-                auto buffer_wrapper = buffer.get_buffer_wrapper(
-                    &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_confidence_wrapper);
-                pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-                solver.step(dt, boundaries.improver.confidence, boundaries.improver.confidence);
-            }
-
+            auto confidence_concentration_wrapper = buffer.get_buffer_wrapper(
+                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_confidence_wrapper);
+            std::vector<double>& concentration_conf = confidence_concentration_wrapper.current().vars;
+            std::fill(concentration_conf.begin(), concentration_conf.end(), boundaries.improver.confidence);
         }
     }
 
