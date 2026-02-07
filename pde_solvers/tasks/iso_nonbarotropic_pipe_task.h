@@ -90,10 +90,10 @@ public:
 
     /// @brief Выполнение транспортного шага (расчет движения партий)
     virtual void transport_step(double dt, double volumetric_flow, const pde_solvers::endogenous_values_t& boundaries) override {
-        if (std::isinf(dt)) {
-            transport_solve(volumetric_flow, boundaries);
-            return;
+        if (!std::isfinite(dt)) {
+            throw std::runtime_error("transport_step: dt must be finite; use transport_solve for steady-state (infinite dt)");
         }
+
         buffer.current().std_volumetric_flow = volumetric_flow;
         // считаем партии с помощью QUICKEST-ULTIMATE
         pde_solvers::pipe_advection_pde_t advection_model(pde_solvers::circle_area(pipe.wall.diameter),
@@ -412,10 +412,10 @@ public:
 
     /// @brief Выполнение транспортного шага (расчет движения партий)
     virtual void transport_step(double dt, double volumetric_flow, const pde_solvers::endogenous_values_t& boundaries) override {
-        if (std::isinf(dt)) {
-            transport_solve(volumetric_flow, boundaries);
-            return;
+        if (!std::isfinite(dt)) {
+            throw std::runtime_error("transport_step: dt must be finite; use transport_solve for steady-state (infinite dt)");
         }
+
         buffer.current().std_volumetric_flow = volumetric_flow;
         // считаем партии с помощью QUICKEST-ULTIMATE
         pde_solvers::pipe_advection_pde_t advection_model(pde_solvers::circle_area(pipe.wall.diameter),
