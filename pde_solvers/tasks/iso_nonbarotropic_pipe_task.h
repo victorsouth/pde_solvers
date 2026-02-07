@@ -25,7 +25,7 @@ struct iso_nonbaro_pipe_PP_task_boundaries_t {
 
 
 /// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода
-class iso_nonbarotropic_pipe_solver_t : public pipe_solver_hydrotransport_interface_t {
+class iso_nonbaro_pipe_solver_t : public pipe_solver_hydrotransport_interface_t {
 public:
     /// @brief Тип слоя
     using layer_type = iso_nonbaro_pipe_layer_t;
@@ -42,18 +42,18 @@ private:
 
 public:
     /// @brief Фиктивный констуктор для совместмости с селектором рассчитываемых свойств
-    iso_nonbarotropic_pipe_solver_t(
+    iso_nonbaro_pipe_solver_t(
         const iso_nonbaro_pipe_properties_t& pipe,
         buffer_type& buffer,
         const pde_solvers::endogenous_selector_t& endogenous_selector)
-        : iso_nonbarotropic_pipe_solver_t(pipe, buffer)
+        : iso_nonbaro_pipe_solver_t(pipe, buffer)
     {
     }
 
     /// @brief Конструктор
     /// @param pipe Ссылка на свойства конденсатопровода
     /// @param buffer Ссылка на буфер слоев
-    iso_nonbarotropic_pipe_solver_t(
+    iso_nonbaro_pipe_solver_t(
         const iso_nonbaro_pipe_properties_t& pipe,
         buffer_type& buffer)
         : pipe(pipe)
@@ -90,36 +90,20 @@ public:
         }
 
         buffer.current().std_volumetric_flow = volumetric_flow;
-        // считаем партии с помощью QUICKEST-ULTIMATE
-        pde_solvers::pipe_advection_pde_t advection_model(pde_solvers::circle_area(pipe.wall.diameter),
-            volumetric_flow, pipe.profile.coordinates);
-        {
-            auto buffer_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbaro_pipe_endogenious_layer_t::get_density_wrapper);
-            pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-            solver.step(dt, boundaries.density_std.value, boundaries.density_std.value);
-        }
-        {
-            auto buffer_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbaro_pipe_endogenious_layer_t::get_density_confidence_wrapper);
-            pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-            solver.step(dt, boundaries.density_std.confidence, boundaries.density_std.confidence);
-        }
+
+        step_advection(dt, volumetric_flow, boundaries.density_std,
+            pipe.wall.diameter, pipe.profile.coordinates, buffer,
+            &iso_nonbaro_pipe_endogenious_layer_t::get_density_wrapper,
+            &iso_nonbaro_pipe_endogenious_layer_t::get_density_confidence_wrapper);
     }
 
     /// @brief Транспортное решение при бесконечном dt (заполнение трубы граничными значениями)
     virtual void transport_solve(double volumetric_flow, const pde_solvers::endogenous_values_t& boundaries) override {
         buffer.current().std_volumetric_flow = volumetric_flow;
 
-        auto value_buffer_wrapper = buffer.get_buffer_wrapper(
-            &iso_nonbaro_pipe_endogenious_layer_t::get_density_wrapper);
-        std::vector<double>& val = value_buffer_wrapper.current().vars;
-        std::fill(val.begin(), val.end(), boundaries.density_std.value);
-
-        auto confidence_buffer_wrapper = buffer.get_buffer_wrapper(
+        solve_advection(boundaries.density_std, buffer,
+            &iso_nonbaro_pipe_endogenious_layer_t::get_density_wrapper,
             &iso_nonbaro_pipe_endogenious_layer_t::get_density_confidence_wrapper);
-        std::vector<double>& conf = confidence_buffer_wrapper.current().vars;
-        std::fill(conf.begin(), conf.end(), boundaries.density_std.confidence);
     }
 
     ///// @brief Получает эндогенные значения на выходе трубы
@@ -191,7 +175,7 @@ public:
         endogenous_boundaries.density_std.value = initial_conditions.density;
         endogenous_boundaries.density_std.confidence = true;
 
-        iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
+        iso_nonbaro_pipe_solver_t solver(pipe, buffer);
         solver.transport_solve(initial_conditions.volumetric_flow, endogenous_boundaries);
         solver.hydro_solve_QP(initial_conditions.volumetric_flow, initial_conditions.pressure_in, +1);
     }
@@ -206,7 +190,7 @@ private:
         endogenous_boundaries.density_std.value = boundaries.density;
         endogenous_boundaries.density_std.confidence = true;
 
-        iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
+        iso_nonbaro_pipe_solver_t solver(pipe, buffer);
         if (std::isfinite(dt)) {
             solver.transport_step(dt, boundaries.volumetric_flow, endogenous_boundaries);
         } else {
@@ -217,7 +201,7 @@ private:
     /// @brief Рассчёт профиля давления методом Эйлера (задача PQ)
     /// @param boundaries Краевые условия
     void calc_pressure_layer(const boundaries_type& boundaries) {
-        iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
+        iso_nonbaro_pipe_solver_t solver(pipe, buffer);
         solver.hydro_solve_QP(boundaries.volumetric_flow, boundaries.pressure_in, +1);
     }
 public:
@@ -281,7 +265,7 @@ public:
         endogenous_boundaries.density_std.value = initial_conditions.density;
         endogenous_boundaries.density_std.confidence = true;
 
-        iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
+        iso_nonbaro_pipe_solver_t solver(pipe, buffer);
         solver.transport_solve(volumetric_flow_initial, endogenous_boundaries);
         solver.hydro_solve_PP(initial_conditions.pressure_in, initial_conditions.pressure_out);
     }
@@ -297,7 +281,7 @@ private:
         endogenous_boundaries.density_std.value = boundaries.density;
         endogenous_boundaries.density_std.confidence = true;
 
-        iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
+        iso_nonbaro_pipe_solver_t solver(pipe, buffer);
         if (std::isfinite(dt)) {
             solver.transport_step(dt, volumetric_flow, endogenous_boundaries);
         } else {
@@ -308,7 +292,7 @@ private:
     /// @brief Рассчёт профиля давления методом Ньютона над Эйлером (задача PP)
     /// @param boundaries Краевые условия
     void calc_pressure_layer(const boundaries_type& boundaries) {
-        iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
+        iso_nonbaro_pipe_solver_t solver(pipe, buffer);
         solver.hydro_solve_PP(boundaries.pressure_in, boundaries.pressure_out);
     }
 public:
@@ -402,61 +386,27 @@ public:
         }
 
         buffer.current().std_volumetric_flow = volumetric_flow;
-        // считаем партии с помощью QUICKEST-ULTIMATE
-        pde_solvers::pipe_advection_pde_t advection_model(pde_solvers::circle_area(pipe.wall.diameter),
-            volumetric_flow, pipe.profile.coordinates);
-        {
-            auto buffer_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_wrapper);
-            pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-            solver.step(dt, boundaries.density_std.value, boundaries.density_std.value);
-        }
-        {
-            auto buffer_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_confidence_wrapper);
-            pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-            solver.step(dt, boundaries.density_std.confidence, boundaries.density_std.confidence);
-        }
-        {
-            auto buffer_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_wrapper);
-            pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-            solver.step(dt, boundaries.improver.value, boundaries.improver.value);
-        }
-        {
-            auto buffer_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_confidence_wrapper);
-            pde_solvers::quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
-            solver.step(dt, boundaries.improver.confidence, boundaries.improver.confidence);
-        }
+
+        step_advection(dt, volumetric_flow, boundaries.density_std,
+            pipe.wall.diameter, pipe.profile.coordinates, buffer,
+            &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_wrapper,
+            &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_confidence_wrapper);
+        step_advection(dt, volumetric_flow, boundaries.improver,
+            pipe.wall.diameter, pipe.profile.coordinates, buffer,
+            &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_wrapper,
+            &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_confidence_wrapper);
     }
 
     /// @brief Транспортное решение при бесконечном dt (заполнение трубы граничными значениями)
     virtual void transport_solve(double volumetric_flow, const pde_solvers::endogenous_values_t& boundaries) override {
         buffer.current().std_volumetric_flow = volumetric_flow;
 
-        {
-            auto value_buffer_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_wrapper);
-            std::vector<double>& val = value_buffer_wrapper.current().vars;
-            std::fill(val.begin(), val.end(), boundaries.density_std.value);
-
-            auto confidence_buffer_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_confidence_wrapper);
-            std::vector<double>& conf = confidence_buffer_wrapper.current().vars;
-            std::fill(conf.begin(), conf.end(), boundaries.density_std.confidence);
-        }
-        {
-            auto concentration_buffer_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_wrapper);
-            std::vector<double>& concentration_val = concentration_buffer_wrapper.current().vars;
-            std::fill(concentration_val.begin(), concentration_val.end(), boundaries.improver.value);
-
-            auto confidence_concentration_wrapper = buffer.get_buffer_wrapper(
-                &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_confidence_wrapper);
-            std::vector<double>& concentration_conf = confidence_concentration_wrapper.current().vars;
-            std::fill(concentration_conf.begin(), concentration_conf.end(), boundaries.improver.confidence);
-        }
+        solve_advection(boundaries.density_std, buffer,
+            &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_wrapper,
+            &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_confidence_wrapper);
+        solve_advection(boundaries.improver, buffer,
+            &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_wrapper,
+            &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_confidence_wrapper);
     }
 
     ///// @brief Получает эндогенные значения на выходе трубы
