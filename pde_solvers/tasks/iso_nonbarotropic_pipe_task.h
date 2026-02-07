@@ -76,8 +76,8 @@ public:
         return std_vol_flow;
     }
 
-    /// @brief Решение гидравлической задачи QP
-    virtual double hydro_solve_QP(double volumetric_flow, double pressure_output) override {
+    /// @brief Решение гидравлической задачи QP/PQ (заданы расход и давление на одной границе)
+    virtual double hydro_solve_QP(double volumetric_flow, double bound_pressure, int solve_direction) override {
         auto& current = buffer.current();
 
         if (current.density_std.value.empty()) {
@@ -85,20 +85,7 @@ public:
         }
 
         return rigorous_impulse_solve_QP<iso_nonbaro_impulse_equation_t>(
-            pipe, current, volumetric_flow, pressure_output, -1);
-    }
-
-    /// @brief Решение гидравлической задачи PQ
-    /// @return Давление на выходе, Па
-    virtual double hydro_solve_PQ(double volumetric_flow, double pressure_in) override {
-        auto& current = buffer.current();
-
-        if (current.density_std.value.empty()) {
-            throw std::runtime_error("iso_nonbarotropic_pipe_solver_t::hydro_solve_PQ: density profile is empty");
-        }
-
-        return rigorous_impulse_solve_QP<iso_nonbaro_impulse_equation_t>(
-            pipe, current, volumetric_flow, pressure_in, +1);
+            pipe, current, volumetric_flow, bound_pressure, solve_direction);
     }
 
     /// @brief Выполнение транспортного шага (расчет движения партий)
@@ -236,7 +223,7 @@ private:
     /// @param boundaries Краевые условия
     void calc_pressure_layer(const boundaries_type& boundaries) {
         iso_nonbarotropic_pipe_solver_t solver(pipe, buffer);
-        solver.hydro_solve_PQ(boundaries.volumetric_flow, boundaries.pressure_in);
+        solver.hydro_solve_QP(boundaries.volumetric_flow, boundaries.pressure_in, +1);
     }
 public:
     /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
@@ -410,25 +397,12 @@ public:
         return solver_pp.solve(volumetric_flow_initial);
     }
 
-    /// @brief Решение гидравлической задачи QP
-    virtual double hydro_solve_QP(double volumetric_flow, double pressure_output) override {
+    /// @brief Решение гидравлической задачи QP/PQ (заданы расход и давление на одной границе)
+    virtual double hydro_solve_QP(double volumetric_flow, double bound_pressure, int solve_direction) override {
         auto& current = buffer.current();
 
-
-
         return rigorous_impulse_solve_QP<iso_nonbaro_improver_impulse_equation_t>(
-            pipe, current, volumetric_flow, pressure_output, -1);
-    }
-
-    /// @brief Решение гидравлической задачи PQ
-    /// @return Давление на выходе, Па
-    virtual double hydro_solve_PQ(double volumetric_flow, double pressure_in) override {
-        auto& current = buffer.current();
-
-
-
-        return rigorous_impulse_solve_QP<iso_nonbaro_improver_impulse_equation_t>(
-            pipe, current, volumetric_flow, pressure_in, +1);
+            pipe, current, volumetric_flow, bound_pressure, solve_direction);
     }
 
     /// @brief Выполнение транспортного шага (расчет движения партий)
