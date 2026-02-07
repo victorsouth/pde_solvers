@@ -179,11 +179,12 @@ public:
         solver.transport_solve(initial_conditions.volumetric_flow, endogenous_boundaries);
         solver.hydro_solve_QP(initial_conditions.volumetric_flow, initial_conditions.pressure_in, +1);
     }
-private:
-    /// @brief Проводится расчёт шага движения партии
-    /// @param dt Временной шаг моделирования
-    /// @param boundaries Краевые условия
-    void make_rheology_step(double dt, const boundaries_type& boundaries) {
+
+    /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
+    /// buffer.current после вызова содержит свежерасчитанный слой
+    /// @param dt временной шаг моделирования
+    /// @param boundaries Краевые условие
+    void step(double dt, const boundaries_type& boundaries) {
         advance();
 
         pde_solvers::endogenous_values_t endogenous_boundaries;
@@ -196,22 +197,7 @@ private:
         } else {
             solver.transport_solve(boundaries.volumetric_flow, endogenous_boundaries);
         }
-    }
-
-    /// @brief Рассчёт профиля давления методом Эйлера (задача PQ)
-    /// @param boundaries Краевые условия
-    void calc_pressure_layer(const boundaries_type& boundaries) {
-        iso_nonbaro_pipe_solver_t solver(pipe, buffer);
         solver.hydro_solve_QP(boundaries.volumetric_flow, boundaries.pressure_in, +1);
-    }
-public:
-    /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
-    /// buffer.current после вызова содержит свежерасчитанный слой
-    /// @param dt временной шаг моделирования
-    /// @param boundaries Краевые условие
-    void step(double dt, const boundaries_type& boundaries) {
-        make_rheology_step(dt, boundaries);
-        calc_pressure_layer(boundaries);
     }
 
     /// @brief Сдвиг текущего слоя в буфере
@@ -269,11 +255,12 @@ public:
         solver.transport_solve(volumetric_flow_initial, endogenous_boundaries);
         solver.hydro_solve_PP(initial_conditions.pressure_in, initial_conditions.pressure_out);
     }
-private:
-    /// @brief Проводится расчёт шага движения партии
-    /// @param dt Временной шаг моделирования
-    /// @param boundaries Краевые условия
-    void make_rheology_step(double dt, const boundaries_type& boundaries) {
+
+    /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
+    /// buffer.current после вызова содержит свежерасчитанный слой
+    /// @param dt временной шаг моделирования
+    /// @param boundaries Краевые условие
+    void step(double dt, const boundaries_type& boundaries) {
         double volumetric_flow = buffer.current().std_volumetric_flow;
         advance();
 
@@ -287,22 +274,7 @@ private:
         } else {
             solver.transport_solve(volumetric_flow, endogenous_boundaries);
         }
-    }
-
-    /// @brief Рассчёт профиля давления методом Ньютона над Эйлером (задача PP)
-    /// @param boundaries Краевые условия
-    void calc_pressure_layer(const boundaries_type& boundaries) {
-        iso_nonbaro_pipe_solver_t solver(pipe, buffer);
         solver.hydro_solve_PP(boundaries.pressure_in, boundaries.pressure_out);
-    }
-public:
-    /// @brief Рассчёт шага моделирования, включающий в себя расчёт шага движения партии и гидравлический расчёт
-    /// buffer.current после вызова содержит свежерасчитанный слой
-    /// @param dt временной шаг моделирования
-    /// @param boundaries Краевые условие
-    void step(double dt, const boundaries_type& boundaries) {
-        make_rheology_step(dt, boundaries);
-        calc_pressure_layer(boundaries);
     }
 
     /// @brief Сдвиг текущего слоя в буфере
