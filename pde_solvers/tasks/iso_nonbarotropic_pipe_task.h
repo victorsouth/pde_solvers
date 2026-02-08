@@ -32,11 +32,12 @@ struct iso_nonbaro_improver_pipe_PP_task_boundaries_t {
     /// @brief Изначальная концентрация присадки на входе
     double improver_concentration;
     /// @brief Создание структуры со значениями по умолчанию
-    static iso_nonbarotropic_pipe_PP_task_boundaries_t default_values() {
-        iso_nonbarotropic_pipe_PP_task_boundaries_t result;
+    static iso_nonbaro_improver_pipe_PP_task_boundaries_t default_values() {
+        iso_nonbaro_improver_pipe_PP_task_boundaries_t result;
         result.pressure_out = 0.6e6;
         result.pressure_in = 6e6;
         result.density = 850;
+        result.improver_concentration = 0.0;
         return result;
     }
 };
