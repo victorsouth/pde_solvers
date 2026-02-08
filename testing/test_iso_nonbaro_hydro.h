@@ -6,7 +6,7 @@
 /// @param conditions 
 /// @return разница давления между началом и концом
 inline double deltaP_for_solve_qP(
-    const pde_solvers::iso_nonbarotropic_pipe_properties_t& pipe,
+    const pde_solvers::iso_nonbaro_pipe_properties_t& pipe,
     const pde_solvers::iso_nonbarotropic_pipe_PQ_task_boundaries_t& conditions)
 {
 
@@ -18,7 +18,7 @@ inline double deltaP_for_solve_qP(
     std::vector<double>& p_profile = layer.pressure;
     int euler_direction = +1; // Задаем направление для Эйлера
 
-    iso_nonbaro_impulse_equation_t pipeModel(pipe, layer.density_std.value, conditions.volumetric_flow, euler_direction);
+    iso_nonbaro_impulse_equation_t pipeModel(pipe, layer, conditions.volumetric_flow, euler_direction);
 
     solve_euler<1>(pipeModel, euler_direction, conditions.pressure_in, &p_profile);
     double pressure_drop = layer.pressure.front() - layer.pressure.back();
@@ -32,26 +32,18 @@ inline double deltaP_for_solve_qP(
 /// @param initial_Q_for_Newton начальное значение расхода при решении методом Ньютона
 /// @return расход в PP задаче
 inline double Q_for_solve_PP(
-    const pde_solvers::iso_nonbarotropic_pipe_properties_t& pipe,
-    const pde_solvers::iso_nonbarotropic_pipe_PP_task_boundaries_t& conditions,
+    const pde_solvers::iso_nonbaro_pipe_properties_t& pipe,
+    const pde_solvers::iso_nonbaro_pipe_PP_task_boundaries_t& conditions,
     double initial_Q_for_Newton = 0.2)
 {
     iso_nonbaro_pipe_layer_t layer(pipe.profile.get_point_count());
     for (double& density : layer.density_std.value) {
         density = conditions.density;
     }
-    int euler_direction = +1;
-    iso_nonbaro_impulse_equation_t pipeModel(pipe, layer.density_std.value, initial_Q_for_Newton, euler_direction);
 
-    solve_condensate_PP<iso_nonbarotropic_pipe_PP_task_boundaries_t, iso_nonbaro_pipe_layer_t> test = solve_condensate_PP(pipeModel, conditions, layer);
-    fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
-    parameters.residuals_norm = 0.1; // погрешность 0.1 Па
-    parameters.argument_increment_norm = 0;
-    parameters.residuals_norm_allow_early_exit = true;
-    // Создание структуры для записи результатов расчета
-    fixed_solver_result_t<1> result;
-    fixed_newton_raphson<1>::solve_dense(test, { initial_Q_for_Newton }, parameters, &result);
-    return result.argument;
+    rigorous_impulse_solver_PP<iso_nonbaro_impulse_equation_t>
+        solver(pipe, layer, conditions.pressure_in, conditions.pressure_out);
+    return solver.solve(initial_Q_for_Newton);
 }
 
 /// @brief Проверяет способность системы производить нулевой перепад давления при нулевом расходе
@@ -104,7 +96,7 @@ TEST(CondensatePipeQPPde, IncreasesPressureLoss_WithIncreasingFlowRate) {
 TEST(CondensatePipePPPde, ProducesZeroFlowRate_WhenPressureDropIsZero) {
     // Arrange
     auto pipe = create_test_pipe_for_PP();
-    auto conditions = pde_solvers::iso_nonbarotropic_pipe_PP_task_boundaries_t::default_values();
+    auto conditions = pde_solvers::iso_nonbaro_pipe_PP_task_boundaries_t::default_values();
     conditions.pressure_in = 5e6;
     conditions.pressure_out = 5e6;
     conditions.density = 850.0;
@@ -122,7 +114,7 @@ TEST(CondensatePipePPPde, ProducesZeroFlowRate_WhenPressureDropIsZero) {
 TEST(CondensatePipePPPde, DecreasesFlowRate_WithIncreasingDensity_AtFixedPressureDrop) {
     // Arrange
     auto pipe = create_test_pipe_for_PP();
-    auto base_conditions = pde_solvers::iso_nonbarotropic_pipe_PP_task_boundaries_t::default_values();
+    auto base_conditions = pde_solvers::iso_nonbaro_pipe_PP_task_boundaries_t::default_values();
     base_conditions.pressure_in = 5e6;
     base_conditions.pressure_out = 4e6;
 

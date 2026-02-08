@@ -1,4 +1,4 @@
-﻿namespace pde_solvers
+namespace pde_solvers
 {
 ;
 
@@ -112,6 +112,21 @@ struct confident_layer_t {
                 return false;
         }
         return true;
+    }
+
+    /// @brief Значение и достоверность на границе по направлению потока (выход при flow >= 0, вход при flow < 0)
+    /// @param volumetric_flow Объемный расход для определения направления
+    endogenous_confident_value_t get_boundary_value(double volumetric_flow) const {
+        endogenous_confident_value_t boundary_parameter;
+        if (volumetric_flow >= 0) {
+            boundary_parameter.value = value.back();
+            boundary_parameter.confidence = discriminate_confidence_level(confidence.back());
+        }
+        else {
+            boundary_parameter.value = value.front();
+            boundary_parameter.confidence = discriminate_confidence_level(confidence.front());
+        }
+        return boundary_parameter;
     }
 };
 
