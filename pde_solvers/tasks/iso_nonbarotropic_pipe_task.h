@@ -121,6 +121,26 @@ struct iso_nonbarotropic_pipe_PP_task_boundaries_t {
     }
 };
 
+/// @brief Структура, содержащая в себе краевые условия задачи PP для модели трубы с присадкой
+struct iso_nonbaro_improver_pipe_PP_task_boundaries_t {
+    /// @brief Изначальное давление на входе
+    double pressure_in;
+    /// @brief Изначальное давление на выходе
+    double pressure_out;
+    /// @brief Изначальная плотность на входе
+    double density;
+    /// @brief Изначальная концентрация присадки на входе
+    double improver_concentration;
+    /// @brief Создание структуры со значениями по умолчанию
+    static iso_nonbarotropic_pipe_PP_task_boundaries_t default_values() {
+        iso_nonbarotropic_pipe_PP_task_boundaries_t result;
+        result.pressure_out = 0.6e6;
+        result.pressure_in = 6e6;
+        result.density = 850;
+        return result;
+    }
+};
+
 
 
 
@@ -359,6 +379,27 @@ struct iso_nonbarotropic_pipe_PQ_task_boundaries_t {
         result.volumetric_flow = 0.2;
         result.pressure_in = 6e6;
         result.density = 850;
+        return result;
+    }
+};
+
+/// @brief Структура, содержащая в себе краевые условия задачи PQ включая присадку
+struct iso_nonbaro_improver_pipe_PQ_task_boundaries_t {
+    /// @brief Изначальный объемный расход
+    double volumetric_flow;
+    /// @brief Изначальное давление на входе
+    double pressure_in;
+    /// @brief Изначальная плотность на входе
+    double density;
+    /// @brief Изначальная концентрация присадки на входе
+    double improver_concentration;
+    /// @brief Создание структуры со значениями по умолчанию
+    static iso_nonbaro_improver_pipe_PQ_task_boundaries_t default_values() {
+        iso_nonbaro_improver_pipe_PQ_task_boundaries_t result;
+        result.volumetric_flow = 0.2;
+        result.pressure_in = 6e6;
+        result.density = 850;
+        result.improver_concentration = 0.0;
         return result;
     }
 };
