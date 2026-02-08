@@ -249,7 +249,7 @@ inline double Q_for_solve_PP(
 
 
 /// @brief Проверяет способность системы производить нулевой перепад давления при нулевом расходе
-TEST(CondensatePipeQPPde, ProducesZeroPressureDrop_WhenFlowRateIsZero) {
+TEST(NonbaroImproverPipeQPPde, ProducesZeroPressureDrop_WhenFlowRateIsZero) {
 
     //Arrange
     auto pipe = create_test_nonbaro_improver_pipe_for_PQ();
@@ -264,7 +264,7 @@ TEST(CondensatePipeQPPde, ProducesZeroPressureDrop_WhenFlowRateIsZero) {
 }
 
 ///@brief Проверяет способность системы увеличивать потери давления с ростом расхода
-TEST(CondensatePipeQPPde, IncreasesPressureLoss_WithIncreasingFlowRate) {
+TEST(NonbaroImproverPipeQPPde, IncreasesPressureLoss_WithIncreasingFlowRate) {
     //Arrange
     auto pipe = create_test_nonbaro_improver_pipe_for_PQ();
 
@@ -292,7 +292,7 @@ TEST(CondensatePipeQPPde, IncreasesPressureLoss_WithIncreasingFlowRate) {
 }
 
 /// @brief Проверяет способность системы производить нулевой расход при нулевом перепаде давления
-TEST(CondensatePipePPPde, ProducesZeroFlowRate_WhenPressureDropIsZero) {
+TEST(NonbaroImproverPipeQPPde, ProducesZeroFlowRate_WhenPressureDropIsZero) {
     // Arrange
     auto pipe = create_test_nonbaro_improver_pipe_for_PP();
     auto conditions = pde_solvers::iso_nonbaro_improver_pipe_PP_task_boundaries_t::default_values();
@@ -310,7 +310,7 @@ TEST(CondensatePipePPPde, ProducesZeroFlowRate_WhenPressureDropIsZero) {
 
 
 /// @brief Проверяет способность системы уменьшать расход с увеличением плотности при фиксированном перепаде давления
-TEST(CondensatePipePPPde, DecreasesFlowRate_WithIncreasingDensity_AtFixedPressureDrop) {
+TEST(NonbaroImproverPipeQPPde, DecreasesFlowRate_WithIncreasingDensity_AtFixedPressureDrop) {
     // Arrange
     auto pipe = create_test_nonbaro_improver_pipe_for_PP();
     auto base_conditions = pde_solvers::iso_nonbaro_improver_pipe_PP_task_boundaries_t::default_values();
