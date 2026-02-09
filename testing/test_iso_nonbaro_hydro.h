@@ -230,21 +230,17 @@ inline double Q_for_solve_PP(
     for (double& density : layer.density_std.value) {
         density = conditions.density;
     }
-    int euler_direction = +1;
-    //iso_nonbaro_improver_impulse_equation_t pipeModel(pipe, endogenious_layer, initial_Q_for_Newton, euler_direction);
 
-    rigorous_impulse_solver_PP<iso_nonbaro_improver_impulse_equation_t> test 
+    for (double& concentration : layer.improver_concentration.value) {
+        concentration = conditions.improver_concentration;
+    }
+
+    rigorous_impulse_solver_PP<iso_nonbaro_improver_impulse_equation_t> solver 
         (
             pipe, layer, conditions.pressure_in, conditions.pressure_out
         );
-    fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
-    parameters.residuals_norm = 0.1; // погрешность 0.1 Па
-    parameters.argument_increment_norm = 0;
-    parameters.residuals_norm_allow_early_exit = true;
-    // Создание структуры для записи результатов расчета
-    fixed_solver_result_t<1> result;
-    fixed_newton_raphson<1>::solve_dense(test, { initial_Q_for_Newton }, parameters, &result);
-    return result.argument;
+
+    return solver.solve(initial_Q_for_Newton);
 }
 
 
@@ -333,4 +329,26 @@ TEST(NonbaroImproverPipeQPPde, DecreasesFlowRate_WithIncreasingDensity_AtFixedPr
     for (size_t i = 1; i < calculated_flows.size(); ++i) {
         EXPECT_LT(calculated_flows[i], calculated_flows[i - 1]);
     }
+}
+
+/// @brief Проверяет увеличение потока при расчете по двум давлениям при вводе присадки
+TEST(NonbaroImproverPipeQPPde, FlowIncrease_WithImprover) {
+    // Arrange
+    auto pipe = create_test_nonbaro_improver_pipe_for_PP();
+    auto base_conditions = pde_solvers::iso_nonbaro_improver_pipe_PP_task_boundaries_t::default_values();
+    auto improved_conditions = pde_solvers::iso_nonbaro_improver_pipe_PP_task_boundaries_t::default_values();
+    base_conditions.pressure_in = 5e6;
+    base_conditions.pressure_out = 4e6;
+
+    double density = 800;
+    double Q0, QImprover;
+
+    // Act
+    Q0 = Q_for_solve_PP(pipe, base_conditions);
+    base_conditions.improver_concentration = 0.001;
+    QImprover = Q_for_solve_PP(pipe, base_conditions);
+
+    // Assert
+    // Расход должен увеличиться
+    EXPECT_LT(Q0, QImprover);
 }
