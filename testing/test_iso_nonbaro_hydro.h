@@ -229,12 +229,11 @@ inline double Q_for_solve_PP(
         density = conditions.density;
     }
     int euler_direction = +1;
-    iso_nonbaro_improver_impulse_equation_t pipeModel(pipe, endogenious_layer, initial_Q_for_Newton, euler_direction);
+    //iso_nonbaro_improver_impulse_equation_t pipeModel(pipe, endogenious_layer, initial_Q_for_Newton, euler_direction);
 
-    rigorous_impulse_solver_PP<iso_nonbaro_improver_pipe_PP_task_boundaries_t> test = 
-        rigorous_impulse_solver_PP<iso_nonbaro_improver_pipe_PP_task_boundaries_t>
+    rigorous_impulse_solver_PP<iso_nonbaro_improver_impulse_equation_t> test 
         (
-            pipeModel, layer, conditions.pressure_in, conditions.pressure_out
+            pipe, layer, conditions.pressure_in, conditions.pressure_out
         );
     fixed_solver_parameters_t<1, 0, golden_section_search> parameters;
     parameters.residuals_norm = 0.1; // погрешность 0.1 Па
