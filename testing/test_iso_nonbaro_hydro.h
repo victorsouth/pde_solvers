@@ -208,6 +208,8 @@ inline pde_solvers::iso_nonbaro_improver_pipe_properties_t create_test_nonbaro_i
     pipe.wall.diameter = 0.5; // 500 мм
     pipe.wall.wallThickness = 0.0001; // 0.1 мм
     pipe.kinematic_viscosity = 1e-6; // 1 сСт
+    pipe.improver.coeffs = { 0.1, 0.1 };
+    pipe.improver.efficiency_formula = improver_efficiency_formula_t::virk_modified;
 
     return pipe;
 }
