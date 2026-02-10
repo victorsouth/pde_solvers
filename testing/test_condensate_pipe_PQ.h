@@ -1,8 +1,8 @@
 #pragma once
 
 /// @brief Создает простую равномерную трубу для тестовых расчетов
-inline pde_solvers::iso_nonbarotropic_pipe_properties_t create_test_pipe_for_PQ() {
-    pde_solvers::iso_nonbarotropic_pipe_properties_t pipe;
+inline pde_solvers::iso_nonbaro_pipe_properties_t create_test_pipe_for_PQ() {
+    pde_solvers::iso_nonbaro_pipe_properties_t pipe;
     pde_solvers::pipe_profile_t profile;
     const size_t points_count = 10;
     const double length = 1000.0; // 1 км

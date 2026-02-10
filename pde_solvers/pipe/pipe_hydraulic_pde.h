@@ -484,7 +484,7 @@ public:
     using ode_t<1>::right_party_type;
     using ode_t<1>::var_type;
 protected:
-    const std::vector<double>& rho_profile;
+    const std::vector<double>& density_profile;
     const std::vector<double>& nu_profile;
     const pipe_properties_t& pipe;
     const double flow;
@@ -496,10 +496,10 @@ public:
     /// @param oil Ссылка на сущность нефти
     /// @param flow Объемный расход
     /// @param solver_direction Направление расчета по Эйлеру, должно обязательно совпадать с параметром солвера Эйлера
-    isothermal_pipe_PQ_parties_t(const pipe_properties_t& pipe, const std::vector<double>& rho_profile, const std::vector<double>& nu_profile, double flow,
+    isothermal_pipe_PQ_parties_t(const pipe_properties_t& pipe, const std::vector<double>& density_profile, const std::vector<double>& nu_profile, double flow,
         int solver_direction, size_t flag_for_points = 0)
         : pipe(pipe)
-        , rho_profile(rho_profile)
+        , density_profile(density_profile)
         , nu_profile(nu_profile)
         , flow(flow)
         , solver_direction(solver_direction)
@@ -523,7 +523,7 @@ public:
         /// Чтобы не выйти за массив высот, будем считать dz/dx в соседней точке
         size_t rheo_index = grid_index;
 
-        if (pipe.profile.get_point_count() == rho_profile.size())
+        if (pipe.profile.get_point_count() == density_profile.size())
         {
             // Случай расчета партий в точках (например для метода характеристик)
             if (solver_direction == +1)
@@ -538,7 +538,7 @@ public:
                 ? grid_index
                 : grid_index - 1;
         }
-        double rho = rho_profile[rheo_index];
+        double rho = density_profile[rheo_index];
         double S_0 = pipe.wall.getArea();
         double v = flow / (S_0);
         double Re = v * pipe.wall.diameter / nu_profile[rheo_index];

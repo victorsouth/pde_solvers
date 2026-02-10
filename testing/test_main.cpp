@@ -45,6 +45,7 @@ using namespace pde_solvers;
 #include "test_condensate_pipe_PQ.h"
 #include "test_condensate_pipe_PP.h"
 #include "test_static_pipe_solver.h"
+#include "test_iso_nonbaro_hydro.h"
 #include "test_timeseries.h"
 #include "test_advection_moc_solver.h"
 #include "test_synthetic_timeseries.h"
