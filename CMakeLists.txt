@@ -124,6 +124,7 @@ if(PDE_SOLVERS_BUILD_TESTS)
         testing/test_quick.h
         testing/test_quick_conservativity.h
         testing/test_static_pipe_solver.h
+        testing/test_iso_nonbaro_hydro.h
         testing/test_timeseries.h
     )
     set(TESTS_SOURCES
