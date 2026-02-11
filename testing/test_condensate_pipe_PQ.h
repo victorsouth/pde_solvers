@@ -23,6 +23,38 @@ inline pde_solvers::iso_nonbaro_pipe_properties_t create_test_pipe_for_PQ() {
     return pipe;
 }
 
+/// @brief Возвращает знаки приращений функции, встертившиеся 
+/// при увеличении аргумента от start_arg до end_arg с шагом step
+/// @tparam OneArgumentFunction Функция double(double)
+template <typename OneArgumentFunction>
+inline std::set<int> get_increments_sign_for_func(OneArgumentFunction f, 
+    double start_arg, double end_arg, double step) 
+{
+    if (start_arg > end_arg)
+        throw std::runtime_error("Wrong start and end values of argument");
+    
+    std::set<int> increment_sign;
+    bool has_previous = false;
+    double previous_func = 0.0;
+    for (double x = start_arg; x <= end_arg; x += step)
+    {
+        double new_func = f(x);
+
+        if (!has_previous) {
+            previous_func = new_func;
+            has_previous = true;
+            continue;
+        }
+
+        int sgn = fixed_solvers::sgn(new_func - previous_func);
+        increment_sign.insert(sgn);
+        
+        previous_func = new_func;
+    }
+
+    return increment_sign;
+}
+
 /// @brief Проверяет способность системы PQ задачи поддерживать корректный профиль давления при заданных начальных условиях.
 /// Тест выполняет следующие проверки:
 /// 1. Корректность инициализации плотности - все значения плотности в профиле должны соответствовать заданному начальному значению (800.0 кг/м³) с точностью 1e-6
@@ -30,7 +62,7 @@ inline pde_solvers::iso_nonbaro_pipe_properties_t create_test_pipe_for_PQ() {
 /// 3. Сохранение граничного условия на входе - давление на входе должно точно совпадать с заданным значением (5 МПа) с точностью 1e-6
 /// 4. Монотонное убывание давления вдоль трубы - давление должно строго уменьшаться от входа к выходу из-за гидравлических потерь
 /// 5. Физическая корректность значений - все значения давления в профиле должны быть положительными
-TEST(CondensatePipeQPTask, MaintainsCorrectPressureProfile_WhenGivenInitialConditions) {
+TEST(IsoNonbaroPipeQPTask, MaintainsCorrectPressureProfile_WhenGivenInitialConditions) {
 
     //Arrange
     auto pipe = create_test_pipe_for_PQ();
@@ -74,7 +106,7 @@ TEST(CondensatePipeQPTask, MaintainsCorrectPressureProfile_WhenGivenInitialCondi
     
 
 /// @brief Проверяет способность системы поддерживать стабильность давления при множественных шагах по времени
-TEST(CondensatePipeQPTask, MaintainsPressureStability_OverMultipleTimeSteps) {
+TEST(IsoNonbaroPipeQPTask, MaintainsPressureStability_OverMultipleTimeSteps) {
     //Arrange
     auto pipe = create_test_pipe_for_PQ();
     pde_solvers::iso_nonbarotropic_pipe_PQ_task_t task(pipe);
@@ -116,6 +148,40 @@ TEST(CondensatePipeQPTask, MaintainsPressureStability_OverMultipleTimeSteps) {
         ASSERT_NEAR(volumes[i], initial_conditions.volumetric_flow, 1e-6);
     }
 
+}
+
+/// @brief Проверяет монотонность замыкающего соотношения для трубы
+/// При использовании для расчета гидравлического сопротивления 
+/// при переходе между формулами Исаева и Шифринсона наблюдался скачок, нарушавший монотонность
+TEST(IsoNonbaroPipeQPTask, HasMonotonicity_WhenChangeFlow) {
+
+    using hydro_solver = pde_solvers::iso_nonbaro_pipe_solver_t;
+
+    // Arrange - создание солвера для трубы с известными параметрами
+    double Q_max = 1.0; // Размах при переборе расхода [-Qmax; +Qmax]
+    double Q_step = 1e-3;
+
+    double length = 500e3;
+    double dx = 200;
+    double diameter = 0.8;
+    pde_solvers::pipe_json_data pipe_data{ diameter, 0, length };
+    auto pipe_parameters = iso_nonbaro_pipe_properties_t(pipe_data);
+    pipe_parameters.make_uniform_profile(dx);
+ 
+    double Pout = 100000.0;
+    hydro_solver::layer_type layer(pipe_parameters.profile.get_point_count());
+    
+    // Act - расчет знака приращения давления в диапазоне расхода
+    auto calc_pressure = [&](double flow) { 
+        return pde_solvers::rigorous_impulse_solve_QP<pde_solvers::iso_nonbaro_impulse_equation_t>
+            (pipe_parameters, layer, flow, Pout, -1); 
+    };
+    
+    std::set<int> pressure_increment_sign = get_increments_sign_for_func(calc_pressure, -Q_max, Q_max, Q_step);
+
+    // Assert - QP задача монотонная по давлению при изменении расхода - все приращения положительные
+    ASSERT_TRUE(pressure_increment_sign.size() == 1);
+    ASSERT_TRUE(pressure_increment_sign.find(+1) != pressure_increment_sign.end());
 }
 
 

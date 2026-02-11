@@ -38,9 +38,6 @@ inline double hydraulic_resistance_isaev(double reynolds_number, double relative
 
     double lam;
 
-    // Формулы по РД-75.180.00-КТН-258-10. 
-    // В конце нет форулы для больших чисел Рейнольдса
-
     if (Re < 1) {
         lam = 64; // Стокс при Re = 1
     }
@@ -54,19 +51,11 @@ inline double hydraulic_resistance_isaev(double reynolds_number, double relative
         double gm = 1 - exp(-0.002 * (Re - 2320));
         lam = 64 / Re * (1 - gm) + 0.3164 / pow(Re, 0.25) * gm;
     }
-    //else if(Re < 1e4)//min(1e5,27/pow(Ke,1.143))  27/pow(Ke,1.143)   1e4   //10/Ke
-    //{
-    //    lam=0.3164/pow(Re,0.25);
-    //}
-    else if (Re < 560 / Ke)
+    else 
     {
         // Исаев по [Морозова, Коршак], ф-ла (1)
+        // Граница - (Re < 560 / Ke). Была убрана, т.к. асимптота Исаева не равна Шифринсону
         lam = 1.0 / fixed_solvers::sqr(-1.8 * log10(6.8 / Re + pow(Ke / 3.7, 1.1)));
-    }
-    else
-    {
-        // Шифринсон
-        lam = 0.11 * pow(Ke, 0.25);
     }
 
     return lam;
