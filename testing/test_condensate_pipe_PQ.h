@@ -39,7 +39,7 @@ inline std::set<int> get_increments_sign_for_func(OneArgumentFunction f,
     {
         double new_func = f(x);
 
-        if (isnan<double>(previous_func)) {
+        if (std::isnan<double>(previous_func)) {
             // На первой итерации только запоминаем значение функции
             previous_func = new_func;
             continue;
