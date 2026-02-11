@@ -28,7 +28,7 @@ inline pde_solvers::iso_nonbaro_pipe_properties_t create_test_pipe_for_PQ() {
 /// @tparam OneArgumentFunction Функция double(double)
 template <typename OneArgumentFunction>
 inline std::set<int> get_increments_sign_for_func(OneArgumentFunction f, 
-    double start_arg, double end_arg, double step = 1e-3) 
+    double start_arg, double end_arg, double step) 
 {
     if (start_arg > end_arg)
         throw std::runtime_error("Wrong start and end values of argument");
@@ -62,7 +62,7 @@ inline std::set<int> get_increments_sign_for_func(OneArgumentFunction f,
 /// 3. Сохранение граничного условия на входе - давление на входе должно точно совпадать с заданным значением (5 МПа) с точностью 1e-6
 /// 4. Монотонное убывание давления вдоль трубы - давление должно строго уменьшаться от входа к выходу из-за гидравлических потерь
 /// 5. Физическая корректность значений - все значения давления в профиле должны быть положительными
-TEST(CondensatePipeQPTask, MaintainsCorrectPressureProfile_WhenGivenInitialConditions) {
+TEST(IsoNonbaroPipeQPTask, MaintainsCorrectPressureProfile_WhenGivenInitialConditions) {
 
     //Arrange
     auto pipe = create_test_pipe_for_PQ();
@@ -106,7 +106,7 @@ TEST(CondensatePipeQPTask, MaintainsCorrectPressureProfile_WhenGivenInitialCondi
     
 
 /// @brief Проверяет способность системы поддерживать стабильность давления при множественных шагах по времени
-TEST(CondensatePipeQPTask, MaintainsPressureStability_OverMultipleTimeSteps) {
+TEST(IsoNonbaroPipeQPTask, MaintainsPressureStability_OverMultipleTimeSteps) {
     //Arrange
     auto pipe = create_test_pipe_for_PQ();
     pde_solvers::iso_nonbarotropic_pipe_PQ_task_t task(pipe);
@@ -153,34 +153,35 @@ TEST(CondensatePipeQPTask, MaintainsPressureStability_OverMultipleTimeSteps) {
 /// @brief Проверяет монотонность замыкающего соотношения для трубы
 /// При использовании для расчета гидравлического сопротивления 
 /// при переходе между формулами Исаева и Шифринсона наблюдался скачок, нарушавший монотонность
-TEST(CondensatePipeQPTask, CheckClosingRelationMonotonicity) {
+TEST(IsoNonbaroPipeQPTask, HasMonotonicity_WhenChangeFlow) {
 
     using hydro_solver = pde_solvers::iso_nonbaro_pipe_solver_t;
 
     // Arrange - создание солвера для трубы с известными параметрами
+    double Q_max = 1.0; // Размах при переборе расхода [-Qmax; +Qmax]
+    double Q_step = 1e-3;
+
     double length = 500e3;
     double dx = 200;
     double diameter = 0.8;
-
     pde_solvers::pipe_json_data pipe_data{ diameter, 0, length };
     auto pipe_parameters = iso_nonbaro_pipe_properties_t(pipe_data);
     pipe_parameters.make_uniform_profile(dx);
  
-    hydro_solver::layer_type layer(pipe_parameters.profile.get_point_count());
-
-    double Pin = 872947.27809030749;
     double Pout = 100000.0;
-    pde_solvers::rigorous_impulse_solver_PP<pde_solvers::iso_nonbaro_impulse_equation_t>
-        pp_solver(pipe_parameters, layer, Pin, Pout);
+    hydro_solver::layer_type layer(pipe_parameters.profile.get_point_count());
+    
+    // Act - расчет знака приращения давления в диапазоне расхода
+    auto calc_pressure = [&](double flow) { 
+        return pde_solvers::rigorous_impulse_solve_QP<pde_solvers::iso_nonbaro_impulse_equation_t>
+            (pipe_parameters, layer, flow, Pout, -1); 
+    };
+    
+    std::set<int> pressure_increment_sign = get_increments_sign_for_func(calc_pressure, -Q_max, Q_max, Q_step);
 
-    // Act - расчет знака приращения невязки в диапазоне расхода
-    auto residuals = [&pp_solver](double flow) { return pp_solver.residuals(flow); };
-    double start_flow = -0.03;
-    double end_flow = 1.0;
-    std::set<int> residuals_increment_sign = get_increments_sign_for_func(residuals, start_flow, end_flow);
-
-    // Assert - Замыкающее соотношение монотонное - все приращения имеют одинаковый знак
-    ASSERT_TRUE(residuals_increment_sign.size() == 1);
+    // Assert - QP задача монотонная по давлению при изменении расхода - все приращения положительные
+    ASSERT_TRUE(pressure_increment_sign.size() == 1);
+    ASSERT_TRUE(pressure_increment_sign.find(+1) != pressure_increment_sign.end());
 }
 
 
