@@ -58,16 +58,16 @@ inline double hydraulic_resistance_isaev(double reynolds_number, double relative
     //{
     //    lam=0.3164/pow(Re,0.25);
     //}
-    else if (Re < 560 / Ke)
+    else //if (Re < 560 / Ke)
     {
         // Исаев по [Морозова, Коршак], ф-ла (1)
         lam = 1.0 / fixed_solvers::sqr(-1.8 * log10(6.8 / Re + pow(Ke / 3.7, 1.1)));
     }
-    else
-    {
-        // Шифринсон
-        lam = 0.11 * pow(Ke, 0.25);
-    }
+    //else
+    //{
+    //    // Шифринсон - отключен, т.к. при переходе Исаев-Шифринсон функция
+    //    lam = 0.11 * pow(Ke, 0.25);
+    //}
 
     return lam;
 }

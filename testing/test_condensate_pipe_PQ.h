@@ -23,6 +23,37 @@ inline pde_solvers::iso_nonbaro_pipe_properties_t create_test_pipe_for_PQ() {
     return pipe;
 }
 
+/// @brief Возвращает знаки приращений функции, встертившиеся 
+/// при увеличении аргумента от start_arg до end_arg с шагом step
+/// @tparam OneArgumentFunction Функция double(double)
+template <typename OneArgumentFunction>
+inline std::set<int> get_increments_sign_for_func(OneArgumentFunction f, 
+    double start_arg, double end_arg, double step = 1e-3) 
+{
+    if (start_arg > end_arg)
+        throw std::runtime_error("Wrong start and end values of argument");
+    
+    std::set<int> increment_sign;
+    double previous_func = std::numeric_limits<double>::quiet_NaN();
+    for (double x = start_arg; x <= end_arg; x += step)
+    {
+        double new_func = f(x);
+
+        if (isnan<double>(previous_func)) {
+            // На первой итерации только запоминаем значение функции
+            previous_func = new_func;
+            continue;
+        }
+
+        int sgn = fixed_solvers::sgn(new_func - previous_func);
+        increment_sign.insert(sgn);
+        
+        previous_func = new_func;
+    }
+
+    return increment_sign;
+}
+
 /// @brief Проверяет способность системы PQ задачи поддерживать корректный профиль давления при заданных начальных условиях.
 /// Тест выполняет следующие проверки:
 /// 1. Корректность инициализации плотности - все значения плотности в профиле должны соответствовать заданному начальному значению (800.0 кг/м³) с точностью 1e-6
@@ -116,6 +147,39 @@ TEST(CondensatePipeQPTask, MaintainsPressureStability_OverMultipleTimeSteps) {
         ASSERT_NEAR(volumes[i], initial_conditions.volumetric_flow, 1e-6);
     }
 
+}
+
+/// @brief Проверяет монотонность замыкающего соотношения для трубы
+/// При использовании для расчета гидравлического сопротивления 
+/// при переходе между формулами Исаева и Шифринсона наблюдался скачок, нарушавший монотонность
+TEST(CondensatePipeQPTask, CheckClosingRelationMonotonicity) {
+
+    using hydro_solver = pde_solvers::iso_nonbaro_pipe_solver_t;
+
+    // Arrange - создание солвера для трубы с известными параметрами
+    double length = 500e3;
+    double dx = 200;
+    double diameter = 0.8;
+
+    pde_solvers::pipe_json_data pipe_data{ diameter, 0, length };
+    auto pipe_parameters = iso_nonbaro_pipe_properties_t(pipe_data);
+    pipe_parameters.make_uniform_profile(dx);
+ 
+    hydro_solver::layer_type layer(pipe_parameters.profile.get_point_count());
+
+    double Pin = 872947.27809030749;
+    double Pout = 100000.0;
+    pde_solvers::rigorous_impulse_solver_PP<pde_solvers::iso_nonbaro_impulse_equation_t>
+        pp_solver(pipe_parameters, layer, Pin, Pout);
+
+    // Act - расчет знака приращения невязки в диапазоне расхода
+    auto residuals = [&pp_solver](double flow) { return pp_solver.residuals(flow); };
+    double start_flow = -0.03;
+    double end_flow = 1.0;
+    std::set<int> residuals_increment_sign = get_increments_sign_for_func(residuals, start_flow, end_flow);
+
+    // Assert - Замыкающее соотношение монотонное - все приращения имеют одинаковый знак
+    ASSERT_TRUE(residuals_increment_sign.size() == 1);
 }
 
 
