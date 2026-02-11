@@ -34,14 +34,15 @@ inline std::set<int> get_increments_sign_for_func(OneArgumentFunction f,
         throw std::runtime_error("Wrong start and end values of argument");
     
     std::set<int> increment_sign;
-    double previous_func = std::numeric_limits<double>::quiet_NaN();
+    bool has_previous = false;
+    double previous_func = 0.0;
     for (double x = start_arg; x <= end_arg; x += step)
     {
         double new_func = f(x);
 
-        if (std::isnan<double>(previous_func)) {
-            // На первой итерации только запоминаем значение функции
+        if (!has_previous) {
             previous_func = new_func;
+            has_previous = true;
             continue;
         }
 
