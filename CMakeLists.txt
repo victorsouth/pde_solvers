@@ -3,8 +3,19 @@ cmake_minimum_required(VERSION 3.10)
 # for install, dependencies and correct include path
 project(pde_solvers)
 
-set(CMAKE_CXX_STANDARD 17)#23?
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+if(MSVC)
+    add_compile_options("/MP")     # включает многопроцессорную компиляцию
+endif()
+if(MINGW)
+    add_compile_options("-Wa,-mbig-obj")
+endif()
+
+find_package(Eigen3)
+find_package(Boost REQUIRED headers)
+
 
 if(NOT TARGET fixed_solvers::fixed_solvers)
 find_package(fixed_solvers)
@@ -65,7 +76,7 @@ if("3.19.0" VERSION_LESS ${CMAKE_VERSION})
 else()
     add_library(${PROJECT_NAME} INTERFACE)
 endif()
-target_link_libraries(${PROJECT_NAME} INTERFACE fixed_solvers::fixed_solvers)
+target_link_libraries(${PROJECT_NAME} INTERFACE fixed_solvers::fixed_solvers Boost::headers)
 target_include_directories(${PROJECT_NAME}
     INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
