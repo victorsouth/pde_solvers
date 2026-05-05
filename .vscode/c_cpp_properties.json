@@ -3,8 +3,8 @@
         {
             "name": "Win32",
             "intelliSenseMode": "windows-gcc-x64",
-            "compileCommands": "${workspaceFolder}/out/build/GCC 15.2.0 x86_64-w64-mingw32/compile_commands.json",
-            "compilerPath": "C:/mingw64/bin/g++.exe"
+            "compileCommands": "${workspaceFolder}/out/build/windows-gcc-debug/compile_commands.json",
+            "compilerPath": "C:/msys64/ucrt64/bin/g++.exe"
         }
     ],
     "version": 4

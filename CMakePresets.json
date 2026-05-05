@@ -2,25 +2,419 @@
     "version": 8,
     "configurePresets": [
         {
-            "name": "GCC 15.2.0 x86_64-w64-mingw32",
-            "displayName": "GCC 15.2.0 x86_64-w64-mingw32",
-            "description": "Using compilers: C = C:\\mingw64\\bin\\gcc.exe, CXX = C:\\mingw64\\bin\\g++.exe",
-            "generator": "MinGW Makefiles",
+            "name": "base-debug",
+            "hidden": true,
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
-                "CMAKE_C_COMPILER": "C:/mingw64/bin/gcc.exe",
-                "CMAKE_CXX_COMPILER": "C:/mingw64/bin/g++.exe",
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_PREFIX_PATH": "C:/Devel/install/googletest/mingw"
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "PDE_SOLVERS_BUILD_TESTS": "ON"
+            }
+        },
+        {
+            "name": "base-release",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "PDE_SOLVERS_BUILD_TESTS": "ON"
+            }
+        },
+        {
+            "name": "windows-msvc-debug",
+            "displayName": "Windows MSVC Debug",
+            "inherits": "base-debug",
+            "generator": "Visual Studio 17 2022",
+            "architecture": {
+                "value": "x64"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "windows-gcc-debug",
+            "displayName": "Windows GCC Debug",
+            "inherits": "base-debug",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "C:/msys64/ucrt64/bin/gcc.exe",
+                "CMAKE_CXX_COMPILER": "C:/msys64/ucrt64/bin/g++.exe",
+                "CMAKE_TOOLCHAIN_FILE": "",
+                "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "windows-clang-debug",
+            "displayName": "Windows Clang Debug",
+            "inherits": "base-debug",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "C:/msys64/ucrt64/bin/clang.exe",
+                "CMAKE_CXX_COMPILER": "C:/msys64/ucrt64/bin/clang++.exe",
+                "CMAKE_TOOLCHAIN_FILE": "",
+                "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "linux-gcc-debug",
+            "displayName": "Linux GCC Debug",
+            "inherits": "base-debug",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "linux-clang-debug",
+            "displayName": "Linux Clang Debug",
+            "inherits": "base-debug",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "macos-clang-debug",
+            "displayName": "macOS Clang Debug",
+            "inherits": "base-debug",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "windows-msvc-release",
+            "displayName": "Windows MSVC Release",
+            "inherits": "base-release",
+            "generator": "Visual Studio 17 2022",
+            "architecture": {
+                "value": "x64"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "windows-gcc-release",
+            "displayName": "Windows GCC Release",
+            "inherits": "base-release",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "C:/msys64/ucrt64/bin/gcc.exe",
+                "CMAKE_CXX_COMPILER": "C:/msys64/ucrt64/bin/g++.exe",
+                "CMAKE_TOOLCHAIN_FILE": "",
+                "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "windows-clang-release",
+            "displayName": "Windows Clang Release",
+            "inherits": "base-release",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "C:/msys64/ucrt64/bin/clang.exe",
+                "CMAKE_CXX_COMPILER": "C:/msys64/ucrt64/bin/clang++.exe",
+                "CMAKE_TOOLCHAIN_FILE": "",
+                "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "linux-gcc-release",
+            "displayName": "Linux GCC Release",
+            "inherits": "base-release",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "linux-clang-release",
+            "displayName": "Linux Clang Release",
+            "inherits": "base-release",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "macos-clang-release",
+            "displayName": "macOS Clang Release",
+            "inherits": "base-release",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
             }
         }
     ],
     "buildPresets": [
         {
-            "name": "GCC 15.2.0 x86_64-w64-mingw32",
-            "configurePreset": "GCC 15.2.0 x86_64-w64-mingw32",
+            "name": "windows-msvc-debug",
+            "configurePreset": "windows-msvc-debug",
             "jobs": 8
+        },
+        {
+            "name": "windows-gcc-debug",
+            "configurePreset": "windows-gcc-debug",
+            "jobs": 8
+        },
+        {
+            "name": "windows-clang-debug",
+            "configurePreset": "windows-clang-debug",
+            "jobs": 8
+        },
+        {
+            "name": "linux-gcc-debug",
+            "configurePreset": "linux-gcc-debug",
+            "jobs": 8
+        },
+        {
+            "name": "linux-clang-debug",
+            "configurePreset": "linux-clang-debug",
+            "jobs": 8
+        },
+        {
+            "name": "macos-clang-debug",
+            "configurePreset": "macos-clang-debug",
+            "jobs": 8
+        },
+        {
+            "name": "windows-msvc-release",
+            "configurePreset": "windows-msvc-release",
+            "configuration": "Release",
+            "jobs": 8
+        },
+        {
+            "name": "windows-gcc-release",
+            "configurePreset": "windows-gcc-release",
+            "jobs": 8
+        },
+        {
+            "name": "windows-clang-release",
+            "configurePreset": "windows-clang-release",
+            "jobs": 8
+        },
+        {
+            "name": "linux-gcc-release",
+            "configurePreset": "linux-gcc-release",
+            "jobs": 8
+        },
+        {
+            "name": "linux-clang-release",
+            "configurePreset": "linux-clang-release",
+            "jobs": 8
+        },
+        {
+            "name": "macos-clang-release",
+            "configurePreset": "macos-clang-release",
+            "jobs": 8
+        },
+        {
+            "name": "windows-msvc-release-install",
+            "configurePreset": "windows-msvc-release",
+            "configuration": "Release",
+            "targets": [
+                "install"
+            ],
+            "jobs": 8
+        },
+        {
+            "name": "windows-gcc-release-install",
+            "configurePreset": "windows-gcc-release",
+            "targets": [
+                "install"
+            ],
+            "jobs": 8
+        },
+        {
+            "name": "windows-clang-release-install",
+            "configurePreset": "windows-clang-release",
+            "targets": [
+                "install"
+            ],
+            "jobs": 8
+        },
+        {
+            "name": "linux-gcc-release-install",
+            "configurePreset": "linux-gcc-release",
+            "targets": [
+                "install"
+            ],
+            "jobs": 8
+        },
+        {
+            "name": "linux-clang-release-install",
+            "configurePreset": "linux-clang-release",
+            "targets": [
+                "install"
+            ],
+            "jobs": 8
+        },
+        {
+            "name": "macos-clang-release-install",
+            "configurePreset": "macos-clang-release",
+            "targets": [
+                "install"
+            ],
+            "jobs": 8
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "windows-msvc-debug",
+            "configurePreset": "windows-msvc-debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "windows-gcc-debug",
+            "configurePreset": "windows-gcc-debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "windows-clang-debug",
+            "configurePreset": "windows-clang-debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-gcc-debug",
+            "configurePreset": "linux-gcc-debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-clang-debug",
+            "configurePreset": "linux-clang-debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "macos-clang-debug",
+            "configurePreset": "macos-clang-debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "windows-msvc-release",
+            "configurePreset": "windows-msvc-release",
+            "configuration": "Release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "windows-gcc-release",
+            "configurePreset": "windows-gcc-release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "windows-clang-release",
+            "configurePreset": "windows-clang-release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-gcc-release",
+            "configurePreset": "linux-gcc-release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-clang-release",
+            "configurePreset": "linux-clang-release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "macos-clang-release",
+            "configurePreset": "macos-clang-release",
+            "output": {
+                "outputOnFailure": true
+            }
         }
     ]
 }

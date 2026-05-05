@@ -1,22 +1,29 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
-            "type": "cppdbg",
+            "name": "Windows MSVC Debug (pde_tests)",
+            "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/out/build/GCC 15.2.0 x86_64-w64-mingw32/pde_tests.exe",
+            "program": "${workspaceFolder}/out/build/windows-msvc-debug/Debug/pde_tests.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "CMake: Build windows-msvc-debug"
+        },
+        {
+            "name": "Windows GCC Debug (pde_tests)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/build/windows-gcc-debug/pde_tests.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerPath": "C:/mingw64/bin/gdb.exe",
-            "preLaunchTask": "CMake: Build",
+            "miDebuggerPath": "C:/msys64/ucrt64/bin/gdb.exe",
+            "preLaunchTask": "CMake: Build windows-gcc-debug",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -29,7 +36,85 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "Windows Clang Debug (gdb, pde_tests)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/build/windows-clang-debug/pde_tests.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:/msys64/ucrt64/bin/gdb.exe",
+            "preLaunchTask": "CMake: Build windows-clang-debug",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Windows Clang Debug (lldb, pde_tests)",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/build/windows-clang-debug/pde_tests.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "debugAdapterPath": "C:/msys64/ucrt64/bin/lldb-dap.exe",
+            "preLaunchTask": "CMake: Build windows-clang-debug"
+        },
+        {
+            "name": "Linux GCC Debug (pde_tests)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/build/linux-gcc-debug/pde_tests",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "preLaunchTask": "CMake: Build linux-gcc-debug"
+        },
+        {
+            "name": "Linux Clang Debug (pde_tests)",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/build/linux-clang-debug/pde_tests",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "debugAdapterPath": "/usr/bin/lldb-dap",
+            "preLaunchTask": "CMake: Build linux-clang-debug"
+        },
+        {
+            "name": "macOS Clang Debug (pde_tests)",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/build/macos-clang-debug/pde_tests",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "debugAdapterPath": "/usr/bin/lldb-dap",
+            "preLaunchTask": "CMake: Build macos-clang-debug"
         }
-
     ]
 }
