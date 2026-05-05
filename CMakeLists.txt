@@ -52,6 +52,8 @@ set(HEADERS_SOLVERS
     pde_solvers/solvers/quick_solver.h
 )
 file(GLOB_RECURSE HEADERS_TASKS pde_solvers/tasks/* )
+file(GLOB_RECURSE HEADERS_TASKS_EXTRAS pde_solvers/tasks/extras/*)
+list(REMOVE_ITEM HEADERS_TASKS ${HEADERS_TASKS_EXTRAS})
 
 set(HEADERS_TIME
     pde_solvers/timeseries/csv_readers.h
@@ -68,11 +70,12 @@ source_group("Header Files/Core" FILES ${HEADERS_CORE})
 source_group("Header Files/Pipe" FILES ${HEADERS_PIPE})
 source_group("Header Files/Solvers" FILES ${HEADERS_SOLVERS})
 source_group("Header Files/Tasks" FILES ${HEADERS_TASKS})
+source_group("Header Files/Tasks/Extras" FILES ${HEADERS_TASKS_EXTRAS})
 source_group("Header Files/Timeseries" FILES ${HEADERS_TIME})
 
 
 if("3.19.0" VERSION_LESS ${CMAKE_VERSION})
-    add_library(${PROJECT_NAME} INTERFACE ${HEADERS} ${HEADERS_CORE} ${HEADERS_PIPE} ${HEADERS_SOLVERS} ${HEADERS_TIME} ${HEADERS_TASKS})
+    add_library(${PROJECT_NAME} INTERFACE ${HEADERS} ${HEADERS_CORE} ${HEADERS_PIPE} ${HEADERS_SOLVERS} ${HEADERS_TIME} ${HEADERS_TASKS} ${HEADERS_TASKS_EXTRAS})
 else()
     add_library(${PROJECT_NAME} INTERFACE)
 endif()
@@ -117,6 +120,7 @@ install(FILES ${HEADERS_PIPE} DESTINATION include/pde_solvers/pipe)
 install(FILES ${HEADERS_SOLVERS} DESTINATION include/pde_solvers/solvers)
 install(FILES ${HEADERS_TIME} DESTINATION include/pde_solvers/timeseries)
 install(FILES ${HEADERS_TASKS} DESTINATION include/pde_solvers/tasks)
+install(FILES ${HEADERS_TASKS_EXTRAS} DESTINATION include/pde_solvers/tasks/extras)
 endif()
 
 option(PDE_SOLVERS_BUILD_TESTS "" ON)
