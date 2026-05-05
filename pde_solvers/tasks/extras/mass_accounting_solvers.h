@@ -51,9 +51,7 @@ public:
 
 private:
     using base_solver_type = iso_nonbaro_pipe_solver_templated_t<layer_type>;
-
-    /// @brief Ссылка на буфер слоев с учетом массы
-    buffer_type& mass_accounting_buffer;
+    /// @brief Параметры трубы с флагом расчета массы
     const pipe_parameters_type& mass_accounting_pipe;
 
 public:
@@ -64,7 +62,6 @@ public:
         const pde_solvers::endogenous_selector_t& endogenous_selector)
         : base_solver_type(pipe, buffer, endogenous_selector)
         , mass_accounting_pipe(pipe)
-        , mass_accounting_buffer(buffer)
     {
     }
 
@@ -74,13 +71,12 @@ public:
         buffer_type& buffer)
         : base_solver_type(pipe, buffer)
         , mass_accounting_pipe(pipe)
-        , mass_accounting_buffer(buffer)
     {
     }
 
     /// @brief Вычисляет массу вещества в трубе по текущему слою
     double calculate_mass() const {
-        const layer_type& current_layer = mass_accounting_buffer.current();
+        const layer_type& current_layer = buffer.current();
         return calculate_isothermal_incompressible_fluid_mass_in_rigid_pipe(
             mass_accounting_pipe.profile.coordinates,
             current_layer.density_std.value,
@@ -93,7 +89,7 @@ public:
     {
         base_solver_type::transport_step(dt, volumetric_flow, boundaries);
         if (mass_accounting_pipe.calculate_mass) {
-            mass_accounting_buffer.current().mass = calculate_mass();
+            buffer.current().mass = calculate_mass();
         }
     }
 
@@ -103,7 +99,7 @@ public:
     {
         base_solver_type::transport_solve(volumetric_flow, boundaries);
         if (mass_accounting_pipe.calculate_mass) {
-            mass_accounting_buffer.current().mass = calculate_mass();
+            buffer.current().mass = calculate_mass();
         }
     }
 };
@@ -145,8 +141,8 @@ public:
 
 private:
     using base_solver_type = iso_nonbaro_improver_pipe_solver_templated_t<layer_type>;
+    /// @brief Параметры трубы с флагом расчета массы
     const pipe_parameters_type& mass_accounting_pipe;
-    buffer_type& mass_accounting_buffer;
 
 public:
     /// @brief Констуктор с селектором рассчитываемых свойств
@@ -156,7 +152,6 @@ public:
         const pde_solvers::endogenous_selector_t& endogenous_selector)
         : base_solver_type(pipe, buffer, endogenous_selector)
         , mass_accounting_pipe(pipe)
-        , mass_accounting_buffer(buffer)
     {
     }
 
@@ -166,13 +161,12 @@ public:
         buffer_type& buffer)
         : base_solver_type(pipe, buffer)
         , mass_accounting_pipe(pipe)
-        , mass_accounting_buffer(buffer)
     {
     }
 
     /// @brief Вычисляет массу вещества в трубе по текущему слою
     double calculate_mass() const {
-        const layer_type& current_layer = mass_accounting_buffer.current();
+        const layer_type& current_layer = buffer.current();
         return calculate_isothermal_incompressible_fluid_mass_in_rigid_pipe(
             mass_accounting_pipe.profile.coordinates,
             current_layer.density_std.value,
@@ -184,7 +178,7 @@ public:
         const pde_solvers::endogenous_values_t& boundaries) override {
         base_solver_type::transport_step(dt, volumetric_flow, boundaries);
         if (mass_accounting_pipe.calculate_mass) {
-            mass_accounting_buffer.current().mass = calculate_mass();
+            buffer.current().mass = calculate_mass();
         }
     }
 
@@ -193,7 +187,7 @@ public:
         const pde_solvers::endogenous_values_t& boundaries) override {
         base_solver_type::transport_solve(volumetric_flow, boundaries);
         if (mass_accounting_pipe.calculate_mass) {
-            mass_accounting_buffer.current().mass = calculate_mass();
+            buffer.current().mass = calculate_mass();
         }
     }
 };

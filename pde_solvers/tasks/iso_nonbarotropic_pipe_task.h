@@ -46,7 +46,8 @@ struct iso_nonbaro_improver_pipe_PP_task_boundaries_t {
 
 
 /// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода
-/// Шаблонный тип слоя вееден для возможности переопределения слоя в наследниках, расширяющших функционал солвера
+/// Шаблонный тип слоя вееден для возможности переопределения слоя в наследниках, расширяющших функционал солвера.
+/// @tparam Layer Тип слоя (iso_nonbaro_pipe_layer_t или iso_nonbaro_pipe_mass_accounting_layer_t)
 template<typename Layer>
 class iso_nonbaro_pipe_solver_templated_t : public pipe_solver_hydrotransport_interface_t {
 public:
@@ -340,6 +341,7 @@ public:
 };
 
 /// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода
+/// @tparam Layer Тип слоя (iso_nonbaro_pipe_layer_t или iso_nonbaro_pipe_mass_accounting_layer_t)
 template<typename Layer>
 class iso_nonbaro_improver_pipe_solver_templated_t : public pipe_solver_hydrotransport_interface_t {
 public:
