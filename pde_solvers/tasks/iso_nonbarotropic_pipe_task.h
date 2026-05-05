@@ -46,36 +46,38 @@ struct iso_nonbaro_improver_pipe_PP_task_boundaries_t {
 
 
 /// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода
-class iso_nonbaro_pipe_solver_t : public pipe_solver_hydrotransport_interface_t {
+/// Шаблонный тип слоя вееден для возможности переопределения слоя в наследниках, расширяющших функционал солвера
+template<typename Layer>
+class iso_nonbaro_pipe_solver_templated_t : public pipe_solver_hydrotransport_interface_t {
 public:
     /// @brief Тип слоя
-    using layer_type = iso_nonbaro_pipe_layer_t;
+    using layer_type = Layer;
     /// @brief Тип буфера
     using buffer_type = ring_buffer_t<layer_type>;
     /// @brief Тип параметров трубы
     using pipe_parameters_type = iso_nonbaro_pipe_properties_t;
 
-private:
+protected:
     /// @brief Ссылка на свойства конденсатопровода
-    const iso_nonbaro_pipe_properties_t& pipe;
+    const pipe_parameters_type& pipe;
     /// @brief Ссылка на буфер слоев
     buffer_type& buffer;
 
 public:
     /// @brief Фиктивный констуктор для совместмости с селектором рассчитываемых свойств
-    iso_nonbaro_pipe_solver_t(
-        const iso_nonbaro_pipe_properties_t& pipe,
+    iso_nonbaro_pipe_solver_templated_t(
+        const pipe_parameters_type& pipe,
         buffer_type& buffer,
         const pde_solvers::endogenous_selector_t& endogenous_selector)
-        : iso_nonbaro_pipe_solver_t(pipe, buffer)
+        : iso_nonbaro_pipe_solver_templated_t(pipe, buffer)
     {
     }
 
     /// @brief Конструктор
     /// @param pipe Ссылка на свойства конденсатопровода
     /// @param buffer Ссылка на буфер слоев
-    iso_nonbaro_pipe_solver_t(
-        const iso_nonbaro_pipe_properties_t& pipe,
+    iso_nonbaro_pipe_solver_templated_t(
+        const pipe_parameters_type& pipe,
         buffer_type& buffer)
         : pipe(pipe)
         , buffer(buffer)
@@ -139,11 +141,13 @@ public:
     }
 
     /// @brief Геттер для текущего слоя
-    iso_nonbaro_pipe_layer_t& get_current_layer() {
+    layer_type& get_current_layer() {
         return buffer.current();
     }
 };
 
+/// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода
+using iso_nonbaro_pipe_solver_t = iso_nonbaro_pipe_solver_templated_t<iso_nonbaro_pipe_layer_t>;
 
 /// @brief Структура, содержащая в себе краевые условия задачи PQ
 struct iso_nonbarotropic_pipe_PQ_task_boundaries_t {
@@ -336,16 +340,17 @@ public:
 };
 
 /// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода
-class iso_nonbaro_improver_pipe_solver_t : public pipe_solver_hydrotransport_interface_t {
+template<typename Layer>
+class iso_nonbaro_improver_pipe_solver_templated_t : public pipe_solver_hydrotransport_interface_t {
 public:
     /// @brief Тип слоя
-    using layer_type = iso_nonbaro_improver_pipe_layer_t;
+    using layer_type = Layer;
     /// @brief Тип буфера
     using buffer_type = ring_buffer_t<layer_type>;
     /// @brief Тип параметров трубы
     using pipe_parameters_type = iso_nonbaro_improver_pipe_properties_t;
 
-private:
+protected:
     /// @brief Ссылка на свойства конденсатопровода
     const pipe_parameters_type& pipe;
     /// @brief Ссылка на буфер слоев
@@ -353,19 +358,19 @@ private:
 
 public:
     /// @brief Фиктивный констуктор для совместмости с селектором рассчитываемых свойств
-    iso_nonbaro_improver_pipe_solver_t(
-        const iso_nonbaro_improver_pipe_properties_t& pipe,
+    iso_nonbaro_improver_pipe_solver_templated_t(
+        const pipe_parameters_type& pipe,
         buffer_type& buffer,
         const pde_solvers::endogenous_selector_t& endogenous_selector)
-        : iso_nonbaro_improver_pipe_solver_t(pipe, buffer)
+        : iso_nonbaro_improver_pipe_solver_templated_t(pipe, buffer)
     {
     }
 
     /// @brief Конструктор
     /// @param pipe Ссылка на свойства конденсатопровода
     /// @param buffer Ссылка на буфер слоев
-    iso_nonbaro_improver_pipe_solver_t(
-        const iso_nonbaro_improver_pipe_properties_t& pipe,
+    iso_nonbaro_improver_pipe_solver_templated_t(
+        const pipe_parameters_type& pipe,
         buffer_type& buffer)
         : pipe(pipe)
         , buffer(buffer)
@@ -436,10 +441,13 @@ public:
     }
 
     /// @brief Геттер для текущего слоя
-    iso_nonbaro_improver_pipe_layer_t& get_current_layer() {
+    layer_type& get_current_layer() {
         return buffer.current();
     }
 };
+
+/// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода с присадкой
+using iso_nonbaro_improver_pipe_solver_t = iso_nonbaro_improver_pipe_solver_templated_t<iso_nonbaro_improver_pipe_layer_t>;
 
 
 }

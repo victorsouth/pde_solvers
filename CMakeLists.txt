@@ -51,7 +51,7 @@ set(HEADERS_SOLVERS
     pde_solvers/solvers/ode_solver.h
     pde_solvers/solvers/quick_solver.h
 )
-file(GLOB HEADERS_TASKS pde_solvers/tasks/* )
+file(GLOB_RECURSE HEADERS_TASKS pde_solvers/tasks/* )
 
 set(HEADERS_TIME
     pde_solvers/timeseries/csv_readers.h
@@ -136,6 +136,7 @@ if(PDE_SOLVERS_BUILD_TESTS)
         testing/test_quick_conservativity.h
         testing/test_static_pipe_solver.h
         testing/test_iso_nonbaro_hydro.h
+        testing/extras/test_mass_accounting.h
         testing/test_timeseries.h
     )
     set(TESTS_SOURCES

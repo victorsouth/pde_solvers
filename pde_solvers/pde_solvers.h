@@ -39,6 +39,7 @@
 
 #include "solvers/diffusion_solver.h" // нужно инклудить после объявления трубы и проч.
 #include "tasks/pipe_heat_task_util.h"
+#include "tasks/extras/mass_calculation.h"
 #include "pipe/iso_nonbaro_impulse_pde.h"
 #include "tasks/pipe_solver_interface.h"
 
@@ -48,6 +49,7 @@
 #include "tasks/nonisothermal_quasistatic_task_p.h"
 #include "tasks/nonisothermal_quasistatic_ident.h"
 #include "tasks/iso_nonbarotropic_pipe_task.h"
+#include "tasks/extras/mass_accounting_solvers.h"
 #include "tasks/advection_task.h"
 
 namespace pde_solvers
