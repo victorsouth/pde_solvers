@@ -16,6 +16,7 @@ C:\msys64\usr\bin\bash -lc "pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64
 
 ### Linux
 - Install `gcc`, `clang`, `gdb`, `ninja`.
+- Install LLDB components for Clang debugging and Eigen printers: `lldb`, Python bindings for LLDB (for example `python3-module-lldb<version>`), and LLDB DAP adapter (`lldb-dap` or `lldb-vscode` from LLVM tools package).
 - Install vcpkg to `${HOME}/vcpkg`.
 
 ### macOS
@@ -113,12 +114,12 @@ Set `EIGEN_PRINTERS_ROOT`:
 
 ```powershell
 # Windows (PowerShell, current user)
-[Environment]::SetEnvironmentVariable("EIGEN_PRINTERS_ROOT", "D:/Coding/Projects/eigen-pretty-printers", "User")
+[Environment]::SetEnvironmentVariable("EIGEN_PRINTERS_ROOT", "../eigen-pretty-printers", "User")
 ```
 
 ```bash
 # Linux/macOS
-export EIGEN_PRINTERS_ROOT="$HOME/Coding/Projects/eigen-pretty-printers"
+export EIGEN_PRINTERS_ROOT="$HOME/../eigen-pretty-printers"
 ```
 
 Validation checklist:
