@@ -1,0 +1,43 @@
+CompileFlags:
+  CompilationDatabase: .
+  Add:
+    - "-include"
+    - "pde_solvers/pde_solvers.h"
+    - "-I."
+    - "-Ipde_solvers"
+    - "-IC:/Program Files (x86)/googletest-distribution/include"
+    - "-isystem"
+    - "C:/Program Files (x86)/googletest-distribution/include"
+    - "-IC:/Program Files (x86)/fixed_solvers/include"
+    - "-isystem"
+    - "C:/Program Files (x86)/fixed_solvers/include"
+    - "-IC:/Program Files (x86)/fixed_solvers/include/FIXED_SOLVERS"
+    - "-isystem"
+    - "C:/Program Files (x86)/fixed_solvers/include/FIXED_SOLVERS"
+    - "-isystem"
+    - "C:/Program Files (x86)/fixed_solvers/include/fixed_solvers"
+    - "-isystem"
+    - "C:/devel/eigen"
+    - "-isystem"
+    - "C:/Program Files (x86)/Boost/include/boost-1_88"
+    - "-std=gnu++20"
+    - "-w"
+    - "-Wno-#pragma-messages"
+    - "-Wa,-mbig-obj"
+
+Index:
+  Background: Build
+  StandardLibrary: Yes
+
+Completion:
+  AllScopes: Yes
+
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None
+  Suppress: [unused-includes, missing-includes]
