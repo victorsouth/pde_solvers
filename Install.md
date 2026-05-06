@@ -96,3 +96,33 @@ cmake --build --preset windows-msvc-release-install
 
 - VS Code: use launch configurations from `.vscode/launch.json`.
 - Visual Studio 2022: open folder as CMake project and pick `windows-msvc-debug`.
+
+## Eigen pretty-printers (shared external root)
+
+All debuggers use one shared location from `EIGEN_PRINTERS_ROOT`.
+Default location for this workspace layout: `${workspaceFolder}/../eigen-pretty-printers`
+(for example: `d:/Coding/Projects/eigen-pretty-printers`).
+
+Required layout:
+- `${EIGEN_PRINTERS_ROOT}/gdb/eigen.gdbinit`
+- `${EIGEN_PRINTERS_ROOT}/gdb/printers.py`
+- `${EIGEN_PRINTERS_ROOT}/lldb/eigen_printers.py`
+- `${EIGEN_PRINTERS_ROOT}/natvis/Eigen.natvis`
+
+Set `EIGEN_PRINTERS_ROOT`:
+
+```powershell
+# Windows (PowerShell, current user)
+[Environment]::SetEnvironmentVariable("EIGEN_PRINTERS_ROOT", "D:/Coding/Projects/eigen-pretty-printers", "User")
+```
+
+```bash
+# Linux/macOS
+export EIGEN_PRINTERS_ROOT="$HOME/Coding/Projects/eigen-pretty-printers"
+```
+
+Validation checklist:
+- VS Code + `windows-msvc-debug`: `Eigen::Matrix` displayed via natvis.
+- VS Code + `windows-gcc-debug`/`linux-gcc-debug`: `Eigen::Matrix` expanded with GDB printer.
+- VS Code + `windows-clang-debug`/`linux-clang-debug`/`macos-clang-debug`: LLDB summaries/synthetic children are available.
+- Visual Studio 2022 (`windows-msvc-debug`): natvis is loaded automatically from CMake (`CMAKE_VS_NATVIS_PATH`).

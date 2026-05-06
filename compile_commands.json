@@ -1,14 +1,14 @@
 [
 {
-  "directory": "C:/repos/netlib/pde_solvers/out/build/Clang 21.1.7 x86_64-w64-windows-gnu (ucrt64)",
-  "command": "C:\\msys64\\ucrt64\\bin\\clang++.exe -IC:/repos/netlib/pde_solvers -IC:/repos/netlib/pde_solvers/pde_solvers -isystem \"C:/Program Files (x86)/fixed_solvers/include/fixed_solvers\" -isystem C:/repos/Libraries/eigen-3.4.0 -isystem C:/repos/Libraries/boost_1_88_0 -isystem C:/install/googletest/clang/include -w -Wno-#pragma-messages -g -std=gnu++17 -Wa,-mbig-obj -o CMakeFiles\\pde_tests.dir\\testing\\test_main.cpp.obj -c C:\\repos\\netlib\\pde_solvers\\testing\\test_main.cpp",
-  "file": "C:\\repos\\netlib\\pde_solvers\\testing\\test_main.cpp",
-  "output": "CMakeFiles\\pde_tests.dir\\testing\\test_main.cpp.obj"
+  "directory": "D:/Coding/Projects/pde_solvers/out/build/windows-clang-release",
+  "command": "C:\\msys64\\ucrt64\\bin\\clang++.exe -DGTEST_LINKED_AS_SHARED_LIBRARY=1 -ID:/Coding/Projects/pde_solvers -ID:/Coding/Projects/pde_solvers/pde_solvers -isystem \"C:/Program Files (x86)/fixed_solvers/include/fixed_solvers\" -isystem \"C:/Program Files/eigen-3.4.1\" -O3 -DNDEBUG -std=gnu++17 -Wa,-mbig-obj -o CMakeFiles\\pde_tests.dir\\testing\\test_main.cpp.obj -c D:\\Coding\\Projects\\pde_solvers\\testing\\test_main.cpp",
+  "file": "D:/Coding/Projects/pde_solvers/testing/test_main.cpp",
+  "output": "D:/Coding/Projects/pde_solvers/out/build/windows-clang-release/CMakeFiles/pde_tests.dir/testing/test_main.cpp.obj"
 },
 {
-  "directory": "C:/repos/netlib/pde_solvers/out/build/Clang 21.1.7 x86_64-w64-windows-gnu (ucrt64)",
-  "command": "C:\\msys64\\ucrt64\\bin\\clang++.exe -IC:/repos/netlib/pde_solvers -IC:/repos/netlib/pde_solvers/pde_solvers -isystem \"C:/Program Files (x86)/fixed_solvers/include/fixed_solvers\" -isystem C:/repos/Libraries/eigen-3.4.0 -isystem C:/repos/Libraries/boost_1_88_0 -isystem C:/install/googletest/clang/include -w -Wno-#pragma-messages -g -std=gnu++17 -Wa,-mbig-obj -o CMakeFiles\\pde_research.dir\\research\\research_main.cpp.obj -c C:\\repos\\netlib\\pde_solvers\\research\\research_main.cpp",
-  "file": "C:\\repos\\netlib\\pde_solvers\\research\\research_main.cpp",
-  "output": "CMakeFiles\\pde_research.dir\\research\\research_main.cpp.obj"
+  "directory": "D:/Coding/Projects/pde_solvers/out/build/windows-clang-release",
+  "command": "C:\\msys64\\ucrt64\\bin\\clang++.exe -DGTEST_LINKED_AS_SHARED_LIBRARY=1 -ID:/Coding/Projects/pde_solvers -ID:/Coding/Projects/pde_solvers/pde_solvers -isystem \"C:/Program Files (x86)/fixed_solvers/include/fixed_solvers\" -isystem \"C:/Program Files/eigen-3.4.1\" -O3 -DNDEBUG -std=gnu++17 -Wa,-mbig-obj -o CMakeFiles\\pde_research.dir\\research\\research_main.cpp.obj -c D:\\Coding\\Projects\\pde_solvers\\research\\research_main.cpp",
+  "file": "D:/Coding/Projects/pde_solvers/research/research_main.cpp",
+  "output": "D:/Coding/Projects/pde_solvers/out/build/windows-clang-release/CMakeFiles/pde_research.dir/research/research_main.cpp.obj"
 }
 ]
