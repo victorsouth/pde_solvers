@@ -90,7 +90,13 @@ ctest --preset linux-clang-debug --output-on-failure
 ```powershell
 cmake --preset windows-msvc-release
 cmake --build --preset windows-msvc-release
-cmake --build --preset windows-msvc-release-install
+cmake --install --preset windows-msvc-release
+```
+
+Note: installation into system directories may require administrator privileges.
+
+```bash
+sudo cmake --install --preset linux-clang-release
 ```
 
 ## Debug
@@ -103,6 +109,7 @@ cmake --build --preset windows-msvc-release-install
 All debuggers use one shared location from `EIGEN_PRINTERS_ROOT`.
 Default location for this workspace layout: `${workspaceFolder}/../eigen-pretty-printers`
 (for example: `d:/Coding/Projects/eigen-pretty-printers`).
+`eigen-pretty-printers` should be placed in the same parent folder as the solver projects (`dae_solvers`, `vle_solvers`, `pde_solvers`, `fixed_solvers`, `graph_solvers`).
 
 Required layout:
 - `${EIGEN_PRINTERS_ROOT}/gdb/eigen.gdbinit`

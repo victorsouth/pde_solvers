@@ -6,7 +6,6 @@
             "hidden": true,
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
@@ -18,7 +17,6 @@
             "hidden": true,
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
@@ -122,7 +120,7 @@
             "name": "macos-clang-debug",
             "displayName": "macOS Clang Debug",
             "inherits": "base-debug",
-            "generator": "Ninja",
+            "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++",
@@ -220,7 +218,7 @@
             "name": "macos-clang-release",
             "displayName": "macOS Clang Release",
             "inherits": "base-release",
-            "generator": "Ninja",
+            "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++",
@@ -296,54 +294,6 @@
             "configurePreset": "macos-clang-release",
             "jobs": 8
         },
-        {
-            "name": "windows-msvc-release-install",
-            "configurePreset": "windows-msvc-release",
-            "configuration": "Release",
-            "targets": [
-                "install"
-            ],
-            "jobs": 8
-        },
-        {
-            "name": "windows-gcc-release-install",
-            "configurePreset": "windows-gcc-release",
-            "targets": [
-                "install"
-            ],
-            "jobs": 8
-        },
-        {
-            "name": "windows-clang-release-install",
-            "configurePreset": "windows-clang-release",
-            "targets": [
-                "install"
-            ],
-            "jobs": 8
-        },
-        {
-            "name": "linux-gcc-release-install",
-            "configurePreset": "linux-gcc-release",
-            "targets": [
-                "install"
-            ],
-            "jobs": 8
-        },
-        {
-            "name": "linux-clang-release-install",
-            "configurePreset": "linux-clang-release",
-            "targets": [
-                "install"
-            ],
-            "jobs": 8
-        },
-        {
-            "name": "macos-clang-release-install",
-            "configurePreset": "macos-clang-release",
-            "targets": [
-                "install"
-            ],
-            "jobs": 8
         }
     ],
     "testPresets": [
