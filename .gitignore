@@ -1,4 +1,4 @@
-﻿# Prerequisites
+# Prerequisites
 *.d
 
 # Compiled Object files
@@ -341,6 +341,7 @@ __pycache__/
 build*/
 BUILD*/
 out/
+compile_commands.json
 
 # Исключаем csv с реальными данными трубопровода
 !research/2024-08-quasistationary-with-real-data/data/*.csv
