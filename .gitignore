@@ -348,3 +348,4 @@ compile_commands.json
 /research_out/QSM_models/IsothermalQuasistaticModelWithRealData/Example.py
 /research_out/QSM_models/NonisothermalQuasistaticModelWithRealData/*.jpg
 .cache/*
+compile_commands.json
