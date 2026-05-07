@@ -293,7 +293,6 @@
             "name": "macos-clang-release",
             "configurePreset": "macos-clang-release",
             "jobs": 8
-        },
         }
     ],
     "testPresets": [
