@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
+if(POLICY CMP0091)
+    cmake_policy(SET CMP0091 NEW)
+endif()
 # header only library
 # for install, dependencies and correct include path
 project(pde_solvers)
@@ -21,6 +24,7 @@ endif()
 
 if(MSVC)
     add_compile_options("/MP")     # включает многопроцессорную компиляцию
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
 if(MINGW)
     add_compile_options("-Wa,-mbig-obj")
