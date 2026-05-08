@@ -11,7 +11,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(EIGEN_PRINTERS_ROOT "$ENV{EIGEN_PRINTERS_ROOT}" CACHE PATH "Path to shared Eigen pretty-printers root")
 if(NOT EIGEN_PRINTERS_ROOT)
-    set(EIGEN_PRINTERS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../eigen-pretty-printers" CACHE PATH "Path to shared Eigen pretty-printers root" FORCE)
+    if(WIN32)
+        set(EIGEN_PRINTERS_ROOT "C:/install/eigen-pretty-printers" CACHE PATH "Path to shared Eigen pretty-printers root" FORCE)
+    else()
+        set(EIGEN_PRINTERS_ROOT "$ENV{HOME}/install/eigen-pretty-printers" CACHE PATH "Path to shared Eigen pretty-printers root" FORCE)
+    endif()
 endif()
 set(EIGEN_NATVIS_FILE "${EIGEN_PRINTERS_ROOT}/natvis/Eigen.natvis" CACHE FILEPATH "Path to Eigen.natvis")
 if(MSVC AND CMAKE_GENERATOR MATCHES "Visual Studio")
@@ -29,6 +33,30 @@ endif()
 if(MINGW)
     add_compile_options("-Wa,-mbig-obj")
 endif()
+
+if(WIN32)
+    set(SOLVERS_INSTALL_ROOT "C:/install")
+else()
+    set(SOLVERS_INSTALL_ROOT "$ENV{HOME}/install")
+endif()
+
+if(MSVC)
+    set(SOLVERS_COMPILER_DIR "msvc")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(SOLVERS_COMPILER_DIR "clang")
+else()
+    set(SOLVERS_COMPILER_DIR "gcc")
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(SOLVERS_CONFIG_DIR "Release")
+else()
+    set(SOLVERS_CONFIG_DIR "Debug")
+endif()
+
+list(APPEND CMAKE_PREFIX_PATH
+    "${SOLVERS_INSTALL_ROOT}/fixed_solvers/${SOLVERS_COMPILER_DIR}/${SOLVERS_CONFIG_DIR}"
+)
 
 find_package(Eigen3)
 find_package(Boost REQUIRED headers)
@@ -169,7 +197,6 @@ if(PDE_SOLVERS_BUILD_TESTS)
 
     add_executable(pde_tests  ${TESTS_SOURCES} ${TESTS_HEADERS})
     target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
-	install(TARGETS pde_tests DESTINATION bin)
 
 
     set(RESEARCH_HEADERS
@@ -194,3 +221,4 @@ if(PDE_SOLVERS_BUILD_TESTS)
 
 
 endif()
+

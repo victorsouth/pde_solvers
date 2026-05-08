@@ -82,15 +82,6 @@
             "problemMatcher": [
                 "$gcc"
             ]
-        },
-        {
-            "label": "CMake: Skip build",
-            "type": "shell",
-            "command": "echo",
-            "args": [
-                "Skipping build before debug launch"
-            ],
-            "problemMatcher": []
         }
     ]
 }

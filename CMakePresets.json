@@ -34,7 +34,8 @@
             "cacheVariables": {
                 "CMAKE_MSVC_DEBUG_INFORMATION_FORMAT": "ProgramDatabase",
                 "CMAKE_CXX_FLAGS_DEBUG": "/Od /Zi",
-                "CMAKE_C_FLAGS_DEBUG": "/Od /Zi"
+                "CMAKE_C_FLAGS_DEBUG": "/Od /Zi",
+                "CMAKE_INSTALL_PREFIX": "C:/install/pde_solvers/msvc/Debug"
             },
             "condition": {
                 "type": "equals",
@@ -53,7 +54,8 @@
                 "CMAKE_TOOLCHAIN_FILE": "",
                 "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64",
                 "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g3",
-                "CMAKE_C_FLAGS_DEBUG": "-O0 -g3"
+                "CMAKE_C_FLAGS_DEBUG": "-O0 -g3",
+                "CMAKE_INSTALL_PREFIX": "C:/install/pde_solvers/gcc/Debug"
             },
             "condition": {
                 "type": "equals",
@@ -72,7 +74,8 @@
                 "CMAKE_TOOLCHAIN_FILE": "",
                 "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64",
                 "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g",
-                "CMAKE_C_FLAGS_DEBUG": "-O0 -g"
+                "CMAKE_C_FLAGS_DEBUG": "-O0 -g",
+                "CMAKE_INSTALL_PREFIX": "C:/install/pde_solvers/clang/Debug"
             },
             "condition": {
                 "type": "equals",
@@ -90,7 +93,8 @@
                 "CMAKE_CXX_COMPILER": "g++",
                 "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake",
                 "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g3",
-                "CMAKE_C_FLAGS_DEBUG": "-O0 -g3"
+                "CMAKE_C_FLAGS_DEBUG": "-O0 -g3",
+                "CMAKE_INSTALL_PREFIX": "$env{HOME}/install/pde_solvers/gcc/Debug"
             },
             "condition": {
                 "type": "equals",
@@ -108,7 +112,8 @@
                 "CMAKE_CXX_COMPILER": "clang++",
                 "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake",
                 "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g",
-                "CMAKE_C_FLAGS_DEBUG": "-O0 -g"
+                "CMAKE_C_FLAGS_DEBUG": "-O0 -g",
+                "CMAKE_INSTALL_PREFIX": "$env{HOME}/install/pde_solvers/clang/Debug"
             },
             "condition": {
                 "type": "equals",
@@ -126,7 +131,8 @@
                 "CMAKE_CXX_COMPILER": "clang++",
                 "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake",
                 "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g",
-                "CMAKE_C_FLAGS_DEBUG": "-O0 -g"
+                "CMAKE_C_FLAGS_DEBUG": "-O0 -g",
+                "CMAKE_INSTALL_PREFIX": "$env{HOME}/install/pde_solvers/clang/Debug"
             },
             "condition": {
                 "type": "equals",
@@ -146,6 +152,9 @@
                 "type": "equals",
                 "lhs": "${hostSystemName}",
                 "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "C:/install/pde_solvers/msvc/Release"
             }
         },
         {
@@ -157,7 +166,8 @@
                 "CMAKE_C_COMPILER": "C:/msys64/ucrt64/bin/gcc.exe",
                 "CMAKE_CXX_COMPILER": "C:/msys64/ucrt64/bin/g++.exe",
                 "CMAKE_TOOLCHAIN_FILE": "",
-                "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64"
+                "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64",
+                "CMAKE_INSTALL_PREFIX": "C:/install/pde_solvers/gcc/Release"
             },
             "condition": {
                 "type": "equals",
@@ -174,7 +184,8 @@
                 "CMAKE_C_COMPILER": "C:/msys64/ucrt64/bin/clang.exe",
                 "CMAKE_CXX_COMPILER": "C:/msys64/ucrt64/bin/clang++.exe",
                 "CMAKE_TOOLCHAIN_FILE": "",
-                "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64"
+                "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64",
+                "CMAKE_INSTALL_PREFIX": "C:/install/pde_solvers/clang/Release"
             },
             "condition": {
                 "type": "equals",
@@ -190,7 +201,8 @@
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "gcc",
                 "CMAKE_CXX_COMPILER": "g++",
-                "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+                "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_INSTALL_PREFIX": "$env{HOME}/install/pde_solvers/gcc/Release"
             },
             "condition": {
                 "type": "equals",
@@ -206,7 +218,8 @@
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++",
-                "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+                "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_INSTALL_PREFIX": "$env{HOME}/install/pde_solvers/clang/Release"
             },
             "condition": {
                 "type": "equals",
@@ -222,7 +235,8 @@
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++",
-                "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+                "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_INSTALL_PREFIX": "$env{HOME}/install/pde_solvers/clang/Release"
             },
             "condition": {
                 "type": "equals",
@@ -384,3 +398,4 @@
         }
     ]
 }
+

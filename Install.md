@@ -57,6 +57,13 @@ Install for macOS:
 $HOME/vcpkg/vcpkg install gtest:x64-osx eigen3:x64-osx
 ```
 
+## Install layout
+
+Each preset installs to a compiler/config specific directory:
+- Windows: C:/install/<project>/<compiler>/<Debug|Release>
+- Linux/macOS: $HOME/install/<project>/<compiler>/<Debug|Release>
+
+This keeps Debug and Release artifacts side-by-side without renaming binaries.
 ## Configure/build/test
 
 Use one of presets:
@@ -93,23 +100,19 @@ cmake --build --preset windows-msvc-release
 cmake --install --preset windows-msvc-release
 ```
 
-Note: installation into system directories may require administrator privileges.
-
-```bash
-sudo cmake --install --preset linux-clang-release
-```
+Install uses user-scoped prefixes from presets, so admin privileges are typically not required.
 
 ## Debug
 
 - VS Code: use launch configurations from `.vscode/launch.json`.
 - Visual Studio 2022: open folder as CMake project and pick `windows-msvc-debug`.
 
-## Eigen pretty-printers (shared external root)
+## Eigen pretty-printers (shared install root)
 
 All debuggers use one shared location from `EIGEN_PRINTERS_ROOT`.
-Default location for this workspace layout: `${workspaceFolder}/../eigen-pretty-printers`
-(for example: `d:/Coding/Projects/eigen-pretty-printers`).
-`eigen-pretty-printers` should be placed in the same parent folder as the solver projects (`dae_solvers`, `vle_solvers`, `pde_solvers`, `fixed_solvers`, `graph_solvers`).
+Default location:
+- Windows: `C:/install/eigen-pretty-printers`
+- Linux/macOS: `$HOME/install/eigen-pretty-printers`
 
 Required layout:
 - `${EIGEN_PRINTERS_ROOT}/gdb/eigen.gdbinit`
@@ -121,12 +124,12 @@ Set `EIGEN_PRINTERS_ROOT`:
 
 ```powershell
 # Windows (PowerShell, current user)
-[Environment]::SetEnvironmentVariable("EIGEN_PRINTERS_ROOT", "../eigen-pretty-printers", "User")
+[Environment]::SetEnvironmentVariable("EIGEN_PRINTERS_ROOT", "C:/install/eigen-pretty-printers", "User")
 ```
 
 ```bash
 # Linux/macOS
-export EIGEN_PRINTERS_ROOT="$HOME/../eigen-pretty-printers"
+export EIGEN_PRINTERS_ROOT="$HOME/install/eigen-pretty-printers"
 ```
 
 Validation checklist:
