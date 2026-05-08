@@ -197,6 +197,7 @@ if(PDE_SOLVERS_BUILD_TESTS)
 
     add_executable(pde_tests  ${TESTS_SOURCES} ${TESTS_HEADERS})
     target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
+    install(TARGETS pde_tests DESTINATION bin)
 
 
     set(RESEARCH_HEADERS
