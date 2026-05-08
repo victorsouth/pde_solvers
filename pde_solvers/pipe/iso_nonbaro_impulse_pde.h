@@ -190,6 +190,15 @@ struct improver_properties_t
     std::vector<double> coeffs;
     /// @brief формула расчета эффективности присадки
     improver_efficiency_formula_t efficiency_formula;
+
+    /// @brief Значения по умолчанию для параметров присадки
+    static improver_properties_t default_values()
+    {
+        improver_properties_t result;
+        result.efficiency_formula = improver_efficiency_formula_t::polynomial;
+        result.coeffs = { 0.0 };
+        return result;
+    }
     
     /// @brief расчет эффективности присадки с учетом заданного типа efficiency_formula
     double drag_reduction_effectiveness(double concentration) const
@@ -271,14 +280,25 @@ struct iso_nonbaro_improver_pipe_properties_t : public pipe_properties_t {
 
     /// @brief Объект со значениями по умолчанию
     static iso_nonbaro_improver_pipe_properties_t default_values() {
-        throw std::runtime_error("not implemented");
+        iso_nonbaro_improver_pipe_properties_t result;
+        double length = 5000;
+        double dx = 200;
+        result.profile.coordinates =
+            pde_solvers::pipe_profile_uniform::generate_uniform_grid(0.0, length, dx);
+        result.wall.diameter = 1;
+        result.kinematic_viscosity = 1e-7;
+        result.improver.efficiency_formula = improver_efficiency_formula_t::polynomial;
+        result.improver.coeffs = { 0.0 };
+        return result;
     }
 
     /// @brief Конструктор из JSON данных
     /// @param json_data Данные о трубе в формате JSON
     iso_nonbaro_improver_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
     {
-        throw std::runtime_error("not implemented");
+        *this = iso_nonbaro_improver_pipe_properties_t::default_values();
+        profile.coordinates = { json_data.x_start, json_data.x_end };
+        wall.diameter = json_data.diameter;
     }
 
     /// @brief Создает равномерный профиль трубы с заданным шагом
