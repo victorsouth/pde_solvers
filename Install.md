@@ -1,72 +1,72 @@
-# Install
+# Установка
 
-## One-time setup
+## Первичная настройка
 
 ### Windows x64
-- Install Visual Studio 17 2022 (Desktop development with C++).
-- Install MSYS2 to `C:/msys64` and install UCRT64 components:
+- Установите Visual Studio 17 2022 (Desktop development with C++).
+- Установите MSYS2 в `C:/msys64` и добавьте компоненты UCRT64:
 
 ```powershell
 C:\msys64\usr\bin\bash -lc "pacman -Syu --noconfirm"
-C:\msys64\usr\bin\bash -lc "pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb mingw-w64-ucrt-x86_64-lldb mingw-w64-ucrt-x86_64-ninja"
+C:\msys64\usr\bin\bash -lc "pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb mingw-w64-ucrt-x86_64-lldb mingw-w64-ucrt-x86_64-lldb-dap mingw-w64-ucrt-x86_64-ninja"
 C:\msys64\usr\bin\bash -lc "pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64-gtest mingw-w64-ucrt-x86_64-eigen3"
 ```
 
-- Install vcpkg to `C:/vcpkg`.
+- Установите vcpkg в `C:/vcpkg`.
 
 ### Linux
-- Install `gcc`, `clang`, `gdb`, `ninja`.
-- Install LLDB components for Clang debugging and Eigen printers: `lldb`, Python bindings for LLDB (for example `python3-module-lldb<version>`), and LLDB DAP adapter (`lldb-dap` or `lldb-vscode` from LLVM tools package).
-- Install vcpkg to `${HOME}/vcpkg`.
+- Установите `gcc`, `clang`, `gdb`, `ninja`.
+- Для отладки Clang и принтеров Eigen установите компоненты LLDB: `lldb`, Python-привязки для LLDB (например, `python3-module-lldb<version>`) и LLDB DAP-адаптер (`lldb-dap` или `lldb-vscode` из пакета LLVM tools).
+- Установите vcpkg в `${HOME}/vcpkg`.
 
 ### macOS
-- Install Xcode Command Line Tools (`clang`, `lldb`).
-- Install `ninja` (for example via Homebrew).
-- Install vcpkg to `${HOME}/vcpkg`.
+- Установите Xcode Command Line Tools (`clang`, `lldb`).
+- Установите `ninja` (например, через Homebrew).
+- Установите vcpkg в `${HOME}/vcpkg`.
 
-## Supported compiler matrix
+## Поддерживаемые компиляторы
 
 - Windows: MSVC, GCC, Clang
 - Linux: GCC, Clang
 - macOS: Clang
 
-## vcpkg dependencies
+## Зависимости vcpkg
 
-`pde_solvers` uses:
+`pde_solvers` использует:
 - GTest
 - Eigen3
-- Boost is not used in this project.
+- Boost Headers
 
-Install for Windows (x64, MSVC only):
+Установка для Windows (x64, только MSVC):
 
 ```powershell
-C:\vcpkg\vcpkg install gtest:x64-windows eigen3:x64-windows
+C:\vcpkg\vcpkg install gtest:x64-windows eigen3:x64-windows boost:x64-windows
 ```
 
-For Windows GCC/Clang, dependencies are taken from MSYS2 UCRT64 (`C:/msys64/ucrt64`) via CMake presets.
+Для Windows GCC/Clang зависимости берутся из MSYS2 UCRT64 (`C:/msys64/ucrt64`) через пресеты CMake.
 
-Install for Linux:
+Установка для Linux:
 
 ```bash
-$HOME/vcpkg/vcpkg install gtest:x64-linux eigen3:x64-linux
+$HOME/vcpkg/vcpkg install gtest:x64-linux eigen3:x64-linux boost:x64-linux
 ```
 
-Install for macOS:
+Установка для macOS:
 
 ```bash
-$HOME/vcpkg/vcpkg install gtest:x64-osx eigen3:x64-osx
+$HOME/vcpkg/vcpkg install gtest:x64-osx eigen3:x64-osx boost:x64-osx
 ```
 
-## Install layout
+## Структура установки
 
-Each preset installs to a compiler/config specific directory:
+Каждый пресет устанавливает артефакты в отдельный путь по компилятору и конфигурации:
 - Windows: C:/install/<project>/<compiler>/<Debug|Release>
 - Linux/macOS: $HOME/install/<project>/<compiler>/<Debug|Release>
 
-This keeps Debug and Release artifacts side-by-side without renaming binaries.
-## Configure/build/test
+Это позволяет держать Debug и Release рядом без переименования бинарников.
+## Конфигурация / сборка / тесты
 
-Use one of presets:
+Используйте один из пресетов:
 - `windows-msvc-debug`
 - `windows-gcc-debug`
 - `windows-clang-debug`
@@ -80,7 +80,7 @@ Use one of presets:
 - `macos-clang-debug`
 - `macos-clang-release`
 
-Example:
+Примеры:
 
 ```powershell
 cmake --preset windows-gcc-debug
@@ -100,40 +100,27 @@ cmake --build --preset windows-msvc-release
 cmake --install --preset windows-msvc-release
 ```
 
-Install uses user-scoped prefixes from presets, so admin privileges are typically not required.
+В установке используются пользовательские префиксы из пресетов, поэтому права администратора обычно не требуются.
 
-## Debug
+## Отладка
 
-- VS Code: use launch configurations from `.vscode/launch.json`.
-- Visual Studio 2022: open folder as CMake project and pick `windows-msvc-debug`.
+- VS Code: используйте конфигурации запуска из `.vscode/launch.json`.
+- Visual Studio 2022: откройте папку как CMake-проект и выберите `windows-msvc-debug`.
 
-## Eigen pretty-printers (shared install root)
+## Pretty-printers Eigen (общий корень установки)
 
-All debuggers use one shared location from `EIGEN_PRINTERS_ROOT`.
-Default location:
+Все отладчики используют единое расположение из `EIGEN_PRINTERS_ROOT`.
+Путь по умолчанию:
 - Windows: `C:/install/eigen-pretty-printers`
 - Linux/macOS: `$HOME/install/eigen-pretty-printers`
 
-Required layout:
+Требуемая структура:
 - `${EIGEN_PRINTERS_ROOT}/gdb/eigen.gdbinit`
 - `${EIGEN_PRINTERS_ROOT}/gdb/printers.py`
 - `${EIGEN_PRINTERS_ROOT}/lldb/eigen_printers.py`
 - `${EIGEN_PRINTERS_ROOT}/natvis/Eigen.natvis`
 
-Set `EIGEN_PRINTERS_ROOT`:
-
-```powershell
-# Windows (PowerShell, current user)
-[Environment]::SetEnvironmentVariable("EIGEN_PRINTERS_ROOT", "C:/install/eigen-pretty-printers", "User")
-```
-
-```bash
-# Linux/macOS
-export EIGEN_PRINTERS_ROOT="$HOME/install/eigen-pretty-printers"
-```
-
-Validation checklist:
-- VS Code + `windows-msvc-debug`: `Eigen::Matrix` displayed via natvis.
-- VS Code + `windows-gcc-debug`/`linux-gcc-debug`: `Eigen::Matrix` expanded with GDB printer.
-- VS Code + `windows-clang-debug`/`linux-clang-debug`/`macos-clang-debug`: LLDB summaries/synthetic children are available.
-- Visual Studio 2022 (`windows-msvc-debug`): natvis is loaded automatically from CMake (`CMAKE_VS_NATVIS_PATH`).
+Проверочный список:
+- VS Code + `windows-msvc-debug`: `Eigen::Matrix` отображается через natvis.
+- VS Code + `windows-gcc-debug`/`linux-gcc-debug`: `Eigen::Matrix` разворачивается через принтер GDB.
+- VS Code + `windows-clang-debug`/`linux-clang-debug`/`macos-clang-debug`: доступны summaries/synthetic children в LLDB.
