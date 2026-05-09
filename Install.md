@@ -4,7 +4,7 @@
 
 ### Windows x64
 - Установите Visual Studio 17 2022 (Desktop development with C++).
-- Установите MSYS2 в `C:/msys64` и добавьте компоненты UCRT64:
+- Установите MSYS2 в `C:/msys64` (скачивание: https://www.msys2.org/) и добавьте компоненты UCRT64:
 
 ```powershell
 C:\msys64\usr\bin\bash -lc "pacman -Syu --noconfirm"
@@ -12,17 +12,35 @@ C:\msys64\usr\bin\bash -lc "pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64
 C:\msys64\usr\bin\bash -lc "pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64-gtest mingw-w64-ucrt-x86_64-eigen3"
 ```
 
-- Установите vcpkg в `C:/vcpkg`.
+- Установите vcpkg в `C:/vcpkg`:
+
+```powershell
+git clone https://github.com/microsoft/vcpkg C:\vcpkg
+C:\vcpkg\bootstrap-vcpkg.bat
+C:\vcpkg\vcpkg integrate install
+```
+
+Команда `vcpkg integrate install` опциональна и полезна для локальной работы в Visual Studio/MSBuild.
 
 ### Linux
-- Установите `gcc`, `clang`, `gdb`, `ninja`.
+- Установите инструменты: `git`, `cmake`, `ninja`, `gcc`, `clang`, `gdb`, `lldb`.
 - Для отладки Clang и принтеров Eigen установите компоненты LLDB: `lldb`, Python-привязки для LLDB (например, `python3-module-lldb<version>`) и LLDB DAP-адаптер (`lldb-dap` или `lldb-vscode` из пакета LLVM tools).
-- Установите vcpkg в `${HOME}/vcpkg`.
+- Установите vcpkg в `${HOME}/vcpkg`:
+
+```bash
+git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg"
+"$HOME/vcpkg/bootstrap-vcpkg.sh"
+```
 
 ### macOS
-- Установите Xcode Command Line Tools (`clang`, `lldb`).
-- Установите `ninja` (например, через Homebrew).
-- Установите vcpkg в `${HOME}/vcpkg`.
+- Установите Xcode Command Line Tools (`clang`, `lldb`, `git`).
+- Установите инструменты: `cmake`, `ninja` (например, через Homebrew).
+- Установите vcpkg в `${HOME}/vcpkg`:
+
+```bash
+git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg"
+"$HOME/vcpkg/bootstrap-vcpkg.sh"
+```
 
 ## Поддерживаемые компиляторы
 
