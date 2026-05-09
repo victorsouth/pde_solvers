@@ -5,7 +5,7 @@
             "name": "Windows MSVC Debug (pde_tests)",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/out/build/windows-msvc-debug/Debug/pde_tests.exe",
+            "program": "${workspaceFolder}/out/windows-msvc-debug/Debug/pde_tests.exe",
             "args": [
                 
             ],
@@ -18,7 +18,7 @@
             "name": "Windows GCC Debug (pde_tests)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/out/build/windows-gcc-debug/pde_tests.exe",
+            "program": "${workspaceFolder}/out/windows-gcc-debug/pde_tests.exe",
             "args": [
                 
             ],
@@ -56,7 +56,7 @@
             "name": "Windows Clang Debug (gdb, pde_tests)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/out/build/windows-clang-debug/pde_tests.exe",
+            "program": "${workspaceFolder}/out/windows-clang-debug/pde_tests.exe",
             "args": [
                 
             ],
@@ -94,7 +94,7 @@
             "name": "Windows Clang Debug (lldb, pde_tests)",
             "type": "lldb-dap",
             "request": "launch",
-            "program": "${workspaceFolder}/out/build/windows-clang-debug/pde_tests.exe",
+            "program": "${workspaceFolder}/out/windows-clang-debug/pde_tests.exe",
             "args": [
                 
             ],
@@ -117,7 +117,7 @@
             "name": "Linux GCC Debug (pde_tests)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/out/build/linux-gcc-debug/pde_tests",
+            "program": "${workspaceFolder}/out/linux-gcc-debug/pde_tests",
             "args": [
                 
             ],
@@ -150,7 +150,7 @@
             "name": "Linux Clang Debug (pde_tests)",
             "type": "lldb-dap",
             "request": "launch",
-            "program": "${workspaceFolder}/out/build/linux-clang-debug/pde_tests",
+            "program": "${workspaceFolder}/out/linux-clang-debug/pde_tests",
             "args": [
                 
             ],
@@ -173,7 +173,7 @@
             "name": "macOS Clang Debug (pde_tests)",
             "type": "lldb-dap",
             "request": "launch",
-            "program": "${workspaceFolder}/out/build/macos-clang-debug/pde_tests",
+            "program": "${workspaceFolder}/out/macos-clang-debug/pde_tests",
             "args": [
                 
             ],
