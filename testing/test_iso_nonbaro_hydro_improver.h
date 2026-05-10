@@ -200,15 +200,11 @@ TEST(IsoNonbaroPipeWithImproverQPPde, FlowIncrease_WithImprover) {
     base_conditions.pressure_in = 5e6;
     base_conditions.pressure_out = 4e6;
 
-    double density = 800;
-    double Q0, QImprover;
-
     // Act
-    Q0 = Q_for_solve_PP(pipe, base_conditions);
+    double Q0 = Q_for_solve_PP(pipe, base_conditions);
     base_conditions.improver_concentration = 0.001;
-    QImprover = Q_for_solve_PP(pipe, base_conditions);
+    double Q_with_improver = Q_for_solve_PP(pipe, base_conditions);
 
     // Assert
-    // Расход должен увеличиться
-    EXPECT_LT(Q0, QImprover);
+    EXPECT_GT(Q_with_improver, Q0); // Расход должен увеличиться
 }
