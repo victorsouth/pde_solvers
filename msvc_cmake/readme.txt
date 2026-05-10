@@ -10,7 +10,7 @@
 
 При всех собранных зависимостях используем типовую команду (запускать из pde_solvers/msvc_cmake)
 
-cmake .. -G "Visual Studio 17 2022" -DCMAKE_PREFIX_PATH="C:/Program Files (x86)/googletest-distribution"  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDebugDLL -DCMAKE_BUILD_TYPE=Debug -DPDE_SOLVERS_BUILD_TESTS=ON
+cmake .. -G "Visual Studio 17 2022" -DCMAKE_PREFIX_PATH="C:/install/googletest/msvc"  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDebugDLL -DPDE_SOLVERS_BUILD_TESTS=ON
 
 В папке pde_solvers/msvc_cmake будет создано решение MSVC (.sln). Его открываем, работаем с ним как обычно.
 
