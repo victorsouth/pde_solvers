@@ -1,5 +1,16 @@
 @PACKAGE_INIT@
 include(CMakeFindDependencyMacro)
+
+get_filename_component(_solvers_config_name "${PACKAGE_PREFIX_DIR}" NAME)
+get_filename_component(_solvers_compiler_path "${PACKAGE_PREFIX_DIR}" DIRECTORY)
+get_filename_component(_solvers_compiler_name "${_solvers_compiler_path}" NAME)
+get_filename_component(_solvers_project_path "${_solvers_compiler_path}" DIRECTORY)
+get_filename_component(_solvers_install_root "${_solvers_project_path}" DIRECTORY)
+
+list(APPEND CMAKE_PREFIX_PATH
+    "${_solvers_install_root}/fixed_solvers/${_solvers_compiler_name}/${_solvers_config_name}"
+)
+
 find_dependency(fixed_solvers)
 find_dependency(Boost COMPONENTS headers)
 

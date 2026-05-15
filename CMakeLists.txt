@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
+if(POLICY CMP0091)
+    cmake_policy(SET CMP0091 NEW)
+endif()
 # header only library
 # for install, dependencies and correct include path
 project(pde_solvers)
@@ -8,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(MSVC)
     add_compile_options("/MP")     # включает многопроцессорную компиляцию
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
 if(MINGW)
     add_compile_options("-Wa,-mbig-obj")
@@ -153,7 +157,7 @@ if(PDE_SOLVERS_BUILD_TESTS)
 
     add_executable(pde_tests  ${TESTS_SOURCES} ${TESTS_HEADERS})
     target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
-	install(TARGETS pde_tests DESTINATION bin)
+    install(TARGETS pde_tests DESTINATION bin)
 
 
     set(RESEARCH_HEADERS
@@ -178,3 +182,4 @@ if(PDE_SOLVERS_BUILD_TESTS)
 
 
 endif()
+

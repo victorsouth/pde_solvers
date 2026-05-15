@@ -1,4 +1,5 @@
 {
+    "C_Cpp.intelliSenseEngine": "disabled",
     "files.associations": {
         "iostream": "cpp",
         "filesystem": "cpp",
