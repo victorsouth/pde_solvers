@@ -1,22 +1,39 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "Windows MSVC Debug (pde_tests)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/windows-msvc-debug/Debug/pde_tests.exe",
+            "args": [
+                
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "visualizerFile": "C:/install/eigen-pretty-printers/natvis/Eigen.natvis",
+            "preLaunchTask": "CMake: Build windows-msvc-debug"
+        },
+        {
+            "name": "Windows GCC Debug (pde_tests)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/out/build/GCC 15.2.0 x86_64-w64-mingw32/pde_tests.exe",
-            "args": [],
+            "program": "${workspaceFolder}/out/windows-gcc-debug/pde_tests.exe",
+            "args": [
+                
+            ],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
-            "environment": [],
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "EIGEN_PRINTERS_ROOT",
+                    "value": "C:/install/eigen-pretty-printers"
+                }
+            ],
             "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerPath": "C:/mingw64/bin/gdb.exe",
-            "preLaunchTask": "CMake: Build",
+            "miDebuggerPath": "C:/msys64/ucrt64/bin/gdb.exe",
+            "preLaunchTask": "CMake: Build windows-gcc-debug",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -27,9 +44,157 @@
                     "description": "Set Disassembly Flavor to Intel",
                     "text": "-gdb-set disassembly-flavor intel",
                     "ignoreFailures": true
+                },
+                {
+                    "description": "Load Eigen pretty-printers (shared root)",
+                    "text": "python import importlib.util; p=r'C:/install/eigen-pretty-printers/gdb/printers.py'; s=importlib.util.spec_from_file_location('eigen_printers', p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.register_eigen_printers(gdb)",
+                    "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "Windows Clang Debug (gdb, pde_tests)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/windows-clang-debug/pde_tests.exe",
+            "args": [
+                
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "EIGEN_PRINTERS_ROOT",
+                    "value": "C:/install/eigen-pretty-printers"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:/msys64/ucrt64/bin/gdb.exe",
+            "preLaunchTask": "CMake: Build windows-clang-debug",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Load Eigen pretty-printers (shared root)",
+                    "text": "python import importlib.util; p=r'C:/install/eigen-pretty-printers/gdb/printers.py'; s=importlib.util.spec_from_file_location('eigen_printers', p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.register_eigen_printers(gdb)",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Windows Clang Debug (lldb, pde_tests)",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/windows-clang-debug/pde_tests.exe",
+            "args": [
+                
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "EIGEN_PRINTERS_ROOT",
+                    "value": "C:/install/eigen-pretty-printers"
+                }
+            ],
+            "externalConsole": false,
+            "debugAdapterPath": "C:/msys64/ucrt64/bin/lldb-dap.exe",
+            "initCommands": [
+                "script import os, lldb; p=r'C:/install/eigen-pretty-printers/lldb/eigen_printers.py'; lldb.debugger.HandleCommand('command script import ' + p) if os.path.isfile(p) else None"
+            ],
+            "preLaunchTask": "CMake: Build windows-clang-debug"
+        },
+        {
+            "name": "Linux GCC Debug (pde_tests)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/linux-gcc-debug/pde_tests",
+            "args": [
+                
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "EIGEN_PRINTERS_ROOT",
+                    "value": "${env:HOME}/install/eigen-pretty-printers"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Load Eigen pretty-printers (shared root)",
+                    "text": "python import importlib.util; p=r'${env:HOME}/install/eigen-pretty-printers/gdb/printers.py'; s=importlib.util.spec_from_file_location('eigen_printers', p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.register_eigen_printers(gdb)",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "CMake: Build linux-gcc-debug"
+        },
+        {
+            "name": "Linux Clang Debug (pde_tests)",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/linux-clang-debug/pde_tests",
+            "args": [
+                
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "EIGEN_PRINTERS_ROOT",
+                    "value": "${env:HOME}/install/eigen-pretty-printers"
+                }
+            ],
+            "externalConsole": false,
+            "debugAdapterPath": "/usr/bin/lldb-dap",
+            "initCommands": [
+                "script import os, lldb; p=r'${env:HOME}/install/eigen-pretty-printers/lldb/eigen_printers.py'; lldb.debugger.HandleCommand('command script import ' + p) if os.path.isfile(p) else None"
+            ],
+            "preLaunchTask": "CMake: Build linux-clang-debug"
+        },
+        {
+            "name": "macOS Clang Debug (pde_tests)",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/macos-clang-debug/pde_tests",
+            "args": [
+                
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "EIGEN_PRINTERS_ROOT",
+                    "value": "${env:HOME}/install/eigen-pretty-printers"
+                }
+            ],
+            "externalConsole": false,
+            "debugAdapterPath": "/usr/bin/lldb-dap",
+            "initCommands": [
+                "script import os, lldb; p=r'${env:HOME}/install/eigen-pretty-printers/lldb/eigen_printers.py'; lldb.debugger.HandleCommand('command script import ' + p) if os.path.isfile(p) else None"
+            ],
+            "preLaunchTask": "CMake: Build macos-clang-debug"
         }
-
+    ],
+    "inputs": [
+        
     ]
 }
+
