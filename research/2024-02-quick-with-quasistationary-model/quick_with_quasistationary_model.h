@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <pde_solvers/timeseries.h>
 #include <filesystem>
@@ -67,7 +67,7 @@ struct matlab_printer {
         std::string path,
         const time_t& t,
         const pipe_properties_t& pipe,
-        const density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true >& layer,
+        const density_viscosity_quasi_layer<is_cell_based_solver_v<Solver>>& layer,
         const std::vector<double>& etalon_values = {}
     ) {
         print(layer.density, t, path, "density");
@@ -171,7 +171,7 @@ TEST_F(IsothermalQuasistaticModel, QuickWithQuasiStationaryModel)
     // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
     vector_timeseries_t<double> time_series = generate_timeseries(timeseries_initial_values);
     double dt = 75;
-    perform_quasistatic_simulation<quickest_ultimate_fv_solver, matlab_printer<quickest_ultimate_fv_solver>>(
+    perform_quasistatic_simulation<quickest_ultimate_fv_solver<sequential_policy>, matlab_printer<quickest_ultimate_io_solver>>(
         path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi, dt);
 }
 /// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом (идеальные настройки)
@@ -201,7 +201,7 @@ TEST_F(IsothermalQuasistaticModel, IdealQuickWithQuasiStationaryModel)
     settings.sample_time_min = 200;
     vector_timeseries_t<double> time_series = generate_timeseries(timeseries_initial_values, settings);
     // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
-    perform_quasistatic_simulation<quickest_ultimate_fv_solver, matlab_printer<quickest_ultimate_fv_solver>>(
+    perform_quasistatic_simulation<quickest_ultimate_fv_solver<sequential_policy>, matlab_printer<quickest_ultimate_io_solver>>(
         path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi);
 }
 /// @brief Пример использования метода характеристик с гидравлическим расчетом  

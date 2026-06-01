@@ -4,6 +4,7 @@
 - Eigen Debug
 - Gtest Debug
 - fixed_solvers Debug
+- oneTBB (installed в C:/install/TBB/msvc)
 
 Подробности см. fixed_solvers/msvc_cmake/readme.txt
 (ЕСЛИ В БИБЛИОТЕКАХ ПОЯВИЛИСЬ ИЗМЕНЕНИЯ, КОТОРЫЕ НЕОБХОДИМЫ ДЛЯ РАБОТЫ ТЕКУЩЕЙ БИБЛИОТЕКИ, ТО ИХ НАДО ПЕРЕСОБИРАТЬ И ПЕРЕУСТАНАВЛИВАТЬ)
@@ -27,6 +28,7 @@ cmake --install . --config Debug
 - Eigen Release
 - Gtest Release
 - fixed_solvers Release
+- oneTBB (installed в C:/install/TBB/msvc)
 
 Подробности см. fixed_solvers/msvc_cmake/readme.txt
 (ЕСЛИ В БИБЛИОТЕКАХ ПОЯВИЛИСЬ ИЗМЕНЕНИЯ, КОТОРЫЕ НЕОБХОДИМЫ ДЛЯ РАБОТЫ ТЕКУЩЕЙ БИБЛИОТЕКИ, ТО ИХ НАДО ПЕРЕСОБИРАТЬ И ПЕРЕУСТАНАВЛИВАТЬ)

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 // Среднее значение коэффициента сжимаемости нефти 
 #define AVG_OIL_COMPRESSIBILITY_COEFF 0.00078e-6 // МПа-1 - надо ли переводить?
 
@@ -195,7 +195,7 @@ private:
         auto density_wrapper = buffer.get_buffer_wrapper(
             &density_viscosity_quasi_layer<1>::get_density_wrapper);
 
-        quickest_ultimate_fv_solver solver_rho(advection_model, density_wrapper);
+        quickest_ultimate_fv_solver<sequential_policy> solver_rho(advection_model, density_wrapper);
         solver_rho.step(dt, density, density);
        
     }

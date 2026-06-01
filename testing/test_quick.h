@@ -1,5 +1,7 @@
 #pragma once
 
+#include <chrono>
+#include <thread>
 
 /// @brief Тесты для солвера upstream_fv_solver
 class UpstreamDifferencing : public ::testing::Test {
@@ -477,7 +479,7 @@ TEST_F(QUICKEST_ULTIMATE, DISABLED_UseCaseStepDensity)
 
             t += dt;
 
-            quickest_ultimate_fv_solver solver(*advection_model, *buffer);
+            quickest_ultimate_fv_solver<sequential_policy> solver(*advection_model, *buffer);
             solver.step(dt, rho_in, rho_out);
 
             layer_t& next = buffer->current();
@@ -510,7 +512,7 @@ TEST_F(QUICKEST_ULTIMATE, ConsidersFlowSwap) {
     double v = advection_model->getEquationsCoeffs(0, 0);
     double dt = 0.9 * dx / abs(v);
 
-    quickest_ultimate_fv_solver solver(*advection_model, prev, next);
+    quickest_ultimate_fv_solver<sequential_policy> solver(*advection_model, prev, next);
     solver.step(dt, rho_in, rho_out);
 
     const auto& rho_prev = prev.vars.cell_double[0];
@@ -591,7 +593,7 @@ TEST_F(QUICKEST_ULTIMATE2, Quick_UseCase_Advection_Temperature)
 
     for (size_t index = 0; index < 10; ++index) {
 
-        quickest_ultimate_fv_solver solver(*heatModel, *buffer);
+        quickest_ultimate_fv_solver<sequential_policy> solver(*heatModel, *buffer);
         t += dt;
         solver.step(dt, temp_in, temp_out);
 
@@ -632,7 +634,7 @@ inline std::pair<double, double> short_pipe_step(double vol_flow,
     double dt = abs((Cr * simple_pipe.dx) / v);       // шаг по времени
 
     // Запускаем шаг по QUICKEST-ULTIMATE
-    quickest_ultimate_fv_solver solver(advection_model, prev, next);
+    quickest_ultimate_fv_solver<sequential_policy> solver(advection_model, prev, next);
     solver.step(dt, rho_in, rho_out);
 
     double rho_prev = prev.vars.cell_double[0].front();
@@ -676,4 +678,130 @@ TEST(QuickestUltimate, HandlesShortPipe_Reverse)
     ASSERT_NE(rho_curr, rho_prev)
         << "Плотность не должна оставаться равной начальному значению";
 
+}
+
+/// @brief Фикстура perf-теста QUICKEST-ULTIMATE: длинная труба, замер одного шага sequential и parallel
+class QuickestUltimate_ParallelPerf : public ::testing::Test {
+protected:
+    /// @brief Тип данных для переменных слоя
+    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
+    /// @brief Тип данных для специфичных переменных слоя
+    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
+    /// @brief Слой: переменных Vars и служебных Specific
+    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
+    /// @brief Результат одного шага с замером времени
+    struct step_timed_result_t {
+        /// @brief Профиль вещества по ячейкам после step()
+        std::vector<double> profile;
+        /// @brief Длительность step() в секундах
+        double elapsed_seconds{ 0.0 };
+    };
+    /// @brief Число ячеек (достаточно велико, чтобы параллелизм дал измеримый эффект)
+    static constexpr size_t n_cells = 1'000'000;
+    /// @brief Шаг сетки, м
+    static constexpr double dx = 1.0;
+    /// @brief Граничное значение профиля на входе и выходе
+    static constexpr double u_boundary = 860.0;
+    /// @brief Допуск при сравнении sequential и parallel профилей
+    static constexpr double profile_tolerance = 1e-14;
+    /// @brief Параметры трубы
+    pipe_properties_t pipe;
+    /// @brief Профиль расхода
+    std::vector<double> Q;
+    /// @brief Модель адвекции
+    std::unique_ptr<PipeQAdvection> advection_model;
+    /// @brief Число расчётных ячеек (размерность cell_double[0])
+    size_t cell_count{ 0 };
+    /// @brief Временной шаг step() при Cr = 0.5
+    double dt{ 0.0 };
+    /// @brief Строит длинную трубу, модель адвекции и dt для одного шага
+    void SetUp() override {
+        simple_pipe_properties simple_pipe;
+        simple_pipe.length = n_cells * dx;
+        simple_pipe.dx = dx;
+        simple_pipe.diameter = 0.7;
+        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
+
+        Q.assign(pipe.profile.get_point_count(), 0.5);
+        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
+
+        cell_count = advection_model->get_grid().size() - 1;
+        ASSERT_GE(cell_count, n_cells - 1);
+
+        const double v = advection_model->getEquationsCoeffs(0, u_boundary);
+        ASSERT_GT(std::abs(v), 0.0);
+        dt = 0.5 * dx / std::abs(v);
+    }
+
+    /// @brief Пропускает тест на однопоточной машине (проверка ускорения бессмысленна)
+    void skip_if_single_threaded() const {
+        if (std::thread::hardware_concurrency() < 2) {
+            GTEST_SKIP() << "для проверки ускорения нужно не менее двух аппаратных потоков";
+        }
+    }
+
+    /// @brief Выполняет один step() QUICKEST-ULTIMATE и замеряет время
+    /// @tparam ExecutionPolicy sequential_policy или parallel_policy
+    template <typename ExecutionPolicy>
+    step_timed_result_t run_timed_step() const {
+        ring_buffer_t<layer_t> buffer(2, pipe.profile.get_point_count());
+        buffer.previous().vars.cell_double[0] = std::vector<double>(cell_count, u_boundary);
+
+        const auto t0 = std::chrono::steady_clock::now();
+        quickest_ultimate_fv_solver<ExecutionPolicy> solver(
+            *advection_model, buffer.previous(), buffer.current());
+        solver.step(dt, u_boundary, u_boundary);
+        const auto t1 = std::chrono::steady_clock::now();
+
+        step_timed_result_t result;
+        result.profile = buffer.current().vars.cell_double[0];
+        result.elapsed_seconds = std::chrono::duration<double>(t1 - t0).count();
+        return result;
+    }
+
+    /// @brief То же, что run_timed_step, с выбором политики по флагу
+    /// @param use_parallel true — parallel_policy, false — sequential_policy
+    step_timed_result_t run_timed_step(bool use_parallel) const {
+        if (use_parallel) {
+            return run_timed_step<parallel_policy>();
+        }
+        return run_timed_step<sequential_policy>();
+    }
+
+    /// @brief Прогрев sequential и parallel, чтобы замер не включал первичную инициализацию TBB
+    void warmup() const {
+        run_timed_step<sequential_policy>();
+        run_timed_step<parallel_policy>();
+    }
+
+    /// @brief Проверяет совпадение профилей sequential и parallel в пределах profile_tolerance
+    /// @param sequential Профиль после step() с sequential_policy
+    /// @param parallel Профиль после step() с parallel_policy
+    static void assert_profiles_equal(
+        const std::vector<double>& sequential,
+        const std::vector<double>& parallel)
+    {
+        ASSERT_EQ(sequential.size(), parallel.size());
+        for (size_t i = 0; i < sequential.size(); ++i) {
+            ASSERT_NEAR(sequential[i], parallel[i], profile_tolerance) << "cell index " << i;
+        }
+    }
+};
+
+/// @brief На длинной трубе parallel_policy даёт тот же профиль, что sequential_policy, и меньшее время step()
+TEST_F(QuickestUltimate_ParallelPerf, IncreasesPerfomanceInParallel)
+{
+    // Arrange: фикстура подготовила трубу; на однопоточной платформе тест не выполняется
+    skip_if_single_threaded();
+
+    // Act: прогрев и замер одного шага в sequential и parallel режимах
+    warmup();
+    const auto sequential = run_timed_step<sequential_policy>();
+    const auto parallel = run_timed_step<parallel_policy>();
+    std::cout << "Длительность последовательного расчета: " << sequential.elapsed_seconds << " с\n";
+    std::cout << "Длительность параллельного расчета: " << parallel.elapsed_seconds << " с\n";
+
+    // Assert: численный результат совпадает, parallel быстрее sequential
+    assert_profiles_equal(sequential.profile, parallel.profile);
+    EXPECT_LT(parallel.elapsed_seconds, sequential.elapsed_seconds);
 }

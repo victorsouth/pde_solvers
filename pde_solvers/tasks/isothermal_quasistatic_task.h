@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 namespace pde_solvers {
 ;
@@ -123,7 +123,7 @@ public:
     }
 
     /// @brief Геттер для текущего слоя  
-    density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true> get_current_layer() {
+    density_viscosity_quasi_layer<std::is_same_v<Solver, advection_moc_solver> ? false : true> get_current_layer() {
         return buffer.current();
     }
 
@@ -198,7 +198,7 @@ private:
                 // Шаг по плотности
                 auto density_wrapper = buffer.get_buffer_wrapper(
                     &density_viscosity_quasi_layer<1>::get_density_wrapper);
-                quickest_ultimate_fv_solver solver_rho(advection_model, density_wrapper);
+                quickest_ultimate_fv_solver<sequential_policy> solver_rho(advection_model, density_wrapper);
                 solver_rho.step(dt, boundaries.density, boundaries.density);
             }
             else {
@@ -211,7 +211,7 @@ private:
                     &density_viscosity_quasi_layer<1>::get_viscosity_wrapper);
                 
                 // Шаг по вязкости
-                quickest_ultimate_fv_solver solver_nu(advection_model, viscosity_wrapper);
+                quickest_ultimate_fv_solver<sequential_policy> solver_nu(advection_model, viscosity_wrapper);
                 solver_nu.step(dt, boundaries.viscosity, boundaries.viscosity);
             } else
                 buffer.current().viscosity = std::vector<double>(buffer.current().viscosity.size(), boundaries.viscosity);

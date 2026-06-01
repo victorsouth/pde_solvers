@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 namespace pde_solvers {
 ;
@@ -168,7 +168,7 @@ private:
         std::vector<double> G(n-1, boundaries.volumetric_flow * oil.density.nominal_density);   /// массовый расход
         PipeHeatInflowConstArea heatModel(pipe, oil, G);
         auto temperature_wrapper = buffer.get_buffer_wrapper(&qsm_noniso_T_layer::get_temperature_wrapper);
-        quickest_ultimate_fv_solver solver_tm(heatModel, temperature_wrapper);
+        quickest_ultimate_fv_solver<sequential_policy> solver_tm(heatModel, temperature_wrapper);
         solver_tm.step(dt, boundaries.temperature, boundaries.temperature);
     }
     /// @brief Шаг по температуре в виде адвекции. 
@@ -181,7 +181,7 @@ private:
 
         auto temperature_wrapper = buffer.get_buffer_wrapper(&qsm_noniso_T_layer::get_temperature_wrapper);
 
-        quickest_ultimate_fv_solver solver_rho(advection_model, temperature_wrapper);
+        quickest_ultimate_fv_solver<sequential_policy> solver_rho(advection_model, temperature_wrapper);
         solver_rho.step(dt, temperature_in, temperature_in);
 
     }
@@ -377,7 +377,7 @@ private:
         std::vector<double> G(n - 1, boundaries.volumetric_flow * oil.density.nominal_density);   /// массовый расход
         PipeHeatInflowConstArea heatModel(pipe, oil, G);
         auto temperature_wrapper = buffer.get_buffer_wrapper(&qsm_noniso_T_layer::get_temperature_wrapper);
-        quickest_ultimate_fv_solver solver_tm(heatModel, temperature_wrapper);
+        quickest_ultimate_fv_solver<sequential_policy> solver_tm(heatModel, temperature_wrapper);
         solver_tm.step(dt, boundaries.temperature, boundaries.temperature);
     }
     /// @brief Шаг по температуре в виде адвекции. 
@@ -390,7 +390,7 @@ private:
 
         auto temperature_wrapper = buffer.get_buffer_wrapper(&qsm_noniso_T_layer::get_temperature_wrapper);
 
-        quickest_ultimate_fv_solver solver_rho(advection_model, temperature_wrapper);
+        quickest_ultimate_fv_solver<sequential_policy> solver_rho(advection_model, temperature_wrapper);
         solver_rho.step(dt, temperature_in, temperature_in);
 
     }

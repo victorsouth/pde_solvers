@@ -1,7 +1,33 @@
-﻿#pragma once
+#pragma once
 #include <limits>
+#include <type_traits>
+
+#include <tbb/parallel_for.h>
 
 namespace pde_solvers {
+
+/// @brief Политика: расчёт по ячейкам в нескольких потоках (oneTBB)
+struct parallel_policy {};
+/// @brief Политика: последовательный расчёт по ячейкам
+struct sequential_policy {};
+
+/// @brief Обход ячеек с учётом ExecutionPolicy (for или tbb::parallel_for)
+/// @tparam ExecutionPolicy sequential_policy или parallel_policy
+/// @tparam Body Callable с сигнатурой void(size_t cell)
+template <typename ExecutionPolicy, typename Body>
+inline void for_each_cell(size_t cell_count, Body&& body)
+{
+    if constexpr (std::is_same_v<ExecutionPolicy, parallel_policy>) {
+        tbb::parallel_for(size_t(0), cell_count, [&](size_t cell) {
+            body(cell);
+        });
+    }
+    else {
+        for (size_t cell = 0; cell < cell_count; ++cell) {
+            body(cell);
+        }
+    }
+}
 
 /// @brief Описание типов данных для метода конечных объемов на основе upstream differencing 
 template <size_t Dimension>
@@ -449,6 +475,8 @@ struct quickest_ultimate_fv_wrapper<1> {
 
 /// @brief Солвер на основе QUICKEST-ULTIMATE, только для размерности 1!
 /// [Leonard 1991]
+/// @tparam ExecutionPolicy Режим обхода ячеек в step(): sequential_policy или parallel_policy
+template <typename ExecutionPolicy>
 class quickest_ultimate_fv_solver {
 public:
     typedef typename quickest_ultimate_fv_solver_traits<1>::var_layer_data var_layer_data;
@@ -551,7 +579,7 @@ public:
         double v_pipe = pde.getEquationsCoeffs(0, U[0]);//не совсем корректно, скорость в ячейке берется из скорости на ее левой границе
         // Расчет потоков на границе по правилу QUICK
         if (v_pipe >= 0) {
-            for (size_t cell = 0; cell < U.size(); ++cell) {
+            for_each_cell<ExecutionPolicy>(U.size(), [&](size_t cell) {
                 size_t right_border = cell + 1;
                 double Vb = v_pipe; // предположили, что скорость на границе во всех точках трубы одна и та же
                 double Ub;
@@ -563,10 +591,10 @@ public:
                     Ub = quickest_ultimate_border_approximation(U[cell - 1], U[cell], U[cell + 1], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // честный расчет
                 }
                 F[right_border] = Ub * Vb;
-            }
+            });
         }
         else {
-            for (size_t cell = 0; cell < U.size(); ++cell) {
+            for_each_cell<ExecutionPolicy>(U.size(), [&](size_t cell) {
                 size_t left_border = cell;
                 double Vb = v_pipe; // предположили, что скорость на границе во всех точках трубы одна и та же
                 double Ub;
@@ -578,11 +606,11 @@ public:
                     Ub = quickest_ultimate_border_approximation(U[cell + 1], U[cell], U[cell - 1], 0, grid[cell + 1] - grid[cell], dt, abs(v_pipe)); // честный расчет с abs для корректной работы с отрицательными скоростями
                 }
                 F[left_border] = Ub * Vb;
-            }
+            });
 
         }
 
-        for (size_t cell = 0; cell < U.size(); ++cell) {
+        for_each_cell<ExecutionPolicy>(U.size(), [&](size_t cell) {
             double dx = grid[cell + 1] - grid[cell]; // ячейки обычно одинаковой длины, но мало ли..
 
             double v_cell = pde.getEquationsCoeffs(cell, U[cell]); // скорость в текущей ячейке
@@ -591,9 +619,33 @@ public:
                 throw std::runtime_error("Quickest-ultimate is called with Cr > 1");
             }
             U_new[cell] = U[cell] + dt / dx * ((F[cell] - F[cell + 1])) + (dt * pde.getSourceTerm(cell, U[cell]));
-        }
-
+        });
     }
 };
+
+/// @brief Солвер — QUICKEST-ULTIMATE (независимот от параллельного или последовательного режима расчета)
+template <typename T>
+struct is_quickest_ultimate_fv_solver : std::false_type {};
+
+/// @brief Специализация для режимов расчета QUICKEST-ULTIMATE: sequential_policy и parallel_policy
+template <typename QuickestExecutionPolicy>
+struct is_quickest_ultimate_fv_solver<quickest_ultimate_fv_solver<QuickestExecutionPolicy>>
+    : std::true_type {};
+
+/// @brief Удобная форма trait для if constexpr и bool-шаблонных параметров
+template <typename T>
+inline constexpr bool is_quickest_ultimate_fv_solver_v = is_quickest_ultimate_fv_solver<T>::value;
+
+/// @brief Солвер хранит параметры в ячейках, а не в узлах сетки
+template <typename T>
+struct is_cell_based_solver : is_quickest_ultimate_fv_solver<T> {};
+
+/// @brief true, если для солвера T нужен слой с параметрами в ячейках
+template <typename T>
+inline constexpr bool is_cell_based_solver_v = is_cell_based_solver<T>::value;
+
+/// @brief Тип для шаблонов вывода (python_printer, matlab_printer) с QUICKEST-ULTIMATE.
+/// Вывод не зависит от распараллеливания расчета.
+using quickest_ultimate_io_solver = quickest_ultimate_fv_solver<sequential_policy>;
 
 }

@@ -110,7 +110,7 @@ public:
         auto value_wrapper = buffer.get_buffer_wrapper(&qsm_advection_layer::get_value_wrapper);
 
         // Создаем и запускаем решатель
-        quickest_ultimate_fv_solver solver_rho(advection_model, value_wrapper);
+        quickest_ultimate_fv_solver<sequential_policy> solver_rho(advection_model, value_wrapper);
         solver_rho.step(dt, boundaries.value, boundaries.value);
 
         // Обновляем текущий слой

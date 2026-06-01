@@ -40,12 +40,12 @@ void step_advection(double dt, double volumetric_flow,
         volumetric_flow, profile_coordinates);
     {
         auto buffer_wrapper = buffer.get_buffer_wrapper(value_getter);
-        quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
+        quickest_ultimate_fv_solver<sequential_policy> solver(advection_model, buffer_wrapper);
         solver.step(dt, boundary_value.value, boundary_value.value);
     }
     {
         auto buffer_wrapper = buffer.get_buffer_wrapper(confidence_getter);
-        quickest_ultimate_fv_solver solver(advection_model, buffer_wrapper);
+        quickest_ultimate_fv_solver<sequential_policy> solver(advection_model, buffer_wrapper);
         solver.step(dt, boundary_value.confidence, boundary_value.confidence);
     }
 }

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 namespace pde_solvers {
 ;
@@ -158,7 +158,7 @@ private:
                 &qsm_noniso_TP_layer::get_temperature_wrapper);
 
             // Шаг по вязкости
-            quickest_ultimate_fv_solver solver_tm(*heatModel, temp_wrapper);
+            quickest_ultimate_fv_solver<sequential_policy> solver_tm(*heatModel, temp_wrapper);
             solver_tm.step(dt, boundaries.temperature, boundaries.temperature);
         }
         else {

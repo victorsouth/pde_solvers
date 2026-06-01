@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 
 namespace pde_solvers {
@@ -58,6 +58,8 @@ struct ident_isothermal_qsm_pipe_settings {
 /// на данных с реального ЛУ по одному из двух параметров:
 /// 1. диаметру
 /// 2. коэффициенту гидравлического сопротивления
+/// @tparam QuickestExecutionPolicy sequential_policy или parallel_policy
+template <typename QuickestExecutionPolicy>
 class ident_isothermal_qsm_pipe_parameters_t : public fixed_least_squares_function_t
 {
     /// @brief Настройка, определяющая по какому из параметров будет проводиться идентификация
@@ -106,7 +108,7 @@ protected:
         ident_parameters.set_adaptation(pipe_nominal, &pipe_to_ident);
 
         // Проводим гидравлический изотермический квазистационарный расчёт
-        isothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver> task(pipe_to_ident);
+        isothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver<QuickestExecutionPolicy>> task(pipe_to_ident);
         quasistatic_batch(
             task,
             times,

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 /// @brief Класс, содержащий функции для вывода
 /// профилей в файл в формате для плоттеров на Python
@@ -47,7 +47,7 @@ struct python_printer {
         std::string folder,
         const time_t& t,
         const pipe_properties_t& pipe,
-        const density_viscosity_quasi_layer<std::is_same<Solver, advection_moc_solver>::value ? false : true >& layer,
+        const density_viscosity_quasi_layer<is_cell_based_solver_v<Solver>>& layer,
         const std::vector<double>& etalon_values = {}
     ) {
         print_profiles<double>(

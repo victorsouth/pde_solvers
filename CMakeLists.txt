@@ -25,6 +25,8 @@ if(NOT TARGET fixed_solvers::fixed_solvers)
 find_package(fixed_solvers)
 endif()
 
+find_package(TBB REQUIRED)
+
 set(HEADERS
     pde_solvers/pde_solvers.h  pde_solvers/pipe.h pde_solvers/timeseries.h pde_solvers/physical_constants.h
     )
@@ -83,7 +85,12 @@ if("3.19.0" VERSION_LESS ${CMAKE_VERSION})
 else()
     add_library(${PROJECT_NAME} INTERFACE)
 endif()
-target_link_libraries(${PROJECT_NAME} INTERFACE fixed_solvers::fixed_solvers Boost::headers)
+target_link_libraries(${PROJECT_NAME} INTERFACE fixed_solvers::fixed_solvers Boost::headers TBB::tbb)
+if(MINGW)
+    # Сборка Windows через MSYS2 (Clang/GCC): в Debug oneTBB включает ITT-профилирование,
+    # заголовки которого не компилируются с __MINGW32__. Отключаем только его; TBB::parallel_for не затрагивается.
+    target_compile_definitions(${PROJECT_NAME} INTERFACE TBB_USE_PROFILING_TOOLS=0)
+endif()
 target_include_directories(${PROJECT_NAME}
     INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
