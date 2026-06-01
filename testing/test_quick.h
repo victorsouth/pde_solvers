@@ -101,6 +101,8 @@ TEST(QuickestUltimate, ExecutesTemperatureAdvection)
         solver.step(dt, temp_in, temp_out);
         buffer.advance(+1);
     }
+
+    // TODO: Assert
 }
 
 /// @brief Проверка возможности применения метода Quickest Ultimate для трубы из одной ячейки
@@ -139,7 +141,7 @@ TEST(QuickestUltimate, HandlesShortPipe_Reverse)
 {
     using namespace quickest_ultimate_solver_types;
 
-    // Arrange: труба из одной ячейки (length/dx → 1 сегмент), модель адвекции и буфер
+    // Arrange: труба из одной ячейки, модель адвекции и буфер
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe({.length = 50.0, .dx = 50.0, .diameter = 0.7});
     double rho_initial = 840;
     double rho_in = 860;
@@ -167,10 +169,8 @@ TEST(QuickestUltimate, HandlesShortPipe_Reverse)
 /// @brief Результаты параллельного и последовательного расчетов совпадают.
 /// В начальном состоянии параметр в каждой ячейке различен.
 /// Вероятно, если при одном шаге расчета результаты совпадают, то и при длительном расчете они будут совпадать.
-TEST(QuickestUltimate, SameResultsInSequentialAndParallel)
+TEST(MultiThreadedQuickestUltimate, IsCoherentWithSingleThreaded)
 {
-    using namespace quickest_ultimate_solver_types;
-
     // Arrange: Подготовка трубы с большим количеством ячеек и линейным профилем плотности
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(
         {.length = 1'000'000.0, .dx = 1.0, .diameter = 0.7});
@@ -185,35 +185,36 @@ TEST(QuickestUltimate, SameResultsInSequentialAndParallel)
     double dt = calc_time_step_by_Courant(advection_model, 1.0);
 
     // Act: Расчет адвекции в последовательном и параллельном режимах
-    auto seq_buf = build_linear_buffer<layer_t>(pipe, rho_initial_left, rho_initial_right);
-    quickest_sequential_solver(advection_model, seq_buf.previous(), seq_buf.current())
+    // TODO: явно сгенерировать слой в виде вектора через STL и передать в конструктор
+    auto seqential_calculation = build_linear_buffer<quickest_ultimate_solver_types::layer_t>(pipe, rho_initial_left, rho_initial_right);
+    quickest_ultimate_solver_types::quickest_sequential_solver(advection_model, seqential_calculation.previous(), seqential_calculation.current())
         .step(dt, rho_new, rho_initial_right);
-    std::vector<double> sequential_profile = seq_buf.current().vars.cell_double[0];
+    std::vector<double> sequential_profile = seqential_calculation.current().vars.cell_double[0];
 
-    auto par_buf = build_linear_buffer<layer_t>(pipe, rho_initial_left, rho_initial_right);
-    quickest_parallel_solver(advection_model, par_buf.previous(), par_buf.current())
+    auto parallel_calculation = build_linear_buffer<quickest_ultimate_solver_types::layer_t>(pipe, rho_initial_left, rho_initial_right);
+    quickest_ultimate_solver_types::quickest_parallel_solver(advection_model, parallel_calculation.previous(), parallel_calculation.current())
         .step(dt, rho_new, rho_initial_right);
-    std::vector<double> parallel_profile = par_buf.current().vars.cell_double[0];
+    std::vector<double> parallel_profile = parallel_calculation.current().vars.cell_double[0];
 
     // Assert: Расчетные профили параметра в каждой ячейке совпадают
-    ASSERT_EQ(sequential_profile, parallel_profile);
+    ASSERT_EQ(sequential_profile, parallel_profile); // GTest корректно сравнивает векторы
 }
 
 /// @brief На длинной трубе параллельный расчет дает выигрыш во времени по сравнению с последовательным.
 /// Ожидаемое ускорение пропорционально числу аппаратных потоков.
-TEST(QuickestUltimate, IncreasesPerformanceInParallel)
+TEST(MultiThreadedQuickestUltimate, IncreasesPerformance)
 {
     using namespace quickest_ultimate_solver_types;
 
-    const unsigned int threads = std::thread::hardware_concurrency();
-    if (threads < 2) {
+    unsigned int threads = std::thread::hardware_concurrency();
+    if (threads <= 2) {
+        // При двух ядрах случайный разбег времени выполнения может быть близок к ожидаемому ускорению 
         GTEST_SKIP() << "для проверки ускорения нужно не менее 2 аппаратных потоков";
     }
-    const double expected_speedup = expected_parallel_speedup(threads);
-
+    
     // Arrange: Подготовка трубы с большим количеством ячеек
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(
-        {.length = 1'000'000.0, .dx = 1.0, .diameter = 0.7});
+        {.length = 500, .dx = 1.0, .diameter = 0.7});
 
     double rho_initial_left = 850;
     double rho_initial_right = 860;
@@ -224,16 +225,17 @@ TEST(QuickestUltimate, IncreasesPerformanceInParallel)
     PipeQAdvection advection_model(pipe, Q);
     double dt = calc_time_step_by_Courant(advection_model, 0.5);
 
+    constexpr size_t step_count = 100;
+
     // Act: Расчет адвекции в последовательном и параллельном режимах
-    const double seq_seconds = run_timed_step<quickest_sequential_solver, layer_t>(
-        advection_model, pipe, dt, rho_initial_left, rho_initial_right, rho_new).second;
-    const double par_seconds = run_timed_step<quickest_parallel_solver, layer_t>(
-        advection_model, pipe, dt, rho_initial_left, rho_initial_right, rho_new).second;
+    double seqential_calculation_time = run_timed_step<quickest_sequential_solver, layer_t>(
+        advection_model, pipe, dt, rho_initial_left, rho_initial_right, rho_new, step_count).second;
+    double parallel_calculation_time = run_timed_step<quickest_parallel_solver, layer_t>(
+        advection_model, pipe, dt, rho_initial_left, rho_initial_right, rho_new, step_count).second;
 
     // Assert: Фактическое ускорение не меньше ожидаемого
-    const double actual_speedup = seq_seconds / par_seconds;
-    std::cout << "Потоков: " << threads << ", ожидаемое ускорение: " << expected_speedup << "x"
-              << ", фактическое: " << actual_speedup << "x\n";
-
-    EXPECT_GE(actual_speedup, expected_speedup);
+    double actual_speedup = seqential_calculation_time / parallel_calculation_time;
+    double expected_speedup = threads / 2.0;
+    EXPECT_GE(actual_speedup, expected_speedup) << "Потоков: " << threads << ", ожидаемое ускорение: " 
+        << expected_speedup << "x, фактическое: " << actual_speedup << "x";
 }
