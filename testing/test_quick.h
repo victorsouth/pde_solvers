@@ -1,807 +1,239 @@
 #pragma once
 
-#include <chrono>
-#include <thread>
+/// @brief Учитывает инверсию потока: при отрицательном расходе плотность изменяется с конца трубы
+TEST(UpstreamDifferencing, ConsidersFlowSwap) {
+    using namespace upstream_solver_types;
 
-/// @brief Тесты для солвера upstream_fv_solver
-class UpstreamDifferencing : public ::testing::Test {
-protected:
-    /// @brief Профиль переменных
-    typedef upstream_fv_solver_traits<1>::var_layer_data target_var_t;
-    /// @brief Профиль specific переменных
-    typedef upstream_fv_solver_traits<1>::specific_layer specific_data_t;
-
-    /// @brief Слой: переменных Vars + сколько угодно служебных Specific
-    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
-protected:
-    /// @brief Параметры трубы
-    pipe_properties_t pipe;
-    /// @brief Профиль расхода
-    std::vector<double> Q;
-    /// @brief Модель адвекции
-    std::unique_ptr<PipeQAdvection> advection_model;
-    /// @brief Буфер слоев
-    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
-protected:
-    
-    /// @brief Подготовка к расчету для семейства тестов
-    virtual void SetUp() override {
-        // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
-        simple_pipe_properties simple_pipe = simple_pipe_properties::sample_district();
-        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-
-        Q = std::vector<double> (pipe.profile.get_point_count(), 0.5);
-        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
-
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = std::vector<double>(prev.vars.cell_double[0].size(), 850);
-    }
-};
-
-/// @brief Тесты для солвера quick_fv_solver
-class QUICK : public ::testing::Test {
-protected:
-    /// @brief Профиль переменных
-    typedef quick_fv_solver_traits<1>::var_layer_data target_var_t;
-    /// @brief Профиль specific переменных
-    typedef quick_fv_solver_traits<1>::specific_layer specific_data_t;
-
-    /// @brief Слой: переменных Vars + сколько угодно служебных Specific
-    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
-protected:
-    /// @brief Параметры трубы
-    pipe_properties_t pipe;
-    /// @brief Профиль расхода
-    std::vector<double> Q;
-    /// @brief Модель адвекции
-    std::unique_ptr<PipeQAdvection> advection_model;
-    /// @brief Буфер слоев
-    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
-protected:
-
-    /// @brief Подготовка к расчету для семейства тестов
-    virtual void SetUp() override {
-        // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
-        simple_pipe_properties simple_pipe;
-        //simple_pipe.length = 50e3;
-        simple_pipe.length = 700e3; // тест трубы 700км
-        //simple_pipe.diameter = 0.7;
-        simple_pipe.diameter = 0.514; // тест трубы 700км
-        //simple_pipe.dx = 100;
-        simple_pipe.dx = 100; // тест трубы 700км
-        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-
-        Q = std::vector<double>(pipe.profile.get_point_count(), 0.5);
-        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
-
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = std::vector<double>(prev.vars.cell_double[0].size(), 850);
-    }
-};
-
-/// @brief Тесты для солвера quickest_fv_solver
-class QUICKEST : public ::testing::Test {
-protected:
-    /// @brief Профиль переменных
-    typedef quickest_fv_solver_traits<1>::var_layer_data target_var_t;
-    /// @brief Профиль specific переменных
-    typedef quickest_fv_solver_traits<1>::specific_layer specific_data_t;
-
-    /// @brief Слой: переменных Vars + сколько угодно служебных Specific
-    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
-protected:
-    /// @brief Параметры трубы
-    pipe_properties_t pipe;
-    /// @brief Профиль расхода
-    std::vector<double> Q;
-    /// @brief Модель адвекции
-    std::unique_ptr<PipeQAdvection> advection_model;
-    /// @brief Буфер слоев
-    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
-protected:
-
-    /// @brief Подготовка к расчету для семейства тестов
-    virtual void SetUp() override {
-        // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
-        simple_pipe_properties simple_pipe;
-        //simple_pipe.length = 50e3;
-        simple_pipe.length = 700e3; // тест трубы 700км
-        //simple_pipe.diameter = 0.7;
-        simple_pipe.diameter = 0.514; // тест трубы 700км
-        //simple_pipe.dx = 100;
-        simple_pipe.dx = 100; // тест трубы 700км
-        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-
-        Q = std::vector<double>(pipe.profile.get_point_count(), 0.5);
-        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
-
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = std::vector<double>(prev.vars.cell_double[0].size(), 850);
-    }
-};
-
-/// @brief Тесты для солвера quickest_ultimate_fv_solver
-class QUICKEST_ULTIMATE : public ::testing::Test {
-protected:
-    /// @brief Тип данных для переменных слоя
-    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
-    /// @brief Тип данных для специфичных переменных слоя
-    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
-    /// @brief Слой: переменных Vars + сколько угодно служебных Specific
-    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
-protected:
-    /// @brief Параметры трубы
-    pipe_properties_t pipe;
-    /// @brief Профиль расхода
-    std::vector<double> Q;
-    /// @brief Модель адвекции
-    std::unique_ptr<PipeQAdvection> advection_model;
-    /// @brief Буфер слоев
-    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
-protected:
-
-    /// @brief Подготовка к расчету для семейства тестов
-    virtual void SetUp() override {
-        // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
-        simple_pipe_properties simple_pipe;
-        //simple_pipe.length = 50e3;
-        simple_pipe.length = 700e3; // тест трубы 700км
-        //simple_pipe.diameter = 0.7;
-        simple_pipe.diameter = 0.514; // тест трубы 700км
-        //simple_pipe.dx = 100;
-        simple_pipe.dx = 100; // тест трубы 700км
-        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-
-        Q = std::vector<double>(pipe.profile.get_point_count(), 0.5);
-        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
-
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = std::vector<double>(prev.vars.cell_double[0].size(), 850);
-    }
-};
-
-/// @brief Проверка, правильно ли учитывается инверсия потока
-TEST_F(UpstreamDifferencing, ConsidersFlowSwap) {
-    Q = std::vector<double>(pipe.profile.get_point_count(), -0.5);
-
-    //Получение текущего/предыдущего слоя
-    layer_t& prev = buffer->previous();
-    layer_t& next = buffer->current();
-
+    // Arrange: труба, модель адвекции и буфер
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(
+        simple_pipe_properties::sample_district());
+    double rho_initial = 850;
     double rho_in = 860;
     double rho_out = 870;
-    double dt = 60; // 1 минута
+    double dt = 60;
 
-    upstream_fv_solver solver(*advection_model, prev, next);
-    solver.step(dt, rho_in, rho_out);
-
-    const auto& rho_prev = prev.vars.cell_double[0];
-    const auto& rho_curr = next.vars.cell_double[0];
-    ASSERT_GT(rho_curr.back(), rho_prev.back()); // плотность в конце выросла
-    ASSERT_NEAR(rho_curr.front(), rho_prev.front(), 1e-8); // плотность в начале не изменилась
-}
-
-/// @brief Разработка метода прямых разностей по [Leonard 1979]
-TEST_F(UpstreamDifferencing, UseCaseSingleStep)
-{
-    //Получение текущего/предыдущего слоя
-    layer_t& prev = buffer->previous();
-    layer_t& next = buffer->current();
-
-    double rho_in = 860;
-    double rho_out = 870;
-    double dt = 60; // 1 минута
-
-    upstream_fv_solver solver(*advection_model, prev, next);
-    solver.step(dt, rho_in, rho_out);
-
-}
-
-/// @brief Пример вывода в файл через
-TEST_F(UpstreamDifferencing, DISABLED_UseCaseStepDensity)
-{
-    std::string path = prepare_test_folder();
-    std::ofstream output(path + "output.csv");
-
-    double rho_in = 860;
-    double rho_out = 870;
-    double T = 350000; // период моделирования
-
-    const auto& x = advection_model->get_grid();
-    double dx = x[1] - x[0];
-    double v = advection_model->getEquationsCoeffs(0, 0);
-    double dt_ideal = dx / v;
-
-    for (double Cr = 0.5; Cr < 0.51; Cr += 0.05) {
-        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
-
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = std::vector<double>(prev.vars.cell_double[0].size(), 850);
-
-        double t = 0; // текущее время
-        //double dt = 60; // 1 минута
-        double dt = Cr * dt_ideal; // время в долях от Куранта
-
-        std::stringstream filename;
-        filename << path << "output Cr=" << Cr << ".csv";
-        std::ofstream output(filename.str());
-
-
-        size_t N = static_cast<int>(T / dt);
-        for (size_t index = 0; index < N; ++index) {
-            if (index == 0) {
-                layer_t& prev = buffer->previous();
-                prev.vars.print(t, output);
-            }
-
-            t += dt;
-
-            upstream_fv_solver solver(*advection_model, *buffer);
-            solver.step(dt, rho_in, rho_out);
-
-            layer_t& next = buffer->current();
-            next.vars.print(t, output);
-
-            buffer->advance(+1);
-
-        }
-        output.flush();
-        output.close();
-    }
-}
-
-/// @brief Пример вывода в файл через
-TEST_F(QUICK, DISABLED_UseCaseStepDensity)
-{
-    std::string path = prepare_test_folder();
-
-
-    double rho_in = 860;
-    double rho_out = 870;
-    double T = 350000; // период моделирования
-
-    const auto& x = advection_model->get_grid();
-    double dx = x[1] - x[0];
-    double v = advection_model->getEquationsCoeffs(0, 0);
-    double dt_ideal = abs(dx / v);
-
-
-    for (double Cr = 0.5; Cr < 0.51; Cr += 0.05) {
-        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
-
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = std::vector<double>(prev.vars.cell_double[0].size(), 850);
-
-        double t = 0; // текущее время
-        //double dt = 60; // 1 минута
-        double dt = Cr * dt_ideal; // время в долях от Куранта
-
-        std::stringstream filename;
-        filename << path << "output Cr=" << Cr << ".csv";
-        std::ofstream output(filename.str());
-
-
-        size_t N = static_cast<int>(T / dt);
-        for (size_t index = 0; index < N; ++index) {
-            if (index == 0) {
-                layer_t& prev = buffer->previous();
-                prev.vars.print(t, output);
-            }
-
-            t += dt;
-
-            quick_fv_solver solver(*advection_model, *buffer);
-            solver.step(dt, rho_in, rho_out);
-
-            layer_t& next = buffer->current();
-            next.vars.print(t, output);
-
-            buffer->advance(+1);
-
-        }
-        output.flush();
-        output.close();
-    }
-
-}
-
-/// @brief Пример вывода в файл через
-TEST_F(QUICKEST, DISABLED_UseCaseStepDensity)
-{
-    std::string path = prepare_test_folder();
-
-
-    double rho_in = 860;
-    double rho_out = 870;
-    double T = 350000; // период моделирования
-
-    const auto& x = advection_model->get_grid();
-    double dx = x[1] - x[0];
-    double v = advection_model->getEquationsCoeffs(0, 0);
-    double dt_ideal = abs(dx / v);
-
-
-    for (double Cr = 0.5; Cr < 0.51; Cr += 0.05) {
-        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
-
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = std::vector<double>(prev.vars.cell_double[0].size(), 850);
-
-        double t = 0; // текущее время
-        //double dt = 60; // 1 минута
-        double dt = Cr * dt_ideal; // время в долях от Куранта
-
-        std::stringstream filename;
-        filename << path << "output Cr=" << Cr << ".csv";
-        std::ofstream output(filename.str());
-
-
-        size_t N = static_cast<int>(T / dt);
-        for (size_t index = 0; index < N; ++index) {
-            if (index == 0) {
-                layer_t& prev = buffer->previous();
-                prev.vars.print(t, output);
-            }
-
-            t += dt;
-
-            quickest_fv_solver solver(*advection_model, *buffer);
-            solver.step(dt, rho_in, rho_out);
-
-            layer_t& next = buffer->current();
-            next.vars.print(t, output);
-
-            buffer->advance(+1);
-
-        }
-        output.flush();
-        output.close();
-    }
-
-}
-
-//TEST_MOC
-/// @brief Базовый пример использования метода характеристик для уравнения адвекции
-TEST(MOC_Solver, DISABLED_MOC_Compare_With_QUICK)
-{
-    
-    // Упрощенное задание трубы - 50км, с шагом разбиения для расчтной сетки 1км, диаметром 700мм
-    simple_pipe_properties simple_pipe;
-    //simple_pipe.length = 50e3;
-    simple_pipe.length = 700e3; // тест трубы 700км
-    //simple_pipe.diameter = 0.7;
-    simple_pipe.diameter = 0.514; // тест трубы 700км
-    //simple_pipe.dx = 100;
-    simple_pipe.dx = 100; // тест трубы 700км
-
-    std::string path = prepare_test_folder();
-
-    double rho_in = 860;
-    double rho_out = 870;
-    double T = 350000; // период моделирования
-
-    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-
-    // Одна переменная, и структуры метода характеристик для нееm
-    typedef composite_layer_t<profile_collection_t<1>,
-        moc_solver<1>::specific_layer> single_var_moc_t;
-
-
-    std::vector<double> Q(pipe.profile.get_point_count(), 0.5); // задаем по трубе расход 0.5 м3/с
+    std::vector<double> Q(pipe.profile.get_point_count(), -0.5);
     PipeQAdvection advection_model(pipe, Q);
+    ring_buffer_t<layer_t> buffer = build_buffer<layer_t>(pipe, rho_initial);
 
-    const auto& x = advection_model.get_grid();
-    double dx = x[1] - x[0];
-    double v = advection_model.getEquationsCoeffs(0, 0);
-    double dt_ideal = abs(dx / v);
-
-    for (double Cr = 0.05; Cr < 0.51; Cr += 0.05) {
-        PipeQAdvection advection_model(pipe, Q);
-        ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.get_point_count());
-        buffer.advance(+1);
-        single_var_moc_t& prev = buffer.previous();
-        single_var_moc_t& next = buffer.current();
-        auto& rho_initial = prev.vars.point_double[0];
-        rho_initial = std::vector<double>(rho_initial.size(), 850);
-        double t = 0; // текущее время
-        double dt = Cr * dt_ideal; // время в долях от Куранта
-        std::stringstream filename;
-        filename << path << "output Cr=" << Cr << ".csv";
-        std::ofstream output(filename.str());
-        size_t N = static_cast<int>(T / dt);
-        for (size_t index = 0; index < N; ++index) {
-            
-            if (index == 0) {
-                single_var_moc_t& prev = buffer.previous();
-            }
-
-            t += dt;
-            moc_solver<1> solver(advection_model, buffer.previous(), buffer.current());
-            solver.step_optional_boundaries(dt, rho_in, rho_out);
-
-            single_var_moc_t& next = buffer.current();
-            next.vars.print(t, output);
-
-            buffer.advance(+1);
-
-        }
-        output.flush();
-        output.close();
-    }
-}
-
-/// @brief Пример вывода в файл через
-TEST_F(QUICKEST_ULTIMATE, DISABLED_UseCaseStepDensity)
-{
-    std::string path = prepare_test_folder();
-
-
-    double rho_in = 860;
-    double rho_out = 870;
-    double T = 350000; // период моделирования
-    //double T = 800000; // период моделирования (тест трубы 700км)
-
-    const auto& x = advection_model->get_grid();
-    double dx = x[1] - x[0];
-    double v = advection_model->getEquationsCoeffs(0, 0);
-    double dt_ideal = abs(dx / v);
-
-
-    for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
-        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
-
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = std::vector<double>(prev.vars.cell_double[0].size(), 850);
-
-        double t = 0; // текущее время
-        //double dt = 60; // 1 минута
-        double dt = Cr * dt_ideal; // время в долях от Куранта
-
-        std::stringstream filename;
-        filename << path << "output Cr=" << Cr << ".csv";
-        std::ofstream output(filename.str());
-
-
-        size_t N = static_cast<int>(T / dt);
-        for (size_t index = 0; index < N; ++index) {
-            if (index == 0) {
-                layer_t& prev = buffer->previous();
-                prev.vars.print(t, output);
-            }
-
-            t += dt;
-
-            quickest_ultimate_fv_solver<sequential_policy> solver(*advection_model, *buffer);
-            solver.step(dt, rho_in, rho_out);
-
-            layer_t& next = buffer->current();
-            next.vars.print(t, output);
-
-
-            buffer->advance(+1);
-
-        }
-        output.flush();
-        output.close();
-    }
-
-}
-
-/// @brief Проверка QUICKEST-ULTIMATE, правильно ли учитывается инверсия потока
-TEST_F(QUICKEST_ULTIMATE, ConsidersFlowSwap) {
-    Q = std::vector<double>(pipe.profile.get_point_count(), -0.5);
-
-    //Получение текущего/предыдущего слоя
-    layer_t& prev = buffer->previous();
-    layer_t& next = buffer->current();
-
-    double rho_in = 860;
-    double rho_out = 870;
-
-    // Рассчитываем dt для Cr = 0.9, чтобы выполнялось условие Куранта
-    const auto& x = advection_model->get_grid();
-    double dx = x[1] - x[0];
-    double v = advection_model->getEquationsCoeffs(0, 0);
-    double dt = 0.9 * dx / abs(v);
-
-    quickest_ultimate_fv_solver<sequential_policy> solver(*advection_model, prev, next);
+    // Act: один шаг адвекции
+    upstream_fv_solver solver(advection_model, buffer.previous(), buffer.current());
     solver.step(dt, rho_in, rho_out);
 
-    const auto& rho_prev = prev.vars.cell_double[0];
-    const auto& rho_curr = next.vars.cell_double[0];
-    ASSERT_GT(rho_curr.back(), rho_prev.back()); // плотность в конце выросла
-    ASSERT_NEAR(rho_curr.front(), rho_prev.front(), 1e-8); // плотность в начале не изменилась
+    // Assert: плотность в конце выросла, в начале не изменилась
+    const auto& rho_prev = buffer.previous().vars.cell_double[0];
+    const auto& rho_curr = buffer.current().vars.cell_double[0];
+    ASSERT_GT(rho_curr.back(), rho_prev.back());
+    ASSERT_NEAR(rho_curr.front(), rho_prev.front(), 1e-8);
 }
 
-
-
-/// @brief Тесты для солвера quickest_ultimate_fv_solver
-class QUICKEST_ULTIMATE2 : public ::testing::Test {
-protected:
-    /// @brief Профиль переменных
-    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
-    /// @brief Профиль specific переменных
-    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
-
-    /// @brief Слой: переменных Vars + сколько угодно служебных Specific
-    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
-protected:
-    /// @brief Параметры трубы
-    pipe_noniso_properties_t pipe;
-    /// @brief Параметры нефти
-    oil_parameters_t oil;
-    /// @brief Профиль расхода
-    std::vector<double> G;
-    /// @brief Модель теллообмена(?)
-    std::unique_ptr<PipeHeatInflowConstArea> heatModel;
-    /// @brief Буфер слоев
-    std::unique_ptr<ring_buffer_t<layer_t>> buffer;
-protected:
-
-    /// @brief Подготовка к расчету для семейства тестов
-    virtual void SetUp() override {
-        oil_parameters_t oil = get_default_oil_heatmodel();
-        pipe_noniso_properties_t  pipe = get_default_pipe_heatmodel();
-        auto model = pipe.get_heat_eqivalent_model(oil);
-        pipe.heat.ambient_heat_transfer = -model.A;    // Использовать пока Кт константу 1-5
-        
-
-        std::vector<double> G(pipe.profile.get_point_count(), 300);
-        PipeHeatInflowConstArea heatModel(pipe, oil, G);
-
-        buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
-
-        layer_t& prev = buffer->previous();
-        prev.vars.cell_double[0] = std::vector<double>(prev.vars.cell_double[0].size(), 300);
-    }
-};
-
-/// @brief Базовый пример использования метода характеристик для уравнения адвекции
-TEST_F(QUICKEST_ULTIMATE2, Quick_UseCase_Advection_Temperature)
+/// @brief Дымовой тест метода верхней разности
+TEST(UpstreamDifferencing, ExecutesSingleStep)
 {
-    std::vector<double> x = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+    using namespace upstream_solver_types;
 
-    double temp_in = 310; // темп нефти, закачиваемой на входе трубы при положительном расходе
-    double temp_out = 290; // темп нефти, закачиваемой с выхода трубы при отрицательном расходе
+    // Arrange: труба, модель адвекции и буфер
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe_properties::sample_district());
+    double rho_initial = 850;
+    double rho_in = 860;
+    double rho_out = 870;
+    double dt = 60;
 
-    double t = 0;
-    //const auto& x = heatModel->get_grid();
-    //double dx = x[1] - x[0];
-    //double v = heatModel->getEquationsCoeffs(0, 0);
-    //double dt_ideal = abs(dx / v);
-    //double Cr = 0.9;
-    double dt = 1000;
+    std::vector<double> Q(pipe.profile.get_point_count(), 0.5);
+    PipeQAdvection advection_model(pipe, Q);
+    ring_buffer_t<layer_t> buffer = build_buffer<layer_t>(pipe, rho_initial);
+
+    // Act: один шаг адвекции
+    upstream_fv_solver solver(advection_model, buffer.previous(), buffer.current());
+    solver.step(dt, rho_in, rho_out);
+}
+
+/// @brief Солвер Quickest учитывает инверсию потока:
+/// при перекачке в обратном направлении более тяжёлая нефть приходит с конца трубы
+TEST(QuickestUltimate, ConsidersFlowSwap) {
+    using namespace quickest_ultimate_solver_types;
+
+    // Arrange: труба, модель адвекции и буфер
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe({.length = 700e3, .dx = 100, .diameter = 0.514});
+    double rho_initial = 850;
+    double rho_in = 860;
+    double rho_out = 870;
+
+    std::vector<double> Q(pipe.profile.get_point_count(), -0.5);
+    PipeQAdvection advection_model(pipe, Q);
+    ring_buffer_t<layer_t> buffer = build_buffer<layer_t>(pipe, rho_initial);
+    double dt = calc_time_step_by_Courant(advection_model, 0.9);
+
+    // Act: один шаг адвекции
+    quickest_sequential_solver solver(advection_model, buffer.previous(), buffer.current());
+    solver.step(dt, rho_in, rho_out);
+
+    // Assert: плотность в конце выросла, в начале не изменилась
+    const auto& rho_prev = buffer.previous().vars.cell_double[0];
+    const auto& rho_curr = buffer.current().vars.cell_double[0];
+    ASSERT_GT(rho_curr.back(), rho_prev.back());
+    ASSERT_NEAR(rho_curr.front(), rho_prev.front(), 1e-8);
+}
+
+/// @brief Дымовой тест метода Quickest Ultimate на тепловой модели
+TEST(QuickestUltimate, ExecutesTemperatureAdvection)
+{
+    using namespace quickest_ultimate_solver_types;
+
+    // Arrange: труба, нефть, тепловая модель и буфер
     oil_parameters_t oil = pde_solvers::get_default_oil_heatmodel();
-    pipe_noniso_properties_t  pipe = pde_solvers::get_default_pipe_heatmodel();
-    auto model = pipe.get_heat_eqivalent_model(oil);
-    //pipe.heat.ambient_heat_transfer = -model.A;
+    pipe_noniso_properties_t pipe = pde_solvers::get_default_pipe_heatmodel();
     pipe.heat.ambient_heat_transfer = 3;
 
-    std::vector<double> G(pipe.profile.get_point_count(), 300);
-    heatModel = std::make_unique<PipeHeatInflowConstArea>(pipe, oil, G);
-    buffer = std::make_unique<ring_buffer_t<layer_t>>(2, pipe.profile.get_point_count());
-    layer_t& prev = buffer->previous();
-    prev.vars.cell_double[0] = std::vector<double>(prev.vars.cell_double[0].size(), 300);
+    double temp_initial = 300;
+    double temp_in = 310;
+    double temp_out = 290;
+    double dt = 1000;
+    double mass_flow = 300;
 
+    std::vector<double> G(pipe.profile.get_point_count(), mass_flow);
+    PipeHeatInflowConstArea heat_model(pipe, oil, G);
+    ring_buffer_t<layer_t> buffer = build_buffer<layer_t>(pipe, temp_initial);
+
+    // Act: 10 шагов адвекции температуры
     for (size_t index = 0; index < 10; ++index) {
-
-        quickest_ultimate_fv_solver<sequential_policy> solver(*heatModel, *buffer);
-        t += dt;
+        quickest_sequential_solver solver(heat_model, buffer);
         solver.step(dt, temp_in, temp_out);
-
-        //auto& curr = buffer[0].layers;
-        layer_t& next = buffer->current();
-        buffer->advance(+1);
+        buffer.advance(+1);
     }
 }
 
-/// @brief Расчет шага на короткой трубе
-/// @return Значение параметра в единственной ячейки на предыдущем слое и на новом
-inline std::pair<double, double> short_pipe_step(double vol_flow, 
-    double rho_in, double rho_out, double rho_initial)
-{
-    simple_pipe_properties simple_pipe;
-    simple_pipe.length = 100.0;   // длина 100 м
-    simple_pipe.dx = 50.0;       // шаг сетки = длина (1 ячейка)
-    simple_pipe.diameter = 0.7;
-    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-
-    std::vector<double> Q(pipe.profile.get_point_count(), 1.0);
-    PipeQAdvection advection_model(pipe, Q);
-
-    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
-    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
-    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
-
-    ring_buffer_t<layer_t> buffer(2, pipe.profile.get_point_count());
-    ring_buffer_t<layer_t> buffer_reverse(2, pipe.profile.get_point_count());
-
-    layer_t& prev = buffer.previous();
-    layer_t& next = buffer.current();
-
-    prev.vars.cell_double[0] = std::vector<double>(1, rho_initial);
-
-    double v = advection_model.getEquationsCoeffs(0, Q[0]);
-    double Cr = 1;
-    double dt = abs((Cr * simple_pipe.dx) / v);       // шаг по времени
-
-    // Запускаем шаг по QUICKEST-ULTIMATE
-    quickest_ultimate_fv_solver<sequential_policy> solver(advection_model, prev, next);
-    solver.step(dt, rho_in, rho_out);
-
-    double rho_prev = prev.vars.cell_double[0].front();
-    double rho_curr = next.vars.cell_double[0].front();
-
-    return std::make_pair(rho_prev, rho_curr);
-
-}
-
-/// @brief Проверка QUICKEST-ULTIMATE на короткой трубе (1 ячейка)
-/// Прямой поток
+/// @brief Проверка возможности применения метода Quickest Ultimate для трубы из одной ячейки
+/// При прямом потоке в ячейке мгновенно устанавливается значение из краевого условия на входе.
 TEST(QuickestUltimate, HandlesShortPipe_Direct)
 {
-    double vol_flow = +1.0;
-    double rho_in = 860;    // плотность на входе
-    double rho_out = 850; // плотность на выходе
-    double rho_initial = 840;
-    auto [rho_prev, rho_curr] = short_pipe_step(vol_flow, rho_in, rho_out, rho_initial);
+    using namespace quickest_ultimate_solver_types;
 
-    // Проверка
-    ASSERT_NEAR(rho_curr, rho_in, 1e-6)
-        << "Плотность в текущей ячейке должна стремиться к граничному значению на входе";
-    ASSERT_NE(rho_curr, rho_prev)
-        << "Плотность не должна оставаться равной начальному значению";
+    // Arrange: труба из одной ячейки (length/dx → 1 сегмент), модель адвекции и буфер
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe({.length = 50.0, .dx = 50.0, .diameter = 0.7});
+    double rho_initial = 840;
+    double rho_in = 860;
+    double rho_out = 850;
+    double flow = +1.0;
+    double Cr = 1.0;
+
+    std::vector<double> Q(pipe.profile.get_point_count(), flow);
+    PipeQAdvection advection_model(pipe, Q);
+    ring_buffer_t<layer_t> buffer = build_buffer<layer_t>(pipe, rho_initial);
+    double dt = calc_time_step_by_Courant(advection_model, Cr);
+
+    // Act: один шаг адвекции
+    quickest_sequential_solver solver(advection_model, buffer.previous(), buffer.current());
+    solver.step(dt, rho_in, rho_out);
+
+    // Assert: плотность в ячейке стремится к граничному значению на входе
+    double rho_prev = buffer.previous().vars.cell_double[0].front();
+    double rho_curr = buffer.current().vars.cell_double[0].front();
+    ASSERT_NEAR(rho_curr, rho_in, 1e-6);
+    ASSERT_NE(rho_curr, rho_prev);
 }
 
-
-/// @brief Проверка QUICKEST-ULTIMATE на короткой трубе (1 ячейка)
-/// Обратный поток
+/// @brief Проверка возможности применения метода Quickest Ultimate для трубы из одной ячейки
+/// При обратном потоке в ячейке мгновенно устанавливается значение из краевого условия на выходе.
 TEST(QuickestUltimate, HandlesShortPipe_Reverse)
 {
-    double vol_flow = -1.0;
-    double rho_in = 860;    // плотность на входе
-    double rho_out = 850; // плотность на выходе
+    using namespace quickest_ultimate_solver_types;
+
+    // Arrange: труба из одной ячейки (length/dx → 1 сегмент), модель адвекции и буфер
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe({.length = 50.0, .dx = 50.0, .diameter = 0.7});
     double rho_initial = 840;
-    auto [rho_prev, rho_curr] = short_pipe_step(vol_flow, rho_in, rho_out, rho_initial);
+    double rho_in = 860;
+    double rho_out = 850;
+    double flow = -1.0;
 
-    // Проверка
-    ASSERT_NEAR(rho_curr, rho_in, 1e-6)
-        << "Плотность в текущей ячейке должна стремиться к граничному значению на входе";
-    ASSERT_NE(rho_curr, rho_prev)
-        << "Плотность не должна оставаться равной начальному значению";
+    std::vector<double> Q(pipe.profile.get_point_count(), flow);
+    PipeQAdvection advection_model(pipe, Q);
+    ring_buffer_t<layer_t> buffer = build_buffer<layer_t>(pipe, rho_initial);
 
+    double Cr = 1.0;
+    double dt = calc_time_step_by_Courant(advection_model, Cr);
+
+    // Act: один шаг адвекции
+    quickest_sequential_solver solver(advection_model, buffer.previous(), buffer.current());
+    solver.step(dt, rho_in, rho_out);
+
+    // Assert: плотность в ячейке стремится к граничному значению на выходе
+    double rho_prev = buffer.previous().vars.cell_double[0].front();
+    double rho_curr = buffer.current().vars.cell_double[0].front();
+    ASSERT_NEAR(rho_curr, rho_out, 1e-6);
+    ASSERT_NE(rho_curr, rho_prev);
 }
 
-/// @brief Фикстура perf-теста QUICKEST-ULTIMATE: длинная труба, замер одного шага sequential и parallel
-class QuickestUltimate_ParallelPerf : public ::testing::Test {
-protected:
-    /// @brief Тип данных для переменных слоя
-    typedef quickest_ultimate_fv_solver_traits<1>::var_layer_data target_var_t;
-    /// @brief Тип данных для специфичных переменных слоя
-    typedef quickest_ultimate_fv_solver_traits<1>::specific_layer specific_data_t;
-    /// @brief Слой: переменных Vars и служебных Specific
-    typedef composite_layer_t<target_var_t, specific_data_t> layer_t;
-    /// @brief Результат одного шага с замером времени
-    struct step_timed_result_t {
-        /// @brief Профиль вещества по ячейкам после step()
-        std::vector<double> profile;
-        /// @brief Длительность step() в секундах
-        double elapsed_seconds{ 0.0 };
-    };
-    /// @brief Число ячеек (достаточно велико, чтобы параллелизм дал измеримый эффект)
-    static constexpr size_t n_cells = 1'000'000;
-    /// @brief Шаг сетки, м
-    static constexpr double dx = 1.0;
-    /// @brief Граничное значение профиля на входе и выходе
-    static constexpr double u_boundary = 860.0;
-    /// @brief Допуск при сравнении sequential и parallel профилей
-    static constexpr double profile_tolerance = 1e-14;
-    /// @brief Параметры трубы
-    pipe_properties_t pipe;
-    /// @brief Профиль расхода
-    std::vector<double> Q;
-    /// @brief Модель адвекции
-    std::unique_ptr<PipeQAdvection> advection_model;
-    /// @brief Число расчётных ячеек (размерность cell_double[0])
-    size_t cell_count{ 0 };
-    /// @brief Временной шаг step() при Cr = 0.5
-    double dt{ 0.0 };
-    /// @brief Строит длинную трубу, модель адвекции и dt для одного шага
-    void SetUp() override {
-        simple_pipe_properties simple_pipe;
-        simple_pipe.length = n_cells * dx;
-        simple_pipe.dx = dx;
-        simple_pipe.diameter = 0.7;
-        pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
-
-        Q.assign(pipe.profile.get_point_count(), 0.5);
-        advection_model = std::make_unique<PipeQAdvection>(pipe, Q);
-
-        cell_count = advection_model->get_grid().size() - 1;
-        ASSERT_GE(cell_count, n_cells - 1);
-
-        const double v = advection_model->getEquationsCoeffs(0, u_boundary);
-        ASSERT_GT(std::abs(v), 0.0);
-        dt = 0.5 * dx / std::abs(v);
-    }
-
-    /// @brief Пропускает тест на однопоточной машине (проверка ускорения бессмысленна)
-    void skip_if_single_threaded() const {
-        if (std::thread::hardware_concurrency() < 2) {
-            GTEST_SKIP() << "для проверки ускорения нужно не менее двух аппаратных потоков";
-        }
-    }
-
-    /// @brief Выполняет один step() QUICKEST-ULTIMATE и замеряет время
-    /// @tparam ExecutionPolicy sequential_policy или parallel_policy
-    template <typename ExecutionPolicy>
-    step_timed_result_t run_timed_step() const {
-        ring_buffer_t<layer_t> buffer(2, pipe.profile.get_point_count());
-        buffer.previous().vars.cell_double[0] = std::vector<double>(cell_count, u_boundary);
-
-        const auto t0 = std::chrono::steady_clock::now();
-        quickest_ultimate_fv_solver<ExecutionPolicy> solver(
-            *advection_model, buffer.previous(), buffer.current());
-        solver.step(dt, u_boundary, u_boundary);
-        const auto t1 = std::chrono::steady_clock::now();
-
-        step_timed_result_t result;
-        result.profile = buffer.current().vars.cell_double[0];
-        result.elapsed_seconds = std::chrono::duration<double>(t1 - t0).count();
-        return result;
-    }
-
-    /// @brief То же, что run_timed_step, с выбором политики по флагу
-    /// @param use_parallel true — parallel_policy, false — sequential_policy
-    step_timed_result_t run_timed_step(bool use_parallel) const {
-        if (use_parallel) {
-            return run_timed_step<parallel_policy>();
-        }
-        return run_timed_step<sequential_policy>();
-    }
-
-    /// @brief Прогрев sequential и parallel, чтобы замер не включал первичную инициализацию TBB
-    void warmup() const {
-        run_timed_step<sequential_policy>();
-        run_timed_step<parallel_policy>();
-    }
-
-    /// @brief Проверяет совпадение профилей sequential и parallel в пределах profile_tolerance
-    /// @param sequential Профиль после step() с sequential_policy
-    /// @param parallel Профиль после step() с parallel_policy
-    static void assert_profiles_equal(
-        const std::vector<double>& sequential,
-        const std::vector<double>& parallel)
-    {
-        ASSERT_EQ(sequential.size(), parallel.size());
-        for (size_t i = 0; i < sequential.size(); ++i) {
-            ASSERT_NEAR(sequential[i], parallel[i], profile_tolerance) << "cell index " << i;
-        }
-    }
-};
-
-/// @brief На длинной трубе parallel_policy даёт тот же профиль, что sequential_policy, и меньшее время step()
-TEST_F(QuickestUltimate_ParallelPerf, IncreasesPerfomanceInParallel)
+/// @brief Результаты параллельного и последовательного расчетов совпадают.
+/// В начальном состоянии параметр в каждой ячейке различен.
+/// Вероятно, если при одном шаге расчета результаты совпадают, то и при длительном расчете они будут совпадать.
+TEST(QuickestUltimate, SameResultsInSequentialAndParallel)
 {
-    // Arrange: фикстура подготовила трубу; на однопоточной платформе тест не выполняется
-    skip_if_single_threaded();
+    using namespace quickest_ultimate_solver_types;
 
-    // Act: прогрев и замер одного шага в sequential и parallel режимах
-    warmup();
-    const auto sequential = run_timed_step<sequential_policy>();
-    const auto parallel = run_timed_step<parallel_policy>();
-    std::cout << "Длительность последовательного расчета: " << sequential.elapsed_seconds << " с\n";
-    std::cout << "Длительность параллельного расчета: " << parallel.elapsed_seconds << " с\n";
+    // Arrange: Подготовка трубы с большим количеством ячеек и линейным профилем плотности
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(
+        {.length = 1'000'000.0, .dx = 1.0, .diameter = 0.7});
 
-    // Assert: численный результат совпадает, parallel быстрее sequential
-    assert_profiles_equal(sequential.profile, parallel.profile);
-    EXPECT_LT(parallel.elapsed_seconds, sequential.elapsed_seconds);
+    double rho_initial_left = 850;
+    double rho_initial_right = 860;
+    double rho_new = 870;
+    double flow = 0.5;
+
+    std::vector<double> Q(pipe.profile.get_point_count(), flow);
+    PipeQAdvection advection_model(pipe, Q);
+    double dt = calc_time_step_by_Courant(advection_model, 1.0);
+
+    // Act: Расчет адвекции в последовательном и параллельном режимах
+    auto seq_buf = build_linear_buffer<layer_t>(pipe, rho_initial_left, rho_initial_right);
+    quickest_sequential_solver(advection_model, seq_buf.previous(), seq_buf.current())
+        .step(dt, rho_new, rho_initial_right);
+    std::vector<double> sequential_profile = seq_buf.current().vars.cell_double[0];
+
+    auto par_buf = build_linear_buffer<layer_t>(pipe, rho_initial_left, rho_initial_right);
+    quickest_parallel_solver(advection_model, par_buf.previous(), par_buf.current())
+        .step(dt, rho_new, rho_initial_right);
+    std::vector<double> parallel_profile = par_buf.current().vars.cell_double[0];
+
+    // Assert: Расчетные профили параметра в каждой ячейке совпадают
+    ASSERT_EQ(sequential_profile, parallel_profile);
+}
+
+/// @brief На длинной трубе параллельный расчет дает выигрыш во времени по сравнению с последовательным.
+/// Ожидаемое ускорение пропорционально числу аппаратных потоков.
+TEST(QuickestUltimate, IncreasesPerformanceInParallel)
+{
+    using namespace quickest_ultimate_solver_types;
+
+    const unsigned int threads = std::thread::hardware_concurrency();
+    if (threads < 2) {
+        GTEST_SKIP() << "для проверки ускорения нужно не менее 2 аппаратных потоков";
+    }
+    const double expected_speedup = expected_parallel_speedup(threads);
+
+    // Arrange: Подготовка трубы с большим количеством ячеек
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(
+        {.length = 1'000'000.0, .dx = 1.0, .diameter = 0.7});
+
+    double rho_initial_left = 850;
+    double rho_initial_right = 860;
+    double rho_new = 870;
+    double flow = 0.5;
+
+    std::vector<double> Q(pipe.profile.get_point_count(), flow);
+    PipeQAdvection advection_model(pipe, Q);
+    double dt = calc_time_step_by_Courant(advection_model, 0.5);
+
+    // Act: Расчет адвекции в последовательном и параллельном режимах
+    const double seq_seconds = run_timed_step<quickest_sequential_solver, layer_t>(
+        advection_model, pipe, dt, rho_initial_left, rho_initial_right, rho_new).second;
+    const double par_seconds = run_timed_step<quickest_parallel_solver, layer_t>(
+        advection_model, pipe, dt, rho_initial_left, rho_initial_right, rho_new).second;
+
+    // Assert: Фактическое ускорение не меньше ожидаемого
+    const double actual_speedup = seq_seconds / par_seconds;
+    std::cout << "Потоков: " << threads << ", ожидаемое ускорение: " << expected_speedup << "x"
+              << ", фактическое: " << actual_speedup << "x\n";
+
+    EXPECT_GE(actual_speedup, expected_speedup);
 }

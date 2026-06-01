@@ -195,7 +195,7 @@ private:
         auto density_wrapper = buffer.get_buffer_wrapper(
             &density_viscosity_quasi_layer<1>::get_density_wrapper);
 
-        quickest_ultimate_fv_solver<sequential_policy> solver_rho(advection_model, density_wrapper);
+        quickest_ultimate_fv_solver<quickest_cell_compute_mode::sequential> solver_rho(advection_model, density_wrapper);
         solver_rho.step(dt, density, density);
        
     }

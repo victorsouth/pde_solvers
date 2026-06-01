@@ -48,7 +48,8 @@ struct iso_nonbaro_improver_pipe_PP_task_boundaries_t {
 /// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода
 /// Шаблонный тип слоя вееден для возможности переопределения слоя в наследниках, расширяющших функционал солвера.
 /// @tparam Layer Тип слоя (iso_nonbaro_pipe_layer_t или iso_nonbaro_pipe_mass_accounting_layer_t)
-template<typename Layer>
+/// @tparam QuickestMode Режим последовательной или параллельной обработки ячеек
+template<typename Layer, quickest_cell_compute_mode QuickestMode>
 class iso_nonbaro_pipe_solver_templated_t : public pipe_solver_hydrotransport_interface_t {
 public:
     /// @brief Тип слоя
@@ -115,7 +116,7 @@ public:
 
         buffer.current().std_volumetric_flow = volumetric_flow;
 
-        step_advection(dt, volumetric_flow, boundaries.density_std,
+        step_advection<QuickestMode>(dt, volumetric_flow, boundaries.density_std,
             pipe.wall.diameter, pipe.profile.coordinates, buffer,
             &iso_nonbaro_pipe_endogenious_layer_t::get_density_wrapper,
             &iso_nonbaro_pipe_endogenious_layer_t::get_density_confidence_wrapper);
@@ -148,7 +149,10 @@ public:
 };
 
 /// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода
-using iso_nonbaro_pipe_solver_t = iso_nonbaro_pipe_solver_templated_t<iso_nonbaro_pipe_layer_t>;
+/// @tparam QuickestMode Режим последовательной или параллельной обработки ячеек
+template <quickest_cell_compute_mode QuickestMode>
+using iso_nonbaro_pipe_solver_t = iso_nonbaro_pipe_solver_templated_t<
+    iso_nonbaro_pipe_layer_t, QuickestMode>;
 
 /// @brief Структура, содержащая в себе краевые условия задачи PQ
 struct iso_nonbarotropic_pipe_PQ_task_boundaries_t {
@@ -222,7 +226,7 @@ public:
         endogenous_boundaries.density_std.value = initial_conditions.density;
         endogenous_boundaries.density_std.confidence = true;
 
-        iso_nonbaro_pipe_solver_t solver(pipe, buffer);
+        iso_nonbaro_pipe_solver_t<quickest_cell_compute_mode::sequential> solver(pipe, buffer);
         solver.transport_solve(initial_conditions.volumetric_flow, endogenous_boundaries);
         solver.hydro_solve_QP(initial_conditions.volumetric_flow, initial_conditions.pressure_in, +1);
     }
@@ -238,7 +242,7 @@ public:
         endogenous_boundaries.density_std.value = boundaries.density;
         endogenous_boundaries.density_std.confidence = true;
 
-        iso_nonbaro_pipe_solver_t solver(pipe, buffer);
+        iso_nonbaro_pipe_solver_t<quickest_cell_compute_mode::sequential> solver(pipe, buffer);
         if (std::isfinite(dt)) {
             solver.transport_step(dt, boundaries.volumetric_flow, endogenous_boundaries);
         } else {
@@ -298,7 +302,7 @@ public:
         endogenous_boundaries.density_std.value = initial_conditions.density;
         endogenous_boundaries.density_std.confidence = true;
 
-        iso_nonbaro_pipe_solver_t solver(pipe, buffer);
+        iso_nonbaro_pipe_solver_t<quickest_cell_compute_mode::sequential> solver(pipe, buffer);
         solver.transport_solve(volumetric_flow_initial, endogenous_boundaries);
         solver.hydro_solve_PP(initial_conditions.pressure_in, initial_conditions.pressure_out);
     }
@@ -315,7 +319,7 @@ public:
         endogenous_boundaries.density_std.value = boundaries.density;
         endogenous_boundaries.density_std.confidence = true;
 
-        iso_nonbaro_pipe_solver_t solver(pipe, buffer);
+        iso_nonbaro_pipe_solver_t<quickest_cell_compute_mode::sequential> solver(pipe, buffer);
         if (std::isfinite(dt)) {
             solver.transport_step(dt, volumetric_flow, endogenous_boundaries);
         } else {
@@ -340,9 +344,10 @@ public:
     }
 };
 
-/// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода
-/// @tparam Layer Тип слоя (iso_nonbaro_pipe_layer_t или iso_nonbaro_pipe_mass_accounting_layer_t)
-template<typename Layer>
+/// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода с присадкой
+/// @tparam Layer Тип слоя (iso_nonbaro_improver_pipe_layer_t или слой mass_accounting)
+/// @tparam QuickestMode Режим последовательной или параллельной обработки ячеек (адвекция QUICKEST-ULTIMATE)
+template<typename Layer, quickest_cell_compute_mode QuickestMode>
 class iso_nonbaro_improver_pipe_solver_templated_t : public pipe_solver_hydrotransport_interface_t {
 public:
     /// @brief Тип слоя
@@ -408,11 +413,11 @@ public:
 
         buffer.current().std_volumetric_flow = volumetric_flow;
 
-        step_advection(dt, volumetric_flow, boundaries.density_std,
+        step_advection<QuickestMode>(dt, volumetric_flow, boundaries.density_std,
             pipe.wall.diameter, pipe.profile.coordinates, buffer,
             &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_wrapper,
             &iso_nonbaro_improver_pipe_endogenious_layer_t::get_density_confidence_wrapper);
-        step_advection(dt, volumetric_flow, boundaries.improver,
+        step_advection<QuickestMode>(dt, volumetric_flow, boundaries.improver,
             pipe.wall.diameter, pipe.profile.coordinates, buffer,
             &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_wrapper,
             &iso_nonbaro_improver_pipe_endogenious_layer_t::get_improver_concentration_confidence_wrapper);
@@ -449,8 +454,10 @@ public:
 };
 
 /// @brief Солвер квазистационарного гидравлического расчета для конденсатопровода с присадкой
-using iso_nonbaro_improver_pipe_solver_t = iso_nonbaro_improver_pipe_solver_templated_t<iso_nonbaro_improver_pipe_layer_t>;
-
+/// @tparam QuickestMode Режим последовательной или параллельной обработки ячеек
+template <quickest_cell_compute_mode QuickestMode>
+using iso_nonbaro_improver_pipe_solver_t = iso_nonbaro_improver_pipe_solver_templated_t<
+    iso_nonbaro_improver_pipe_layer_t, QuickestMode>;
 
 }
 

@@ -39,18 +39,20 @@ struct iso_nonbaro_pipe_mass_accounting_layer_t : public iso_nonbaro_pipe_layer_
 };
 
 /// @brief Расширенный солвер с учетом расчета массы в трубе
+/// @tparam QuickestMode Режим последовательной или параллельной обработки ячеек при расчете адвекции
+template <quickest_cell_compute_mode QuickestMode>
 class iso_nonbaro_pipe_mass_accounting_solver_t
-    : public iso_nonbaro_pipe_solver_templated_t<iso_nonbaro_pipe_mass_accounting_layer_t> {
+    : public iso_nonbaro_pipe_solver_templated_t<iso_nonbaro_pipe_mass_accounting_layer_t, QuickestMode> {
 public:
     /// @brief Тип слоя (наследник от слоя основного солвера)
     using layer_type = iso_nonbaro_pipe_mass_accounting_layer_t;
     /// @brief Тип буфера
-    using buffer_type = typename iso_nonbaro_pipe_solver_templated_t<layer_type>::buffer_type;
+    using buffer_type = typename iso_nonbaro_pipe_solver_templated_t<layer_type, QuickestMode>::buffer_type;
     /// @brief Тип параметров трубы
     using pipe_parameters_type = iso_nonbaro_pipe_mass_accounting_properties_t;
 
 private:
-    using base_solver_type = iso_nonbaro_pipe_solver_templated_t<layer_type>;
+    using base_solver_type = iso_nonbaro_pipe_solver_templated_t<layer_type, QuickestMode>;
     /// @brief Параметры трубы с флагом расчета массы
     const pipe_parameters_type& mass_accounting_pipe;
 
@@ -76,7 +78,7 @@ public:
 
     /// @brief Вычисляет массу вещества в трубе по текущему слою
     double calculate_mass() const {
-        const layer_type& current_layer = buffer.current();
+        const layer_type& current_layer = this->buffer.current();
         return calculate_isothermal_incompressible_fluid_mass_in_rigid_pipe(
             mass_accounting_pipe.profile.coordinates,
             current_layer.density_std.value,
@@ -84,22 +86,22 @@ public:
     }
 
     /// @brief Выполнение транспортного шага (расчет движения партий)
-    virtual void transport_step(double dt, double volumetric_flow, 
-        const pde_solvers::endogenous_values_t& boundaries) override 
+    virtual void transport_step(double dt, double volumetric_flow,
+        const pde_solvers::endogenous_values_t& boundaries) override
     {
         base_solver_type::transport_step(dt, volumetric_flow, boundaries);
         if (mass_accounting_pipe.calculate_mass) {
-            buffer.current().mass = calculate_mass();
+            this->buffer.current().mass = calculate_mass();
         }
     }
 
     /// @brief Транспортное решение при бесконечном dt (заполнение трубы граничными значениями)
-    virtual void transport_solve(double volumetric_flow, 
-        const pde_solvers::endogenous_values_t& boundaries) override 
+    virtual void transport_solve(double volumetric_flow,
+        const pde_solvers::endogenous_values_t& boundaries) override
     {
         base_solver_type::transport_solve(volumetric_flow, boundaries);
         if (mass_accounting_pipe.calculate_mass) {
-            buffer.current().mass = calculate_mass();
+            this->buffer.current().mass = calculate_mass();
         }
     }
 };
@@ -129,8 +131,10 @@ struct iso_nonbaro_improver_pipe_mass_accounting_properties_t : public iso_nonba
 };
 
 /// @brief Расширенный солвер для небаротропной трубы с присадкой и учетом массы
+/// @tparam QuickestMode Режим последовательной или параллельной обработки ячеек при расчете адвекции
+template <quickest_cell_compute_mode QuickestMode>
 class iso_nonbaro_improver_pipe_mass_accounting_solver_t
-    : public iso_nonbaro_improver_pipe_solver_templated_t<iso_nonbaro_improver_pipe_mass_accounting_layer_t> {
+    : public iso_nonbaro_improver_pipe_solver_templated_t<iso_nonbaro_improver_pipe_mass_accounting_layer_t, QuickestMode> {
 public:
     /// @brief Тип слоя (наследник от слоя основного солвера)
     using layer_type = iso_nonbaro_improver_pipe_mass_accounting_layer_t;
@@ -140,7 +144,7 @@ public:
     using pipe_parameters_type = iso_nonbaro_improver_pipe_mass_accounting_properties_t;
 
 private:
-    using base_solver_type = iso_nonbaro_improver_pipe_solver_templated_t<layer_type>;
+    using base_solver_type = iso_nonbaro_improver_pipe_solver_templated_t<layer_type, QuickestMode>;
     /// @brief Параметры трубы с флагом расчета массы
     const pipe_parameters_type& mass_accounting_pipe;
 
@@ -166,7 +170,7 @@ public:
 
     /// @brief Вычисляет массу вещества в трубе по текущему слою
     double calculate_mass() const {
-        const layer_type& current_layer = buffer.current();
+        const layer_type& current_layer = this->buffer.current();
         return calculate_isothermal_incompressible_fluid_mass_in_rigid_pipe(
             mass_accounting_pipe.profile.coordinates,
             current_layer.density_std.value,
@@ -178,16 +182,16 @@ public:
         const pde_solvers::endogenous_values_t& boundaries) override {
         base_solver_type::transport_step(dt, volumetric_flow, boundaries);
         if (mass_accounting_pipe.calculate_mass) {
-            buffer.current().mass = calculate_mass();
+            this->buffer.current().mass = calculate_mass();
         }
     }
 
     /// @brief Транспортное решение при бесконечном dt (заполнение трубы граничными значениями)
-    virtual void transport_solve(double volumetric_flow, 
+    virtual void transport_solve(double volumetric_flow,
         const pde_solvers::endogenous_values_t& boundaries) override {
         base_solver_type::transport_solve(volumetric_flow, boundaries);
         if (mass_accounting_pipe.calculate_mass) {
-            buffer.current().mass = calculate_mass();
+            this->buffer.current().mass = calculate_mass();
         }
     }
 };

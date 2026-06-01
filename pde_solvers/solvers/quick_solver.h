@@ -6,18 +6,20 @@
 
 namespace pde_solvers {
 
-/// @brief Политика: расчёт по ячейкам в нескольких потоках (oneTBB)
-struct parallel_policy {};
-/// @brief Политика: последовательный расчёт по ячейкам
-struct sequential_policy {};
+/// @brief Режим расчёта QUICKEST по ячейкам
+enum class quickest_cell_compute_mode {
+    /// @brief Последовательный расчет ячеек
+    sequential,
+    /// @brief Параллельный расчет всех ячеек
+    parallel
+};
 
-/// @brief Обход ячеек с учётом ExecutionPolicy (for или tbb::parallel_for)
-/// @tparam ExecutionPolicy sequential_policy или parallel_policy
-/// @tparam Body Callable с сигнатурой void(size_t cell)
-template <typename ExecutionPolicy, typename Body>
+/// @brief Обход ячеек с заданным режимом расчета QuickestMode
+/// @tparam Body функция с сигнатурой void(size_t cell)
+template <quickest_cell_compute_mode QuickestMode, typename Body>
 inline void for_each_cell(size_t cell_count, Body&& body)
 {
-    if constexpr (std::is_same_v<ExecutionPolicy, parallel_policy>) {
+    if constexpr (QuickestMode == quickest_cell_compute_mode::parallel) {
         tbb::parallel_for(size_t(0), cell_count, [&](size_t cell) {
             body(cell);
         });
@@ -475,8 +477,8 @@ struct quickest_ultimate_fv_wrapper<1> {
 
 /// @brief Солвер на основе QUICKEST-ULTIMATE, только для размерности 1!
 /// [Leonard 1991]
-/// @tparam ExecutionPolicy Режим обхода ячеек в step(): sequential_policy или parallel_policy
-template <typename ExecutionPolicy>
+/// @tparam QuickestMode Режим последовательной или параллельной обработки ячеек
+template <quickest_cell_compute_mode QuickestMode>
 class quickest_ultimate_fv_solver {
 public:
     typedef typename quickest_ultimate_fv_solver_traits<1>::var_layer_data var_layer_data;
@@ -579,7 +581,7 @@ public:
         double v_pipe = pde.getEquationsCoeffs(0, U[0]);//не совсем корректно, скорость в ячейке берется из скорости на ее левой границе
         // Расчет потоков на границе по правилу QUICK
         if (v_pipe >= 0) {
-            for_each_cell<ExecutionPolicy>(U.size(), [&](size_t cell) {
+            for_each_cell<QuickestMode>(U.size(), [&](size_t cell) {
                 size_t right_border = cell + 1;
                 double Vb = v_pipe; // предположили, что скорость на границе во всех точках трубы одна и та же
                 double Ub;
@@ -594,7 +596,7 @@ public:
             });
         }
         else {
-            for_each_cell<ExecutionPolicy>(U.size(), [&](size_t cell) {
+            for_each_cell<QuickestMode>(U.size(), [&](size_t cell) {
                 size_t left_border = cell;
                 double Vb = v_pipe; // предположили, что скорость на границе во всех точках трубы одна и та же
                 double Ub;
@@ -610,7 +612,7 @@ public:
 
         }
 
-        for_each_cell<ExecutionPolicy>(U.size(), [&](size_t cell) {
+        for_each_cell<QuickestMode>(U.size(), [&](size_t cell) {
             double dx = grid[cell + 1] - grid[cell]; // ячейки обычно одинаковой длины, но мало ли..
 
             double v_cell = pde.getEquationsCoeffs(cell, U[cell]); // скорость в текущей ячейке
@@ -627,9 +629,9 @@ public:
 template <typename T>
 struct is_quickest_ultimate_fv_solver : std::false_type {};
 
-/// @brief Специализация для режимов расчета QUICKEST-ULTIMATE: sequential_policy и parallel_policy
-template <typename QuickestExecutionPolicy>
-struct is_quickest_ultimate_fv_solver<quickest_ultimate_fv_solver<QuickestExecutionPolicy>>
+/// @brief Специализация для режимов расчета QUICKEST-ULTIMATE
+template <quickest_cell_compute_mode QuickestMode>
+struct is_quickest_ultimate_fv_solver<quickest_ultimate_fv_solver<QuickestMode>>
     : std::true_type {};
 
 /// @brief Удобная форма trait для if constexpr и bool-шаблонных параметров
@@ -646,6 +648,6 @@ inline constexpr bool is_cell_based_solver_v = is_cell_based_solver<T>::value;
 
 /// @brief Тип для шаблонов вывода (python_printer, matlab_printer) с QUICKEST-ULTIMATE.
 /// Вывод не зависит от распараллеливания расчета.
-using quickest_ultimate_io_solver = quickest_ultimate_fv_solver<sequential_policy>;
+using quickest_ultimate_io_solver = quickest_ultimate_fv_solver<quickest_cell_compute_mode::sequential>;
 
 }

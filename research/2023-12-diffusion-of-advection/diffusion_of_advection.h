@@ -323,6 +323,9 @@ protected:
 /// по модели смесеобразования
 TEST_F(DiffusionOfAdvection, CompareQuickestDiffusion)
 {
+    using quickest_sequential_solver = quickest_ultimate_fv_solver<
+        quickest_cell_compute_mode::sequential>;
+
     // Создаём папку с результатами и получаем путь к ней
     std::string path = prepare_research_folder();
 
@@ -332,7 +335,7 @@ TEST_F(DiffusionOfAdvection, CompareQuickestDiffusion)
     // Производим моделирование движения партий методом QUICKEST-ULTIMATE
     // для разных чисел Cr
     for (double Cr = 0.05; Cr < 1.01; Cr += 0.05) {
-        calc_quickest_with_cr<quickest_ultimate_fv_solver<sequential_policy>>(density_initial, density_final, v,
+        calc_quickest_with_cr<quickest_sequential_solver>(density_initial, density_final, v,
             Cr, experiment_time, path);
     }
 
@@ -352,6 +355,9 @@ TEST_F(DiffusionOfAdvection, CompareQuickestDiffusion)
 /// и график Аналитического решения (QUICKEST-ULTIMATE для Cr = 1)
 TEST_F(DiffusionOfAdvection, CompareQuickestAndQuickestUltimateDiffusion)
 {
+    using quickest_sequential_solver = quickest_ultimate_fv_solver<
+        quickest_cell_compute_mode::sequential>;
+
     // Создаём папку с результатами и получаем путь к ней
     std::string path = prepare_research_folder();
 
@@ -362,7 +368,7 @@ TEST_F(DiffusionOfAdvection, CompareQuickestAndQuickestUltimateDiffusion)
     double Cr = 0.5;
 
     // Расчёт методом QUICKEST-UlTIMATE для Cr = 0.5
-    calc_quickest_with_cr<quickest_ultimate_fv_solver<sequential_policy>>(density_initial, density_final, v,
+    calc_quickest_with_cr<quickest_sequential_solver>(density_initial, density_final, v,
         Cr, experiment_time, path);
 
     // Расчёт методом QUICKEST для Cr = 0.5
@@ -373,7 +379,7 @@ TEST_F(DiffusionOfAdvection, CompareQuickestAndQuickestUltimateDiffusion)
     Cr = 1;
 
     // Расчёт методом QUICKEST-UlTIMATE для Cr = 1
-    calc_quickest_with_cr<quickest_ultimate_fv_solver<sequential_policy>>(density_initial, density_final, v,
+    calc_quickest_with_cr<quickest_sequential_solver>(density_initial, density_final, v,
         Cr, experiment_time, path);
 }
 

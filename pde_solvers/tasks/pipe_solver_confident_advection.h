@@ -22,9 +22,10 @@ void solve_advection(const endogenous_confident_value_t& boundary_value,
 }
 
 /// @brief Шаг адвекции одного параметра (конечный шаг по времени)
+/// @tparam QuickestMode Режим последовательной или параллельной обработки ячеек
 /// @tparam BufferType Тип буфера с методом get_buffer_wrapper
 /// @tparam WrapperGetter Тип геттера обёртки слоя
-template <typename BufferType, typename WrapperGetter>
+template <quickest_cell_compute_mode QuickestMode, typename BufferType, typename WrapperGetter>
 void step_advection(double dt, double volumetric_flow,
     const endogenous_confident_value_t& boundary_value,
     double pipe_diameter,
@@ -40,12 +41,12 @@ void step_advection(double dt, double volumetric_flow,
         volumetric_flow, profile_coordinates);
     {
         auto buffer_wrapper = buffer.get_buffer_wrapper(value_getter);
-        quickest_ultimate_fv_solver<sequential_policy> solver(advection_model, buffer_wrapper);
+        quickest_ultimate_fv_solver<QuickestMode> solver(advection_model, buffer_wrapper);
         solver.step(dt, boundary_value.value, boundary_value.value);
     }
     {
         auto buffer_wrapper = buffer.get_buffer_wrapper(confidence_getter);
-        quickest_ultimate_fv_solver<sequential_policy> solver(advection_model, buffer_wrapper);
+        quickest_ultimate_fv_solver<QuickestMode> solver(advection_model, buffer_wrapper);
         solver.step(dt, boundary_value.confidence, boundary_value.confidence);
     }
 }

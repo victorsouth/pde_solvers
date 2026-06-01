@@ -153,6 +153,9 @@ public:
 /// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом  
 TEST_F(IsothermalQuasistaticModel, QuickWithQuasiStationaryModel)
 {
+    using quickest_sequential_solver = quickest_ultimate_fv_solver<
+        quickest_cell_compute_mode::sequential>;
+
     // Создаём папку с результатами и получаем путь к ней
     std::string path = prepare_research_folder_for_qsm_model();
 
@@ -171,12 +174,15 @@ TEST_F(IsothermalQuasistaticModel, QuickWithQuasiStationaryModel)
     // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
     vector_timeseries_t<double> time_series = generate_timeseries(timeseries_initial_values);
     double dt = 75;
-    perform_quasistatic_simulation<quickest_ultimate_fv_solver<sequential_policy>, matlab_printer<quickest_ultimate_io_solver>>(
+    perform_quasistatic_simulation<quickest_sequential_solver, matlab_printer<quickest_ultimate_io_solver>>(
         path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi, dt);
 }
 /// @brief Пример использования метода Quickest Ultimate с гидравлическим расчетом (идеальные настройки)
 TEST_F(IsothermalQuasistaticModel, IdealQuickWithQuasiStationaryModel)
 {
+    using quickest_sequential_solver = quickest_ultimate_fv_solver<
+        quickest_cell_compute_mode::sequential>;
+
     // Создаём папку с результатами и получаем путь к ней
     std::string path = prepare_research_folder_for_qsm_model();
 
@@ -201,7 +207,7 @@ TEST_F(IsothermalQuasistaticModel, IdealQuickWithQuasiStationaryModel)
     settings.sample_time_min = 200;
     vector_timeseries_t<double> time_series = generate_timeseries(timeseries_initial_values, settings);
     // Вызываем метод расчета квазистационарной модели с помощью Quickest Ultimate
-    perform_quasistatic_simulation<quickest_ultimate_fv_solver<sequential_policy>, matlab_printer<quickest_ultimate_io_solver>>(
+    perform_quasistatic_simulation<quickest_sequential_solver, matlab_printer<quickest_ultimate_io_solver>>(
         path, pipe, initial_boundaries, time_series, QuasistaticModelType::FullQuasi);
 }
 /// @brief Пример использования метода характеристик с гидравлическим расчетом  

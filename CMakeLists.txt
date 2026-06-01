@@ -147,6 +147,7 @@ if(PDE_SOLVERS_BUILD_TESTS)
         testing/test_create_pipe_profile.h
         testing/test_diffusion.h
         testing/test_moc.h
+        testing/utils/advection_solvers_helpers.h
         testing/test_quick.h
         testing/test_quick_conservativity.h
         testing/test_static_pipe_solver.h
@@ -168,6 +169,7 @@ if(PDE_SOLVERS_BUILD_TESTS)
 
 
     set(RESEARCH_HEADERS
+        research/2023-10-courant-spatial-profile/courant_spatial_profile.h
         research/2023-12-diffusion-of-advection/diffusion_of_advection.h
         research/2024-02-quick-with-quasistationary-model/quick_with_quasistationary_model.h
         research/2024-08-quasistationary-with-real-data/quasistationary_with_real_data.h

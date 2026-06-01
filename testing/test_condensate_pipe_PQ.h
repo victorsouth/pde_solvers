@@ -154,8 +154,9 @@ TEST(IsoNonbaroPipeQPTask, MaintainsPressureStability_OverMultipleTimeSteps) {
 /// При использовании для расчета гидравлического сопротивления 
 /// при переходе между формулами Исаева и Шифринсона наблюдался скачок, нарушавший монотонность
 TEST(IsoNonbaroPipeQPTask, HasMonotonicity_WhenChangeFlow) {
-
-    using hydro_solver = pde_solvers::iso_nonbaro_pipe_solver_t;
+    using namespace pde_solvers;
+    using hydro_solver = iso_nonbaro_pipe_solver_templated_t<
+        iso_nonbaro_pipe_layer_t, quickest_cell_compute_mode::sequential>;
 
     // Arrange - создание солвера для трубы с известными параметрами
     double Q_max = 1.0; // Размах при переборе расхода [-Qmax; +Qmax]
@@ -164,7 +165,7 @@ TEST(IsoNonbaroPipeQPTask, HasMonotonicity_WhenChangeFlow) {
     double length = 500e3;
     double dx = 200;
     double diameter = 0.8;
-    pde_solvers::pipe_json_data pipe_data{ diameter, 0, length };
+    pipe_json_data pipe_data{ diameter, 0, length };
     auto pipe_parameters = iso_nonbaro_pipe_properties_t(pipe_data);
     pipe_parameters.make_uniform_profile(dx);
  
@@ -173,7 +174,7 @@ TEST(IsoNonbaroPipeQPTask, HasMonotonicity_WhenChangeFlow) {
     
     // Act - расчет знака приращения давления в диапазоне расхода
     auto calc_pressure = [&](double flow) { 
-        return pde_solvers::rigorous_impulse_solve_QP<pde_solvers::iso_nonbaro_impulse_equation_t>
+        return rigorous_impulse_solve_QP<iso_nonbaro_impulse_equation_t>
             (pipe_parameters, layer, flow, Pout, -1); 
     };
     

@@ -17,6 +17,8 @@
 
 #include <time.h>
 #include <algorithm>
+#include <chrono>
+#include <thread>
 
 /// @brief Возвращает тестовую строку в формате TestBundle.TestName
 inline std::string get_test_string() {
@@ -36,6 +38,7 @@ inline std::string prepare_test_folder()
 
 using namespace pde_solvers;
 
+#include "utils/advection_solvers_helpers.h"
 
 #include "test_viscosity.h"
 #include "test_diffusion.h"

@@ -24,7 +24,7 @@ class quickest_ultimate_fv_solver { ... };
 
 ## Тестирование
 
-Тест `TEST(QuickestUltimate, IncreasesPerfomanceInParallel)` добавляется в файл `testing/test_quick.h`.
+Тест `TEST(QuickestUltimate, IncreasesPerformanceInParallel)` добавляется в файл `testing/test_quick.h`.
 
 Тест проводится путем измерения времени расчета одного шага с помощью `QUICKEST-ULTIMATE` на трубе с 100 000 ячеек — этого достаточно, чтобы полезная работа существенно превышала затраты на параллелизм, и параллелизм давал уверенный измеримый эффект.
 

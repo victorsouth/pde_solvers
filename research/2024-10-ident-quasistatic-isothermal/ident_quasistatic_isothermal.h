@@ -116,7 +116,7 @@ TEST_F(IdentIsothermalQSM, Diameter)
     ident_settings.ident_diameter = true;
 
     // Создаём класс для идентификации
-    ident_isothermal_qsm_pipe_parameters_t<sequential_policy> test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
+    ident_isothermal_qsm_pipe_parameters_t<quickest_cell_compute_mode::sequential> test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
     
     // Создаём сущности для хранения результата и аналитики
     fixed_optimizer_result_t result;
@@ -137,7 +137,7 @@ TEST_F(IdentIsothermalQSM, Friction)
     ident_settings.ident_friction = true;
 
     // Создаём класс для идентификации
-    ident_isothermal_qsm_pipe_parameters_t<sequential_policy> test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
+    ident_isothermal_qsm_pipe_parameters_t<quickest_cell_compute_mode::sequential> test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
 
     // Создаём сущности для хранения результата и аналитики
     fixed_optimizer_result_t result;
@@ -155,7 +155,7 @@ TEST_F(IdentIsothermalQSM, Friction)
 /// @param path_to_ident_results 
 void print_identification_result(
     const std::vector<double>& times,
-    ident_isothermal_qsm_pipe_parameters_t<sequential_policy>& test_ident,
+    ident_isothermal_qsm_pipe_parameters_t<quickest_cell_compute_mode::sequential>& test_ident,
     const fixed_optimizer_result_analysis_t& analysis,
     const std::string& path_to_ident_results
 ) 
@@ -207,7 +207,7 @@ TEST_F(IdentIsothermalQSM, DiameterWithPrint)
     ident_settings.ident_diameter = true;
 
     // Создаём класс для идентификации
-    ident_isothermal_qsm_pipe_parameters_t<sequential_policy> test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
+    ident_isothermal_qsm_pipe_parameters_t<quickest_cell_compute_mode::sequential> test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
 
     // Создаём сущности для хранения результата и аналитики
     fixed_optimizer_result_t result;
@@ -234,7 +234,7 @@ TEST_F(IdentIsothermalQSM, FrictionWithPrinter)
     ident_settings.ident_friction = true;
 
     // Создаём класс для идентификации
-    ident_isothermal_qsm_pipe_parameters_t<sequential_policy> test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
+    ident_isothermal_qsm_pipe_parameters_t<quickest_cell_compute_mode::sequential> test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
 
     // Создаём сущности для хранения результата и аналитики
     fixed_optimizer_result_t result;

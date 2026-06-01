@@ -1,4 +1,4 @@
-﻿#include <pde_solvers/pde_solvers.h>
+#include <pde_solvers/pde_solvers.h>
 
 #define GTEST_BREAK_ON_FAILURE 1
 #define GTEST_CATCH_EXCEPTIONS 0
@@ -14,6 +14,8 @@
 
 #include <time.h>
 #include <algorithm>
+#include <chrono>
+#include <thread>
 
 
 
@@ -59,6 +61,8 @@ inline std::string get_pipe_data_path(std::string pipe_name = "")
 using namespace pde_solvers;
 
 
+#include "../testing/utils/advection_solvers_helpers.h"
+#include "../research/2023-10-courant-spatial-profile/courant_spatial_profile.h"
 #include "../research/2023-12-diffusion-of-advection/diffusion_of_advection.h"
 #include "../research/2024-02-quick-with-quasistationary-model/quick_with_quasistationary_model.h"
 #include "../research/2024-08-quasistationary-with-real-data/quasistationary_with_real_data.h"
