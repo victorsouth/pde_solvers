@@ -242,20 +242,35 @@ TEST(MultiThreadedQuickestUltimate, IncreasesPerformance)
 
 TEST(OpenMP, Multithreading) {
     std::vector<double> data(500, 0.0);
-    for (int i = 0; i < 10e3; ++i) {
+    for (int i = 0; i < 10e5; ++i) {
         const auto n = static_cast<std::ptrdiff_t>(data.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(dynamic)
         for (std::ptrdiff_t cell = 0; cell < n; ++cell) {
             data[cell] = data[cell] + 1.0;
         }
     }
 }
 
-TEST(OpenMP, NoMultithreading) {
-    std::vector<double> data(500, 0.0);
-    for (int i = 0; i < 10e3; ++i) {
-        for (size_t cell = 0; cell < data.size(); ++cell) {
-            data[cell] = data[cell] + 1.0;
+TEST(OpenMP, Multithreading1) {
+    std::vector<Eigen::VectorXd> data(500, Eigen::VectorXd::Zero(2));
+    for (int i = 0; i < 10e5; ++i) {
+        const auto n = static_cast<std::ptrdiff_t>(data.size());
+#pragma omp parallel for schedule(dynamic)
+        for (std::ptrdiff_t cell = 0; cell < n; ++cell) {
+            data[cell](0) += 1.0;
+            data[cell](1) += 1.0;
+        }
+    }
+}
+
+
+TEST(OpenMP, NoMultithreading1) {
+    std::vector<Eigen::VectorXd> data(500, Eigen::VectorXd::Zero(2));
+    for (int i = 0; i < 10e5; ++i) {
+        const auto n = static_cast<std::ptrdiff_t>(data.size());
+        for (std::ptrdiff_t cell = 0; cell < n; ++cell) {
+            data[cell](0) += 1.0;
+            data[cell](1) += 1.0;
         }
     }
 }
