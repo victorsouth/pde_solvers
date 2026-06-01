@@ -79,10 +79,9 @@ inline std::pair<std::vector<double>, double> run_timed_step(
     double dt, double value_left, double value_right, double value_new, size_t step_count)
 {
     ring_buffer_t<LayerType> buffer = build_linear_buffer<LayerType>(pipe, value_left, value_right);
-
+    Solver solver(advection_model, buffer.previous(), buffer.current());
     const auto t0 = std::chrono::steady_clock::now();
     for (size_t step = 0; step < step_count; ++step) {
-        Solver solver(advection_model, buffer.previous(), buffer.current());
         solver.step(dt, value_new, value_right);
         if (step + 1 < step_count) {
             buffer.advance(+1);

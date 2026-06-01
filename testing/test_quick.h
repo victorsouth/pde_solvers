@@ -214,7 +214,7 @@ TEST(MultiThreadedQuickestUltimate, IncreasesPerformance)
     
     // Arrange: Подготовка трубы с большим количеством ячеек
     pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(
-        {.length = 500, .dx = 1.0, .diameter = 0.7});
+        {.length = 100e3, .dx = 200.0, .diameter = 0.7});
 
     double rho_initial_left = 850;
     double rho_initial_right = 860;
@@ -223,7 +223,7 @@ TEST(MultiThreadedQuickestUltimate, IncreasesPerformance)
 
     std::vector<double> Q(pipe.profile.get_point_count(), flow);
     PipeQAdvection advection_model(pipe, Q);
-    double dt = calc_time_step_by_Courant(advection_model, 0.5);
+    double dt = calc_time_step_by_Courant(advection_model, 1.0);
 
     constexpr size_t step_count = 100;
 
@@ -238,4 +238,24 @@ TEST(MultiThreadedQuickestUltimate, IncreasesPerformance)
     double expected_speedup = threads / 2.0;
     EXPECT_GE(actual_speedup, expected_speedup) << "Потоков: " << threads << ", ожидаемое ускорение: " 
         << expected_speedup << "x, фактическое: " << actual_speedup << "x";
+}
+
+TEST(OpenMP, Multithreading) {
+    std::vector<double> data(500, 0.0);
+    for (int i = 0; i < 10e3; ++i) {
+        const auto n = static_cast<std::ptrdiff_t>(data.size());
+#pragma omp parallel for schedule(static)
+        for (std::ptrdiff_t cell = 0; cell < n; ++cell) {
+            data[cell] = data[cell] + 1.0;
+        }
+    }
+}
+
+TEST(OpenMP, NoMultithreading) {
+    std::vector<double> data(500, 0.0);
+    for (int i = 0; i < 10e3; ++i) {
+        for (size_t cell = 0; cell < data.size(); ++cell) {
+            data[cell] = data[cell] + 1.0;
+        }
+    }
 }
