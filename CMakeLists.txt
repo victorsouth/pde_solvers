@@ -87,8 +87,7 @@ else()
 endif()
 target_link_libraries(${PROJECT_NAME} INTERFACE fixed_solvers::fixed_solvers Boost::headers TBB::tbb)
 if(MINGW)
-    # Сборка Windows через MSYS2 (Clang/GCC): в Debug oneTBB включает ITT-профилирование,
-    # заголовки которого не компилируются с __MINGW32__. Отключаем только его; TBB::parallel_for не затрагивается.
+    # Debug oneTBB: ITT-заголовки не собираются с __MINGW32__
     target_compile_definitions(${PROJECT_NAME} INTERFACE TBB_USE_PROFILING_TOOLS=0)
 endif()
 target_include_directories(${PROJECT_NAME}
@@ -150,6 +149,7 @@ if(PDE_SOLVERS_BUILD_TESTS)
         testing/utils/advection_solvers_helpers.h
         testing/test_quick.h
         testing/test_quick_conservativity.h
+        testing/test_quickest_parallel_benchmarks.h
         testing/test_static_pipe_solver.h
         testing/test_iso_nonbaro_hydro.h
         testing/test_iso_nonbaro_hydro_improver.h
@@ -164,7 +164,7 @@ if(PDE_SOLVERS_BUILD_TESTS)
     source_group("Source Files/Testing" FILES ${TESTS_SOURCES})
 
     add_executable(pde_tests  ${TESTS_SOURCES} ${TESTS_HEADERS})
-    target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
+    target_link_libraries(pde_tests PRIVATE pde_solvers::pde_solvers GTest::gtest)
     install(TARGETS pde_tests DESTINATION bin)
 
 

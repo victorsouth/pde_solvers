@@ -2,7 +2,9 @@
 #include <limits>
 #include <type_traits>
 
+#include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
+#include <tbb/partitioner.h>
 
 namespace pde_solvers {
 
@@ -14,20 +16,40 @@ enum class quickest_cell_compute_mode {
     parallel
 };
 
-/// @brief Обход ячеек с заданным режимом расчета QuickestMode
+/// @brief Обход ячеек с заданным режимом расчета QuickestMode (auto_partitioner)
 /// @tparam Body функция с сигнатурой void(size_t cell)
 template <quickest_cell_compute_mode QuickestMode, typename Body>
 inline void for_each_cell(size_t cell_count, Body&& body)
 {
     if constexpr (QuickestMode == quickest_cell_compute_mode::parallel) {
-        tbb::parallel_for(size_t(0), cell_count, [&](size_t cell) {
-            body(cell);
-        });
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, cell_count),
+            [&](const tbb::blocked_range<size_t>& r) {
+                for (size_t cell = r.begin(); cell < r.end(); ++cell)
+                    body(cell);
+            });
     }
     else {
-        for (size_t cell = 0; cell < cell_count; ++cell) {
+        for (size_t cell = 0; cell < cell_count; ++cell)
             body(cell);
-        }
+    }
+}
+
+/// @brief Обход ячеек с заданным режимом расчета и выбранным партиционером TBB
+/// @tparam Body функция с сигнатурой void(size_t cell)
+template <quickest_cell_compute_mode QuickestMode, typename Body, typename Partitioner>
+inline void for_each_cell(size_t cell_count, Body&& body, Partitioner& partitioner)
+{
+    if constexpr (QuickestMode == quickest_cell_compute_mode::parallel) {
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, cell_count),
+            [&](const tbb::blocked_range<size_t>& r) {
+                for (size_t cell = r.begin(); cell < r.end(); ++cell)
+                    body(cell);
+            },
+            partitioner);
+    }
+    else {
+        for (size_t cell = 0; cell < cell_count; ++cell)
+            body(cell);
     }
 }
 
@@ -563,14 +585,63 @@ public:
     /// @param dt Заданный период времени
     /// @param u_in Левое граничное условие
     /// @param u_out Правое граничное условие
-    void step(double dt, double u_in, double u_out) {
+    void step(double dt, double u_in, double u_out)
+    {
+        if constexpr (QuickestMode == quickest_cell_compute_mode::parallel) {
+            tbb::auto_partitioner partitioner;
+            step(dt, u_in, u_out, partitioner);
+        }
+        else {
+            step_impl(dt, u_in, u_out);
+        }
+    }
+
+    /// @brief Расчет шага с одним партиционером для циклов потоков и обновления U
+    template <typename Partitioner>
+    void step(double dt, double u_in, double u_out, Partitioner& partitioner)
+    {
+        step(dt, u_in, u_out, partitioner, partitioner);
+    }
+
+    /// @brief Расчет шага с раздельными партиционерами для цикла потоков и цикла обновления U
+    template <typename FluxPartitioner, typename UpdatePartitioner>
+    void step(double dt, double u_in, double u_out,
+        FluxPartitioner& flux_partitioner, UpdatePartitioner& update_partitioner)
+    {
+        step_impl(dt, u_in, u_out, flux_partitioner, update_partitioner);
+    }
+
+private:
+    void step_impl(double dt, double u_in, double u_out)
+    {
+        const size_t cell_count = prev_vars.size();
+        step_core(dt, u_in, u_out,
+            [&](auto&& body) { for_each_cell<QuickestMode>(cell_count, body); },
+            [&](auto&& body) { for_each_cell<QuickestMode>(cell_count, body); });
+    }
+
+    template <typename FluxPartitioner, typename UpdatePartitioner>
+    void step_impl(double dt, double u_in, double u_out,
+        FluxPartitioner& flux_partitioner, UpdatePartitioner& update_partitioner)
+    {
+        const size_t cell_count = prev_vars.size();
+        step_core(dt, u_in, u_out,
+            [&](auto&& body) { for_each_cell<QuickestMode>(cell_count, body, flux_partitioner); },
+            [&](auto&& body) { for_each_cell<QuickestMode>(cell_count, body, update_partitioner); });
+    }
+
+    template <typename ForFluxCells, typename ForUpdateCells>
+    void step_core(double dt, double u_in, double u_out,
+        ForFluxCells&& for_flux_cells, ForUpdateCells&& for_update_cells)
+    {
         auto& F = curr_spec.point_double[0]; // потоки на границах ячеек
         const auto& U = prev_vars;
         auto& U_new = curr_vars;
+        const size_t cell_count = U.size();
 
         // Расчет потоков на границе на основе граничных условий
         double v_in = pde.getEquationsCoeffs(0, U[0]);
-        double v_out = pde.getEquationsCoeffs(F.size() - 1, U[U.size() - 1]);
+        double v_out = pde.getEquationsCoeffs(F.size() - 1, U[cell_count - 1]);
         if (v_in >= 0) {
             F.front() = v_in * u_in;
         }
@@ -581,38 +652,40 @@ public:
         double v_pipe = pde.getEquationsCoeffs(0, U[0]);//не совсем корректно, скорость в ячейке берется из скорости на ее левой границе
         // Расчет потоков на границе по правилу QUICK
         if (v_pipe >= 0) {
-            for_each_cell<QuickestMode>(U.size(), [&](size_t cell) {
+            for_flux_cells([&](size_t cell) {
                 size_t right_border = cell + 1;
                 double Vb = v_pipe; // предположили, что скорость на границе во всех точках трубы одна и та же
                 double Ub;
-                if (cell == 0 || cell == U.size() - 1) {
+                if (cell == 0 || cell == cell_count - 1) {
                     // На границе считаем по донорской ячейке
                     Ub = U[cell];
                 }
                 else {
-                    Ub = quickest_ultimate_border_approximation(U[cell - 1], U[cell], U[cell + 1], 0, grid[cell + 1] - grid[cell], dt, v_pipe); // честный расчет
+                    Ub = quickest_ultimate_border_approximation(
+                        U[cell - 1], U[cell], U[cell + 1],
+                        0, grid[cell + 1] - grid[cell], dt, v_pipe);
                 }
                 F[right_border] = Ub * Vb;
             });
         }
         else {
-            for_each_cell<QuickestMode>(U.size(), [&](size_t cell) {
+            for_flux_cells([&](size_t cell) {
                 size_t left_border = cell;
                 double Vb = v_pipe; // предположили, что скорость на границе во всех точках трубы одна и та же
                 double Ub;
-                if (cell == 0 || cell == U.size() - 1) { // Первый приоритет, так как в случае единственной ячейки (короткая труба) 
-                    Ub = U[cell];           // следующее условие также True, но cell + 1 не существует 
+                if (cell == 0 || cell == cell_count - 1) { // Первый приоритет, так как в случае единственной ячейки (короткая труба)
+                    Ub = U[cell];           // следующее условие также True, но cell + 1 не существует
                 }
                 else {
-
-                    Ub = quickest_ultimate_border_approximation(U[cell + 1], U[cell], U[cell - 1], 0, grid[cell + 1] - grid[cell], dt, abs(v_pipe)); // честный расчет с abs для корректной работы с отрицательными скоростями
+                    Ub = quickest_ultimate_border_approximation(
+                        U[cell + 1], U[cell], U[cell - 1],
+                        0, grid[cell + 1] - grid[cell], dt, abs(v_pipe));
                 }
                 F[left_border] = Ub * Vb;
             });
-
         }
 
-        for_each_cell<QuickestMode>(U.size(), [&](size_t cell) {
+        for_update_cells([&](size_t cell) {
             double dx = grid[cell + 1] - grid[cell]; // ячейки обычно одинаковой длины, но мало ли..
 
             double v_cell = pde.getEquationsCoeffs(cell, U[cell]); // скорость в текущей ячейке
@@ -623,6 +696,8 @@ public:
             U_new[cell] = U[cell] + dt / dx * ((F[cell] - F[cell + 1])) + (dt * pde.getSourceTerm(cell, U[cell]));
         });
     }
+
+public:
 };
 
 /// @brief Солвер — QUICKEST-ULTIMATE (независимот от параллельного или последовательного режима расчета)
