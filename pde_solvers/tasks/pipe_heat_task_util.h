@@ -12,10 +12,16 @@ struct pipe_json_data {
     double x_start;
     /// @brief Координата конца трубы
     double x_end;
+    /// @brief Высотная отметка начала трубы
+    double z_start;
+    /// @brief Высотная отметка конца трубы
+    double z_end;
     /// @brief Параметры
     static pipe_json_data default_values() {
         pipe_json_data result;
         result.diameter = 1;
+        result.z_start = 0.0;
+        result.z_end = 0.0;
         return result;
     }
 };

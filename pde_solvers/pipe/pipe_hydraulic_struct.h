@@ -100,8 +100,8 @@ struct pipe_profile_t {
             double x = x_begin + dx * index;
             result.coordinates[index] = x;
 
-            double alpha = 1 - x / length;
-            double z = z_begin * alpha + z_end * (1 - alpha);
+            double t = (x - x_begin) / length;
+            double z = z_begin * (1.0 - t) + z_end * t;
             result.heights[index] = z;
         }
         return result;

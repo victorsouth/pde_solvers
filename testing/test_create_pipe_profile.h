@@ -157,3 +157,22 @@ TEST(UniformProfile, DISABLED_UseCaseSourceProfFromFile)
 	pipe_profile_t new_prof = pipe_profile_uniform::get_uniform_profile_from_csv(desired_dx, file_name);
 }
 
+/// @brief Проверяет линейный профиль высот при ненулевой начальной координате
+TEST(PipeProfileCreate, ReturnsEndpointHeights_WhenXBeginIsNonZero)
+{
+	// Arrange: участок не от нуля, отметки на концах заданы явно
+	double x_begin = 100.0;
+	double x_end = 1100.0;
+	double z_begin = 10.0;
+	double z_end = 60.0;
+
+	// Act: строим двухточечный линейный профиль
+	pipe_profile_t profile = pipe_profile_t::create(1, x_begin, x_end, z_begin, z_end, 10e6);
+
+	// Assert: высоты на концах совпадают с Z_start и Z_end
+	ASSERT_DOUBLE_EQ(profile.heights.front(), z_begin);
+	ASSERT_DOUBLE_EQ(profile.heights.back(), z_end);
+	ASSERT_DOUBLE_EQ(profile.coordinates.front(), x_begin);
+	ASSERT_DOUBLE_EQ(profile.coordinates.back(), x_end);
+}
+
