@@ -20,11 +20,24 @@ struct pipe_json_data {
     static pipe_json_data default_values() {
         pipe_json_data result;
         result.diameter = 1;
+        result.x_start = 0.0;
+        result.x_end = 0.0;
         result.z_start = 0.0;
         result.z_end = 0.0;
         return result;
     }
 };
+
+/// @brief Строит двухточечный линейный профиль трубы по JSON-параметрам
+/// @param json_data Параметры трубы из JSON
+/// @return Профиль с линейной интерполяцией высот между Z_start и Z_end
+inline pipe_profile_t create_linear_pipe_profile_from_json(const pipe_json_data& json_data)
+{
+    pipe_profile_t result = pipe_profile_t::create(
+        1, json_data.x_start, json_data.x_end,
+        json_data.z_start, json_data.z_end, default_pipe_profile_capacity);
+    return result;
+}
 
 /// @brief Нефть по умолчанию для тепловых задач
 inline oil_parameters_t get_noniso_default_oil()
