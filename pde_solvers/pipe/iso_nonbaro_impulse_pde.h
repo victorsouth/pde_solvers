@@ -42,7 +42,9 @@ struct iso_nonbaro_pipe_properties_t : public pipe_properties_t {
     iso_nonbaro_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
     {
         *this = iso_nonbaro_pipe_properties_t::default_values();
-        profile = create_linear_pipe_profile_from_json(json_data);
+        profile = pipe_profile_t::create(
+            1, json_data.x_start, json_data.x_end,
+            json_data.z_start, json_data.z_end, default_pipe_profile_capacity);
         wall.diameter = json_data.diameter;
     }
     /// @brief Объект со значениями по умолчанию
@@ -50,12 +52,8 @@ struct iso_nonbaro_pipe_properties_t : public pipe_properties_t {
         iso_nonbaro_pipe_properties_t result;
         double length = 5000;
         double dx = 200;
-        size_t segment_count = static_cast<size_t>(length / dx);
-        if (segment_count == 0) {
-            segment_count = 1;
-        }
-        result.profile = pipe_profile_t::create(
-            segment_count, 0.0, length, 0.0, 0.0, default_pipe_profile_capacity);
+        result.profile.coordinates =
+            pde_solvers::pipe_profile_uniform::generate_uniform_grid(0.0, length, dx);
         result.wall.diameter = 1;
         return result;
     }
@@ -276,12 +274,8 @@ struct iso_nonbaro_improver_pipe_properties_t : public pipe_properties_t {
         iso_nonbaro_improver_pipe_properties_t result;
         double length = 5000;
         double dx = 200;
-        size_t segment_count = static_cast<size_t>(length / dx);
-        if (segment_count == 0) {
-            segment_count = 1;
-        }
-        result.profile = pipe_profile_t::create(
-            segment_count, 0.0, length, 0.0, 0.0, default_pipe_profile_capacity);
+        result.profile.coordinates =
+            pde_solvers::pipe_profile_uniform::generate_uniform_grid(0.0, length, dx);
         result.wall.diameter = 1;
         result.kinematic_viscosity = 1e-7;
         result.improver.efficiency_formula = improver_efficiency_formula_t::polynomial;
@@ -294,7 +288,9 @@ struct iso_nonbaro_improver_pipe_properties_t : public pipe_properties_t {
     iso_nonbaro_improver_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
     {
         *this = iso_nonbaro_improver_pipe_properties_t::default_values();
-        profile = create_linear_pipe_profile_from_json(json_data);
+        profile = pipe_profile_t::create(
+            1, json_data.x_start, json_data.x_end,
+            json_data.z_start, json_data.z_end, default_pipe_profile_capacity);
         wall.diameter = json_data.diameter;
     }
 };
