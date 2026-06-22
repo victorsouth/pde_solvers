@@ -42,7 +42,9 @@ struct iso_nonbaro_pipe_properties_t : public pipe_properties_t {
     iso_nonbaro_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
     {
         *this = iso_nonbaro_pipe_properties_t::default_values();
-        profile.coordinates = { json_data.x_start, json_data.x_end };
+        profile = pipe_profile_t::create(
+            1, json_data.x_start, json_data.x_end,
+            json_data.z_start, json_data.z_end, default_pipe_profile_capacity);
         wall.diameter = json_data.diameter;
     }
     /// @brief Объект со значениями по умолчанию
@@ -52,19 +54,8 @@ struct iso_nonbaro_pipe_properties_t : public pipe_properties_t {
         double dx = 200;
         result.profile.coordinates =
             pde_solvers::pipe_profile_uniform::generate_uniform_grid(0.0, length, dx);
-        result.wall.diameter = 1;       
+        result.wall.diameter = 1;
         return result;
-    }
-    /// @brief Создает равномерный профиль трубы с заданным шагом
-    /// TODO: Метод одинаков для всех профилей. Убрать дублирование
-    /// @param desired_dx Желаемый шаг сетки, м
-    void make_uniform_profile(double desired_dx) {
-        profile.coordinates = pde_solvers::pipe_profile_uniform::generate_uniform_grid(
-            profile.coordinates.front(), profile.get_length(), desired_dx
-        );
-
-        // TODO: заменить на фактический профиль
-        profile.heights = std::vector<double>(profile.get_point_count());
     }
 };
 
@@ -297,20 +288,10 @@ struct iso_nonbaro_improver_pipe_properties_t : public pipe_properties_t {
     iso_nonbaro_improver_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
     {
         *this = iso_nonbaro_improver_pipe_properties_t::default_values();
-        profile.coordinates = { json_data.x_start, json_data.x_end };
+        profile = pipe_profile_t::create(
+            1, json_data.x_start, json_data.x_end,
+            json_data.z_start, json_data.z_end, default_pipe_profile_capacity);
         wall.diameter = json_data.diameter;
-    }
-
-    /// @brief Создает равномерный профиль трубы с заданным шагом
-    /// TODO: Метод одинаков для всех профилей. Убрать дублирование
-    /// @param desired_dx Желаемый шаг сетки, м
-    void make_uniform_profile(double desired_dx) {
-        profile.coordinates = pde_solvers::pipe_profile_uniform::generate_uniform_grid(
-            profile.coordinates.front(), profile.get_length(), desired_dx
-        );
-
-        // TODO: заменить на фактический профиль
-        profile.heights = std::vector<double>(profile.get_point_count());
     }
 };
 
