@@ -39,6 +39,9 @@ struct simple_pipe_properties {
     }
 };
 
+/// @brief Несущая способность профиля трубы по умолчанию, Па
+inline constexpr double default_pipe_profile_capacity = 10e6;
+
 /// @brief Сущность профиля трубы
 struct pipe_profile_t {
     /// @brief Координатные отметки, м
@@ -79,29 +82,35 @@ struct pipe_profile_t {
         return coordinates;
     }
     /// @brief Создает профиль с линейным уклоном по параметрам в начале и в конце
-    /// @param segment_count 
-    /// @param x_begin 
-    /// @param x_end 
-    /// @param z_begin 
-    /// @param z_end 
-    /// @param capacity 
-    /// @return 
+    /// @param segment_count Число сегментов между точками профиля
+    /// @param x_begin Координата начала участка, м
+    /// @param x_end Координата конца участка, м
+    /// @param z_begin Высотная отметка начала участка, м
+    /// @param z_end Высотная отметка конца участка, м
+    /// @param capacity Несущая способность профиля, Па
+    /// @return Профиль с линейной интерполяцией высот между концами участка
     static pipe_profile_t create(size_t segment_count,
         double x_begin, double x_end, double z_begin, double z_end,
         double capacity)
     {
+        if (segment_count == 0) {
+            throw std::invalid_argument("pipe_profile_t::create: segment_count must be positive");
+        }
+        double length = x_end - x_begin;
+        if (std::abs(length) < 1e-12) {
+            throw std::invalid_argument("pipe_profile_t::create: x_begin and x_end must differ");
+        }
         size_t n = segment_count + 1;
         pipe_profile_t result;
         result.coordinates = result.heights = std::vector<double>(n);
         result.capacity = std::vector<double>(n, capacity);
-        double length = x_end - x_begin;
         double dx = length / segment_count;
         for (size_t index = 0; index < n; ++index) {
             double x = x_begin + dx * index;
             result.coordinates[index] = x;
 
-            double alpha = 1 - x / length;
-            double z = z_begin * alpha + z_end * (1 - alpha);
+            double t = (x - x_begin) / length;
+            double z = z_begin * (1.0 - t) + z_end * t;
             result.heights[index] = z;
         }
         return result;
@@ -240,9 +249,9 @@ struct pipe_properties
     {
         pipe_properties<AdaptationParameters> pipe;
 
-        double Pcapacity = 10e6; // несущая способность
         size_t segment_count = simple.get_segment_count();
-        pipe.profile = pipe_profile_t::create(segment_count, 0, simple.length, 0, simple.elevation, Pcapacity);
+        pipe.profile = pipe_profile_t::create(
+            segment_count, 0, simple.length, 0, simple.elevation, default_pipe_profile_capacity);
         pipe.wall.equivalent_roughness = 0.0001;
 
         // это диаметр внутренний
@@ -251,6 +260,10 @@ struct pipe_properties
         pipe.wall.wallThickness = 0.01;
         return pipe;
     }
+
+    /// @brief Создает равномерный профиль трубы с заданным шагом
+    /// @param desired_dx Желаемый шаг сетки, м
+    void make_uniform_profile(double desired_dx);
 
 };
 
