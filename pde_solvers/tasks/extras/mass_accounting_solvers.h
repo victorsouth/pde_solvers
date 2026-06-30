@@ -28,8 +28,8 @@ struct iso_nonbaro_pipe_mass_accounting_properties_t : public iso_nonbaro_pipe_p
     /// @brief Конструктор из JSON данных и адаптации
     iso_nonbaro_pipe_mass_accounting_properties_t(
         const pde_solvers::pipe_json_data& json_data,
-        const pipe_json_adaptation_data& adapt)
-        : iso_nonbaro_pipe_properties_t(json_data, adapt)
+        const pipe_json_adaptation_data& json_adaptation)
+        : iso_nonbaro_pipe_properties_t(json_data, json_adaptation)
     {
     }
 };
@@ -136,8 +136,8 @@ struct iso_nonbaro_improver_pipe_mass_accounting_properties_t : public iso_nonba
     /// @brief Конструктор из JSON данных и адаптации
     iso_nonbaro_improver_pipe_mass_accounting_properties_t(
         const pde_solvers::pipe_json_data& json_data,
-        const pipe_json_adaptation_data& adapt)
-        : iso_nonbaro_improver_pipe_properties_t(json_data, adapt)
+        const pipe_json_adaptation_data& json_adaptation)
+        : iso_nonbaro_improver_pipe_properties_t(json_data, json_adaptation)
     {
     }
 };
