@@ -28,6 +28,39 @@ struct pipe_json_data {
     }
 };
 
+/// @brief Параметры адаптации трубы из JSON (аналог pipe_json_data)
+struct pipe_json_adaptation_data {
+    /// @brief Множитель к λ после формулы трения
+    double friction_multiplicator{ std::numeric_limits<double>::quiet_NaN() };
+    /// @brief Гидравлическая эффективность E
+    double hydraulic_effectiveness{ std::numeric_limits<double>::quiet_NaN() };
+    /// @brief Множитель эффективного диаметра
+    double diameter_multiplicator{ std::numeric_limits<double>::quiet_NaN() };
+    /// @brief Множитель теплоёмкости
+    double heat_capacity_multiplicator{ std::numeric_limits<double>::quiet_NaN() };
+    /// @brief Значения по умолчанию (все поля не заданы)
+    static pipe_json_adaptation_data default_values() {
+        pipe_json_adaptation_data result;
+        return result;
+    }
+};
+
+/// @brief Строит двухточечный линейный профиль трубы по JSON-параметрам
+inline pipe_profile_t create_linear_pipe_profile_from_json(const pipe_json_data& json_data)
+{
+    pipe_profile_t result = pipe_profile_t::create(
+        1, json_data.x_start, json_data.x_end,
+        json_data.z_start, json_data.z_end, default_pipe_profile_capacity);
+    return result;
+}
+
+inline adaptation_parameters::adaptation_parameters(const pipe_json_adaptation_data& json)
+{
+    friction = adaptation_multiplicator_or_default(json.friction_multiplicator);
+    diameter = adaptation_multiplicator_or_default(json.diameter_multiplicator);
+    heat_capacity = adaptation_multiplicator_or_default(json.heat_capacity_multiplicator);
+}
+
 /// @brief Нефть по умолчанию для тепловых задач
 inline oil_parameters_t get_noniso_default_oil()
 {

@@ -178,6 +178,18 @@ struct pipe_wall_model_t {
     }
 };
 
+/// @brief Возвращает множитель адаптации или 1, если поле не задано
+inline double adaptation_multiplicator_or_default(double json_value)
+{
+    if (std::isfinite(json_value)) {
+        return json_value;
+    }
+    double result = 1.0;
+    return result;
+}
+
+struct pipe_json_adaptation_data;
+
 /// @brief Параметры адаптации (в тепловых зонах есть еще!!)
 struct adaptation_parameters {
     /// @brief Адаптация трения для коррекции формулы Лямбды
@@ -186,6 +198,10 @@ struct adaptation_parameters {
     double diameter{ 1 };
     /// @brief Поправка на коэффициент теплообмена флюида
     double heat_capacity{ 1 };
+    /// @brief Конструктор по умолчанию
+    adaptation_parameters() = default;
+    /// @brief Конструктор из JSON-DTO адаптации трубы
+    explicit adaptation_parameters(const pipe_json_adaptation_data& json);
 };
 
 
