@@ -21,8 +21,15 @@ struct iso_nonbaro_pipe_mass_accounting_properties_t : public iso_nonbaro_pipe_p
     /// @brief Конструктор из JSON данных
     /// Подразумевается, что при загрузке параметров объекта поле calculate_mass берется из таска.
     /// Поэтому переиспользуем конструктор предка.
-    iso_nonbaro_pipe_mass_accounting_properties_t(const pde_solvers::pipe_json_data& json_data)
+    explicit iso_nonbaro_pipe_mass_accounting_properties_t(const pde_solvers::pipe_json_data& json_data)
         : iso_nonbaro_pipe_properties_t(json_data)
+    {
+    }
+    /// @brief Конструктор из JSON данных и адаптации
+    iso_nonbaro_pipe_mass_accounting_properties_t(
+        const pde_solvers::pipe_json_data& json_data,
+        const pipe_json_adaptation_data& adapt)
+        : iso_nonbaro_pipe_properties_t(json_data, adapt)
     {
     }
 };
@@ -122,8 +129,15 @@ struct iso_nonbaro_improver_pipe_mass_accounting_properties_t : public iso_nonba
     /// @brief Конструктор из JSON данных
     /// Подразумевается, что при загрузке параметров объекта поле calculate_mass берется из таска.
     /// Поэтому переиспользуем конструктор предка.
-    iso_nonbaro_improver_pipe_mass_accounting_properties_t(const pde_solvers::pipe_json_data& json_data)
+    explicit iso_nonbaro_improver_pipe_mass_accounting_properties_t(const pde_solvers::pipe_json_data& json_data)
         : iso_nonbaro_improver_pipe_properties_t(json_data)
+    {
+    }
+    /// @brief Конструктор из JSON данных и адаптации
+    iso_nonbaro_improver_pipe_mass_accounting_properties_t(
+        const pde_solvers::pipe_json_data& json_data,
+        const pipe_json_adaptation_data& adapt)
+        : iso_nonbaro_improver_pipe_properties_t(json_data, adapt)
     {
     }
 };
