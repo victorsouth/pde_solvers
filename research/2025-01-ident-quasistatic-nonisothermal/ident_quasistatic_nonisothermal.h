@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 
 /// @brief Тесты для расчёта на реальных данных
@@ -41,7 +41,7 @@ protected:
 TEST_F(IdentNonisothermalQSM, HTC) 
 {
     /// @brief Путь к реальным данным с Линейного участка трубопровода
-    const std::string data_path = "../research_out/data/";
+    const std::string data_path = get_pipe_data_path();
 
     // Подготавливаем модель трубопровода и параметры для идентификации 
     pipe_noniso_properties_t pipe = get_research_pipe_heatmodel(data_path);
