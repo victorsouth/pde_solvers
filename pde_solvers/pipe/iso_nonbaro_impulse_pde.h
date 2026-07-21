@@ -67,6 +67,8 @@ struct iso_nonbaro_pipe_endogenious_layer_t {
 /// @brief Свойства конденсатопровода
 /// Расширяет базовые свойства трубы добавлением кинематической вязкости
 struct iso_nonbaro_pipe_properties_t : public pipe_properties<adaptation_hydraulic_effectiveness> {
+    /// @brief Тип параметров адаптации, применяемых к трубе в ходе расчёта
+    using adaptation_parameters_type = adaptation_hydraulic_effectiveness;
     /// @brief Кинематическая вязкость, м²/с
     double kinematic_viscosity{1e-7};
     /// @brief Конструктор по умолчанию
@@ -308,6 +310,8 @@ struct improver_properties_t
 /// @brief Свойства конденсатопровода
 /// Расширяет базовые свойства трубы добавлением кинематической вязкости и свойствами присадки
 struct iso_nonbaro_improver_pipe_properties_t : public pipe_properties<adaptation_hydraulic_effectiveness> {
+    /// @brief Тип параметров адаптации, применяемых к трубе в ходе расчёта
+    using adaptation_parameters_type = adaptation_hydraulic_effectiveness;
     /// @brief Кинематическая вязкость, м²/с
     double kinematic_viscosity{std::numeric_limits<double>::quiet_NaN()};
     /// @brief Параметры присадки
