@@ -130,9 +130,8 @@ TEST_F(IdentIsothermalQSM, IdentifiesDiameterFromTelemetry)
     // Assert: проверка успешной сходимости, физического диапазона относительного диаметра и уменьшения невязок
     ASSERT_EQ(result.result_code, numerical_result_code_t::Converged);
     ASSERT_FALSE(std::isnan(result_d));
-    EXPECT_GE(result_d, 0.85);
-    EXPECT_LE(result_d, 1.05);
-    EXPECT_LT(final_residuals_norm, initial_residuals_norm);
+    ASSERT_NEAR(result_d, 0.99996, 0.99998);
+    ASSERT_LT(final_residuals_norm, initial_residuals_norm);
 }
 
 /// @brief Проверяет идентификацию коэффициента гидравлического сопротивления модели трубопровода по реальным данным СДКУ
@@ -161,8 +160,7 @@ TEST_F(IdentIsothermalQSM, IdentifiesFrictionFromTelemetry)
     // Assert: проверка успешной сходимости, физического диапазона поправки сопротивления и уменьшения невязок
     ASSERT_EQ(result.result_code, numerical_result_code_t::Converged);
     ASSERT_FALSE(std::isnan(result_friction));
-    EXPECT_GE(result_friction, 0.1);
-    EXPECT_LE(result_friction, 5.0);
+    ASSERT_NEAR(result_friction, 1.00019, 1e-4);
     EXPECT_LT(final_residuals_norm, initial_residuals_norm);
 }
 
