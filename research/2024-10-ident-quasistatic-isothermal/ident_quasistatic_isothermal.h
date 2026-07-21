@@ -6,7 +6,7 @@
 class IdentIsothermalQSM : public ::testing::Test {
 protected:
     /// @brief Путь к реальным данным с Линейного участка трубопровода
-    const std::string data_path = "../research/2024-08-quasistationary-with-real-data/data/";
+    const std::string data_path = research_source_dir().string() + "/2024-08-quasistationary-with-real-data/data/";
 
     /// @brief Создание модели трубопровода по реальным данным 
     /// @param path Путь к файлу с профилем реального ЛУ

@@ -45,6 +45,15 @@ struct pipe_json_adaptation_data {
     }
 };
 
+/// @brief Строит двухточечный линейный профиль трубы по JSON-параметрам
+inline pipe_profile_t create_linear_pipe_profile_from_json(const pipe_json_data& json_data)
+{
+    pipe_profile_t result = pipe_profile_t::create(
+        1, json_data.x_start, json_data.x_end,
+        json_data.z_start, json_data.z_end, default_pipe_profile_capacity);
+    return result;
+}
+
 inline adaptation_parameters::adaptation_parameters(const pipe_json_adaptation_data& json)
 {
     friction = adaptation_multiplicator_or_default(json.friction_multiplicator);

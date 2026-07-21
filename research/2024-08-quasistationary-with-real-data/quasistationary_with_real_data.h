@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 /// @brief Класс, содержащий функции для вывода
 /// профилей в файл в формате для плоттеров на Python
@@ -83,7 +83,7 @@ protected:
     // Временные ряды эталонных данных
     std::vector<std::pair<std::vector<time_t>, std::vector<double>>> etalon_tag_data;
     // Путь к реальным данным с трубопровода
-    std::string folder = "../research/2024-08-quasistationary-with-real-data/data/";
+    std::string folder = research_source_dir().string() + "/2024-08-quasistationary-with-real-data/data/";
 
     /// @brief Подготовка к расчету для семейства тестов
     virtual void SetUp() override {
