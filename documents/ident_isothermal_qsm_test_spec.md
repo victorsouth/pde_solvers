@@ -33,8 +33,16 @@
    - Для шероховатости $\theta_{\text{fric}}$: параметр конечен, результат проверяется строго через `ASSERT_NEAR(result_friction, 1.00019, 1e-4)`.
 3. **Уменьшение невязки (целевой функции)**:
    Норма невязок $\| r(\theta_{\text{final}}) \|$ должна быть строго меньше начальной нормы $\| r(\theta_{\text{initial}}) \|$.
-4. **Вывод отчётов (для Printer-тестов)**:
+4. **Синтетический эталон расчёта давления (`CalculatesSyntheticPressureEtalon`)**:
+   Текущий расчёт PQ-модели (прямой вызов `quasistatic_batch`, без обёртки идентификации) сравнивается с зафиксированным синтетическим эталоном $P_{\text{out}}^{\text{synthetic}}(t)$ из файла `synthetic_pout.csv`. Проверяется вхождение процентных невязок $\delta_i = \frac{|P_{\text{calc}} - P_{\text{synthetic}}|}{P_{\text{synthetic}}} \times 100\%$ в коридор безопасности:
+   - **MAPE (средняя процентная ошибка)**: $\le \mathbf{0.1\%}$ (допускаются улучшения модели).
+   - **Max PE (пиковая относительная ошибка)**: $\le \mathbf{0.5\%}$ (защита от регрессий).
+
+
+
+5. **Вывод отчётов (для Printer-тестов)**:
    Проверять факт физического создания CSV-файлов отчётов (`ident_diff_press.csv`) через `std::filesystem::exists`.
 
 ## 5. Область изменений
-Изменения затрагивают исследовательские тесты в `pde_solvers/research/2024-10-ident-quasistatic-isothermal/`. Производственные классы `ident_isothermal_qsm_pipe_parameters_t` и `fixed_optimize_gauss_newton` остаются неизменными.
+Изменения затрагивают исследовательские тесты в `pde_solvers/research/2024-10-ident-quasistatic-isothermal/` и спецификацию в `documents/ident-isothermal-qsm/`. Производственные классы `ident_isothermal_qsm_pipe_parameters_t` и `fixed_optimize_gauss_newton` остаются неизменными.
+
