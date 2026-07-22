@@ -1,4 +1,4 @@
-﻿#include <pde_solvers/pde_solvers.h>
+#include <pde_solvers/pde_solvers.h>
 
 #define GTEST_BREAK_ON_FAILURE 1
 #define GTEST_CATCH_EXCEPTIONS 0
@@ -15,7 +15,17 @@
 #include <time.h>
 #include <algorithm>
 
+/// @brief Путь к каталогу с исследованиями
+inline std::filesystem::path research_source_dir()
+{
+    return std::filesystem::path(__FILE__).parent_path();
+}
 
+/// @brief Путь к каталогу с результатами исследований
+inline std::filesystem::path research_out_dir()
+{
+    return std::filesystem::path(research_source_dir().string() + "_out");
+}
 
 inline std::string prepare_research_folder()
 {
@@ -23,20 +33,14 @@ inline std::string prepare_research_folder()
     std::string research_name = std::string(test_info->test_case_name());
     std::string case_name = std::string(test_info->name());
 
-    std::string path = std::string("../research_out/") + 
-        research_name + "/" + case_name + "/";
-    std::filesystem::create_directories(path);
-    return path;
+    std::filesystem::path p = research_out_dir() / research_name / case_name;
+    std::filesystem::create_directories(p);
+    return p.string() + "/";
 }
 
 inline std::string prepare_research_folder_for_qsm_model2()
 {
-    auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
-    std::string research_name = std::string(test_info->test_case_name());
-    std::string case_name = std::string(test_info->name());
-
-    std::string path = std::string("../research_out/") + research_name + "/" + case_name + "/";
-    std::filesystem::create_directories(path);
+    std::string path = prepare_research_folder();
     for (const auto& entry : std::filesystem::directory_iterator(path)) {
         std::filesystem::remove_all(entry.path());
     }
@@ -48,10 +52,11 @@ inline std::string prepare_research_folder_for_qsm_model2()
 /// @param pipe_name Стандартное название трубы (cold_lu, hot_lu, condensate_lu)
 inline std::string get_pipe_data_path(std::string pipe_name = "")
 {
-    std::string path =
-        std::string("../research_out/data/") +
-        pipe_name + "/";
-    return path;
+    std::filesystem::path p = research_out_dir() / "data";
+    if (!pipe_name.empty()) {
+        p = p / pipe_name;
+    }
+    return p.string() + "/";
 }
 
 
