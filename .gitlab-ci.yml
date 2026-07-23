@@ -185,3 +185,22 @@ pde_tests:
       - branches.txt
       - pipeline/pipeline_result
       - Libs
+
+ # Запуск быстрой выборки исследовательских тестов (research)
+pde_research_tests:
+  stage: Unit_Testing
+  tags:
+    - docker
+  image: $DOCKER_REGISTRY/$DOCKER_REPO/gcc_cmake_boost_eigen_gtest:latest
+  script:
+    - bash pipeline/pipeline_scripts/tests_start.sh GCC pde_research "--gtest_filter=CalcMassQSM.*:DiffusionOfAdvection.CompareQuickestAndQuickestUltimateDiffusion:DiffusionOfAdvection.CompareUpstreamDiffAndMOC"
+  needs: [GCC_build]
+  dependencies: [GCC_build]
+  allow_failure: false
+  artifacts:
+    expire_in: 1 week
+    when: always
+    paths:
+      - branches.txt
+      - pipeline/pipeline_result
+      - Libs
