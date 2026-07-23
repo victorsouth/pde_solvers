@@ -1,6 +1,9 @@
 #pragma once
 
 #include <Eigen/Sparse>
+#include <fstream>
+#include <iomanip>
+
 
 /// @brief Тесты для расчёта на реальных данных
 class IdentIsothermalQSM : public ::testing::Test {
@@ -102,48 +105,90 @@ protected:
 
         return std::make_tuple(std::move(times), std::move(control_data), std::move(etalon_pressure));
     }
+
+    /// @brief Считывает предпосчитанные синтетические эталонные данные из CSV-файла
+    static std::vector<double> load_synthetic_etalon(const std::string& folder_path)
+    {
+        std::string file_path = folder_path + "synthetic_pout.csv";
+        std::vector<double> result;
+
+        std::ifstream in(file_path);
+        if (!in.is_open()) {
+            throw std::runtime_error("Synthetic etalon file not found: " + file_path);
+        }
+
+        double val;
+        while (in >> val) {
+            result.push_back(val);
+        }
+
+        if (result.empty()) {
+            throw std::runtime_error("Synthetic etalon file is empty: " + file_path);
+        }
+
+        return result;
+    }
 };
 
-/// @brief Пример идентификации модели трубопровода по диаметру
-TEST_F(IdentIsothermalQSM, Diameter)
+
+/// @brief Проверяет идентификацию эффективного диаметра модели трубопровода по реальным данным СДКУ
+TEST_F(IdentIsothermalQSM, IdentifiesDiameterFromTelemetry)
 {
-    // Подготавливаем модель трубопровода и параметры для идентификации 
+    // Arrange: подготовка модели трубопровода, краевых условий и эталона СДКУ
     pipe_properties_t pipe = prepare_pipe(data_path);
     auto [times, control_data, etalon_pressure] = prepare_real_data(data_path);
 
-    // Выбираем в настройках параметр идентификации - диаметр
     ident_isothermal_qsm_pipe_settings ident_settings;
     ident_settings.ident_diameter = true;
 
-    // Создаём класс для идентификации
     ident_isothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
     
-    // Создаём сущности для хранения результата и аналитики
     fixed_optimizer_result_t result;
     fixed_optimizer_result_analysis_t analysis;
 
+    Eigen::VectorXd initial_arg = Eigen::VectorXd::Ones(1);
+    double initial_residuals_norm = test_ident.residuals(initial_arg).norm();
+
+    // Act: запуск идентификации по диаметру
     double result_d = test_ident.ident(&result, &analysis);
+
+    double final_residuals_norm = test_ident.residuals(result.argument).norm();
+
+    // Assert: проверка успешной сходимости, физического диапазона относительного диаметра и уменьшения невязок
+    ASSERT_EQ(result.result_code, numerical_result_code_t::Converged);
+    ASSERT_FALSE(std::isnan(result_d));
+    ASSERT_NEAR(result_d, 0.99996, 0.99998);
+    ASSERT_LT(final_residuals_norm, initial_residuals_norm);
 }
 
-/// @brief Пример идентификации модели трубопровода по коэффициенту гидравлического сопротивления
-TEST_F(IdentIsothermalQSM, Friction)
+/// @brief Проверяет идентификацию коэффициента гидравлического сопротивления модели трубопровода по реальным данным СДКУ
+TEST_F(IdentIsothermalQSM, IdentifiesFrictionFromTelemetry)
 {
-    // Подготавливаем модель трубопровода и параметры для идентификации 
+    // Arrange: подготовка модели трубопровода, краевых условий и эталона СДКУ
     pipe_properties_t pipe = prepare_pipe(data_path);
     auto [times, control_data, etalon_pressure] = prepare_real_data(data_path);
 
-    // Выбираем в настройках параметр идентификации - коэффициент гидравлического сопротивления
     ident_isothermal_qsm_pipe_settings ident_settings;
     ident_settings.ident_friction = true;
 
-    // Создаём класс для идентификации
     ident_isothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
 
-    // Создаём сущности для хранения результата и аналитики
     fixed_optimizer_result_t result;
     fixed_optimizer_result_analysis_t analysis;
 
-    double result_d = test_ident.ident(&result, &analysis);
+    Eigen::VectorXd initial_arg = Eigen::VectorXd::Ones(1);
+    double initial_residuals_norm = test_ident.residuals(initial_arg).norm();
+
+    // Act: запуск идентификации по гидравлическому сопротивлению
+    double result_friction = test_ident.ident(&result, &analysis);
+
+    double final_residuals_norm = test_ident.residuals(result.argument).norm();
+
+    // Assert: проверка успешной сходимости, физического диапазона поправки сопротивления и уменьшения невязок
+    ASSERT_EQ(result.result_code, numerical_result_code_t::Converged);
+    ASSERT_FALSE(std::isnan(result_friction));
+    ASSERT_NEAR(result_friction, 1.00019, 1e-4);
+    EXPECT_LT(final_residuals_norm, initial_residuals_norm);
 }
 
 /// @brief Функция вывода в csv историчности алгоритма идентификации,
@@ -195,57 +240,106 @@ void print_identification_result(
     }
 }
 
-/// @brief Пример идентификации модели трубопровода по диаметру c выводом результатов в файл
-TEST_F(IdentIsothermalQSM, DiameterWithPrint)
+/// @brief Проверяет идентификацию диаметра c сохранением невязок и истории оптимизации в файлы
+TEST_F(IdentIsothermalQSM, IdentifiesDiameterAndPrintsResults)
 {
-    // Подготавливаем модель трубопровода и параметры для идентификации 
+    // Arrange: подготовка модели трубопровода, краевых условий и эталона СДКУ
     pipe_properties_t pipe = prepare_pipe(data_path);
     auto [times, control_data, etalon_pressure] = prepare_real_data(data_path);
 
-    // Выбираем в настройках параметр идентификации - диаметр
     ident_isothermal_qsm_pipe_settings ident_settings;
     ident_settings.ident_diameter = true;
 
-    // Создаём класс для идентификации
     ident_isothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
 
-    // Создаём сущности для хранения результата и аналитики
     fixed_optimizer_result_t result;
     fixed_optimizer_result_analysis_t analysis;
 
+    Eigen::VectorXd initial_arg = Eigen::VectorXd::Ones(1);
+    double initial_residuals_norm = test_ident.residuals(initial_arg).norm();
+
+    // Act: проведение идентификации и вывод отчетов в файл
     double result_d = test_ident.ident(&result, &analysis);
 
-    // Создаём папку с результатами и получаем путь к ней
-    std::string path_to_ident_reults = prepare_research_folder_for_qsm_model();
+    std::string path_to_ident_results = prepare_research_folder_for_qsm_model2();
+    print_identification_result(times, test_ident, analysis, path_to_ident_results);
 
-    // Записываем результаты в cs
-    print_identification_result(times, test_ident, analysis, path_to_ident_reults);
+    double final_residuals_norm = test_ident.residuals(result.argument).norm();
+
+    // Assert: проверка успешной оптимизации и сохранения отчетов
+    ASSERT_EQ(result.result_code, numerical_result_code_t::Converged);
+    ASSERT_FALSE(std::isnan(result_d));
+    EXPECT_LT(final_residuals_norm, initial_residuals_norm);
+    EXPECT_TRUE(std::filesystem::exists(path_to_ident_results + "ident_diff_press.csv"));
 }
 
-/// @brief Пример идентификации модели трубопровода по коэффициенту гидравлического сопротивления
-TEST_F(IdentIsothermalQSM, FrictionWithPrinter)
+/// @brief Проверяет идентификацию коэффициента трения c сохранением невязок и истории оптимизации в файлы
+TEST_F(IdentIsothermalQSM, IdentifiesFrictionAndPrintsResults)
 {
-    // Подготавливаем модель трубопровода и параметры для идентификации 
+    // Arrange: подготовка модели трубопровода, краевых условий и эталона СДКУ
     pipe_properties_t pipe = prepare_pipe(data_path);
     auto [times, control_data, etalon_pressure] = prepare_real_data(data_path);
 
-    // Выбираем в настройках параметр идентификации - коэффициент гидравлического сопротивления
     ident_isothermal_qsm_pipe_settings ident_settings;
     ident_settings.ident_friction = true;
 
-    // Создаём класс для идентификации
     ident_isothermal_qsm_pipe_parameters_t test_ident(ident_settings, pipe, times, control_data, etalon_pressure);
 
-    // Создаём сущности для хранения результата и аналитики
     fixed_optimizer_result_t result;
     fixed_optimizer_result_analysis_t analysis;
 
-    double result_d = test_ident.ident(&result, &analysis);
+    Eigen::VectorXd initial_arg = Eigen::VectorXd::Ones(1);
+    double initial_residuals_norm = test_ident.residuals(initial_arg).norm();
 
-    // Создаём папку с результатами и получаем путь к ней
-    std::string path_to_ident_reults = prepare_research_folder_for_qsm_model();
+    // Act: проведение идентификации по трению и вывод отчетов в файл
+    double result_friction = test_ident.ident(&result, &analysis);
 
-    // Записываем результаты в csv
-    print_identification_result(times, test_ident, analysis, path_to_ident_reults);
+    std::string path_to_ident_results = prepare_research_folder_for_qsm_model2();
+    print_identification_result(times, test_ident, analysis, path_to_ident_results);
+
+    double final_residuals_norm = test_ident.residuals(result.argument).norm();
+
+    // Assert: проверка успешной оптимизации и сохранения отчетов
+    ASSERT_EQ(result.result_code, numerical_result_code_t::Converged);
+    ASSERT_FALSE(std::isnan(result_friction));
+    EXPECT_LT(final_residuals_norm, initial_residuals_norm);
+    EXPECT_TRUE(std::filesystem::exists(path_to_ident_results + "ident_diff_press.csv"));
 }
+
+/// @brief Проверяет эталонный расчёт давления PQ-модели на синтетических чистых данных реального объекта
+TEST_F(IdentIsothermalQSM, CalculatesSyntheticPressureEtalon)
+{
+    // Arrange: загрузка параметров реального объекта и синтетического эталона
+    pipe_properties_t pipe = prepare_pipe(data_path);
+    auto [times, control_data, real_scada_pout] = prepare_real_data(data_path);
+    std::vector<double> synthetic_etalon = load_synthetic_etalon(data_path);
+    ASSERT_EQ(synthetic_etalon.size(), times.size()) << "Synthetic etalon size mismatch";
+
+    // Act: прямой расчёт давления PQ-моделью (без обёртки идентификации)
+    isothermal_qsm_batch_Pout_collector_t collector(times);
+    isothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver> task(pipe);
+    quasistatic_batch(task, times, control_data, &collector);
+    const auto& calculated_pout = collector.get_pressure_out_calculated();
+
+    // Расчёт процентных невязок относительно синтетического эталона
+    Eigen::VectorXd calc_vec = Eigen::Map<const Eigen::VectorXd>(calculated_pout.data(), calculated_pout.size());
+    Eigen::VectorXd etalon_vec = Eigen::Map<const Eigen::VectorXd>(synthetic_etalon.data(), synthetic_etalon.size());
+    Eigen::VectorXd relative_errors = ((calc_vec - etalon_vec).array().abs() / etalon_vec.array()) * 100.0;
+    double mape = relative_errors.mean();
+    double max_pe = relative_errors.maxCoeff();
+
+    // Assert: коридор безопасности + диагностика при падении
+    ASSERT_FALSE(std::isnan(mape)) << "MAPE is NaN";
+    ASSERT_LE(mape, 0.1) << "MAPE=" << mape << "% exceeded 0.1% safety corridor";
+    ASSERT_LE(max_pe, 0.5) << "MaxPE=" << max_pe << "% exceeded 0.5% safety corridor";
+}
+
+
+
+
+
+
+
+
+
 
