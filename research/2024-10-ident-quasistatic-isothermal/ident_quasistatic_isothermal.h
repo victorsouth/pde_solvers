@@ -1,6 +1,9 @@
 #pragma once
 
 #include <Eigen/Sparse>
+#include <fstream>
+#include <iomanip>
+
 
 /// @brief Тесты для расчёта на реальных данных
 class IdentIsothermalQSM : public ::testing::Test {
@@ -102,7 +105,31 @@ protected:
 
         return std::make_tuple(std::move(times), std::move(control_data), std::move(etalon_pressure));
     }
+
+    /// @brief Считывает предпосчитанные синтетические эталонные данные из CSV-файла
+    static std::vector<double> load_synthetic_etalon(const std::string& folder_path)
+    {
+        std::string file_path = folder_path + "synthetic_pout.csv";
+        std::vector<double> result;
+
+        std::ifstream in(file_path);
+        if (!in.is_open()) {
+            throw std::runtime_error("Synthetic etalon file not found: " + file_path);
+        }
+
+        double val;
+        while (in >> val) {
+            result.push_back(val);
+        }
+
+        if (result.empty()) {
+            throw std::runtime_error("Synthetic etalon file is empty: " + file_path);
+        }
+
+        return result;
+    }
 };
+
 
 /// @brief Проверяет идентификацию эффективного диаметра модели трубопровода по реальным данным СДКУ
 TEST_F(IdentIsothermalQSM, IdentifiesDiameterFromTelemetry)
@@ -278,5 +305,41 @@ TEST_F(IdentIsothermalQSM, IdentifiesFrictionAndPrintsResults)
     EXPECT_LT(final_residuals_norm, initial_residuals_norm);
     EXPECT_TRUE(std::filesystem::exists(path_to_ident_results + "ident_diff_press.csv"));
 }
+
+/// @brief Проверяет эталонный расчёт давления PQ-модели на синтетических чистых данных реального объекта
+TEST_F(IdentIsothermalQSM, CalculatesSyntheticPressureEtalon)
+{
+    // Arrange: загрузка параметров реального объекта и синтетического эталона
+    pipe_properties_t pipe = prepare_pipe(data_path);
+    auto [times, control_data, real_scada_pout] = prepare_real_data(data_path);
+    std::vector<double> synthetic_etalon = load_synthetic_etalon(data_path);
+    ASSERT_EQ(synthetic_etalon.size(), times.size()) << "Synthetic etalon size mismatch";
+
+    // Act: прямой расчёт давления PQ-моделью (без обёртки идентификации)
+    isothermal_qsm_batch_Pout_collector_t collector(times);
+    isothermal_quasistatic_PQ_task_t<quickest_ultimate_fv_solver> task(pipe);
+    quasistatic_batch(task, times, control_data, &collector);
+    const auto& calculated_pout = collector.get_pressure_out_calculated();
+
+    // Расчёт процентных невязок относительно синтетического эталона
+    Eigen::VectorXd calc_vec = Eigen::Map<const Eigen::VectorXd>(calculated_pout.data(), calculated_pout.size());
+    Eigen::VectorXd etalon_vec = Eigen::Map<const Eigen::VectorXd>(synthetic_etalon.data(), synthetic_etalon.size());
+    Eigen::VectorXd relative_errors = ((calc_vec - etalon_vec).array().abs() / etalon_vec.array()) * 100.0;
+    double mape = relative_errors.mean();
+    double max_pe = relative_errors.maxCoeff();
+
+    // Assert: коридор безопасности + диагностика при падении
+    ASSERT_FALSE(std::isnan(mape)) << "MAPE is NaN";
+    ASSERT_LE(mape, 0.1) << "MAPE=" << mape << "% exceeded 0.1% safety corridor";
+    ASSERT_LE(max_pe, 0.5) << "MaxPE=" << max_pe << "% exceeded 0.5% safety corridor";
+}
+
+
+
+
+
+
+
+
 
 
