@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <pde_solvers/timeseries.h>
 #include <filesystem>
@@ -9,13 +9,15 @@ inline std::string prepare_research_folder_for_qsm_model(std::string dop_path = 
     std::string research_name = std::string(test_info->test_case_name());
     std::string case_name = std::string(test_info->name());
 
-    std::string path = std::string("../research_out/QSM_models/") +
-        research_name + "/" + case_name + "/" + dop_path + "/";
-    std::filesystem::create_directories(path);
-    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+    std::filesystem::path p = research_out_dir() / "QSM_models" / research_name / case_name;
+    if (!dop_path.empty()) {
+        p = p / dop_path;
+    }
+    std::filesystem::create_directories(p);
+    for (const auto& entry : std::filesystem::directory_iterator(p)) {
         std::filesystem::remove_all(entry.path());
     }
-    return path;
+    return p.string() + "/";
 }
 
 

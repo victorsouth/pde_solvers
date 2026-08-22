@@ -35,29 +35,30 @@ public:
     /// TODO: Не очень понятно, как это дружит с самотеками (вероятно, никак - там вообще нужен МГГ вместо МД)
     /// @return Массив из двух элементов: [dQ/dP_in, dQ/dP_out]
     virtual std::array<double, 2> hydro_solve_PP_jacobian(double pressure_input, double pressure_output)  {
-        // Вычисляем базовое решение - расход при заданных давлениях
-        double Q_base = hydro_solve_PP(pressure_input, pressure_output);
+    // Вычисляем базовое решение - расход при заданных давлениях
+    double Q_base = hydro_solve_PP(pressure_input, pressure_output);
 
-        // Малое приращение для численного дифференцирования (0.1% от расхода)
-        const double eps = std::max(1e-6, std::abs(Q_base) * 1e-3);
+    // Малое приращение для численного дифференцирования
+    double eps = numeric_derivative_delta(std::abs(Q_base), 1e-6);
 
-        // Вычисляем производную перепада давления по расходу dP/dQ
-        // Вычисляем давление на выходе при базовом и увеличенном расходе (PQ: solve_direction = +1)
-        double P_out_base = hydro_solve_QP(Q_base, pressure_input, +1);
-        double P_out_plus = hydro_solve_QP(Q_base + eps, pressure_input, +1);
+    // Вычисляем dP/dQ - (PQ: solve_direction = +1) 
+    // Намеренно сначала считаем при увеличенном расходе, чтобы в буфере
+    // оказалcя расход, соответствующий pressure_input и pressure_output
+    double P_out_plus = hydro_solve_QP(Q_base + eps, pressure_input, +1);
+    double P_out_base = hydro_solve_QP(Q_base, pressure_input, +1);
 
-        // Производная давления на выходе по расходу: dP_out/dQ
-        double dP_out_dQ = (P_out_plus - P_out_base) / eps;
+    // Производная давления на выходе по расходу: dP_out/dQ
+    double dP_out_dQ = (P_out_plus - P_out_base) / eps;
 
-        // Производная перепада давления по расходу: dP/dQ = -dP_out/dQ
-        double dP_dQ = -dP_out_dQ;
+    // Производная перепада давления по расходу: dP/dQ = -dP_out/dQ
+    double dP_dQ = -dP_out_dQ;
 
-        // Используем формулу переворота производной:
-        double dQ_dP_in = 1.0 / dP_dQ;
-        double dQ_dP_out = -1.0 / dP_dQ;
+    // Используем формулу переворота производной:
+    double dQ_dP_in = 1.0 / dP_dQ;
+    double dQ_dP_out = -1.0 / dP_dQ;
 
-        return { dQ_dP_in, dQ_dP_out };
-    }
+    return { dQ_dP_in, dQ_dP_out };
+}
 };
 
 /// @brief Объединенный интерфейс для совмещенных солвером (умеют выполнять транспортный и гидравлический расчеты)

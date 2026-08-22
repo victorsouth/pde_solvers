@@ -29,9 +29,12 @@ inline std::string get_test_string() {
 /// Возвращает путь к созданной папке
 inline std::string prepare_test_folder()
 {
-    std::string path = std::string("../testing_out/") + get_test_string() + "/";
-    std::filesystem::create_directories(path);
-    return path;
+    std::filesystem::path p(__FILE__);
+    p = p.parent_path();
+    p = p.string() + "_out";
+    p = p / get_test_string();
+    std::filesystem::create_directories(p);
+    return p.string() + "/";
 }
 
 using namespace pde_solvers;
@@ -46,6 +49,8 @@ using namespace pde_solvers;
 #include "test_condensate_pipe_PP.h"
 #include "test_static_pipe_solver.h"
 #include "test_iso_nonbaro_hydro.h"
+#include "test_iso_nonbaro_hydro_improver.h"
+#include "extras/test_mass_accounting.h"
 #include "test_timeseries.h"
 #include "test_advection_moc_solver.h"
 #include "test_synthetic_timeseries.h"

@@ -351,6 +351,11 @@ inline pipe_profile_t create_uniform_profile(const pipe_profile_t& source_profil
     return pipe_profile_uniform::create_uniform_profile(source_profile, desired_uniform_segment);
 }
 
+template <typename AdaptationParameters>
+void pipe_properties<AdaptationParameters>::make_uniform_profile(double desired_dx)
+{
+    profile = pipe_profile_uniform::create_uniform_profile(profile, desired_dx);
+}
 
 /// @brief Вывод профиля в файл
 /// @param coord_heights вектор, первый элемент которого сетка координат, а второй - соответствующие высотные отметки

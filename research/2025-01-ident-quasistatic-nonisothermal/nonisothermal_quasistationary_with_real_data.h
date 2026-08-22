@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 /// @brief Класс, содержащий функции для вывода
 /// профилей в файл в формате для плоттеров на Python
@@ -198,7 +198,7 @@ protected:
     // Временные ряды эталонных данных давления
     std::vector<std::pair<std::vector<time_t>, std::vector<double>>> etalon_tag_data;
     // Путь к реальным данным с трубопровода
-    std::string folder = "../research_out/data/";
+    std::string folder = get_pipe_data_path();
 
     /// @brief Подготовка к расчету для семейства тестов
     virtual void SetUp() override {

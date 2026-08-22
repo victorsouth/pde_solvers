@@ -3,6 +3,46 @@
 namespace pde_solvers {
 ;
 
+/// @brief Специфические параметры адаптации для изотермической небаротропной модели
+struct adaptation_hydraulic_effectiveness {
+    /// @brief Гидравлическая эффективность E
+    double hydraulic_effectiveness{ 1.0 };
+public:
+    /// @brief Конструктор по умолчанию
+    adaptation_hydraulic_effectiveness() = default;
+    /// @brief Конструктор из JSON-DTO адаптации трубы
+    explicit adaptation_hydraulic_effectiveness(const pipe_json_adaptation_data& json) {
+        if (std::isfinite(json.friction_multiplicator)
+            || std::isfinite(json.diameter_multiplicator)
+            || std::isfinite(json.heat_capacity_multiplicator)) 
+        {
+            // Заданы неподдерживаемые параметры адаптации
+            throw std::runtime_error(
+                "pipe adaptation field is not supported for iso_nonbaro pipe");
+        }
+        
+        // Если не задан параметр адаптации, то используем значение по умолчанию
+        if (!std::isfinite(json.hydraulic_effectiveness)) {
+            hydraulic_effectiveness = 1.0;
+            return;
+        }
+        
+        // Если параметр задан, то должен удовлетворять ограничениям
+        if (json.hydraulic_effectiveness <= 1e-12) {
+            throw std::runtime_error(
+                "hydraulic_effectiveness must be finite and positive for iso_nonbaro pipe");
+        }
+
+        hydraulic_effectiveness = json.hydraulic_effectiveness;
+    }
+public:
+    /// @brief Записывает поправку на трение в модель стенки трубы
+    void apply(pipe_wall_model_t& wall) const {
+        wall.resistance_function_adaptation =
+            1.0 / (hydraulic_effectiveness * hydraulic_effectiveness);
+    }
+};
+
 /// @brief Профиль эндогенных параметров для небаротропной трубы (переменная только плотность по длине)
 struct iso_nonbaro_pipe_endogenious_layer_t {
     /// @brief Профиль плотности с достоверностью
@@ -32,18 +72,28 @@ struct iso_nonbaro_pipe_endogenious_layer_t {
 
 /// @brief Свойства конденсатопровода
 /// Расширяет базовые свойства трубы добавлением кинематической вязкости
-struct iso_nonbaro_pipe_properties_t : public pipe_properties_t {
+struct iso_nonbaro_pipe_properties_t : public pipe_properties<adaptation_hydraulic_effectiveness> {
+    /// @brief Тип параметров адаптации, применяемых к трубе в ходе расчёта
+    using adaptation_parameters_type = adaptation_hydraulic_effectiveness;
     /// @brief Кинематическая вязкость, м²/с
     double kinematic_viscosity{1e-7};
     /// @brief Конструктор по умолчанию
     iso_nonbaro_pipe_properties_t() = default;
     /// @brief Конструктор из JSON данных
-    /// @param json_data Данные о трубе в формате JSON
-    iso_nonbaro_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
+    explicit iso_nonbaro_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
     {
         *this = iso_nonbaro_pipe_properties_t::default_values();
-        profile.coordinates = { json_data.x_start, json_data.x_end };
+        profile = create_linear_pipe_profile_from_json(json_data);
         wall.diameter = json_data.diameter;
+    }
+    /// @brief Конструктор из JSON данных и адаптации
+    iso_nonbaro_pipe_properties_t(
+        const pde_solvers::pipe_json_data& json_data,
+        const pipe_json_adaptation_data& json_adaptation)
+        : iso_nonbaro_pipe_properties_t(json_data)
+    {
+        adaptation = adaptation_hydraulic_effectiveness(json_adaptation);
+        adaptation.apply(wall);
     }
     /// @brief Объект со значениями по умолчанию
     static iso_nonbaro_pipe_properties_t default_values() {
@@ -52,19 +102,8 @@ struct iso_nonbaro_pipe_properties_t : public pipe_properties_t {
         double dx = 200;
         result.profile.coordinates =
             pde_solvers::pipe_profile_uniform::generate_uniform_grid(0.0, length, dx);
-        result.wall.diameter = 1;       
+        result.wall.diameter = 1;
         return result;
-    }
-    /// @brief Создает равномерный профиль трубы с заданным шагом
-    /// TODO: Метод одинаков для всех профилей. Убрать дублирование
-    /// @param desired_dx Желаемый шаг сетки, м
-    void make_uniform_profile(double desired_dx) {
-        profile.coordinates = pde_solvers::pipe_profile_uniform::generate_uniform_grid(
-            profile.coordinates.front(), profile.get_length(), desired_dx
-        );
-
-        // TODO: заменить на фактический профиль
-        profile.heights = std::vector<double>(profile.get_point_count());
     }
 };
 
@@ -190,6 +229,15 @@ struct improver_properties_t
     std::vector<double> coeffs;
     /// @brief формула расчета эффективности присадки
     improver_efficiency_formula_t efficiency_formula;
+
+    /// @brief Значения по умолчанию для параметров присадки
+    static improver_properties_t default_values()
+    {
+        improver_properties_t result;
+        result.efficiency_formula = improver_efficiency_formula_t::polynomial;
+        result.coeffs = { 0.0 };
+        return result;
+    }
     
     /// @brief расчет эффективности присадки с учетом заданного типа efficiency_formula
     double drag_reduction_effectiveness(double concentration) const
@@ -260,7 +308,9 @@ struct improver_properties_t
 
 /// @brief Свойства конденсатопровода
 /// Расширяет базовые свойства трубы добавлением кинематической вязкости и свойствами присадки
-struct iso_nonbaro_improver_pipe_properties_t : public pipe_properties_t {
+struct iso_nonbaro_improver_pipe_properties_t : public pipe_properties<adaptation_hydraulic_effectiveness> {
+    /// @brief Тип параметров адаптации, применяемых к трубе в ходе расчёта
+    using adaptation_parameters_type = adaptation_hydraulic_effectiveness;
     /// @brief Кинематическая вязкость, м²/с
     double kinematic_viscosity{std::numeric_limits<double>::quiet_NaN()};
     /// @brief Параметры присадки
@@ -271,26 +321,34 @@ struct iso_nonbaro_improver_pipe_properties_t : public pipe_properties_t {
 
     /// @brief Объект со значениями по умолчанию
     static iso_nonbaro_improver_pipe_properties_t default_values() {
-        throw std::runtime_error("not implemented");
+        iso_nonbaro_improver_pipe_properties_t result;
+        double length = 5000;
+        double dx = 200;
+        result.profile.coordinates =
+            pde_solvers::pipe_profile_uniform::generate_uniform_grid(0.0, length, dx);
+        result.wall.diameter = 1;
+        result.kinematic_viscosity = 1e-7;
+        result.improver.efficiency_formula = improver_efficiency_formula_t::polynomial;
+        result.improver.coeffs = { 0.0 };
+        return result;
     }
 
     /// @brief Конструктор из JSON данных
     /// @param json_data Данные о трубе в формате JSON
-    iso_nonbaro_improver_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
+    explicit iso_nonbaro_improver_pipe_properties_t(const pde_solvers::pipe_json_data& json_data)
     {
-        throw std::runtime_error("not implemented");
+        *this = iso_nonbaro_improver_pipe_properties_t::default_values();
+        profile = create_linear_pipe_profile_from_json(json_data);
+        wall.diameter = json_data.diameter;
     }
-
-    /// @brief Создает равномерный профиль трубы с заданным шагом
-    /// TODO: Метод одинаков для всех профилей. Убрать дублирование
-    /// @param desired_dx Желаемый шаг сетки, м
-    void make_uniform_profile(double desired_dx) {
-        profile.coordinates = pde_solvers::pipe_profile_uniform::generate_uniform_grid(
-            profile.coordinates.front(), profile.get_length(), desired_dx
-        );
-
-        // TODO: заменить на фактический профиль
-        profile.heights = std::vector<double>(profile.get_point_count());
+    /// @brief Конструктор из JSON данных и адаптации
+    iso_nonbaro_improver_pipe_properties_t(
+        const pde_solvers::pipe_json_data& json_data,
+        const pipe_json_adaptation_data& json_adaptation)
+        : iso_nonbaro_improver_pipe_properties_t(json_data)
+    {
+        adaptation = adaptation_hydraulic_effectiveness(json_adaptation);
+        adaptation.apply(wall);
     }
 };
 

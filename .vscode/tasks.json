@@ -2,26 +2,86 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "CMake: Build",
+            "label": "CMake: Build windows-msvc-debug",
             "type": "shell",
             "command": "cmake",
             "args": [
                 "--build",
                 "--preset",
-                "GCC 15.2.0 x86_64-w64-mingw32"
+                "windows-msvc-debug"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated"
-            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake: Build windows-gcc-debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "windows-gcc-debug"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "CMake: Build windows-clang-debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "windows-clang-debug"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "CMake: Build linux-gcc-debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "linux-gcc-debug"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "CMake: Build linux-clang-debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "linux-clang-debug"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "CMake: Build macos-clang-debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "macos-clang-debug"
+            ],
+            "group": "build",
             "problemMatcher": [
                 "$gcc"
             ]
         }
     ]
 }
-
