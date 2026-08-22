@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
+if(POLICY CMP0091)
+    cmake_policy(SET CMP0091 NEW)
+endif()
 # header only library
 # for install, dependencies and correct include path
 project(pde_solvers)
@@ -8,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(MSVC)
     add_compile_options("/MP")     # включает многопроцессорную компиляцию
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
 if(MINGW)
     add_compile_options("-Wa,-mbig-obj")
@@ -51,7 +55,9 @@ set(HEADERS_SOLVERS
     pde_solvers/solvers/ode_solver.h
     pde_solvers/solvers/quick_solver.h
 )
-file(GLOB HEADERS_TASKS pde_solvers/tasks/* )
+file(GLOB_RECURSE HEADERS_TASKS pde_solvers/tasks/* )
+file(GLOB_RECURSE HEADERS_TASKS_EXTRAS pde_solvers/tasks/extras/*)
+list(REMOVE_ITEM HEADERS_TASKS ${HEADERS_TASKS_EXTRAS})
 
 set(HEADERS_TIME
     pde_solvers/timeseries/csv_readers.h
@@ -68,11 +74,12 @@ source_group("Header Files/Core" FILES ${HEADERS_CORE})
 source_group("Header Files/Pipe" FILES ${HEADERS_PIPE})
 source_group("Header Files/Solvers" FILES ${HEADERS_SOLVERS})
 source_group("Header Files/Tasks" FILES ${HEADERS_TASKS})
+source_group("Header Files/Tasks/Extras" FILES ${HEADERS_TASKS_EXTRAS})
 source_group("Header Files/Timeseries" FILES ${HEADERS_TIME})
 
 
 if("3.19.0" VERSION_LESS ${CMAKE_VERSION})
-    add_library(${PROJECT_NAME} INTERFACE ${HEADERS} ${HEADERS_CORE} ${HEADERS_PIPE} ${HEADERS_SOLVERS} ${HEADERS_TIME} ${HEADERS_TASKS})
+    add_library(${PROJECT_NAME} INTERFACE ${HEADERS} ${HEADERS_CORE} ${HEADERS_PIPE} ${HEADERS_SOLVERS} ${HEADERS_TIME} ${HEADERS_TASKS} ${HEADERS_TASKS_EXTRAS})
 else()
     add_library(${PROJECT_NAME} INTERFACE)
 endif()
@@ -117,6 +124,7 @@ install(FILES ${HEADERS_PIPE} DESTINATION include/pde_solvers/pipe)
 install(FILES ${HEADERS_SOLVERS} DESTINATION include/pde_solvers/solvers)
 install(FILES ${HEADERS_TIME} DESTINATION include/pde_solvers/timeseries)
 install(FILES ${HEADERS_TASKS} DESTINATION include/pde_solvers/tasks)
+install(FILES ${HEADERS_TASKS_EXTRAS} DESTINATION include/pde_solvers/tasks/extras)
 endif()
 
 option(PDE_SOLVERS_BUILD_TESTS "" ON)
@@ -136,6 +144,8 @@ if(PDE_SOLVERS_BUILD_TESTS)
         testing/test_quick_conservativity.h
         testing/test_static_pipe_solver.h
         testing/test_iso_nonbaro_hydro.h
+        testing/test_iso_nonbaro_hydro_improver.h
+        testing/extras/test_mass_accounting.h
         testing/test_timeseries.h
     )
     set(TESTS_SOURCES
@@ -147,7 +157,7 @@ if(PDE_SOLVERS_BUILD_TESTS)
 
     add_executable(pde_tests  ${TESTS_SOURCES} ${TESTS_HEADERS})
     target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
-	install(TARGETS pde_tests DESTINATION bin)
+    install(TARGETS pde_tests DESTINATION bin)
 
 
     set(RESEARCH_HEADERS
@@ -168,7 +178,9 @@ if(PDE_SOLVERS_BUILD_TESTS)
 
     add_executable(pde_research ${RESEARCH_SOURCES} ${RESEARCH_HEADERS})
     target_link_libraries(pde_research pde_solvers::pde_solvers GTest::gtest)
+    install(TARGETS pde_research DESTINATION bin)
 
 
 
 endif()
+

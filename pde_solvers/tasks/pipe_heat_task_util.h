@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 namespace pde_solvers {
 ;
@@ -12,13 +12,54 @@ struct pipe_json_data {
     double x_start;
     /// @brief Координата конца трубы
     double x_end;
+    /// @brief Высотная отметка начала трубы
+    double z_start;
+    /// @brief Высотная отметка конца трубы
+    double z_end;
     /// @brief Параметры
     static pipe_json_data default_values() {
         pipe_json_data result;
         result.diameter = 1;
+        result.x_start = 0.0;
+        result.x_end = 1000.0;
+        result.z_start = 0.0;
+        result.z_end = 0.0;
         return result;
     }
 };
+
+/// @brief Параметры адаптации трубы из JSON (аналог pipe_json_data)
+struct pipe_json_adaptation_data {
+    /// @brief Множитель к λ после формулы трения
+    double friction_multiplicator{ std::numeric_limits<double>::quiet_NaN() };
+    /// @brief Гидравлическая эффективность E
+    double hydraulic_effectiveness{ std::numeric_limits<double>::quiet_NaN() };
+    /// @brief Множитель эффективного диаметра
+    double diameter_multiplicator{ std::numeric_limits<double>::quiet_NaN() };
+    /// @brief Множитель теплоёмкости
+    double heat_capacity_multiplicator{ std::numeric_limits<double>::quiet_NaN() };
+    /// @brief Значения по умолчанию (все поля не заданы)
+    static pipe_json_adaptation_data default_values() {
+        pipe_json_adaptation_data result;
+        return result;
+    }
+};
+
+/// @brief Строит двухточечный линейный профиль трубы по JSON-параметрам
+inline pipe_profile_t create_linear_pipe_profile_from_json(const pipe_json_data& json_data)
+{
+    pipe_profile_t result = pipe_profile_t::create(
+        1, json_data.x_start, json_data.x_end,
+        json_data.z_start, json_data.z_end, default_pipe_profile_capacity);
+    return result;
+}
+
+inline adaptation_parameters::adaptation_parameters(const pipe_json_adaptation_data& json)
+{
+    friction = adaptation_multiplicator_or_default(json.friction_multiplicator);
+    diameter = adaptation_multiplicator_or_default(json.diameter_multiplicator);
+    heat_capacity = adaptation_multiplicator_or_default(json.heat_capacity_multiplicator);
+}
 
 /// @brief Нефть по умолчанию для тепловых задач
 inline oil_parameters_t get_noniso_default_oil()
@@ -87,7 +128,7 @@ inline pipe_noniso_properties_t  get_noniso_default_pipe(double length = 12000, 
 /// @brief Зонированный трубопровод для тепловых задач с равной длиной участков с разным грунтом
 inline zoned_pipe_properties get_zoned_pipe(
     const simple_pipe_properties& spipe,
-    const std::vector<thermophysical_properties_t>& soils,
+    const std::vector<thermophysical_properties_t>& soil_layers,
     HeatModelVer model_version = HeatModelVer::V2)
 {
     zoned_pipe_properties pipe;
@@ -112,15 +153,15 @@ inline zoned_pipe_properties get_zoned_pipe(
     int sensor_count = std::max(2, static_cast<int>(spipe.length / sensor_step + 0.5) + 1);
     sensor_count -= 2; // датчики на границах будут в любом случае
     std::vector<double> sensor_coordinates(sensor_count);
-    for (size_t index = 0; index < sensor_coordinates.size(); ++index) {
-        sensor_coordinates[index] = sensor_step * (index + 1);
+    for (size_t sensor_idx = 0; sensor_idx < sensor_coordinates.size(); ++sensor_idx) {
+        sensor_coordinates[sensor_idx] = sensor_step * (sensor_idx + 1);
     }
     pipe.init_pressure_sensors(sensor_coordinates);
 
-    for (const auto& soil : soils) {
+    for (const auto& soil : soil_layers) {
         primary_heat_zone_parameters_t zone;
         zone.coordinate_begin = index;
-        index += n / soils.size();
+        index += n / soil_layers.size();
 
         // Толщина стенки, слоев изоляции и защитного слоя, м
         // первый слой изоляции, второй слой изоляции, защитный слой
@@ -144,7 +185,7 @@ inline zoned_pipe_properties get_zoned_pipe(
 
 /// @brief Зонированный трубопровод для тепловых задач с равной длиной участков с разным грунтом
 inline zoned_pipe_properties get_zoned_pipe(
-    const std::vector<thermophysical_properties_t>& soils,
+    const std::vector<thermophysical_properties_t>& soil_layers,
     HeatModelVer model_version = HeatModelVer::V2,
     double length = 12000, double dx = 1000, double diameter = 0.7)
 {
@@ -154,7 +195,7 @@ inline zoned_pipe_properties get_zoned_pipe(
     spipe.length = length;
     spipe.dx = dx;
 
-    return get_zoned_pipe(spipe, soils, model_version);
+    return get_zoned_pipe(spipe, soil_layers, model_version);
 }
 
 }

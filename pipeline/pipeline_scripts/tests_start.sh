@@ -6,6 +6,7 @@ RES_DIR="${SCRIPT_DIR}/../pipeline_result/tests_out"
 mkdir -p ${RES_DIR}
 cd "${SCRIPT_DIR}/../../Libs/${1}/bin/"
 TEST_NAME="$2"
+TEST_ARGS="${3:-}"
 
 if [ ! -f "./$TEST_NAME" ]; then
     echo "--------------- FAIL ---------------"
@@ -14,7 +15,7 @@ if [ ! -f "./$TEST_NAME" ]; then
     exit 1
 fi
 
-./${TEST_NAME} --gtest_output=xml:${RES_DIR}/${TEST_NAME}_out.xml > ${RES_DIR}/${TEST_NAME}_out.txt 2>&1
+./${TEST_NAME} ${TEST_ARGS} --gtest_output=xml:${RES_DIR}/${TEST_NAME}_out.xml > ${RES_DIR}/${TEST_NAME}_out.txt 2>&1
 TEST_RETURN=$?
 
 # Проверка на наличие сообщений об аварийном завершении
@@ -36,7 +37,7 @@ if [[ -n "$failed_tests" || -n "$CRASH_ERRORS" || $TEST_RETURN -ne 0 || "$GLOBAL
     fi
 	echo "------------------------------------------------------"
     echo "--------------- List of tests ---------------"
-    ./${TEST_NAME} --gtest_list_tests
+    ./${TEST_NAME} ${TEST_ARGS} --gtest_list_tests
     echo "-------------------------------------------"
     exit 1
 else
@@ -44,6 +45,6 @@ else
     tac ${RES_DIR}/${TEST_NAME}_out.txt | awk '/\[----------\] Global test environment tear-down/{exit} 1' | tac
     echo "-------------------------------------------"
     echo "--------------- List of tests ---------------"
-    ./${TEST_NAME} --gtest_list_tests
+    ./${TEST_NAME} ${TEST_ARGS} --gtest_list_tests
     echo "-------------------------------------------"
 fi

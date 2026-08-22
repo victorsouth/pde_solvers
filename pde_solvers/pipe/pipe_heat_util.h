@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 namespace pde_solvers {
 ;
@@ -77,7 +77,7 @@ inline pipe_noniso_properties_t  get_default_pipe_heatmodel(double length = 1200
 /// @brief Зонированный трубопровод для тепловых задач с равной длиной участков с разным грунтом
 inline zoned_pipe_properties get_zoned_pipe_heatmodel(
     const simple_pipe_properties& spipe,
-    const std::vector<thermophysical_properties_t>& soils,
+    const std::vector<thermophysical_properties_t>& soil_layers,
     HeatModelVer model_version = HeatModelVer::V2)
 {
     zoned_pipe_properties pipe;
@@ -102,15 +102,15 @@ inline zoned_pipe_properties get_zoned_pipe_heatmodel(
     int sensor_count = std::max(2, static_cast<int>(spipe.length / sensor_step + 0.5) + 1);
     sensor_count -= 2; // датчики на границах будут в любом случае
     std::vector<double> sensor_coordinates(sensor_count);
-    for (size_t index = 0; index < sensor_coordinates.size(); ++index) {
-        sensor_coordinates[index] = sensor_step * (index + 1);
+    for (size_t sensor_idx = 0; sensor_idx < sensor_coordinates.size(); ++sensor_idx) {
+        sensor_coordinates[sensor_idx] = sensor_step * (sensor_idx + 1);
     }
     pipe.init_pressure_sensors(sensor_coordinates);
 
-    for (const auto& soil : soils) {
+    for (const auto& soil : soil_layers) {
         primary_heat_zone_parameters_t zone;
         zone.coordinate_begin = index;
-        index += n / soils.size();
+        index += n / soil_layers.size();
 
         // Толщина стенки, слоев изоляции и защитного слоя, м
         // первый слой изоляции, второй слой изоляции, защитный слой
@@ -134,7 +134,7 @@ inline zoned_pipe_properties get_zoned_pipe_heatmodel(
 
 /// @brief Зонированный трубопровод для тепловых задач с равной длиной участков с разным грунтом
 inline zoned_pipe_properties get_zoned_pipe_heatmodel(
-    const std::vector<thermophysical_properties_t>& soils,
+    const std::vector<thermophysical_properties_t>& soil_layers,
     HeatModelVer model_version = HeatModelVer::V2,
     double length = 12000, double dx = 1000, double diameter = 0.7)
 {
@@ -144,7 +144,7 @@ inline zoned_pipe_properties get_zoned_pipe_heatmodel(
     spipe.length = length;
     spipe.dx = dx;
 
-    return get_zoned_pipe_heatmodel(spipe, soils, model_version);
+    return get_zoned_pipe_heatmodel(spipe, soil_layers, model_version);
 }
 
 }
