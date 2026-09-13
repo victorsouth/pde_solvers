@@ -258,14 +258,19 @@ public:
     {
         std::vector<std::pair<std::vector<time_t>, std::vector<DataType>>> data(filename_dim.size());
 
-#pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < static_cast<int>(filename_dim.size()); i++)
-        {
-            csv_tag_reader tag_reader(filename_dim[i]);
-            std::pair<std::vector<time_t>, std::vector<DataType>> data_from_single_csv =
-                tag_reader.read_csv<DataType>(start_period, end_period);
-            data[i] = std::move(data_from_single_csv);
-        }
+        tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, filename_dim.size(), 1),
+            [&](const tbb::blocked_range<std::size_t>& range)
+            {
+                for (std::size_t i = range.begin(); i != range.end(); ++i)
+                {
+                    csv_tag_reader tag_reader(filename_dim[i]);
+                    std::pair<std::vector<time_t>, std::vector<DataType>> data_from_single_csv =
+                        tag_reader.read_csv<DataType>(start_period, end_period);
+                    data[i] = std::move(data_from_single_csv);
+                }
+            },
+            tbb::simple_partitioner());
 
         return data;
     };

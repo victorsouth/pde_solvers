@@ -8,6 +8,11 @@
 #include <iomanip>
 #include <ctime>
 
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
+#include <tbb/partitioner.h>
+#include <tbb/task_arena.h>
+
 #include "timeseries/timeseries_helpers.h"
 #include "timeseries/csv_readers.h"
 #include "timeseries/csv_helpers.h"

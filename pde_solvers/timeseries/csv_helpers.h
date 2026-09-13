@@ -42,10 +42,16 @@ inline std::string convert_csv_values(const std::string& filename,
     const std::vector<std::time_t>& timestamps = original_timeseries.first;
     std::vector<DataTypeConverted> converted_values;
 
-    for (const DataTypeOriginal& original : original_timeseries.second) {
-        DataTypeConverted converted_value = conversion_map.at(original);
-        if (converted_value == exception_value)
-            throw std::runtime_error("exception_value found. Check original csv");
+    for (size_t i = 0; i < original_timeseries.second.size(); ++i) {
+        DataTypeConverted converted_value = conversion_map.at(original_timeseries.second[i]);
+        if (converted_value == exception_value) {
+            std::stringstream message;
+            message << "Exception value " << converted_value
+                << " at " << UnixToString(timestamps[i])
+                << " found in file " << filename << ".csv"
+                << ". Check original csv.";
+            throw std::runtime_error(message.str());
+        }
         converted_values.emplace_back(converted_value);
     }
 

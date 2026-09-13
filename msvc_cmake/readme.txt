@@ -4,13 +4,14 @@
 - Eigen Debug
 - Gtest Debug
 - fixed_solvers Debug
+- oneTBB (installed в C:/install/TBB/msvc)
 
 Подробности см. fixed_solvers/msvc_cmake/readme.txt
 (ЕСЛИ В БИБЛИОТЕКАХ ПОЯВИЛИСЬ ИЗМЕНЕНИЯ, КОТОРЫЕ НЕОБХОДИМЫ ДЛЯ РАБОТЫ ТЕКУЩЕЙ БИБЛИОТЕКИ, ТО ИХ НАДО ПЕРЕСОБИРАТЬ И ПЕРЕУСТАНАВЛИВАТЬ)
 
 При всех собранных зависимостях используем типовую команду (запускать из pde_solvers/msvc_cmake)
 
-cmake .. -G "Visual Studio 17 2022" -DCMAKE_PREFIX_PATH="C:/install/googletest/msvc"  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDebugDLL -DPDE_SOLVERS_BUILD_TESTS=ON
+cmake .. -G "Visual Studio 17 2022" -DCMAKE_PREFIX_PATH="C:/install/googletest/msvc;c:/install/tbb/msvc"  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDebugDLL -DPDE_SOLVERS_BUILD_TESTS=ON
 
 В папке pde_solvers/msvc_cmake будет создано решение MSVC (.sln). Его открываем, работаем с ним как обычно.
 
@@ -27,13 +28,14 @@ cmake --install . --config Debug
 - Eigen Release
 - Gtest Release
 - fixed_solvers Release
+- oneTBB (installed в C:/install/TBB/msvc)
 
 Подробности см. fixed_solvers/msvc_cmake/readme.txt
 (ЕСЛИ В БИБЛИОТЕКАХ ПОЯВИЛИСЬ ИЗМЕНЕНИЯ, КОТОРЫЕ НЕОБХОДИМЫ ДЛЯ РАБОТЫ ТЕКУЩЕЙ БИБЛИОТЕКИ, ТО ИХ НАДО ПЕРЕСОБИРАТЬ И ПЕРЕУСТАНАВЛИВАТЬ)
 
 При всех собранных зависимостях используем типовую команду (запускать из pde_solvers/msvc_cmake)
 
-cmake .. -G "Visual Studio 17 2022" -DCMAKE_PREFIX_PATH="C:/Program Files (x86)/googletest-distribution"  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL -DCMAKE_BUILD_TYPE=Release -DPDE_SOLVERS_BUILD_TESTS=ON
+cmake .. -G "Visual Studio 17 2022" -DCMAKE_PREFIX_PATH="C:/Program Files (x86)/googletest-distribution;C:/install/TBB/msvc"  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL -DCMAKE_BUILD_TYPE=Release -DPDE_SOLVERS_BUILD_TESTS=ON
 
 В папке pde_solvers/msvc_cmake будет создано решение MSVC (.sln). Его открываем, работаем с ним как обычно.
 
