@@ -57,6 +57,8 @@ public:
     using buffer_type = ring_buffer_t<layer_type>;
     /// @brief Тип параметров трубы
     using pipe_parameters_type = iso_nonbaro_pipe_properties_t;
+    /// @brief Тип параметров адаптации, применяемых к трубе в ходе расчёта
+    using adaptation_parameters_type = typename pipe_parameters_type::adaptation_parameters_type;
 
 protected:
     /// @brief Ссылка на свойства конденсатопровода
@@ -351,6 +353,8 @@ public:
     using buffer_type = ring_buffer_t<layer_type>;
     /// @brief Тип параметров трубы
     using pipe_parameters_type = iso_nonbaro_improver_pipe_properties_t;
+    /// @brief Тип параметров адаптации, применяемых к трубе в ходе расчёта
+    using adaptation_parameters_type = typename pipe_parameters_type::adaptation_parameters_type;
 
 protected:
     /// @brief Ссылка на свойства конденсатопровода

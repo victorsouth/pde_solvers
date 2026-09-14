@@ -29,9 +29,12 @@ inline std::string get_test_string() {
 /// Возвращает путь к созданной папке
 inline std::string prepare_test_folder()
 {
-    std::string path = std::string("../testing_out/") + get_test_string() + "/";
-    std::filesystem::create_directories(path);
-    return path;
+    std::filesystem::path p(__FILE__);
+    p = p.parent_path();
+    p = p.string() + "_out";
+    p = p / get_test_string();
+    std::filesystem::create_directories(p);
+    return p.string() + "/";
 }
 
 using namespace pde_solvers;
