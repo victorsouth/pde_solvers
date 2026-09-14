@@ -81,6 +81,7 @@ struct iso_nonbaro_pipe_properties_t : public pipe_properties<adaptation_hydraul
             1, json_data.x_start, json_data.x_end,
             json_data.z_start, json_data.z_end, default_pipe_profile_capacity);
         wall.diameter = json_data.diameter;
+        trivial_transport_calculation = json_data.trivial_transport_calculation;
     }
     /// @brief Конструктор из JSON данных
     /// @param json_data Данные о трубе в формате JSON
@@ -342,6 +343,7 @@ struct iso_nonbaro_improver_pipe_properties_t : public pipe_properties<adaptatio
             1, json_data.x_start, json_data.x_end,
             json_data.z_start, json_data.z_end, default_pipe_profile_capacity);
         wall.diameter = json_data.diameter;
+        trivial_transport_calculation = json_data.trivial_transport_calculation;
     }
 
     /// @brief Конструктор из JSON данных

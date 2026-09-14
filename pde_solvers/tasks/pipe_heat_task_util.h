@@ -16,6 +16,8 @@ struct pipe_json_data {
     double z_start;
     /// @brief Высотная отметка конца трубы
     double z_end;
+    /// @brief Тривиальный транспортный расчёт (вход = выход по всему профилю)
+    bool trivial_transport_calculation;
     /// @brief Параметры
     static pipe_json_data default_values() {
         pipe_json_data result;
@@ -24,6 +26,7 @@ struct pipe_json_data {
         result.x_end = 1000.0;
         result.z_start = 0.0;
         result.z_end = 0.0;
+        result.trivial_transport_calculation = false;
         return result;
     }
 };
