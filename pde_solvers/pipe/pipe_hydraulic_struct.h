@@ -215,8 +215,6 @@ struct pipe_properties
     pipe_wall_model_t wall;
     /// @brief Параметры адаптации
     AdaptationParameters adaptation;
-    /// @brief Тривиальный транспортный расчёт (вход = выход по всему профилю)
-    bool trivial_transport_calculation{ false };
     /// @brief Формула расчета гидравлического сопротивления
     /// Параметры шероховатости подхватывается из wall
     double resistance_function(double Re) const {

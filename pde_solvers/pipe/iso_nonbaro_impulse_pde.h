@@ -77,6 +77,8 @@ struct iso_nonbaro_pipe_properties_t : public pipe_properties<adaptation_hydraul
     using adaptation_parameters_type = adaptation_hydraulic_effectiveness;
     /// @brief Кинематическая вязкость, м²/с
     double kinematic_viscosity{1e-7};
+    /// @brief Тривиальный транспортный расчёт (вход = выход по всему профилю)
+    bool trivial_transport_calculation{ false };
     /// @brief Конструктор по умолчанию
     iso_nonbaro_pipe_properties_t() = default;
     /// @brief Конструктор из JSON данных
@@ -316,6 +318,8 @@ struct iso_nonbaro_improver_pipe_properties_t : public pipe_properties<adaptatio
     double kinematic_viscosity{std::numeric_limits<double>::quiet_NaN()};
     /// @brief Параметры присадки
     improver_properties_t improver;
+    /// @brief Тривиальный транспортный расчёт (вход = выход по всему профилю)
+    bool trivial_transport_calculation{ false };
 
     /// @brief Конструктор по умолчанию
     iso_nonbaro_improver_pipe_properties_t() = default;
