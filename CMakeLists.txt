@@ -159,6 +159,10 @@ if(PDE_SOLVERS_BUILD_TESTS)
     target_link_libraries(pde_tests pde_solvers::pde_solvers GTest::gtest)
     install(TARGETS pde_tests DESTINATION bin)
 
+    enable_testing()
+    include(GoogleTest)
+    # PRE_TEST — для multi-config генератора Visual Studio
+    gtest_discover_tests(pde_tests DISCOVERY_MODE PRE_TEST)
 
     set(RESEARCH_HEADERS
         research/2023-12-diffusion-of-advection/diffusion_of_advection.h
