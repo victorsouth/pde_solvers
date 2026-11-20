@@ -135,3 +135,85 @@ TEST(IsoNonbaroPipePPPde, DecreasesFlowRate_WithIncreasingDensity_AtFixedPressur
     }
 }
 
+/// @brief Проверяет монотонное увеличение потерь давления с ростом кинематической вязкости при фиксированном расходе
+TEST(IsoNonbaroPipeQPPde, IncreasesPressureLoss_WithIncreasingViscosity) {
+    // Arrange: подготавливаем трубу, граничные условия и диапазон кинематических вязкостей
+    auto pipe = create_test_pipe_for_PQ();
+    auto conditions = pde_solvers::iso_nonbarotropic_pipe_PQ_task_boundaries_t::default_values();
+    conditions.volumetric_flow = 0.3;
+    conditions.pressure_in = 5e6;
+    conditions.density = 850.0;
+
+    std::vector<double> viscosities = { 1e-7, 4e-7, 8e-7, 2e-6 };
+    std::vector<double> pressure_drops;
+
+    // Act: рассчитываем потери давления для каждого значения вязкости
+    for (double nu : viscosities) {
+        pipe.kinematic_viscosity = nu;
+        double pressure_drop = deltaP_for_solve_qP(pipe, conditions);
+        pressure_drops.push_back(pressure_drop);
+    }
+
+    // Assert: потери давления должны строго увеличиваться с ростом вязкости
+    for (size_t i = 1; i < pressure_drops.size(); ++i) {
+        EXPECT_GT(pressure_drops[i], pressure_drops[i - 1]);
+    }
+}
+
+/// @brief Проверяет монотонное уменьшение расхода с ростом кинематической вязкости при фиксированном перепаде давления
+TEST(IsoNonbaroPipePPPde, DecreasesFlowRate_WithIncreasingViscosity_AtFixedPressureDrop) {
+    // Arrange: подготавливаем трубу, фиксированный перепад давления и диапазон кинематических вязкостей
+    auto pipe = create_test_pipe_for_PP();
+    auto conditions = pde_solvers::iso_nonbaro_pipe_PP_task_boundaries_t::default_values();
+    conditions.pressure_in = 5e6;
+    conditions.pressure_out = 4e6;
+    conditions.density = 850.0;
+
+    std::vector<double> viscosities = { 1e-7, 4e-7, 8e-7, 2e-6 };
+    std::vector<double> calculated_flows;
+
+    // Act: рассчитываем расход методом Ньютона для каждого значения вязкости
+    for (double nu : viscosities) {
+        pipe.kinematic_viscosity = nu;
+        double Q = Q_for_solve_PP(pipe, conditions);
+        calculated_flows.push_back(Q);
+    }
+
+    // Assert: расход должен строго убывать с ростом вязкости
+    for (size_t i = 1; i < calculated_flows.size(); ++i) {
+        EXPECT_LT(calculated_flows[i], calculated_flows[i - 1]);
+    }
+}
+
+/// @brief Проверяет малую чувствительность перепада давления к вариациям вязкости (+-30%) в турбулентном режиме
+TEST(IsoNonbaroPipeQPPde, HasLowSensitivityToViscosityVariation_WhenTurbulent) {
+    // Arrange: номинальная рабочая вязкость конденсата и вариации на +-30%
+    auto pipe = create_test_pipe_for_PQ();
+    auto conditions = pde_solvers::iso_nonbarotropic_pipe_PQ_task_boundaries_t::default_values();
+    conditions.volumetric_flow = 0.3;
+    conditions.pressure_in = 5e6;
+    conditions.density = 750.0;
+
+    double nu_nominal = 8e-7;
+    double nu_low = nu_nominal * 0.7;
+    double nu_high = nu_nominal * 1.3;
+
+    // Act: рассчитываем перепад давления для номинала и отклонений
+    pipe.kinematic_viscosity = nu_nominal;
+    double dp_nominal = deltaP_for_solve_qP(pipe, conditions);
+
+    pipe.kinematic_viscosity = nu_low;
+    double dp_low = deltaP_for_solve_qP(pipe, conditions);
+
+    pipe.kinematic_viscosity = nu_high;
+    double dp_high = deltaP_for_solve_qP(pipe, conditions);
+
+    // Assert: относительное изменение перепада давления не превышает 5%, абсолютная разница менее 0.1 атм
+    double rel_diff_low = std::abs(dp_low - dp_nominal) / dp_nominal;
+    double rel_diff_high = std::abs(dp_high - dp_nominal) / dp_nominal;
+
+    EXPECT_LT(rel_diff_low, 0.05);
+    EXPECT_LT(rel_diff_high, 0.05);
+    EXPECT_LT(std::abs(dp_high - dp_low), 1e4);
+}
+

@@ -76,7 +76,7 @@ struct iso_nonbaro_pipe_properties_t : public pipe_properties<adaptation_hydraul
     /// @brief Тип параметров адаптации, применяемых к трубе в ходе расчёта
     using adaptation_parameters_type = adaptation_hydraulic_effectiveness;
     /// @brief Кинематическая вязкость, м²/с
-    double kinematic_viscosity{1e-7};
+    double kinematic_viscosity{8e-7};
     /// @brief Тривиальный транспортный расчёт (вход = выход по всему профилю)
     bool trivial_transport_calculation{ false };
     /// @brief Конструктор по умолчанию
@@ -332,7 +332,7 @@ struct iso_nonbaro_improver_pipe_properties_t : public pipe_properties<adaptatio
         result.profile.coordinates =
             pde_solvers::pipe_profile_uniform::generate_uniform_grid(0.0, length, dx);
         result.wall.diameter = 1;
-        result.kinematic_viscosity = 1e-7;
+        result.kinematic_viscosity = 8e-7;
         result.improver.efficiency_formula = improver_efficiency_formula_t::polynomial;
         result.improver.coeffs = { 0.0 };
         return result;
